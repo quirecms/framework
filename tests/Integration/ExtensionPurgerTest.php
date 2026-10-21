@@ -8,6 +8,8 @@ use Doctrine\DBAL\Connection;
 use Doctrine\Migrations\DependencyFactory;
 use Doctrine\Migrations\MigratorConfiguration;
 use Doctrine\Migrations\Version\Version;
+use Quire\Content\Command\CreateContent;
+use Quire\Content\ContentWriter;
 use Quire\Extension\Event\ExtensionPurging;
 use Quire\Extension\ExtensionPurger;
 use Quire\Extension\InstalledExtensions;
@@ -30,6 +32,7 @@ final class ExtensionPurgerTest extends KernelTestCase
     protected function tearDown(): void
     {
         $this->connection->executeStatement('DELETE FROM setting');
+        $this->connection->executeStatement('DELETE FROM content');
 
         // Executed migration objects are frozen, so restore the schema from a fresh kernel.
         self::ensureKernelShutdown();
@@ -61,11 +64,14 @@ final class ExtensionPurgerTest extends KernelTestCase
         self::assertTrue($this->tableExists('quire_fixture_hello_visit'));
     }
 
-    public function testPurgeRollsBackMigrationsAndDeletesSettings(): void
+    public function testPurgeRollsBackMigrationsAndDeletesSettingsAndFields(): void
     {
         $container = self::getContainer();
         $container->get(Settings::class)->set('quire-fixture-hello.greeting', 'Howdy');
         $container->get(Settings::class)->set('site.title', 'Untouched');
+        $post = $container->get(ContentWriter::class)->create(new CreateContent('post', 'Hello', fields: ['mood' => 'happy', 'rating' => 3]));
+        // A value no enabled extension declares, e.g. from an extension removed earlier: not this one's to delete.
+        $this->connection->executeStatement('UPDATE content SET fields = fields || \'{"other": 1}\' WHERE id = ?', [$post->id]);
 
         $purging = [];
         $container->get(EventDispatcherInterface::class)->addListener(ExtensionPurging::class, static function (ExtensionPurging $event) use (&$purging): void {
@@ -85,7 +91,15 @@ final class ExtensionPurgerTest extends KernelTestCase
         self::assertFalse($this->migrations()->getMetadataStorage()->getExecutedMigrations()->hasMigration(new Version(\Quire\Fixtures\Hello\Migrations\Version20261022100000::class)));
         self::assertEquals(['site.title'], $this->connection->fetchFirstColumn('SELECT name FROM setting'));
         self::assertTrue($this->tableExists('setting'), 'Core migrations are untouched.');
-        self::assertSame(['Purging "quire-fixture-hello"…', '  Rolled back 1 migration(s).', '  Deleted 1 stored setting(s).'], $output);
+        self::assertSame('{"other": 1}', $this->connection->fetchOne('SELECT fields::text FROM content WHERE id = ?', [$post->id]));
+        self::assertSame('{}', $this->connection->fetchOne('SELECT fields::text FROM content_revision WHERE content_id = ?', [$post->id]), 'Revisions too.');
+        self::assertSame([
+            'Purging "quire-fixture-hello"…',
+            '  Rolled back 1 migration(s).',
+            '  Deleted 1 stored setting(s).',
+            '  Deleted the fields mood, rating, score, featured, subtitle, color, size, tags, due, event_at, extra from 1 post.',
+            '  Deleted the fields recipient from 0 greeting cards.',
+        ], $output);
     }
 
     private function tableExists(string $table): bool

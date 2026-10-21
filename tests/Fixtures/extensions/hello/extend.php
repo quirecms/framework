@@ -37,9 +37,22 @@ return [
     new Extend\ContentType('greeting_card')
         ->label('Greeting card')
         ->capabilities('listable', 'printable')
+        ->field('recipient', 'string', required: true, filterable: true, label: 'Recipient')
         ->permalink('/cards/{id}'),
 
-    Extend\ContentType::existing('post')->addCapabilities('greetable'),
+    Extend\ContentType::existing('post')
+        ->addCapabilities('greetable')
+        ->field('mood', 'enum', choices: ['happy', 'sad'])
+        ->field('rating', 'int', min: 1, max: 5, sortable: true)
+        ->field('score', 'float', min: 0)
+        ->field('featured', 'bool', default: false, filterable: true)
+        ->field('subtitle', 'string', maxLength: 100)
+        ->field('color', 'string')
+        ->field('size', 'string')
+        ->field('tags', 'list', filterable: true)
+        ->field('due', 'date')
+        ->field('event_at', 'datetime', sortable: true)
+        ->field('extra', 'json'),
 
     new Extend\ContentWorkflow()
         ->status('in_review')

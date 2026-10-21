@@ -49,6 +49,9 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
 		php bin/console cache:clear
 	fi
 
+	# Indexes of sortable and filterable content fields follow the enabled extensions' declarations
+	php bin/console quire:content:sync-indexes
+
 	echo 'PHP app ready!'
 fi
 
