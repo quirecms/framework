@@ -208,6 +208,47 @@ Commands registered through `Extend\Services::autoload()` are picked up without 
 | `load($file)` | Loads a Symfony service configuration file (`.php` or `.yaml`) |
 | `compilerPass($pass)` | Adds a compiler pass, for advanced container changes |
 
+#### `Extend\Settings`
+
+Declares settings that site admins can change at runtime (see [Settings](settings.md)).
+
+```php
+new Extend\Settings()
+    ->define('acme-reviews.require_approval', 'bool', true, label: 'Require approval', help: 'New reviews stay hidden until a moderator approves them.')
+    ->define('acme-reviews.per_page', 'int', 20, label: 'Reviews per page')
+    ->define('acme-reviews.sort', 'enum', 'newest', choices: ['newest', 'oldest'])
+    ->define('acme-reviews.api_key', 'string', null, nullable: true, sensitive: true),
+```
+
+| Argument | Description |
+|----------|-------------|
+| `key` | Must start with your extension's ID and a dot, e.g. `acme-reviews.per_page`, so it can't clash with other extensions. Lowercase words separated by dots. |
+| `type` | `string`, `bool`, `int`, `float`, `enum`, `list` (of strings) or `json` |
+| `default` | Used until someone changes the setting. Must fit the type. |
+| `label`, `help`, `group`, `widget` | How admin interfaces present the setting. `widget` is a hint such as `textarea` or `color`. |
+| `choices` | The allowed values, for `enum` settings |
+| `nullable` | Whether the setting may be empty (`null`) |
+| `sensitive` | Hides the value in listings, e.g. for API keys |
+
+Read settings by injecting `Quire\Settings\Settings`:
+
+```php
+final readonly class ListReviews
+{
+    public function __construct(private Settings $settings) {}
+
+    public function __invoke(): Response
+    {
+        $perPage = $this->settings->getInt('acme-reviews.per_page');
+        // ...
+    }
+}
+```
+
+`get()` returns any type. The typed getters `getString()`, `getBool()`, `getInt()`, `getFloat()` and `getList()` save you from checking the type yourself. When a setting changes, Quire dispatches `Quire\Settings\Event\SettingChanged`.
+
+The site's own `extend.php` declares settings under `custom.`, e.g. `custom.footer_text`.
+
 #### `Extend\Conditional`
 
 Applies extenders only when a condition holds, for example to integrate with an optional extension:

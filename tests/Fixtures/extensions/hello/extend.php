@@ -28,6 +28,10 @@ return [
     new Extend\Console()
         ->command(Hello\HelloCommand::class),
 
+    new Extend\Settings()
+        ->define('quire-fixture-hello.greeting', 'string', 'Hello', label: 'Greeting')
+        ->define('quire-fixture-hello.shout', 'bool', false, label: 'Shout the greeting'),
+
     new Extend\Conditional()
         ->whenExtensionEnabled('quire-fixture-not-installed', static fn (): array => [
             new Extend\Routes()->get('/_fixture/never', 'fixture_never', Hello\HelloController::class),

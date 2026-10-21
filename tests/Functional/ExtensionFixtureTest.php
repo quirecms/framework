@@ -21,7 +21,8 @@ final class ExtensionFixtureTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSelectorTextSame('h1', 'Hello, Ada!');
-        self::assertSelectorTextSame('p', 'The fixture extension greets Ada.');
+        self::assertSelectorTextSame('p.message', 'The fixture extension greets Ada.');
+        self::assertSelectorTextSame('p.global', 'Hello');
     }
 
     public function testRouteDefaults(): void
