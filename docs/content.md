@@ -40,6 +40,21 @@ bin/console quire:content-type:list
 
 Extensions add their own capabilities, for example `commentable`, and can add them to types that other extensions register.
 
+### Fields
+
+Content types and extensions can declare **fields**: typed values such as a product's price, an event's date or a post's rating. To see a type's fields and their rules:
+
+```bash
+bin/console quire:content-type:show post
+```
+
+Set fields with `--fields` on `quire:content:create` and `quire:content:update`, as a JSON object. On update, only the fields you pass change, and `null` removes one:
+
+```bash
+bin/console quire:content:create product "Mug" --fields '{"price": 12.5, "color": "blue"}'
+bin/console quire:content:update <id> --fields '{"color": null}'
+```
+
 ## Managing content from the command line
 
 ```bash

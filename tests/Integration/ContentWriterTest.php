@@ -130,10 +130,10 @@ final class ContentWriterTest extends KernelTestCase
                 $event->cancel('No spam, please.');
             }
 
-            $event->command->fields['checked'] = true;
+            $event->command->fields['featured'] = true;
         });
 
-        self::assertTrue($this->writer->create(new CreateContent('post', 'Hello'))->field('checked'));
+        self::assertTrue($this->writer->create(new CreateContent('post', 'Hello'))->field('featured'));
 
         try {
             $this->writer->create(new CreateContent('post', 'Spam'));
@@ -179,10 +179,10 @@ final class ContentWriterTest extends KernelTestCase
 
     public function testUnchangedValuesSaveNothing(): void
     {
-        $post = $this->writer->create(new CreateContent('post', 'Hello', fields: ['a' => 1, 'b' => 2]));
+        $post = $this->writer->create(new CreateContent('post', 'Hello', fields: ['rating' => 1, 'mood' => 'sad']));
         $this->events = [];
 
-        $same = $this->writer->update(new UpdateContent($post->id, 1)->title('Hello')->fields(['b' => 2, 'a' => 1]));
+        $same = $this->writer->update(new UpdateContent($post->id, 1)->title('Hello')->fields(['mood' => 'sad', 'featured' => false, 'rating' => 1]));
 
         self::assertSame(1, $same->version);
         self::assertSame([], $this->recorded());
@@ -193,9 +193,9 @@ final class ContentWriterTest extends KernelTestCase
     {
         $post = $this->writer->create(new CreateContent('post', 'Hello', fields: ['rating' => 1, 'color' => 'red']));
 
-        $updated = $this->writer->update(new UpdateContent($post->id, 1)->field('rating', '1')->field('color', null)->field('size', 'L'));
+        $updated = $this->writer->update(new UpdateContent($post->id, 1)->field('rating', 2)->field('color', null)->field('size', 'L'));
 
-        self::assertSame('1', $updated->field('rating'), 'The string "1" isn\'t the number 1.');
+        self::assertSame(2, $updated->field('rating'));
         self::assertSame('L', $updated->field('size'));
         self::assertArrayNotHasKey('color', $updated->fields);
     }
@@ -213,11 +213,11 @@ final class ContentWriterTest extends KernelTestCase
     public function testUpdatingListenersCanAddChanges(): void
     {
         self::getContainer()->get(EventDispatcherInterface::class)->addListener(ContentUpdating::class, static function (ContentUpdating $event): void {
-            $event->command->field('edited', true);
+            $event->command->field('subtitle', 'Edited');
         });
         $post = $this->writer->create(new CreateContent('post', 'Hello'));
 
-        self::assertTrue($this->writer->update(new UpdateContent($post->id, 1)->title('Changed'))->field('edited'));
+        self::assertSame('Edited', $this->writer->update(new UpdateContent($post->id, 1)->title('Changed'))->field('subtitle'));
     }
 
     public function testPagesFormATree(): void

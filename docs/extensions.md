@@ -297,6 +297,8 @@ use Quire\Content\Type\Capability;
 new Extend\ContentType('product')
     ->label('Product', 'Products')
     ->capabilities(Capability::REVISIONS, Capability::LISTABLE, Capability::SEARCHABLE)
+    ->field('price', 'float', required: true, min: 0, sortable: true, label: 'Price')
+    ->field('color', 'enum', choices: ['red', 'green', 'blue'], filterable: true)
     ->permalink('/products/{slug}')
     ->sortBy('title'),
 ```
@@ -306,17 +308,52 @@ new Extend\ContentType('product')
 | `label($singular, $plural)` | Names shown in admin interfaces. Defaults to the ID, e.g. `Product` and `Products`. |
 | `capabilities(...)` | What the type can do. Use the `Capability` constants for core's flags, and plain strings for your own (e.g. `'reviewable'`). Defaults to none. |
 | `permalink($pattern)` | Default URL pattern, made of static text and the placeholders `{slug}`, `{path}` (the slugs of the item's ancestors and its own, for hierarchical types), `{id}`, `{year}`, `{month}` and `{day}`. It needs `{slug}`, `{path}` or `{id}`. Defaults to `/{type}/{slug}`, or `/{type}/{path}` for hierarchical types. |
-| `sortBy($field, $direction)` | Default order of listings: `published_at`, `created_at`, `updated_at`, `title` or `position`, `asc` or `desc`. Defaults to newest first, or by position for hierarchical types. |
+| `field($name, $type, ...)` | Declares a typed field (see below) |
+| `sortBy($field, $direction)` | Default order of listings: `published_at`, `created_at`, `updated_at`, `title`, `position` or a sortable field such as `fields.price`, `asc` or `desc`. Defaults to newest first, or by position for hierarchical types. |
 
 Type IDs are lowercase letters, digits and underscores, starting with a letter, e.g. `product` or `recipe_card`. They must be unique across the site.
 
-To add capabilities to a type registered by core or another extension, use `existing()`:
+To add capabilities or fields to a type registered by core or another extension, use `existing()`:
 
 ```php
-Extend\ContentType::existing('post')->addCapabilities('commentable'),
+Extend\ContentType::existing('post')
+    ->addCapabilities('commentable')
+    ->field('subtitle', 'string', maxLength: 200),
 ```
 
-Only capabilities can be added this way. When the type comes from another extension, require that extension in your `composer.json`, so it boots first.
+Only capabilities and fields can be added this way. When the type comes from another extension, require that extension in your `composer.json`, so it boots first.
+
+##### Fields
+
+Fields hold an item's structured data, next to its title and body. Values are stored in the item's `fields` (JSONB) and checked against the declaration on every save. Read them with `$content->field('price')`.
+
+| Type | Values | Stored as |
+|------|--------|-----------|
+| `string` | One line of text | text |
+| `text` | Longer text | text |
+| `int`, `float` | Numbers | numbers (a float stays a float, e.g. `4.0`) |
+| `bool` | `true` or `false` | boolean |
+| `enum` | One of `choices` | the choice |
+| `list` | A list of texts, e.g. tags | array |
+| `date` | A date, or a `DateTimeInterface` | `"2026-12-24"` |
+| `datetime` | A `DateTimeInterface`, or ISO 8601 text with an offset | UTC text, `"2026-12-24T17:00:00+00:00"` |
+| `json` | Anything JSON can hold | as is |
+
+| Option | Description |
+|--------|-------------|
+| `default` | Set on new items that don't provide a value |
+| `required` | New items need a value, and it can't be removed |
+| `choices` | The allowed values, for `enum` |
+| `min`, `max` | The allowed range, for `int` and `float` |
+| `maxLength` | Most characters, for `string`, `text` and each item of a `list` |
+| `sortable`, `filterable` | Listings can sort or filter by the field, and it gets a database index. Not available for `text` and `json`; `list` fields can be filtered but not sorted. Indexed `string` fields have a `maxLength` of 255 unless you set one, and at most 1000. |
+| `label`, `help`, `group`, `widget`, `order` | How admin forms present the field |
+
+Field names are lowercase letters, digits and underscores, and unique per type: if two extensions declare the same field for a type, Quire refuses to start and names both.
+
+Only the values being saved are checked. Values an item already has stay as they are, even when no enabled extension declares them any more, so disabling an extension never makes content unsaveable. Purging an extension (`quire:extension:disable --purge`) deletes the values of the fields it declares, also from revisions.
+
+Quire creates and drops the database indexes of sortable and filterable fields itself: when the container starts and after an extension is enabled. In development, run `bin/console quire:content:sync-indexes` after changing a declaration. Indexes are built without blocking writes.
 
 Read the registered types by injecting `Quire\Content\Type\ContentTypeRegistry`:
 
