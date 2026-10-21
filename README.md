@@ -63,6 +63,12 @@ docker compose exec php composer require acme/reviews
 docker compose exec php bin/console quire:extension:enable acme-reviews
 ```
 
+To start your own, generate a working extension (page, setting, migration and tests) and enable it in one step:
+
+```bash
+docker compose exec php bin/console quire:make:extension acme/reviews
+```
+
 See [docs/extensions.md](docs/extensions.md) for managing extensions and for writing your own.
 
 ## Settings
