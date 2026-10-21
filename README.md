@@ -15,7 +15,7 @@ To run without Docker you need PHP 8.5 (with the `intl`, `opcache`, `apcu`, `zip
 ## Quick start
 
 ```bash
-git clone https://github.com/yorvolabs/quire.git
+git clone https://github.com/quirecms/framework.git quire
 cd quire
 docker compose build --pull --no-cache
 docker compose up --wait

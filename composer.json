@@ -1,5 +1,5 @@
 {
-    "name": "quire/quire",
+    "name": "quire/framework",
     "type": "project",
     "license": "MIT",
     "description": "Quire CMS development monorepo: the core, first-party extensions and the application they run in.",
