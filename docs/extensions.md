@@ -319,8 +319,13 @@ The `extend.php` in the project root works exactly like an extension's, and runs
 
 ### After enabling or disabling extensions
 
-Extensions are compiled into the application, so it must be rebuilt after the enabled extensions change. `quire:extension:enable` and `quire:extension:disable` do that for you, and run migrations.
+Extensions are compiled into the application, so it must be rebuilt after the enabled extensions change. Quire does this for you:
 
-Running PHP workers keep serving the previous build until they restart. Restart them after enabling or disabling extensions: `docker compose restart php`. (Quire will do this automatically in a future version.)
+- **On the machine where you run `quire:extension:enable` or `disable`,** the command rebuilds the application, runs migrations and gracefully restarts the PHP workers. The change is live when the command finishes.
+- **On other machines** (when several servers share the database), each PHP worker checks every few seconds whether the enabled extensions changed. When they did, the machine rebuilds in the background and restarts its workers, usually within 5–10 seconds. Requests keep being served meanwhile.
+
+You can run the same refresh by hand with `bin/console quire:app:refresh`. Its output from automatic runs is logged to `var/log/quire-refresh.log`.
 
 `/_quire/health` reports a failing `extensions` check while the running application doesn't match the enabled extensions.
+
+When extensions are pinned in configuration, nothing changes at runtime, so none of this applies.
