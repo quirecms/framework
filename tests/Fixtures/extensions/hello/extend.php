@@ -34,6 +34,13 @@ return [
         ->define('quire-fixture-hello.greeting', 'string', 'Hello', label: 'Greeting')
         ->define('quire-fixture-hello.shout', 'bool', false, label: 'Shout the greeting'),
 
+    new Extend\ContentType('greeting_card')
+        ->label('Greeting card')
+        ->capabilities('listable', 'printable')
+        ->permalink('/cards/{id}'),
+
+    Extend\ContentType::existing('post')->addCapabilities('greetable'),
+
     new Extend\Conditional()
         ->whenExtensionEnabled('quire-fixture-not-installed', static fn (): array => [
             new Extend\Routes()->get('/_fixture/never', 'fixture_never', Hello\HelloController::class),

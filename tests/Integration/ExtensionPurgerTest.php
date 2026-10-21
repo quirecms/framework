@@ -50,6 +50,8 @@ final class ExtensionPurgerTest extends KernelTestCase
         self::assertSame([
             \Quire\Migrations\Version20261021120000::class,
             \Quire\Migrations\Version20261022090000::class,
+            // Core's migrations run first, even when an extension's is older.
+            \Quire\Migrations\Version20261022120000::class,
             \Quire\Fixtures\Hello\Migrations\Version20261022100000::class,
         ], $versions);
     }

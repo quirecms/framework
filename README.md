@@ -82,6 +82,16 @@ docker compose exec php bin/console quire:settings:set site.title "My site"
 
 See [docs/settings.md](docs/settings.md).
 
+## Content
+
+Posts, pages and the content types that extensions add are stored in PostgreSQL. List the registered types:
+
+```bash
+docker compose exec php bin/console quire:content-type:list
+```
+
+See [docs/content.md](docs/content.md).
+
 ## Repository layout
 
 | Path | Contents |

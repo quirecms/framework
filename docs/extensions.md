@@ -287,6 +287,45 @@ final readonly class ListReviews
 
 The site's own `extend.php` declares settings under `custom.`, e.g. `custom.footer_text`.
 
+#### `Extend\ContentType`
+
+Registers a content type (see [Content](content.md)):
+
+```php
+use Quire\Content\Type\Capability;
+
+new Extend\ContentType('product')
+    ->label('Product', 'Products')
+    ->capabilities(Capability::REVISIONS, Capability::LISTABLE, Capability::SEARCHABLE)
+    ->permalink('/products/{slug}')
+    ->sortBy('title'),
+```
+
+| Method | Description |
+|--------|-------------|
+| `label($singular, $plural)` | Names shown in admin interfaces. Defaults to the ID, e.g. `Product` and `Products`. |
+| `capabilities(...)` | What the type can do. Use the `Capability` constants for core's flags, and plain strings for your own (e.g. `'reviewable'`). Defaults to none. |
+| `permalink($pattern)` | Default URL pattern, made of static text and the placeholders `{slug}`, `{path}` (the slugs of the item's ancestors and its own, for hierarchical types), `{id}`, `{year}`, `{month}` and `{day}`. It needs `{slug}`, `{path}` or `{id}`. Defaults to `/{type}/{slug}`, or `/{type}/{path}` for hierarchical types. |
+| `sortBy($field, $direction)` | Default order of listings: `published_at`, `created_at`, `updated_at`, `title` or `position`, `asc` or `desc`. Defaults to newest first, or by position for hierarchical types. |
+
+Type IDs are lowercase letters, digits and underscores, starting with a letter, e.g. `product` or `recipe_card`. They must be unique across the site.
+
+To add capabilities to a type registered by core or another extension, use `existing()`:
+
+```php
+Extend\ContentType::existing('post')->addCapabilities('commentable'),
+```
+
+Only capabilities can be added this way. When the type comes from another extension, require that extension in your `composer.json`, so it boots first.
+
+Read the registered types by injecting `Quire\Content\Type\ContentTypeRegistry`:
+
+```php
+foreach ($registry->withCapability('commentable') as $id => $type) {
+    // ...
+}
+```
+
 #### `Extend\Migrations`
 
 Registers database migrations ([Doctrine Migrations](https://www.doctrine-project.org/projects/doctrine-migrations/en/stable/)) that create and change your extension's tables:
