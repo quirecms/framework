@@ -50,11 +50,11 @@ jobs:
       - name: Run quality checks and tests
         run: docker compose exec -T php composer qa
       - name: Check HTTP reachability
-        run: curl -v --fail-with-body http://localhost
+        run: curl -v --fail-with-body http://quire.localhost
       - name: Check HTTPS reachability
-        run: curl -v --insecure --fail-with-body https://localhost
+        run: curl -v --insecure --fail-with-body https://quire.localhost
       - name: Check health endpoint
-        run: curl -v --insecure --fail-with-body https://localhost/_quire/health
+        run: curl -v --insecure --fail-with-body https://quire.localhost/_quire/health
       - name: Show logs on failure
         if: failure()
         run: docker compose logs
@@ -92,9 +92,9 @@ jobs:
       - name: Start services
         run: docker compose -f compose.yaml -f compose.prod.yaml up --wait --no-build
       - name: Check HTTPS reachability
-        run: curl -v --insecure --fail-with-body https://localhost
+        run: curl -v --insecure --fail-with-body https://quire.localhost
       - name: Check health endpoint
-        run: curl -v --insecure --fail-with-body https://localhost/_quire/health
+        run: curl -v --insecure --fail-with-body https://quire.localhost/_quire/health
       - name: Check the app runs as a non-root user
         run: test "$(docker compose -f compose.yaml -f compose.prod.yaml exec -T php id -u)" != "0"
       - name: Show logs on failure

@@ -82,7 +82,7 @@ Keep these volumes:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `SERVER_NAME` | `localhost` | Domain(s) Caddy serves |
+| `SERVER_NAME` | `quire.localhost` | Domain(s) Caddy serves. Always set it in production. |
 | `HTTP_PORT` / `HTTPS_PORT` / `HTTP3_PORT` | `80` / `443` / `443` | Ports published on the host |
 | `APP_SECRET` | none (required in prod) | Symfony's application secret |
 | `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` | `app` / `app` / `!ChangeMe!` | Database credentials. **Always change the password in production.** |

@@ -15,15 +15,17 @@ To run without Docker you need PHP 8.5 (with the `intl`, `opcache`, `apcu`, `zip
 ## Quick start
 
 ```bash
-git clone https://github.com/YorvoLabs/quire.git
+git clone https://github.com/yorvolabs/quire.git
 cd quire
 docker compose build --pull --no-cache
 docker compose up --wait
 ```
 
-Open <https://localhost> and accept the locally generated TLS certificate. You should see the Quire welcome page.
+Open <https://quire.localhost> and accept the locally generated TLS certificate. You should see the Quire welcome page.
 
-The health report is at <https://localhost/_quire/health>.
+Names ending in `.localhost` always point to your own machine. Browsers and curl resolve them without any `/etc/hosts` entry. To use a different name, set `SERVER_NAME`, e.g. `SERVER_NAME=mysite.localhost docker compose up --wait`.
+
+The health report is at <https://quire.localhost/_quire/health>.
 
 Stop the stack with `docker compose down --remove-orphans`.
 
@@ -35,7 +37,7 @@ If ports 80 or 443 are already in use on your machine, choose different ones:
 HTTP_PORT=8080 HTTPS_PORT=8443 HTTP3_PORT=8443 docker compose up --wait
 ```
 
-Then open <https://localhost:8443>.
+Then open <https://quire.localhost:8443>.
 
 ## Development commands
 
