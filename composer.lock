@@ -1331,7 +1331,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/core",
-                "reference": "43ab4dbd4dfcebd98a608c567dd837f97468fcff"
+                "reference": "4db04d1cade2602793d5b7f961670a147fbad721"
             },
             "require": {
                 "doctrine/dbal": "^4.2",
@@ -1344,6 +1344,7 @@
                 "symfony/config": "^8.1",
                 "symfony/console": "^8.1",
                 "symfony/dependency-injection": "^8.1",
+                "symfony/filesystem": "^8.1",
                 "symfony/framework-bundle": "^8.1",
                 "symfony/http-kernel": "^8.1",
                 "symfony/process": "^8.1",

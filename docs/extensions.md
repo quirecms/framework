@@ -94,6 +94,31 @@ With `pinned: true`, the enable and disable commands refuse to make changes. To 
 
 ## Writing an extension
 
+### Quick start
+
+```bash
+bin/console quire:make:extension acme/reviews
+```
+
+This creates a working extension in `extensions/reviews/`, installs it with Composer and enables it. The extension has:
+
+- a page at `/reviews`: a route, a controller and a Twig template;
+- a setting, `acme-reviews.greeting`, shown on that page;
+- a database migration creating a table the page reads from;
+- passing tests, using [`quire/testing`](#testing-your-extension).
+
+Open `/reviews`, then change the files to build your feature. Run the extension's tests with `vendor/bin/phpunit -c extensions/reviews`.
+
+| Option | Purpose |
+|--------|---------|
+| `--title "Product Reviews"` | Human-readable name, instead of one derived from the package name |
+| `--dir path/to/dir` | Create the extension somewhere else, e.g. for its own repository |
+| `--no-install` | Only create the files |
+
+Extensions in `extensions/` are installed through a Composer path repository, so changes to their files apply immediately. To publish one later, move its directory into its own repository: the generated files work there as they are.
+
+### How an extension is structured
+
 An extension is a Composer package with the type `quire-extension`. Themes use `quire-theme`.
 
 ```json
