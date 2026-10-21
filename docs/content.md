@@ -55,6 +55,37 @@ bin/console quire:content:create product "Mug" --fields '{"price": 12.5, "color"
 bin/console quire:content:update <id> --fields '{"color": null}'
 ```
 
+## Writing content
+
+Bodies are written in **Markdown** by default ([CommonMark](https://commonmark.org) with GitHub's tables, task lists, strikethrough and autolinks). Pass `--format text` for plain text, or `--format html` for HTML. Whatever the format, the HTML visitors get is sanitised: scripts, styles, frames, forms, event handlers and `javascript:` links never get through. HTML inside Markdown is shown as text unless a profile allows it.
+
+Headings get `id`s from their text, so you can link to sections: `## Getting started` becomes `#getting-started`.
+
+### Teasers
+
+A line with only `<!--more-->` ends the **teaser**, the part of a post shown in listings. Without it, listings show the excerpt: the item's own excerpt, or the start of its text.
+
+### Shortcodes
+
+Extensions add **shortcodes** that insert dynamic content, such as a gallery or a video:
+
+```markdown
+[[gallery id=3]]
+[[video id="dQw4w9WgXcQ" caption="Our launch" autoplay]]
+```
+
+A shortcode alone in a paragraph replaces the paragraph. Shortcodes inside code (`` `[[gallery]]` ``) are shown as written, and so are those no enabled extension provides.
+
+### Previewing
+
+```bash
+bin/console quire:content:render <id>              # the body as HTML
+bin/console quire:content:render <id> --teaser     # the part before <!--more-->
+bin/console quire:content:render <id> --excerpt    # the plain-text summary
+```
+
+Rendered HTML is cached until the item changes; shortcodes run each time. The cache is disposable: `bin/console cache:pool:clear quire.render_cache` empties it.
+
 ## Managing content from the command line
 
 ```bash
