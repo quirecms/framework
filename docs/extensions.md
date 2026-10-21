@@ -41,6 +41,8 @@ If the extension requires other extensions that aren't enabled yet, Quire lists 
 
 You can enable several extensions at once: `bin/console quire:extension:enable acme-reviews acme-seo`.
 
+Enabling rebuilds the application and runs the extensions' database migrations. If that fails, for example because a migration has an error, the extensions are disabled again and the error is shown.
+
 ### Disable extensions
 
 ```bash
@@ -63,6 +65,17 @@ Disable it first, then remove the package:
 bin/console quire:extension:disable acme-seo
 composer remove acme/seo
 ```
+
+This keeps the extension's data in the database, in case you install it again. To delete the data for good, disable it with `--purge` before removing the package:
+
+```bash
+bin/console quire:extension:disable acme-seo --purge
+composer remove acme/seo
+```
+
+`--purge` lets the extension clean up after itself, rolls back its database migrations (dropping its tables) and deletes its settings. It can't be undone, so back up the database first if you might need the data. You'll be asked to confirm; in scripts and other places without a terminal, add `--force`.
+
+Only extensions that are currently running can be purged, because their migrations must be loaded to roll them back.
 
 If you remove a package that's still enabled, it shows up as `missing` in the list. Quire keeps running without it. Disable it to clear the warning.
 
@@ -249,6 +262,44 @@ final readonly class ListReviews
 
 The site's own `extend.php` declares settings under `custom.`, e.g. `custom.footer_text`.
 
+#### `Extend\Migrations`
+
+Registers database migrations ([Doctrine Migrations](https://www.doctrine-project.org/projects/doctrine-migrations/en/stable/)) that create and change your extension's tables:
+
+```php
+new Extend\Migrations('Acme\\Reviews\\Migrations', __DIR__.'/migrations'),
+```
+
+```php
+<?php // migrations/Version20261101120000.php
+
+declare(strict_types=1);
+
+namespace Acme\Reviews\Migrations;
+
+use Doctrine\DBAL\Schema\Schema;
+use Doctrine\Migrations\AbstractMigration;
+
+final class Version20261101120000 extends AbstractMigration
+{
+    public function up(Schema $schema): void
+    {
+        $this->addSql('CREATE TABLE acme_reviews_review (id SERIAL PRIMARY KEY, rating SMALLINT NOT NULL)');
+    }
+
+    public function down(Schema $schema): void
+    {
+        $this->addSql('DROP TABLE acme_reviews_review');
+    }
+}
+```
+
+- Migrations run when the extension is enabled, and when it's updated and the container starts (or when you run `bin/console doctrine:migrations:migrate`).
+- `down()` must undo `up()`: it runs when the extension is disabled with `--purge`.
+- Use your own namespace, and keep the directory out of your Composer autoload paths. Doctrine loads migration files itself.
+- Prefix your table names with your extension's ID, e.g. `acme_reviews_review`, so they can't clash with other extensions.
+- Migrations run in dependency order: Quire core first, then extensions in boot order, then the application's own migrations. Your migrations can rely on the tables of the extensions you require.
+
 #### `Extend\Conditional`
 
 Applies extenders only when a condition holds, for example to integrate with an optional extension:
@@ -268,9 +319,8 @@ The `extend.php` in the project root works exactly like an extension's, and runs
 
 ### After enabling or disabling extensions
 
-Extensions are compiled into the application, so it must be rebuilt after the enabled extensions change:
+Extensions are compiled into the application, so it must be rebuilt after the enabled extensions change. `quire:extension:enable` and `quire:extension:disable` do that for you, and run migrations.
 
-- **Development:** console commands rebuild automatically. Running PHP workers keep the previous build until they restart: `docker compose restart php`.
-- **Production:** the container rebuilds when it starts. After enabling or disabling an extension at runtime, restart it.
+Running PHP workers keep serving the previous build until they restart. Restart them after enabling or disabling extensions: `docker compose restart php`. (Quire will do this automatically in a future version.)
 
 `/_quire/health` reports a failing `extensions` check while the running application doesn't match the enabled extensions.
