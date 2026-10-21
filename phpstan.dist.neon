@@ -3,6 +3,7 @@ parameters:
     paths:
         - bin/
         - config/
+        - extend.php
         - public/
         - src/
         - tests/

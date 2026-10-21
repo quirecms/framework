@@ -123,4 +123,113 @@ Mistakes in the manifest are reported with the package name and how to fix them,
 [acme/reviews] Invalid Quire manifest in composer.json: "extra.quire.require" is not a known key. Did you mean "requires"?
 ```
 
-> Registering routes, templates, settings and other behaviour from an extension is coming next. This page will document it as it lands.
+### `extend.php`: registering behaviour
+
+An extension declares what it adds in an `extend.php` file at the root of its package. The file returns a list of **extenders**:
+
+```php
+<?php // extend.php
+
+declare(strict_types=1);
+
+use Acme\Reviews;
+use Quire\Extend;
+
+return [
+    new Extend\Services()
+        ->autoload('Acme\\Reviews\\', __DIR__.'/src', exclude: [__DIR__.'/src/Entity']),
+
+    new Extend\Routes()
+        ->get('/reviews', 'acme_reviews_index', Reviews\ListReviews::class)
+        ->post('/reviews', 'acme_reviews_store', [Reviews\ReviewsController::class, 'store']),
+
+    new Extend\Views()
+        ->namespace('reviews', __DIR__.'/templates'),
+
+    new Extend\Events()
+        ->listen(SomeEvent::class, Reviews\OnSomeEvent::class),
+];
+```
+
+Quire runs `extend.php` while it builds the application, in boot order. The result is compiled and cached, so extensions add no work to each request.
+
+Mistakes are reported with the extension's ID and how to fix them:
+
+```
+[acme-reviews] Extend\Routes::add("acme_reviews_index"): The controller class "Acme\Reviews\ListReview" doesn't exist. Check the class name and that your package's Composer autoload covers it.
+```
+
+> Don't declare functions or classes inside `extend.php`. Put them in your package's `src/` directory, so Composer autoloads them.
+
+#### `Extend\Routes`
+
+Adds pages and endpoints.
+
+| Method | Purpose |
+|--------|---------|
+| `get($path, $name, $controller)` | A `GET` (and `HEAD`) route |
+| `post($path, $name, $controller)` | A `POST` route |
+| `add($path, $name, $controller, $methods, $requirements, $defaults)` | Any HTTP methods, with requirements (e.g. `['id' => '\d+']`) and default values |
+| `controllers($namespace, $directory, $prefix)` | Registers every controller in a directory and loads routes declared on them with Symfony's `#[Route]` attribute. `$prefix` is added to their paths. |
+
+A controller is an invokable class (`Reviews\ListReviews::class`) or a `[class, method]` pair. Controllers are registered as services automatically, so constructor dependencies are injected.
+
+A route with the same name as an existing one replaces it. Extensions can override core routes, and the site's own `extend.php` can override extension routes.
+
+#### `Extend\Views`
+
+| Method | Purpose |
+|--------|---------|
+| `namespace($name, $directory)` | Makes the Twig templates in `$directory` available as `@name/...`, e.g. `{% include '@reviews/stars.html.twig' %}` |
+| `global($name, $value)` | Adds a variable to every template. Values must be scalars or arrays of scalars. |
+
+#### `Extend\Events`
+
+| Method | Purpose |
+|--------|---------|
+| `listen($event, $listener, $method = '__invoke', $priority = 0)` | Calls `$listener` (a service) when `$event` is dispatched. Higher priorities run earlier. |
+| `subscribe($subscriber)` | Registers a Symfony `EventSubscriberInterface` |
+
+Classes with Symfony's `#[AsEventListener]` attribute work too, when they're registered through `Extend\Services::autoload()`.
+
+#### `Extend\Console`
+
+| Method | Purpose |
+|--------|---------|
+| `command($class)` | Adds a `bin/console` command. The class needs Symfony's `#[AsCommand]` attribute. |
+
+Commands registered through `Extend\Services::autoload()` are picked up without this extender.
+
+#### `Extend\Services`
+
+| Method | Purpose |
+|--------|---------|
+| `autoload($namespace, $directory, $exclude = [])` | Registers every class in a directory as an autowired, autoconfigured service. Exclude directories holding non-services, such as entities and value objects. |
+| `load($file)` | Loads a Symfony service configuration file (`.php` or `.yaml`) |
+| `compilerPass($pass)` | Adds a compiler pass, for advanced container changes |
+
+#### `Extend\Conditional`
+
+Applies extenders only when a condition holds, for example to integrate with an optional extension:
+
+```php
+new Extend\Conditional()
+    ->whenExtensionEnabled('acme-seo', fn () => [
+        new Extend\Events()->listen(SeoTagsCollected::class, Reviews\AddRatingToSeoTags::class),
+    ]),
+```
+
+List such extensions under `optional` in your manifest, so they load before yours.
+
+### Customising a site without an extension
+
+The `extend.php` in the project root works exactly like an extension's, and runs after all of them. Use it for site-specific changes that don't deserve their own package.
+
+### After enabling or disabling extensions
+
+Extensions are compiled into the application, so it must be rebuilt after the enabled extensions change:
+
+- **Development:** console commands rebuild automatically. Running PHP workers keep the previous build until they restart: `docker compose restart php`.
+- **Production:** the container rebuilds when it starts. After enabling or disabling an extension at runtime, restart it.
+
+`/_quire/health` reports a failing `extensions` check while the running application doesn't match the enabled extensions.

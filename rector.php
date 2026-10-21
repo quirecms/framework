@@ -16,6 +16,9 @@ return RectorConfig::configure()
     ])
     ->withSkip([
         __DIR__.'/config/reference.php',
+        // Fixtures are referenced by name from tests, so "unused" code in them is deliberate.
+        '*/tests/Fixtures/*',
+        '*/tests/*/Fixtures/*',
     ])
     ->withPhpSets()
     ->withComposerBased(twig: true, doctrine: true, phpunit: true, symfony: true)

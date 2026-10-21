@@ -43,6 +43,12 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
 	# Migrations come from the app and from Quire's packages, so always run whatever is pending
 	php bin/console doctrine:migrations:migrate --no-interaction --all-or-nothing --allow-no-migration
 
+	if [ "$APP_ENV" = 'prod' ]; then
+		# The image is built without a database, so its cached app doesn't include the enabled
+		# extensions yet. Rebuild it now that the database is reachable. (Development rebuilds by itself.)
+		php bin/console cache:clear
+	fi
+
 	echo 'PHP app ready!'
 fi
 
