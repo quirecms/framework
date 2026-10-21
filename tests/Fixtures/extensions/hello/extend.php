@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use League\CommonMark\Extension\Footnote\FootnoteExtension;
 use Quire\Extend;
 use Quire\Fixtures\Hello;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
@@ -53,6 +54,14 @@ return [
         ->field('due', 'date')
         ->field('event_at', 'datetime', sortable: true)
         ->field('extra', 'json'),
+
+    new Extend\Formatter()
+        ->shortcode('greeting', Hello\Formatter\GreetingShortcode::class)
+        ->shortcode('embed', Hello\Formatter\EmbedShortcode::class, trusted: true)
+        ->commonMark(FootnoteExtension::class, profiles: ['content'])
+        ->preProcessor(Hello\Formatter\WaveProcessor::class)
+        ->postProcessor(Hello\Formatter\LazyImages::class, profiles: ['content'])
+        ->profile('review', formats: ['markdown'], shortcodes: ['greeting'], sanitizer: 'basic', linkRel: ['nofollow']),
 
     new Extend\ContentWorkflow()
         ->status('in_review')

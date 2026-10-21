@@ -363,6 +363,70 @@ foreach ($registry->withCapability('commentable') as $id => $type) {
 }
 ```
 
+#### `Extend\Formatter`
+
+Extends how text becomes HTML. The pipeline is: source → pre-processors → format (Markdown, text, HTML, …) → post-processors → sanitiser. Each class you register becomes an autowired service.
+
+```php
+new Extend\Formatter()
+    ->shortcode('gallery', GalleryShortcode::class)
+    ->shortcode('video', VideoShortcode::class, trusted: true)
+    ->commonMark(FootnoteExtension::class, profiles: ['content'])
+    ->preProcessor(Emoji::class)
+    ->postProcessor(LazyImages::class)
+    ->format('asciidoc', AsciidocFormat::class, profiles: ['content'])
+    ->profile('review', formats: ['markdown'], sanitizer: 'basic', linkRel: ['nofollow', 'ugc']),
+```
+
+| Method | Registers |
+|--------|-----------|
+| `shortcode($name, $class, $trusted)` | A `ShortcodeInterface` that renders `[[name …]]`. Its output is sanitised unless `trusted: true`, which only suits output that never contains unescaped user input (e.g. an embed's iframe). Shortcodes aren't cached: they run each time the text is shown. |
+| `commonMark($class, $profiles)` | A [league/commonmark extension](https://commonmark.thephpleague.com/2.x/customization/overview/): new syntax, nodes, renderers or document changes |
+| `preProcessor($class, $profiles)` | A `SourceProcessorInterface` that changes the source before parsing |
+| `postProcessor($class, $profiles)` | An `HtmlProcessorInterface` that changes the HTML before it's sanitised |
+| `format($name, $class, $profiles)` | A `FormatInterface` for another markup language, allowed in the given profiles |
+| `profile($name, ...)` | A set of rules for one kind of text (see below) |
+
+`$profiles` limits a registration to some profiles; by default it applies to all.
+
+```php
+use Quire\Formatter\FormatContext;
+use Quire\Formatter\Shortcode;
+use Quire\Formatter\ShortcodeInterface;
+
+final readonly class GalleryShortcode implements ShortcodeInterface
+{
+    public function __construct(private Environment $twig) {}
+
+    public function render(Shortcode $shortcode, FormatContext $context): string
+    {
+        // Attribute values are written by the author: treat them as user input.
+        return $this->twig->render('@acme-gallery/gallery.html.twig', ['id' => (int) $shortcode->attribute('id')]);
+    }
+}
+```
+
+**Profiles** let different text get different features. Core has two:
+
+| Profile | For | Formats | Allows |
+|---------|-----|---------|--------|
+| `content` | Content written by editors | markdown, text, html | Everything safe: headings (with anchors), tables, images, all shortcodes |
+| `comment` | Text written by visitors | markdown, text | Paragraphs, emphasis, links (marked `rel="nofollow ugc"`), lists, quotes, code. No images or shortcodes. |
+
+Profile options: `formats`, `shortcodes` (names, or `['*']`), `sanitizer` (`rich` or `basic`), `headingAnchors`, `images`, `rawHtml` (let Markdown contain HTML, still sanitised) and `linkRel`.
+
+Render text with `Quire\Formatter\Formatter`, and content with `Quire\Content\ContentRenderer`, which caches:
+
+```php
+$html = $formatter->render($comment->body, 'markdown', 'comment');
+
+$html = $renderer->body($post);         // the whole body
+$teaser = $renderer->teaser($post);     // the part before <!--more-->, or null
+$summary = $renderer->excerpt($post);   // plain text, at most 200 characters
+```
+
+`Formatter::compile()` and `expand()` split rendering in two, for text you cache yourself: compiled text keeps placeholders where its shortcodes go, and `expand()` renders them.
+
 #### `Extend\ContentWorkflow`
 
 Adds statuses and transitions to the content workflow (see [Statuses](content.md#statuses)), e.g. an editorial review step:
