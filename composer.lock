@@ -1331,12 +1331,15 @@
             "dist": {
                 "type": "path",
                 "url": "packages/core",
-                "reference": "48f61d2a8940cb16eb6e45664f55a015f586cf63"
+                "reference": "c23833680e55b3f8785be0592d56decd0a31dd03"
             },
             "require": {
                 "doctrine/dbal": "^4.2",
                 "doctrine/doctrine-bundle": "^3.0",
+                "doctrine/doctrine-migrations-bundle": "^4.0",
+                "doctrine/orm": "^3.5",
                 "php": ">=8.5",
+                "psr/event-dispatcher": "^1.0",
                 "symfony/cache": "^8.1",
                 "symfony/config": "^8.1",
                 "symfony/console": "^8.1",

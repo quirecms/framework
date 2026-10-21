@@ -52,11 +52,18 @@ Run these inside the PHP container, e.g. `docker compose exec php composer test`
 | `composer qa` | Run all of the checks above, the same as CI |
 | `composer fix` | Apply coding-standard fixes and refactorings |
 
-Before running the tests for the first time, create the test database:
+The tests create and migrate their own test database before they run.
+
+## Extensions
+
+Install extensions with Composer, then enable them:
 
 ```bash
-docker compose exec php bin/console -e test doctrine:database:create --if-not-exists
+docker compose exec php composer require acme/reviews
+docker compose exec php bin/console quire:extension:enable acme-reviews
 ```
+
+See [docs/extensions.md](docs/extensions.md) for managing extensions and for writing your own.
 
 ## Repository layout
 

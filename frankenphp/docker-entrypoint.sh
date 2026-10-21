@@ -40,9 +40,8 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
 		echo 'The database is now ready and reachable'
 	fi
 
-	if find ./migrations -iname '*.php' -print -quit | grep --quiet .; then
-		php bin/console doctrine:migrations:migrate --no-interaction --all-or-nothing
-	fi
+	# Migrations come from the app and from Quire's packages, so always run whatever is pending
+	php bin/console doctrine:migrations:migrate --no-interaction --all-or-nothing --allow-no-migration
 
 	echo 'PHP app ready!'
 fi
