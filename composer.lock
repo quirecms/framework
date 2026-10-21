@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "088080677fc3dce9560e18e85b08cf23",
+    "content-hash": "9e742d94cc12b31db50c4ed7f21172f0",
     "packages": [
         {
             "name": "doctrine/collections",
@@ -1331,7 +1331,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/core",
-                "reference": "8c46d38a8fcf503dbcfd32739dbc7a3693360ff7"
+                "reference": "43ab4dbd4dfcebd98a608c567dd837f97468fcff"
             },
             "require": {
                 "doctrine/dbal": "^4.2",
@@ -6086,6 +6086,58 @@
             "time": "2026-10-16T05:56:47+00:00"
         },
         {
+            "name": "quire/testing",
+            "version": "0.1.x-dev",
+            "dist": {
+                "type": "path",
+                "url": "packages/testing",
+                "reference": "f75eeaae166faf7c5fc218d1af227c413a62f815"
+            },
+            "require": {
+                "doctrine/doctrine-bundle": "^3.0",
+                "doctrine/doctrine-migrations-bundle": "^4.0",
+                "php": ">=8.5",
+                "phpunit/phpunit": "^13.4",
+                "quire/core": "0.1.x-dev",
+                "symfony/browser-kit": "^8.1",
+                "symfony/css-selector": "^8.1",
+                "symfony/filesystem": "^8.1",
+                "symfony/framework-bundle": "^8.1",
+                "symfony/twig-bundle": "^8.1"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Quire\\Testing\\": "src/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Quire\\Testing\\Tests\\": "tests/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "YorvoLabs",
+                    "homepage": "https://quirecms.com"
+                }
+            ],
+            "description": "Test Quire extensions and themes: a minimal test application, a PHPUnit base class and helpers.",
+            "homepage": "https://quirecms.com",
+            "keywords": [
+                "cms",
+                "phpunit",
+                "quire",
+                "testing"
+            ],
+            "transport-options": {
+                "relative": true
+            }
+        },
+        {
             "name": "react/cache",
             "version": "v1.2.0",
             "source": {
@@ -8162,7 +8214,8 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "quire/core": 20
+        "quire/core": 20,
+        "quire/testing": 20
     },
     "prefer-stable": true,
     "prefer-lowest": false,

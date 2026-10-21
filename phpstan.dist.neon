@@ -7,9 +7,7 @@ parameters:
         - public/
         - src/
         - tests/
-        - packages/core/config/
-        - packages/core/src/
-        - packages/core/tests/
+        - packages/
     tmpDir: var/cache/phpstan
     symfony:
         containerXmlPath: var/cache/dev/App_KernelDevDebugContainer.xml

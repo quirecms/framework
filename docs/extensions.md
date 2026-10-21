@@ -313,6 +313,64 @@ new Extend\Conditional()
 
 List such extensions under `optional` in your manifest, so they load before yours.
 
+### Testing your extension
+
+`quire/testing` runs your extension in a small Quire application, so you can test it in its own repository, without a site around it:
+
+```bash
+composer require --dev quire/testing
+```
+
+```php
+<?php // tests/ReviewsTest.php
+
+declare(strict_types=1);
+
+namespace Acme\Reviews\Tests;
+
+use Quire\Testing\ExtensionTestCase;
+
+final class ReviewsTest extends ExtensionTestCase
+{
+    // Your extension, plus any extensions it requires.
+    protected static array $extensions = ['acme-comments', 'acme-reviews'];
+
+    public function testListsReviews(): void
+    {
+        $this->setSetting('acme-reviews.per_page', 5);
+
+        $this->client->request('GET', '/reviews');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('h1', 'Reviews');
+    }
+}
+```
+
+What `ExtensionTestCase` does for you:
+
+- **Enables exactly the listed extensions** in a minimal application that doesn't use the host site's configuration, so tests behave the same everywhere. The package you're developing counts as installed, even though Composer never lists a project inside itself.
+- **Prepares the database:** before the first test it creates the test database (your `DATABASE_URL` with `_test` added to the name) and runs all migrations.
+- **Isolates tests:** each test runs in a database transaction that's rolled back afterwards, so tests never see each other's data. The transaction spans all requests a test makes with `$this->client`.
+
+It extends Symfony's `WebTestCase`, so all its assertions work (`assertResponseIsSuccessful()`, `assertSelectorTextContains()`, …). It adds:
+
+| Method | Purpose |
+|--------|---------|
+| `$this->client` | A browser for the test application |
+| `setSetting($key, $value)` / `settings()` | Change or read settings, for this test only |
+| `connection()` | The database connection, e.g. to insert test data |
+| `service($class)` | Any service from the container |
+| `assertExtensionRunning($id)` | Fails with the reason if an extension can't run, e.g. a missing requirement |
+
+Set `DATABASE_URL` for your tests, for example in `phpunit.dist.xml`:
+
+```xml
+<php>
+    <env name="DATABASE_URL" value="postgresql://app:password@127.0.0.1:5432/app?serverVersion=18" />
+</php>
+```
+
 ### Customising a site without an extension
 
 The `extend.php` in the project root works exactly like an extension's, and runs after all of them. Use it for site-specific changes that don't deserve their own package.
