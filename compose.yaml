@@ -1,4 +1,7 @@
 ---
+# Fixed project name, so container and volume names don't depend on the checkout's folder name
+name: quire
+
 services:
   php:
     restart: unless-stopped
