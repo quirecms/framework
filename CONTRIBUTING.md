@@ -17,7 +17,6 @@ You need Docker with Docker Compose v2.10 or later. PHP, Composer and PostgreSQL
 git clone https://github.com/quirecms/framework.git quire
 cd quire
 docker compose up --wait
-docker compose exec php bin/console -e test doctrine:database:create --if-not-exists
 ```
 
 The site runs at <https://quire.localhost>. See the [README](README.md) for other ports and [docs/docker.md](docs/docker.md) for details of the Docker setup.

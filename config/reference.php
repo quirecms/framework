@@ -948,6 +948,12 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         html_to_text_converter?: scalar|Param|null, // A service implementing the "Symfony\Component\Mime\HtmlToTextConverter\HtmlToTextConverterInterface". // Default: null
  *     },
  * }
+ * @psalm-type QuireConfig = array{
+ *     extensions?: array{
+ *         pinned?: bool|Param, // Fix the enabled extensions in configuration instead of the database. Use it for immutable production images; enabling or disabling at runtime is then refused. // Default: false
+ *         enabled?: list<scalar|Param|null>,
+ *     },
+ * }
  * @psalm-type ConfigType = array{
  *     imports?: ImportsConfig,
  *     parameters?: ParametersConfig,
@@ -956,6 +962,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     doctrine?: DoctrineConfig,
  *     doctrine_migrations?: DoctrineMigrationsConfig,
  *     twig?: TwigConfig,
+ *     quire?: QuireConfig,
  *     "when@dev"?: array{
  *         imports?: ImportsConfig,
  *         parameters?: ParametersConfig,
@@ -964,6 +971,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         doctrine?: DoctrineConfig,
  *         doctrine_migrations?: DoctrineMigrationsConfig,
  *         twig?: TwigConfig,
+ *         quire?: QuireConfig,
  *     },
  *     "when@prod"?: array{
  *         imports?: ImportsConfig,
@@ -973,6 +981,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         doctrine?: DoctrineConfig,
  *         doctrine_migrations?: DoctrineMigrationsConfig,
  *         twig?: TwigConfig,
+ *         quire?: QuireConfig,
  *     },
  *     "when@test"?: array{
  *         imports?: ImportsConfig,
@@ -982,6 +991,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         doctrine?: DoctrineConfig,
  *         doctrine_migrations?: DoctrineMigrationsConfig,
  *         twig?: TwigConfig,
+ *         quire?: QuireConfig,
  *     },
  *     ...<string, ExtensionType|array{ // extra keys must follow the when@%env% pattern or match an extension alias
  *         imports?: ImportsConfig,

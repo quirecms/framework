@@ -1,0 +1,8 @@
+quire:
+    extensions:
+        # Enable and disable extensions with "bin/console quire:extension:enable|disable".
+        # For immutable production images, fix the enabled extensions here instead:
+        #
+        # pinned: true
+        # enabled: [quire-admin, acme-reviews]
+        pinned: false
