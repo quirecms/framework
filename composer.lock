@@ -1331,7 +1331,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/core",
-                "reference": "9ec5ace5bcf352ab267e7149c1b3e55a0d44e5aa"
+                "reference": "48f61d2a8940cb16eb6e45664f55a015f586cf63"
             },
             "require": {
                 "doctrine/dbal": "^4.2",
@@ -1339,10 +1339,12 @@
                 "php": ">=8.5",
                 "symfony/cache": "^8.1",
                 "symfony/config": "^8.1",
+                "symfony/console": "^8.1",
                 "symfony/dependency-injection": "^8.1",
                 "symfony/framework-bundle": "^8.1",
                 "symfony/http-kernel": "^8.1",
                 "symfony/routing": "^8.1",
+                "symfony/service-contracts": "^3.6",
                 "symfony/twig-bundle": "^8.1"
             },
             "type": "symfony-bundle",
