@@ -1,6 +1,6 @@
 # Quire
 
-A text-first CMS for PHP, by [YorvoLabs](https://quirecms.com).
+The extensible CMS for PHP, built on Symfony. By [YorvoLabs](https://quirecms.com).
 
 Quire has a small core, and everything else is an extension: the admin panel, single sign-on, comments, reviews. You write content in Markdown, and PostgreSQL is the single source of truth, so one database backup holds your whole site.
 
