@@ -6,3 +6,11 @@ quire:
         # pinned: true
         # enabled: [quire-admin, acme-reviews]
         pinned: false
+
+when@test:
+    quire:
+        extensions:
+            # Tests run with a fixed set of extensions: the fixture extension in tests/Fixtures.
+            installed_json: '%kernel.project_dir%/tests/Fixtures/installed.json'
+            pinned: true
+            enabled: [quire-fixture-hello]

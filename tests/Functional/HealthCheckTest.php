@@ -16,7 +16,7 @@ final class HealthCheckTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertResponseHeaderSame('Content-Type', 'application/json');
         self::assertSame(
-            ['status' => 'ok', 'checks' => ['cache' => ['status' => 'ok'], 'database' => ['status' => 'ok']]],
+            ['status' => 'ok', 'checks' => ['cache' => ['status' => 'ok'], 'database' => ['status' => 'ok'], 'extensions' => ['status' => 'ok']]],
             json_decode((string) $client->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR),
         );
     }

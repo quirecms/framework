@@ -1,0 +1,19 @@
+{
+    "packages": [
+        {
+            "name": "quire/fixture-hello",
+            "version": "1.0.0.0",
+            "pretty_version": "1.0.0",
+            "type": "quire-extension",
+            "install-path": "extensions/hello",
+            "description": "Test extension that exercises every extender",
+            "extra": {
+                "quire": {
+                    "id": "quire-fixture-hello"
+                }
+            }
+        }
+    ],
+    "dev": true,
+    "dev-package-names": []
+}

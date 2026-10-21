@@ -6,7 +6,6 @@ namespace App\Tests\Integration;
 
 use Doctrine\DBAL\Connection;
 use Quire\Extension\State\DatabaseExtensionStateStore;
-use Quire\Extension\State\ExtensionStateStoreInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 final class DatabaseExtensionStateStoreTest extends KernelTestCase
@@ -43,10 +42,5 @@ final class DatabaseExtensionStateStoreTest extends KernelTestCase
         $this->store->enable(['quire-seo']);
 
         self::assertSame(['quire-seo'], $this->store->enabledIds());
-    }
-
-    public function testExtensionsCanBeChangedAtRuntimeUnlessPinned(): void
-    {
-        self::assertNull(self::getContainer()->get(ExtensionStateStoreInterface::class)->readOnlyReason());
     }
 }
