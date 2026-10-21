@@ -12,7 +12,8 @@
             "url": "packages/*",
             "options": {
                 "versions": {
-                    "quire/core": "0.1.x-dev"
+                    "quire/core": "0.1.x-dev",
+                    "quire/testing": "0.1.x-dev"
                 }
             }
         }
@@ -52,7 +53,8 @@
         "psr-4": {
             "App\\Tests\\": "tests/",
             "Quire\\Fixtures\\Hello\\": "tests/Fixtures/extensions/hello/src/",
-            "Quire\\Tests\\": "packages/core/tests/"
+            "Quire\\Tests\\": "packages/core/tests/",
+            "Quire\\Testing\\Tests\\": "packages/testing/tests/"
         }
     },
     "replace": {
@@ -120,6 +122,7 @@
         "phpstan/phpstan-strict-rules": "^2.1",
         "phpstan/phpstan-symfony": "^2.1",
         "phpunit/phpunit": "^13.4",
+        "quire/testing": "0.1.x-dev",
         "rector/rector": "^2.7",
         "symfony/browser-kit": "8.1.*",
         "symfony/css-selector": "8.1.*"
