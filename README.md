@@ -65,6 +65,17 @@ docker compose exec php bin/console quire:extension:enable acme-reviews
 
 See [docs/extensions.md](docs/extensions.md) for managing extensions and for writing your own.
 
+## Settings
+
+Change site settings while the site runs:
+
+```bash
+docker compose exec php bin/console quire:settings:list
+docker compose exec php bin/console quire:settings:set site.title "My site"
+```
+
+See [docs/settings.md](docs/settings.md).
+
 ## Repository layout
 
 | Path | Contents |
