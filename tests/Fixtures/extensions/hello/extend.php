@@ -41,6 +41,11 @@ return [
 
     Extend\ContentType::existing('post')->addCapabilities('greetable'),
 
+    new Extend\ContentWorkflow()
+        ->status('in_review')
+        ->transition('submit', from: ['draft'], to: 'in_review')
+        ->transition('publish', from: ['in_review'], to: 'published'),
+
     new Extend\Conditional()
         ->whenExtensionEnabled('quire-fixture-not-installed', static fn (): array => [
             new Extend\Routes()->get('/_fixture/never', 'fixture_never', Hello\HelloController::class),
