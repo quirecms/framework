@@ -1,0 +1,14 @@
+parameters:
+    level: max
+    paths:
+        - bin/
+        - config/
+        - public/
+        - src/
+        - tests/
+        - packages/core/config/
+        - packages/core/src/
+        - packages/core/tests/
+    tmpDir: var/cache/phpstan
+    symfony:
+        containerXmlPath: var/cache/dev/App_KernelDevDebugContainer.xml
