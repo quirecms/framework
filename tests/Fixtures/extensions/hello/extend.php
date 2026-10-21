@@ -28,6 +28,8 @@ return [
     new Extend\Console()
         ->command(Hello\HelloCommand::class),
 
+    new Extend\Migrations('Quire\\Fixtures\\Hello\\Migrations', __DIR__.'/migrations'),
+
     new Extend\Settings()
         ->define('quire-fixture-hello.greeting', 'string', 'Hello', label: 'Greeting')
         ->define('quire-fixture-hello.shout', 'bool', false, label: 'Shout the greeting'),
