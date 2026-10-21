@@ -78,6 +78,12 @@ Keep these volumes:
 | `caddy_data` | TLS certificates and keys |
 | `caddy_config` | Caddy's runtime configuration |
 
+### Running several servers
+
+The app containers keep no data, so you can run several behind a load balancer, all using the same PostgreSQL database. When an extension is enabled or disabled on one of them, the others notice within a few seconds, rebuild in the background and restart their workers, with no extra setup and no message broker. Tune or disable the check with `quire.extensions.check_interval` (in seconds; default `5`, `0` turns it off).
+
+For the same set of extensions everywhere, set by your deployment instead of at runtime, pin them in `config/packages/quire.yaml` (see [extensions](extensions.md#pinning-extensions-in-production)).
+
 ## Environment variables
 
 | Variable | Default | Description |
@@ -88,6 +94,7 @@ Keep these volumes:
 | `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` | `app` / `app` / `!ChangeMe!` | Database credentials. **Always change the password in production.** |
 | `POSTGRES_VERSION` | `18` | PostgreSQL major version |
 | `XDEBUG_MODE` | `off` | Xdebug mode (development only) |
+| `QUIRE_FRANKENPHP_ADMIN_URL` | `http://localhost:2019` | Where Quire reaches FrankenPHP's admin API to restart PHP workers after extensions change |
 
 ## Health checks
 

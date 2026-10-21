@@ -953,6 +953,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         pinned?: bool|Param, // Fix the enabled extensions in configuration instead of the database. Use it for immutable production images; enabling or disabling at runtime is then refused. // Default: false
  *         enabled?: list<scalar|Param|null>,
  *         installed_json?: scalar|Param|null, // Path to Composer's installed.json, which lists the installed extensions. Defaults to the one in the vendor directory; tests point it at fixtures. // Default: null
+ *         check_interval?: int|Param, // How often, in seconds, each PHP worker checks whether the enabled extensions changed elsewhere (e.g. on another server), and refreshes this machine if so. 0 disables the check. Not used when pinned. // Default: 5
  *     },
  * }
  * @psalm-type ConfigType = array{
