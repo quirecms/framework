@@ -84,9 +84,11 @@ See [docs/settings.md](docs/settings.md).
 
 ## Content
 
-Posts, pages and the content types that extensions add are stored in PostgreSQL. List the registered types:
+Posts, pages and the content types that extensions add are stored in PostgreSQL:
 
 ```bash
+docker compose exec php bin/console quire:content:create post "Hello world" --body "My *first* post." --publish
+docker compose exec php bin/console quire:content:list
 docker compose exec php bin/console quire:content-type:list
 ```
 

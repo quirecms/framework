@@ -326,6 +326,40 @@ foreach ($registry->withCapability('commentable') as $id => $type) {
 }
 ```
 
+#### `Extend\ContentWorkflow`
+
+Adds statuses and transitions to the content workflow (see [Statuses](content.md#statuses)), e.g. an editorial review step:
+
+```php
+new Extend\ContentWorkflow()
+    ->status('in_review')
+    ->transition('submit', from: ['draft'], to: 'in_review')
+    ->transition('reject', from: ['in_review'], to: 'draft')
+    ->transition('publish', from: ['in_review'], to: 'published'),
+```
+
+Status and transition names are lowercase letters, digits and underscores, up to 32 characters. A transition can reuse an existing name (like `publish` above) from statuses that don't have it yet. Statuses that extensions add are never public: visitors only see published items.
+
+The workflow is a Symfony [state machine](https://symfony.com/doc/current/workflow.html) named `content`, so you can make transitions conditional with guard listeners:
+
+```php
+use Quire\Content\Workflow\ContentSubject;
+use Symfony\Component\Workflow\Event\GuardEvent;
+
+#[AsEventListener('workflow.content.guard.publish')]
+final class RequireAnExcerpt
+{
+    public function __invoke(GuardEvent $event): void
+    {
+        $subject = $event->getSubject();
+
+        if ($subject instanceof ContentSubject && null === $subject->content->excerpt) {
+            $event->setBlocked(true, 'Write an excerpt first.');
+        }
+    }
+}
+```
+
 #### `Extend\Migrations`
 
 Registers database migrations ([Doctrine Migrations](https://www.doctrine-project.org/projects/doctrine-migrations/en/stable/)) that create and change your extension's tables:
@@ -376,6 +410,48 @@ new Extend\Conditional()
 ```
 
 List such extensions under `optional` in your manifest, so they load before yours.
+
+### Reading and writing content
+
+Inject `Quire\Content\ContentWriter` to create and change content. The admin interface, the command line and APIs all use it, so the same rules and events apply everywhere:
+
+```php
+use Quire\Content\Command\CreateContent;
+use Quire\Content\Command\UpdateContent;
+use Quire\Content\Status;
+
+$post = $writer->create(new CreateContent('post', 'Hello world', body: 'My *first* post.'));
+$post = $writer->transition($post->id, $post->version, Status::PUBLISH);
+$post = $writer->update(new UpdateContent($post->id, $post->version)->title('Hello again')->field('rating', 5));
+$writer->trash($post->id, $post->version);
+```
+
+Methods that change an item take the version the change is based on, and throw `ContentConflictException` when someone saved the item since. Invalid changes throw `InvalidContentException`, whose `violations` property maps each property (`title`, `slug`, …) to a message. `Quire\Content\ContentRepository` loads items by ID, and `Quire\Content\Revision\RevisionRepository` loads their revisions.
+
+Each change dispatches events from `Quire\Content\Event`:
+
+| Before the change (can cancel or modify it) | After the change |
+|---------------------------------------------|------------------|
+| `ContentCreating` | `ContentCreated` |
+| `ContentUpdating` | `ContentUpdated` |
+| `ContentPublishing` | `ContentPublished`, `ContentUnpublished`, `ContentStatusChanged` |
+| `ContentDeleting` (to the trash) | `ContentDeleted`, `ContentRestored` |
+| `ContentPurging` (permanently) | `ContentPurged` |
+
+The "before" events are dispatched inside the change's database transaction, so what their listeners write is saved or rolled back together with it. Call `$event->cancel('Reason')` to stop the change. The "after" events are dispatched once the transaction has committed, so their listeners never act on a change that was rolled back. That makes them the place for side effects such as clearing caches or sending notifications.
+
+```php
+#[AsEventListener]
+final class RejectSpam
+{
+    public function __invoke(ContentCreating $event): void
+    {
+        if (str_contains($event->command->body, 'casino')) {
+            $event->cancel('That looks like spam.');
+        }
+    }
+}
+```
 
 ### Testing your extension
 

@@ -129,7 +129,7 @@ final class SettingsTest extends KernelTestCase
         $settings = $this->settings();
         $settings->set('site.description', 'A test site');
 
-        self::assertSame(['site.description' => 'A test site', 'site.title' => 'Quire'], $settings->all('site.'));
+        self::assertSame(['site.description' => 'A test site', 'site.locale' => 'en', 'site.title' => 'Quire'], $settings->all('site.'));
     }
 
     public function testTypedGettersRefuseOtherTypes(): void

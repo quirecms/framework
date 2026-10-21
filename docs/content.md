@@ -40,6 +40,72 @@ bin/console quire:content-type:list
 
 Extensions add their own capabilities, for example `commentable`, and can add them to types that other extensions register.
 
+## Managing content from the command line
+
+```bash
+bin/console quire:content:create post "Hello world" --body "My *first* post." --publish
+bin/console quire:content:create page "Team" --parent <page-id> --body-file team.md
+bin/console quire:content:list --type post
+bin/console quire:content:show <id>
+bin/console quire:content:update <id> --title "Hello again" --message "Better title"
+bin/console quire:content:transition <id> unpublish
+bin/console quire:content:delete <id>
+bin/console quire:content:restore <id>
+```
+
+`--body-file=-` reads the body from standard input. Each command's `--help` lists its options.
+
+### Slugs
+
+The slug is the part of the URL that names an item, e.g. `hello-world`. Quire generates it from the title, transliterated for the item's language (`Über uns` becomes `ueber-uns` in German), and adds a number when a sibling already uses it (`hello-world-2`). Pass `--slug` to choose one yourself: lowercase letters and digits separated by hyphens.
+
+Changing the title doesn't change the slug, so published links keep working. Change the slug explicitly when you want a new URL.
+
+### Statuses
+
+Every new item is a **draft**. Transitions move it between statuses:
+
+| Transition | From | To |
+|------------|------|----|
+| `publish` | draft, scheduled, archived | published |
+| `schedule` | draft, scheduled | scheduled (needs `--at` with a future date) |
+| `unpublish` | published, scheduled, archived | draft |
+| `archive` | published | archived |
+
+```bash
+bin/console quire:content:transition <id> schedule --at "2026-12-24 09:00"
+bin/console quire:content:transition <id>          # lists the transitions possible now
+```
+
+Scheduled items become public on their date by themselves. To also run what extensions do when content is published (feeds, notifications, …), run `bin/console quire:content:publish-due` every minute or so, e.g. from cron. Several servers can run it at the same time.
+
+Extensions can add statuses, such as an editorial review step, and conditions for transitions.
+
+### Revisions
+
+Each time a post's or page's title, excerpt, body or fields change, Quire keeps a revision. Changes that don't touch the text, such as moving a page, don't create one.
+
+```bash
+bin/console quire:content:revisions <id>
+bin/console quire:content:revisions <id> --restore <revision-id>
+```
+
+Restoring a revision saves its text as a new revision, so the history is never rewritten. The `quire.content.revisions_keep` setting (default `50`) sets how many revisions each item keeps.
+
+### Editing conflicts
+
+Each save increases the item's **version**. Editing tools send the version they started from, and if someone else saved the item in the meantime, the save fails instead of overwriting the other person's work. On the command line, pass `--expect-version` to get the same protection.
+
+### Trash
+
+`quire:content:delete` moves an item to the trash: visitors no longer see it, and its slug is free for other items. `quire:content:restore` brings it back; if its slug was taken meanwhile, it gets a numbered one. `quire:content:delete --purge` deletes an item permanently, together with its revisions and the data extensions keep about it.
+
+A page with child pages can't be moved to the trash or deleted. Move or delete its children first.
+
+### Translations
+
+Pass `--translation-of <id>` and `--locale` to create a translation of an item. Each item can have one translation per language. New items use the site language (the `site.locale` setting) unless you pass `--locale`.
+
 ## How content is stored
 
 All content lives in PostgreSQL, in one `content` table, together with everything else about the site, so one database backup contains the whole site.
