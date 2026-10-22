@@ -85,6 +85,7 @@ Values use the same format as `quire:settings:set`. A setting fixed by an enviro
 | `site.description` | string | (empty) | A short description of the site, used by search engines and when the site is shared |
 | `site.locale` | string | `en` | The language of the site and of new content, as a language tag such as `en`, `de` or `pt-BR` |
 | `quire.auth.password_login` | bool | `true` | Whether users can sign in with a password (see [users](users.md#signing-in)) |
+| `quire.permissions.grants` | json | `[]` | Abilities granted to or revoked from roles, on top of the defaults. Change them with `quire:permissions:grant` and `revoke` (see [permissions](permissions.md)). |
 | `theme.active` | string | `quire-theme-default` | The site's theme. Change it with `quire:theme:use` (see [themes](themes.md)). |
 | `quire.content.revisions_keep` | int | `50` | How many revisions to keep per content item. Older ones are deleted when a new one is saved. `0` keeps all. |
 

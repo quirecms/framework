@@ -102,7 +102,14 @@ docker compose exec php bin/console quire:user:create grace@example.com --role=e
 docker compose exec php bin/console quire:user:list
 ```
 
-See [docs/users.md](docs/users.md).
+See [docs/users.md](docs/users.md). What each role may do is set by abilities, such as `content.post.publish`:
+
+```bash
+docker compose exec php bin/console quire:permissions:list
+docker compose exec php bin/console quire:permissions:grant member content.post.view_drafts
+```
+
+See [docs/permissions.md](docs/permissions.md).
 
 ## Settings
 

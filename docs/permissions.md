@@ -1,0 +1,123 @@
+# Permissions
+
+What users may do is decided by **abilities**: named things a role may do, such as `content.post.publish`. Each ability comes with default roles. Admins can change which roles have it, and extensions can add roles, abilities and rules of their own.
+
+## Roles
+
+| Role | Who |
+|------|-----|
+| `guest` | Everyone, signed in or not. Abilities granted to guests are granted to all. |
+| `member` | Registered users, e.g. who comment |
+| `editor` | Writing and publishing content |
+| `admin` | Running the site: has every ability, except those marked strict |
+
+Users have one or more roles (see [users](users.md#roles)). Extensions can add roles, e.g. `moderator`.
+
+## Abilities of content
+
+Every content type has seven abilities, e.g. for posts:
+
+| Ability | Default roles |
+|---------|---------------|
+| `content.post.view` | guest |
+| `content.post.view_drafts` | editor |
+| `content.post.create` | editor |
+| `content.post.edit_own` | editor |
+| `content.post.edit_any` | editor |
+| `content.post.publish` | editor |
+| `content.post.delete` | editor |
+
+On the site, they mean:
+
+- **Viewing**: visitors who may not view a type are asked to sign in, and signed-in users who may not are refused (403). Lists and `quire_content()` queries leave out the types the viewer may not view. To make posts members-only:
+
+  ```bash
+  bin/console quire:permissions:revoke guest content.post.view
+  bin/console quire:permissions:grant member content.post.view
+  ```
+
+- **Previewing**: those who may view a type's drafts see its unpublished items at their URL, with a notice that the page is a preview. Previews are never cached or indexed. Lists show published items only, even to editors.
+
+- `edit_own` is granted only for items the user wrote.
+
+## Changing them
+
+```bash
+bin/console quire:permissions:list                       # every ability, and the roles that have it
+bin/console quire:permissions:list --role=member         # what members may do
+bin/console quire:permissions:list --prefix=content.page.
+bin/console quire:permissions:grant editor acme-reviews.moderate
+bin/console quire:permissions:revoke editor content.page.delete
+bin/console quire:permissions:reset content.page.delete  # back to its default roles
+bin/console quire:permissions:reset                      # undo every change
+```
+
+Changes are kept as differences from the defaults, in the setting `quire.permissions.grants`. So an extension enabled later brings its own defaults, and changes made earlier stay. They're part of [backups](backups.md) like every setting.
+
+## Checking abilities
+
+Use Symfony's security as usual. Quire's abilities work with `is_granted()` wherever it does:
+
+```twig
+{% if is_granted('content.post.edit_any', content) %}
+    <a href="…">Edit</a>
+{% endif %}
+```
+
+```php
+#[IsGranted('acme-reviews.moderate')]
+public function moderate(): Response
+
+if ($this->security->isGranted('content.product.publish', $product)) {
+```
+
+Pass the item as the subject when there is one, so `edit_own` and the rules of extensions can look at it.
+
+## Declaring them
+
+Extensions declare roles, abilities and rules with `Extend\Permissions`:
+
+```php
+new Extend\Permissions()
+    ->role('moderator', 'Moderator')
+    ->ability('acme-reviews.moderate', 'Moderate reviews', roles: ['moderator', 'editor'])
+    ->ability('acme-reviews.purge', 'Delete all reviews for good', strict: true)
+    ->rule(Reviews\BannedReviewersRule::class),
+```
+
+- Ability names start with the extension's ID and a dot, like settings; the site's own start with `custom.`.
+- The roles given are the defaults. Admins have every ability that isn't **strict**; a strict one must be granted to admins like to any role, e.g. for things that can't be undone.
+- Roles are declared before the abilities that use them. An extension can give its abilities to roles of core or of extensions it requires.
+
+### Rules
+
+A rule decides abilities case by case, beyond roles: "organisers may edit the news of their own tournaments", or "nobody may edit a locked item". It's a service implementing `Quire\Permission\AbilityRuleInterface`:
+
+```php
+final class BannedReviewersRule implements AbilityRuleInterface
+{
+    public function decide(string $ability, ?UserInterface $user, mixed $subject): ?bool
+    {
+        if ('acme-reviews.write' === $ability && $user instanceof User && ($user->attributes['banned'] ?? false)) {
+            return false;
+        }
+
+        return null;
+    }
+}
+```
+
+It returns `true` to grant, `false` to refuse, or `null` to leave it to roles and other rules. A refusal wins over everything, admins included. Rules are asked about every ability, so return `null` quickly for those they aren't about.
+
+Plain Symfony voters work too, e.g. one registered by a host application. With Symfony's default strategy, any voter that grants an ability grants it; Quire's own refusals are decided in one vote, so a rule's refusal stays a refusal only among Quire's rules. Use the `unanimous` strategy if any voter's refusal should win.
+
+## In code
+
+`Quire\Permission\Permissions` tells what roles alone allow, and changes grants:
+
+```php
+$permissions->rolesWith('content.post.publish');   // ['editor']
+$permissions->allows(['member'], 'content.post.view');
+$permissions->grant('member', ['content.post.view_drafts']);
+$permissions->abilities();                         // every ability, with label, group, default roles, strict
+```

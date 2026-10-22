@@ -83,7 +83,7 @@ public function __invoke(UserLoggingIn $event): void
 | `editor` | Writing and publishing content |
 | `admin` | Running the site |
 
-Visitors who aren't signed in are guests. What each role may do, and roles of extensions, come with permissions in a later release.
+Visitors who aren't signed in are guests. Extensions can add roles, e.g. `moderator`. What each role may do is set by [permissions](permissions.md).
 
 ## In code
 
