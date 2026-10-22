@@ -84,6 +84,7 @@ Values use the same format as `quire:settings:set`. A setting fixed by an enviro
 | `site.title` | string | `Quire` | Shown in the browser tab and the site header |
 | `site.description` | string | (empty) | A short description of the site, used by search engines and when the site is shared |
 | `site.locale` | string | `en` | The language of the site and of new content, as a language tag such as `en`, `de` or `pt-BR` |
+| `theme.active` | string | (none) | The site's theme. Change it with `quire:theme:use` (see [themes](themes.md)). |
 | `quire.content.revisions_keep` | int | `50` | How many revisions to keep per content item. Older ones are deleted when a new one is saved. `0` keeps all. |
 
-Extensions document their own settings.
+Extensions and themes document their own settings. Templates can read the settings marked as exposed, among them `site.title`, `site.description` and `site.locale` (through the `site` variable) and every theme setting.

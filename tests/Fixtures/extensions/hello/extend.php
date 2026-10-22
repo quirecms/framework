@@ -22,7 +22,10 @@ return [
 
     new Extend\Views()
         ->namespace('hello', __DIR__.'/templates')
-        ->global('hello_greeting', 'Hello'),
+        ->global('hello_greeting', 'Hello')
+        ->slot('content.after_body', '@hello/after_body.html.twig')
+        ->slot('content.after_body', Hello\Theme\LikesSlot::class, priority: 10)
+        ->slot('footer', '@hello/footer.html.twig'),
 
     new Extend\Events()
         ->listen(ResponseEvent::class, Hello\FixtureHeaderListener::class),
@@ -33,7 +36,7 @@ return [
     new Extend\Migrations('Quire\\Fixtures\\Hello\\Migrations', __DIR__.'/migrations'),
 
     new Extend\Settings()
-        ->define('quire-fixture-hello.greeting', 'string', 'Hello', label: 'Greeting')
+        ->define('quire-fixture-hello.greeting', 'string', 'Hello', label: 'Greeting', exposed: true)
         ->define('quire-fixture-hello.shout', 'bool', false, label: 'Shout the greeting'),
 
     new Extend\ContentType('greeting_card')

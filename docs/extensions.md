@@ -219,6 +219,7 @@ A route with the same name as an existing one replaces it. Extensions can overri
 | Method | Purpose |
 |--------|---------|
 | `namespace($name, $directory)` | Makes the Twig templates in `$directory` available as `@name/...`, e.g. `{% include '@reviews/stars.html.twig' %}`. Sites and themes can override them (see [themes](themes.md#changing-an-extensions-templates)). |
+| `slot($slot, $fragment, $priority = 0)` | Adds a fragment to a slot of the theme, e.g. `content.after_body`: a template (`'@reviews/summary.html.twig'`) or a class implementing `Quire\Theme\SlotRendererInterface`. Higher priorities come first. See [slots](themes.md#slots). |
 | `global($name, $value)` | Adds a variable to every template. Values must be scalars or arrays of scalars. |
 
 #### `Extend\Events`
@@ -267,6 +268,7 @@ new Extend\Settings()
 | `choices` | The allowed values, for `enum` settings |
 | `nullable` | Whether the setting may be empty (`null`) |
 | `sensitive` | Hides the value in listings, e.g. for API keys |
+| `exposed` | Lets templates read it with `quire_setting()`, e.g. a footer text. Sensitive settings can't be exposed. |
 
 Read settings by injecting `Quire\Settings\Settings`:
 
