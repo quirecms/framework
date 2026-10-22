@@ -35,7 +35,7 @@ Because everything Quire stores is in its own schema, Quire can use the database
 
 - **No clashes.** Your application can have its own `content`, `setting` or `extension` tables.
 - **Schema tools leave Quire alone.** `doctrine:schema:update` and `doctrine:migrations:diff` don't see the `quire` schema, so they never generate SQL that changes or drops Quire's tables.
-- **Separate backups are possible.** `pg_dump --schema=quire` dumps Quire's data, including its migration history, without your application's data.
+- **Separate backups.** `bin/console quire:backup` saves Quire's data, including its migration history, without your application's data, and `quire:restore` puts it back without touching your application's tables. See [backups](backups.md).
 
 Quire connects with the application's default Doctrine connection, so its writes can take part in the application's transactions.
 

@@ -105,6 +105,17 @@ docker compose exec php bin/console quire:migrations:status
 
 See [docs/database.md](docs/database.md).
 
+## Backups
+
+One file holds the whole site. Restoring checks first that the code is new enough for the backup:
+
+```bash
+docker compose exec -T php bin/console quire:backup - > site.dump
+docker compose exec -T php bin/console quire:restore - < site.dump
+```
+
+See [docs/backups.md](docs/backups.md).
+
 ## Repository layout
 
 | Path | Contents |
