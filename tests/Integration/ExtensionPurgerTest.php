@@ -56,6 +56,7 @@ final class ExtensionPurgerTest extends KernelTestCase
             // Core's migrations run first, even when an extension's is older.
             \Quire\Migrations\Version20261022120000::class,
             \Quire\Fixtures\Hello\Migrations\Version20261022100000::class,
+            \Quire\Fixtures\Hello\Migrations\Version20261022150000::class,
         ], $versions);
     }
 
@@ -88,6 +89,7 @@ final class ExtensionPurgerTest extends KernelTestCase
 
         self::assertSame(['quire-fixture-hello'], $purging);
         self::assertFalse($this->tableExists('quire_fixture_hello_visit'));
+        self::assertFalse($this->tableExists('quire_fixture_hello_like'));
         self::assertFalse($this->migrations()->getMetadataStorage()->getExecutedMigrations()->hasMigration(new Version(\Quire\Fixtures\Hello\Migrations\Version20261022100000::class)));
         self::assertEquals(['site.title'], $this->connection->fetchFirstColumn('SELECT name FROM setting'));
         self::assertTrue($this->tableExists('setting'), 'Core migrations are untouched.');
@@ -95,7 +97,7 @@ final class ExtensionPurgerTest extends KernelTestCase
         self::assertSame('{}', $this->connection->fetchOne('SELECT fields::text FROM content_revision WHERE content_id = ?', [$post->id]), 'Revisions too.');
         self::assertSame([
             'Purging "quire-fixture-hello"…',
-            '  Rolled back 1 migration(s).',
+            '  Rolled back 2 migration(s).',
             '  Deleted 1 stored setting(s).',
             '  Deleted the fields mood, rating, score, featured, subtitle, color, size, tags, due, event_at, extra from 1 post.',
             '  Deleted the fields recipient from 0 greeting cards.',

@@ -1,0 +1,7 @@
+{% set posts = quire_content('post').scope('popular').with('likes').paginate(page, 3) %}
+<ul>
+{% for post in posts %}
+    <li class="post" data-likes="{{ post.like_count }}">{{ post.title }}: {{ post.likes|join(', ') }}</li>
+{% endfor %}
+</ul>
+<p class="total">{{ posts.total }} posts, page {{ posts.page }} of {{ posts.pageCount }}</p>
