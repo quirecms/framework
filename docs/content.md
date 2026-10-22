@@ -253,7 +253,7 @@ Items render with the first of these templates that exists, so a theme or site c
 3. `templates/content/single.html.twig`
 4. Quire's own `@Quire/content/single.html.twig`
 
-Lists use `templates/content/<type>/list.html.twig`, then `templates/content/list.html.twig`. Each of Quire's own templates lists the variables it receives at the top.
+Lists use `templates/content/<type>/list.html.twig`, then `templates/content/list.html.twig`. Each of Quire's own templates lists the variables it receives at the top. `templates/` here means the site's directory, then the active theme's (see [themes](themes.md#where-templates-come-from)).
 
 Templates build links with these functions:
 

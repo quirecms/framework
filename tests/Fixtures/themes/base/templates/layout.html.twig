@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="{{ site_locale }}">
+<head>
+    <title>{% block title %}{{ site_title }}{% endblock %}</title>
+    {% block head %}{% endblock %}
+</head>
+<body class="theme-base{{ fixture_base_extend_ran is defined ? ' base-extend-ran' }}{{ fixture_child_extend_ran is defined ? ' child-extend-ran' }}">
+    <main>{% block content %}{% endblock %}</main>
+</body>
+</html>

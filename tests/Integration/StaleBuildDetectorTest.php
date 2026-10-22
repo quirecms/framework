@@ -37,14 +37,14 @@ final class StaleBuildDetectorTest extends KernelTestCase
 
     public function testNothingHappensWhileTheBuildMatches(): void
     {
-        $this->request($this->detector(CompileTimeState::hashOf(['acme-comments'])));
+        $this->request($this->detector(CompileTimeState::hashOf(['acme-comments'], null)));
 
         self::assertSame([], $this->spawned);
     }
 
     public function testAChangeElsewhereTriggersARefresh(): void
     {
-        $detector = $this->detector(CompileTimeState::hashOf(['acme-comments']));
+        $detector = $this->detector(CompileTimeState::hashOf(['acme-comments'], null));
         $this->connection->executeStatement("UPDATE quire.extension SET enabled = true WHERE id = 'acme-seo'");
 
         $this->request($detector);
@@ -53,9 +53,23 @@ final class StaleBuildDetectorTest extends KernelTestCase
         self::assertStringContainsString('quire:app:refresh', $this->spawned[0]);
     }
 
+    public function testAThemeChangeElsewhereTriggersARefresh(): void
+    {
+        $detector = $this->detector(CompileTimeState::hashOf(['acme-comments'], null));
+        $this->connection->executeStatement("INSERT INTO quire.setting (name, value, updated_at) VALUES ('theme.active', '\"acme-dark\"', now())");
+
+        try {
+            $this->request($detector);
+        } finally {
+            $this->connection->executeStatement("DELETE FROM quire.setting WHERE name = 'theme.active'");
+        }
+
+        self::assertCount(1, $this->spawned);
+    }
+
     public function testChecksAtMostOncePerInterval(): void
     {
-        $detector = $this->detector(CompileTimeState::hashOf(['acme-comments']));
+        $detector = $this->detector(CompileTimeState::hashOf(['acme-comments'], null));
         $this->request($detector);
 
         $this->connection->executeStatement("UPDATE quire.extension SET enabled = true WHERE id = 'acme-seo'");

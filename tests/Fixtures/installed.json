@@ -12,6 +12,54 @@
                     "id": "quire-fixture-hello"
                 }
             }
+        },
+        {
+            "name": "quire/fixture-theme-base",
+            "version": "1.0.0.0",
+            "pretty_version": "1.0.0",
+            "type": "quire-theme",
+            "install-path": "themes/base",
+            "description": "Test theme with a layout and a content template",
+            "extra": {
+                "quire": {
+                    "id": "quire-fixture-base"
+                }
+            }
+        },
+        {
+            "name": "quire/fixture-theme-child",
+            "version": "1.0.0.0",
+            "pretty_version": "1.0.0",
+            "type": "quire-theme",
+            "install-path": "themes/child",
+            "description": "Test theme that inherits from the base test theme",
+            "extra": {
+                "quire": {
+                    "id": "quire-fixture-child",
+                    "requires": [
+                        "quire-fixture-hello"
+                    ],
+                    "theme": {
+                        "parent": "quire-fixture-base"
+                    }
+                }
+            }
+        },
+        {
+            "name": "quire/fixture-theme-orphan",
+            "version": "1.0.0.0",
+            "pretty_version": "1.0.0",
+            "type": "quire-theme",
+            "install-path": "themes/orphan",
+            "description": "Test theme whose parent isn't installed",
+            "extra": {
+                "quire": {
+                    "id": "quire-fixture-orphan",
+                    "theme": {
+                        "parent": "quire-fixture-gone"
+                    }
+                }
+            }
         }
     ],
     "dev": true,
