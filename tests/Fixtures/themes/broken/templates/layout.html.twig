@@ -1,0 +1,11 @@
+{# Renders only some standard slots, links a missing file and calls a function nothing provides. #}
+<!doctype html>
+<html>
+<head>{{ quire_slot('head') }}</head>
+<body>
+    <img src="{{ quire_asset('theme/missing.png') }}" alt="">
+    {{ acme_unknown_function() }}
+    <main>{% block content %}{% endblock %}</main>
+    {{ quire_slot('footer') }}
+</body>
+</html>

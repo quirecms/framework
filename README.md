@@ -78,6 +78,8 @@ Themes are Composer packages of templates and assets. New sites use `quire/theme
 ```bash
 docker compose exec php bin/console quire:theme:list
 docker compose exec php bin/console quire:theme:use acme-dark
+docker compose exec php bin/console quire:make:theme acme/dark    # a new theme, based on the default one
+docker compose exec php bin/console quire:theme:lint
 ```
 
 See [docs/themes.md](docs/themes.md).

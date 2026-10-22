@@ -60,6 +60,47 @@
                     }
                 }
             }
+        },
+        {
+            "name": "quire/fixture-theme-broken",
+            "version": "1.0.0.0",
+            "pretty_version": "1.0.0",
+            "type": "quire-theme",
+            "install-path": "themes/broken",
+            "description": "Test theme with mistakes for quire:theme:lint",
+            "extra": {
+                "quire": {
+                    "id": "quire-fixture-broken"
+                }
+            }
+        },
+        {
+            "name": "quire/theme-default",
+            "version": "dev-main",
+            "pretty_version": "dev-main",
+            "type": "quire-theme",
+            "install-path": "../../packages/theme-default",
+            "extra": {
+                "quire": {
+                    "title": "Default"
+                }
+            }
+        },
+        {
+            "name": "quire/fixture-theme-default-child",
+            "version": "1.0.0.0",
+            "pretty_version": "1.0.0",
+            "type": "quire-theme",
+            "install-path": "themes/default-child",
+            "description": "Test theme that overrides one template of the default theme",
+            "extra": {
+                "quire": {
+                    "id": "quire-fixture-default-child",
+                    "theme": {
+                        "parent": "quire-theme-default"
+                    }
+                }
+            }
         }
     ],
     "dev": true,

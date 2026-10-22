@@ -1,0 +1,7 @@
+{# The one template this child of the default theme overrides; everything else is the default theme's. #}
+{% extends '@quire-theme-default/content/single.html.twig' %}
+
+{% block content %}
+    <p class="child-banner">Read by the child theme</p>
+    {{ parent() }}
+{% endblock %}
