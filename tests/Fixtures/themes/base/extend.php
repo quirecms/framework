@@ -12,6 +12,10 @@ return [
     new Extend\Views()
         ->global('fixture_base_extend_ran', true),
 
+    // The active theme's style.css: the child theme's when it has one.
+    new Extend\Assets()
+        ->stylesheet('theme/style.css'),
+
     new Extend\Settings()
         ->define('theme.quire-fixture-base.accent', 'string', 'blue', label: 'Accent colour')
         ->define('theme.quire-fixture-base.show_dates', 'bool', true, label: 'Show dates'),

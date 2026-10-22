@@ -91,6 +91,17 @@ final class ThemesTest extends ExtensionTestCase
         self::assertSame('red', $this->service(Environment::class)->createTemplate("{{ quire_setting('theme.quire-fixture-base.accent') }}")->render(), 'Theme settings are exposed.');
     }
 
+    public function testAChildThemesAssetsReplaceItsParentsWithTheSamePath(): void
+    {
+        $this->publish('Hello world');
+
+        $crawler = $this->client->request('GET', '/blog/hello-world');
+
+        self::assertCount(1, $crawler->filter('head link[href^="/assets/quire-fixture-child/style-"]'), '"theme/style.css" is the child\'s file.');
+        self::assertMatchesRegularExpression('#^/assets/quire-fixture-base/logo-[\w-]+\.svg$#', (string) $crawler->filter('header img.logo')->attr('src'), 'The child has no logo, so it\'s the parent\'s.');
+        self::assertCount(0, $crawler->filter('head link[href^="/assets/quire-fixture-base/style-"]'));
+    }
+
     public function testTheExtendersOfTheThemeAndItsParentsRun(): void
     {
         $this->publish('Hello world');

@@ -27,6 +27,10 @@ return [
         ->slot('content.after_body', Hello\Theme\LikesSlot::class, priority: 10)
         ->slot('footer', '@hello/footer.html.twig'),
 
+    new Extend\Assets()
+        ->stylesheet('quire-fixture-hello/hello.css')
+        ->script('quire-fixture-hello/hello.js'),
+
     new Extend\Events()
         ->listen(ResponseEvent::class, Hello\FixtureHeaderListener::class),
 

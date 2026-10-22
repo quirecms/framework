@@ -7,7 +7,7 @@
 </head>
 <body class="theme-base{{ fixture_base_extend_ran is defined ? ' base-extend-ran' }}{{ fixture_child_extend_ran is defined ? ' child-extend-ran' }}" data-accent="{{ theme.settings.accent }}" data-dates="{{ theme.settings.show_dates ? 'yes' : 'no' }}">
     {{ quire_slot('body_start') }}
-    <header>{{ quire_slot('header.nav') }}</header>
+    <header><img class="logo" src="{{ quire_asset('theme/logo.svg') }}" alt="">{{ quire_slot('header.nav') }}</header>
     <main>{% block content %}{% endblock %}</main>
     {{ quire_slot('sidebar') }}
     <footer>{{ quire_slot('footer') }}</footer>
