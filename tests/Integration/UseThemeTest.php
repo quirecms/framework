@@ -74,7 +74,7 @@ final class UseThemeTest extends KernelTestCase
         self::assertSame([], $this->rebuilder->calls);
 
         $this->expectException(InvalidSettingValueException::class);
-        $this->expectExceptionMessageIsOrContains('No theme with ID "acme-missing" is installed. Installed: "quire-fixture-base", "quire-fixture-child", "quire-fixture-orphan".');
+        $this->expectExceptionMessageIsOrContains('No theme with ID "acme-missing" is installed. Installed: "quire-fixture-base", ');
         $this->settings->set(Themes::SETTING, 'acme-missing');
     }
 

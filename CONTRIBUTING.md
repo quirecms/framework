@@ -68,6 +68,7 @@ The application installs the packages from `packages/` through Composer path rep
 - New features need tests for their normal behaviour and their edge cases.
 - Unit tests for a package live in that package's `tests/` folder (e.g. `packages/core/tests/`). Tests that need the whole application live in the root `tests/` folder.
 - Run a single test with `composer test -- --filter NameOfTest`.
+- Changes to the default theme's templates or CSS must keep it accessible: CI checks it with axe-core (see "Accessibility" in [docs/themes.md](docs/themes.md#accessibility) to run the same check locally).
 
 ### Commit messages
 
