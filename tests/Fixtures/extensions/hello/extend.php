@@ -25,7 +25,8 @@ return [
         ->global('hello_greeting', 'Hello')
         ->slot('content.after_body', '@hello/after_body.html.twig')
         ->slot('content.after_body', Hello\Theme\LikesSlot::class, priority: 10)
-        ->slot('footer', '@hello/footer.html.twig'),
+        ->slot('footer', '@hello/footer.html.twig')
+        ->slot('auth.login_options', '@hello/login_option.html.twig'),
 
     new Extend\Assets()
         ->stylesheet('quire-fixture-hello/hello.css')

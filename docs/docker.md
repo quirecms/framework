@@ -81,7 +81,7 @@ Keep these volumes:
 
 ### Running several servers
 
-The app containers keep no data, so you can run several behind a load balancer, all using the same PostgreSQL database. When an extension is enabled or disabled on one of them, the others notice within a few seconds, rebuild in the background and restart their workers, with no extra setup and no message broker. Tune or disable the check with `quire.extensions.check_interval` (in seconds; default `5`, `0` turns it off).
+The app containers keep no data (sessions too are in PostgreSQL), so you can run several behind a load balancer, all using the same PostgreSQL database; users stay signed in whichever server answers. When an extension is enabled or disabled on one of them, the others notice within a few seconds, rebuild in the background and restart their workers, with no extra setup and no message broker. Tune or disable the check with `quire.extensions.check_interval` (in seconds; default `5`, `0` turns it off).
 
 For the same set of extensions everywhere, set by your deployment instead of at runtime, pin them in `config/packages/quire.yaml` (see [extensions](extensions.md#pinning-extensions-in-production)).
 
