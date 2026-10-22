@@ -2,6 +2,8 @@
 
 Thanks for helping to improve Quire! This guide explains how to set up the project, what we expect from changes, and how to get them merged.
 
+Everyone taking part follows our [code of conduct](https://github.com/quirecms/.github/blob/main/CODE_OF_CONDUCT.md).
+
 ## Before you start
 
 - **Security issues:** don't open a public issue. Follow the [security policy](SECURITY.md).

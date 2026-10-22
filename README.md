@@ -1,16 +1,21 @@
-# Quire
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/quirecms/.github/main/brand/quire-wordmark-white.png">
+    <img src="https://raw.githubusercontent.com/quirecms/.github/main/brand/quire-wordmark-navy.png" alt="Quire" width="320">
+  </picture>
+</p>
 
-The extensible CMS for PHP, built on Symfony. By [YorvoLabs](https://quirecms.com).
+<p align="center"><strong>The extensible CMS for PHP, built on Symfony.</strong> By <a href="https://quirecms.com">YorvoLabs</a>.</p>
 
-Quire has a small core, and everything else is an extension: the admin panel, single sign-on, comments, reviews. You write content in Markdown, and PostgreSQL is the single source of truth, so one database backup holds your whole site.
+Quire has a small core, and everything else is an extension: the admin panel, single sign-on, comments, reviews. You write content in Markdown, and PostgreSQL is the single source of truth, so one database backup holds your whole site. Quire runs on its own or inside an existing Symfony application.
 
-> **Status:** early development. The engine runs, but content, extensions and theming aren't available yet.
+> **Status:** early development, no stable release yet. Content, URLs, extensions, themes and backups work; the admin panel, users and permissions come next.
 
 ## Requirements
 
 - Docker with Docker Compose v2.10 or later
 
-To run without Docker you need PHP 8.5 (with the `intl`, `opcache`, `apcu`, `zip` and `pdo_pgsql` extensions), Composer, and PostgreSQL 18.
+To run without Docker you need PHP 8.5 (with the `intl`, `opcache`, `apcu`, `zip` and `pdo_pgsql` extensions), Composer, and PostgreSQL 18, plus PostgreSQL's client tools (`pg_dump`, `pg_restore`) for backups.
 
 ## Quick start
 
@@ -21,7 +26,7 @@ docker compose build --pull --no-cache
 docker compose up --wait
 ```
 
-Open <https://quire.localhost> and accept the locally generated TLS certificate. You should see the Quire welcome page.
+Open <https://quire.localhost> and accept the locally generated TLS certificate. You should see your new site in the default theme; it lists your posts once you [write some](#content).
 
 Names ending in `.localhost` always point to your own machine. Browsers and curl resolve them without any `/etc/hosts` entry. To use a different name, set `SERVER_NAME`, e.g. `SERVER_NAME=mysite.localhost docker compose up --wait`.
 
@@ -139,6 +144,10 @@ See [docs/backups.md](docs/backups.md).
 | `config/`, `src/`, `templates/`, `public/` | The application that runs Quire. Site-specific overrides go here. |
 | `frankenphp/`, `Dockerfile`, `compose*.yaml` | The Docker setup. See [docs/docker.md](docs/docker.md). |
 
+## Contributing
+
+Bug reports, ideas and pull requests are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md), and our [code of conduct](https://github.com/quirecms/.github/blob/main/CODE_OF_CONDUCT.md). Report security issues privately, as described in [SECURITY.md](SECURITY.md).
+
 ## License
 
-Quire is open-source software licensed under the [MIT license](LICENSE).
+Quire is open-source software licensed under the [MIT license](LICENSE). The Quire name and logos are trademarks of YorvoLabs and aren't covered by the license; see [how to use them](https://github.com/quirecms/.github/blob/main/brand/README.md).
