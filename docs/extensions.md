@@ -307,7 +307,7 @@ new Extend\ContentType('product')
 |--------|-------------|
 | `label($singular, $plural)` | Names shown in admin interfaces. Defaults to the ID, e.g. `Product` and `Products`. |
 | `capabilities(...)` | What the type can do. Use the `Capability` constants for core's flags, and plain strings for your own (e.g. `'reviewable'`). Defaults to none. |
-| `permalink($pattern)` | Default URL pattern, made of static text and the placeholders `{slug}`, `{path}` (the slugs of the item's ancestors and its own, for hierarchical types), `{id}`, `{year}`, `{month}` and `{day}`. It needs `{slug}`, `{path}` or `{id}`. Defaults to `/{type}/{slug}`, or `/{type}/{path}` for hierarchical types. |
+| `permalink($pattern)` | Default URL pattern, made of static text and the placeholders `{slug}`, `{path}` (the slugs of the item's ancestors and its own, for hierarchical types), `{id}`, `{year}`, `{month}` and `{day}`. It needs `{slug}`, `{path}` or `{id}`. Defaults to `/{type}/{slug}`, or `/{type}/{path}` for hierarchical types. Sites change it with the setting `quire.permalinks.<type>` (see [URLs](content.md#urls)). Listable types also get a list, by default at the pattern's static start (`/products`). |
 | `field($name, $type, ...)` | Declares a typed field (see below) |
 | `sortBy($field, $direction)` | Default order of listings: `published_at`, `created_at`, `updated_at`, `title`, `position` or a sortable field such as `fields.price`, `asc` or `desc`. Defaults to newest first, or by position for hierarchical types. |
 
@@ -596,6 +596,8 @@ Each change dispatches events from `Quire\Content\Event`:
 | `ContentPublishing` | `ContentPublished`, `ContentUnpublished`, `ContentStatusChanged` |
 | `ContentDeleting` (to the trash) | `ContentDeleted`, `ContentRestored` |
 | `ContentPurging` (permanently) | `ContentPurged` |
+
+`ContentViewing` is dispatched before an item's page is rendered. Its listeners can add template variables with `$event->set('related', $items)`, or call `$event->deny()` to respond with "404 Not Found".
 
 The "before" events are dispatched inside the change's database transaction, so what their listeners write is saved or rolled back together with it. Call `$event->cancel('Reason')` to stop the change. The "after" events are dispatched once the transaction has committed, so their listeners never act on a change that was rolled back. That makes them the place for side effects such as clearing caches or sending notifications.
 
