@@ -90,6 +90,7 @@ Posts, pages and the content types that extensions add are stored in PostgreSQL:
 docker compose exec php bin/console quire:content:create post "Hello world" --body "My *first* post." --publish
 docker compose exec php bin/console quire:content:list
 docker compose exec php bin/console quire:content-type:list
+docker compose exec php bin/console quire:permalink:list
 ```
 
 See [docs/content.md](docs/content.md).

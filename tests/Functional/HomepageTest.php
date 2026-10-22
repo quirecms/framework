@@ -8,12 +8,13 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class HomepageTest extends WebTestCase
 {
-    public function testHomepageRenders(): void
+    public function testAFreshSiteListsItsPostsOnTheHomepage(): void
     {
         $client = self::createClient();
         $client->request('GET', '/');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('h1', 'Hello Quire');
+        self::assertSelectorTextSame('header a[href="/"]', 'Quire');
+        self::assertSelectorTextContains('main', 'No posts yet.');
     }
 }

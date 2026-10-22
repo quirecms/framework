@@ -105,7 +105,7 @@ bin/console quire:content:restore <id>
 
 The slug is the part of the URL that names an item, e.g. `hello-world`. Quire generates it from the title, transliterated for the item's language (`Über uns` becomes `ueber-uns` in German), and adds a number when a sibling already uses it (`hello-world-2`). Pass `--slug` to choose one yourself: lowercase letters and digits separated by hyphens.
 
-Changing the title doesn't change the slug, so published links keep working. Change the slug explicitly when you want a new URL.
+Changing the title doesn't change the slug, so published links keep working. Change the slug explicitly when you want a new URL: the old one then redirects to it (see [URLs](#urls)).
 
 ### Statuses
 
@@ -152,13 +152,140 @@ A page with child pages can't be moved to the trash or deleted. Move or delete i
 
 Pass `--translation-of <id>` and `--locale` to create a translation of an item. Each item can have one translation per language. New items use the site language (the `site.locale` setting) unless you pass `--locale`.
 
+## URLs
+
+Each content type's items get URLs from a **permalink pattern**, a site setting you can change without touching code:
+
+```bash
+bin/console quire:permalink:list
+```
+
+```
+ ------ -------------- ------
+  Type   Items          List
+ ------ -------------- ------
+  post   /blog/{slug}   /
+  page   /{path}        –
+ ------ -------------- ------
+
+ Homepage: the list of posts
+```
+
+Patterns combine static text with placeholders:
+
+| Placeholder | Value |
+|-------------|-------|
+| `{slug}` | The item's slug, e.g. `hello-world` |
+| `{path}` | For hierarchical types, the slugs of the item's ancestors and its own: `about/team` |
+| `{id}` | The item's ID |
+| `{year}`, `{month}`, `{day}` | The publication date, e.g. `2026`, `10`, `22` |
+
+Every pattern needs `{slug}`, `{path}` or `{id}`. To use dates in post URLs, the way many WordPress sites do:
+
+```bash
+bin/console quire:settings:set quire.permalinks.post "/{year}/{month}/{slug}"
+```
+
+Changes apply right away, with no cache to clear. Two types can't have patterns that produce the same URLs (`/blog/{slug}` and `/blog/{id}`): saving such a pattern fails and names the other type. Patterns that only overlap, such as `/{slug}` for posts and `/{path}` for pages, are allowed. The more specific one is tried first, in the order `quire:permalink:list` shows.
+
+Only items visitors may see have a working URL: drafts, scheduled items that aren't due and items in the trash respond with "404 Not Found".
+
+### Old URLs keep working
+
+When a URL changes, the old one redirects to the new one with "301 Moved Permanently". You don't need to add these redirects yourself:
+
+- **A changed slug** (`/blog/hello` → `/blog/hi`). Quire remembers every path an item had, so even its first URL leads straight to the current one, never through a chain of redirects.
+- **A moved or renamed page.** Its child pages move along, and their old URLs redirect too.
+- **A changed pattern.** URLs in the type's earlier patterns keep working.
+
+Other spellings of a URL also redirect to the right one: a trailing slash, capital letters, or a date that doesn't match the item's (`/2024/01/hello` when it was published in 2025).
+
+### Lists and the homepage
+
+Listable types such as `post` have a list of their items, newest first by default. Its URL is the setting `quire.listings.<type>`, e.g. `/blog`, and pages after the first add `?page=2`. Set it to an empty value for no list. Lists show the items in the site's language (`site.locale`), and the number of items per page is the setting `quire.content.per_page`.
+
+The homepage shows one of these, set with `site.homepage`:
+
+| `site.homepage` | Shows |
+|-----------------|-------|
+| `listing` (default) | The list of the type in `site.homepage_listing`, `post` by default. Its own URL (`/blog`) then redirects to the homepage. |
+| `page` | The page in `site.homepage_page`, given by ID or path, e.g. `home`. The page's own URL then redirects to the homepage. |
+| `route` | The page of an extension or of the application: the route name in `site.homepage_route`. The route must not need parameters. |
+
+```bash
+bin/console quire:settings:set site.homepage_page home
+bin/console quire:settings:set site.homepage page
+```
+
+### Redirects
+
+To keep the URLs of a previous site working, add redirects by hand:
+
+```bash
+bin/console quire:redirect:add /2019/05/hello-world /blog/hello-world
+bin/console quire:redirect:add /shop https://shop.example.com --status=302
+bin/console quire:redirect:list
+bin/console quire:redirect:remove /shop
+```
+
+When the target is the URL of a content item, the redirect points at the item, so it still works after the item's URL changes. Redirects never hide content: one only applies when nothing is published at its URL. Old paths are matched without their trailing slash and capital letters, so `/2019/05/Hello-World/` and `/2019/05/hello-world` are the same.
+
+To add many at once, for example when moving from WordPress, import a CSV file with the old and new URL on each line, and optionally the status:
+
+```
+source,target
+https://example.com/2019/05/hello-world/,/blog/hello-world
+https://example.com/about-us/,/about
+```
+
+```bash
+bin/console quire:redirect:import redirects.csv
+```
+
+Lines that can't be added are reported, and the others are still added.
+
+### Templates
+
+Items render with the first of these templates that exists, so a theme or site can override them for one item, one type or all types:
+
+1. `templates/content/<type>/<slug>.html.twig`
+2. `templates/content/<type>/single.html.twig`
+3. `templates/content/single.html.twig`
+4. Quire's own `@Quire/content/single.html.twig`
+
+Lists use `templates/content/<type>/list.html.twig`, then `templates/content/list.html.twig`. Each of Quire's own templates lists the variables it receives at the top.
+
+Templates build links with these functions:
+
+| Function | Returns |
+|----------|---------|
+| `quire_url(item)` | The item's URL. `quire_url(item, true)` includes the domain. |
+| `quire_listing_url('post')` | The URL of a type's list; `quire_listing_url('post', 2)` for its second page |
+| `quire_home_url()` | The homepage's URL |
+| `quire_body(item)` | The item's body as HTML |
+| `quire_excerpt(item)` | A plain-text summary; `quire_excerpt(item, 120)` for at most 120 characters |
+
+In PHP, `Quire\Content\Permalink\Permalinks` has the same: `url($item)`, `listingUrl('post')` and `homeUrl()`.
+
+### Adding Quire to an existing application
+
+When Quire runs inside another Symfony application, put its URLs under a path of their own in `config/packages/quire.yaml`:
+
+```yaml
+quire:
+    routing:
+        prefix: /cms
+```
+
+The homepage is then `/cms` and posts are at `/cms/blog/…`. Wherever Quire is mounted, its URLs only answer when no other route does, so the application's routes and extensions' routes always win.
+
 ## Querying content
 
 Templates and code list content with the **content query builder**. In Twig:
 
 ```twig
 {% for post in quire_content('post').latest.limit(5) %}
-    <a href="…">{{ post.title }}</a>
+    <a href="{{ quire_url(post) }}">{{ post.title }}</a>
 {% endfor %}
 ```
 

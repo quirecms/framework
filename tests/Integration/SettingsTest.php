@@ -129,7 +129,8 @@ final class SettingsTest extends KernelTestCase
         $settings = $this->settings();
         $settings->set('site.description', 'A test site');
 
-        self::assertSame(['site.description' => 'A test site', 'site.locale' => 'en', 'site.title' => 'Quire'], $settings->all('site.'));
+        self::assertSame(['site.description' => 'A test site', 'site.locale' => 'en', 'site.title' => 'Quire'], array_intersect_key($settings->all('site.'), array_flip(['site.description', 'site.locale', 'site.title'])));
+        self::assertSame(['quire-fixture-hello.greeting'], array_keys(array_filter($settings->all('quire-fixture-hello.'), static fn (mixed $value): bool => 'Hello' === $value)), 'Only keys with the prefix.');
     }
 
     public function testTypedGettersRefuseOtherTypes(): void
