@@ -20,6 +20,15 @@
 
 	{$CADDY_SERVER_EXTRA_DIRECTIVES}
 
+	# Compiled assets have a version in their file name, so browsers can keep them for good. (The JSON
+	# files next to them are AssetMapper's own lists, which change.)
+	@compiledAssets {
+		path /assets/*
+		not path *.json
+		file
+	}
+	header @compiledAssets Cache-Control "public, max-age=31536000, immutable"
+
 	@phpRoute {
 		not file {path}
 	}

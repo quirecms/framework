@@ -45,9 +45,10 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
 	php bin/console quire:migrations:migrate --no-interaction --allow-no-migration
 
 	if [ "$APP_ENV" = 'prod' ]; then
-		# The image is built without a database, so its cached app doesn't include the enabled
-		# extensions yet. Rebuild it now that the database is reachable. (Development rebuilds by itself.)
-		php bin/console cache:clear
+		# The image is built without a database, so its cached app and compiled assets don't include the
+		# enabled extensions and theme yet. Rebuild both now that the database is reachable.
+		# (Development rebuilds by itself and serves assets as they are.)
+		php bin/console quire:app:refresh
 	fi
 
 	# Indexes of sortable and filterable content fields follow the enabled extensions' declarations

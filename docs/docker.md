@@ -66,7 +66,8 @@ The production image:
 
 - runs as the unprivileged `www-data` user;
 - has OPcache preloading enabled and doesn't re-check PHP files for changes;
-- runs pending database migrations when it starts.
+- runs pending database migrations when it starts;
+- compiles the assets (CSS, JavaScript, images) of the site, its extensions and its theme into `public/assets/` when it's built, and again when it starts and whenever extensions or the theme change. Caddy serves them with a one-year `immutable` cache header, since every file has its version in its name.
 
 ### Persistent data
 

@@ -1,6 +1,6 @@
 # Themes
 
-A theme decides how the site looks: it's a Composer package of templates (and, later, assets) that the site uses instead of Quire's plain built-in templates. A site has one active theme. A theme can inherit from another and change only the templates it needs to.
+A theme decides how the site looks: it's a Composer package of templates and assets that the site uses instead of Quire's plain built-in templates. A site has one active theme. A theme can inherit from another and change only the templates it needs to.
 
 ## Using a theme
 
@@ -70,6 +70,9 @@ A theme is a Composer package of type `quire-theme`:
 acme-dark/
 ├── composer.json
 ├── extend.php          (optional)
+├── assets/
+│   ├── style.css
+│   └── logo.svg
 └── templates/
     ├── layout.html.twig
     └── content/
@@ -182,6 +185,7 @@ Every template, of a theme, an extension or the site, has:
 | `quire_slot(name, context)`, `quire_slot_filled(name)` | Render a [slot](#slots), check whether anything fills it |
 | `quire_setting(key)` | A setting's value, for settings exposed to templates; others raise an error, so private settings such as API keys can't end up in a page |
 | `quire_extension_enabled(id)` | Whether an extension is enabled, e.g. to show a link to its page |
+| `quire_asset(path)` | The versioned URL of an [asset](#assets), e.g. `quire_asset('theme/logo.svg')` |
 | `quire_content()`, `quire_url()`, `quire_listing_url()`, `quire_home_url()`, `quire_body()`, `quire_excerpt()` | Content and URLs (see [content](content.md)) |
 
 ## Theme settings
@@ -204,3 +208,31 @@ Site admins change them like other settings (`quire:settings:set theme.acme-dark
 ```
 
 `theme.settings` includes the settings of the themes the active theme inherits from. When a child theme declares a setting with the same name as its parent's, the child's wins.
+
+## Assets
+
+A theme's `assets/` directory holds its stylesheets, scripts, images and fonts. They're handled by Symfony's AssetMapper, with no Node.js and no build step: every file gets a version in its URL (`/assets/acme-dark/style-3f2a1b.css`), so browsers cache it for good and fetch it again only when it changes.
+
+Files are available as `<theme-id>/<path>`, and as `theme/<path>` for the active theme: that's the active theme's file, or its parent's when it doesn't have one. So a child theme replaces a file of its parent by having one at the same path, just like templates.
+
+Add the stylesheets and scripts every page needs in the theme's `extend.php`:
+
+```php
+return [
+    new Extend\Assets()
+        ->stylesheet('theme/style.css')
+        ->script('theme/menu.js'),
+];
+```
+
+They're added to the [`head` slot](#slots), so the layout only has to render it. Link other files with `quire_asset()`:
+
+```twig
+<img src="{{ quire_asset('theme/logo.svg') }}" alt="{{ site.title }}">
+```
+
+A stylesheet can refer to its neighbours with relative URLs (`url('fonts/inter.woff2')`), and a script can import its neighbours with relative paths (`import './menu-toggle.js'`); AssetMapper versions those too. `quire_asset()` raises an error for a file that doesn't exist, rather than linking to nothing.
+
+The site has its own `assets/` directory and `importmap.php`, loaded on every page after the theme's: put site-specific styles in `assets/styles/app.css`, and add JavaScript packages with `bin/console importmap:require <package>`.
+
+Themes that want Sass, Tailwind or a bundler can use Symfony's `symfonycasts/tailwind-bundle`, `symfonycasts/sass-bundle` or `pentatrion/vite-bundle` and ship the built files in `assets/`; Quire neither requires nor prevents them.

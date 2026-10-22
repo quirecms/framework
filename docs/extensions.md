@@ -214,6 +214,24 @@ A controller is an invokable class (`Reviews\ListReviews::class`) or a `[class, 
 
 A route with the same name as an existing one replaces it. Extensions can override core routes, and the site's own `extend.php` can override extension routes.
 
+#### `Extend\Assets`
+
+Adds stylesheets and JavaScript modules to the site's pages. Put the files in your extension's `assets/` directory: they're available as `<extension-id>/<path>`, with a version in their URL so browsers cache them for good.
+
+```php
+new Extend\Assets()
+    ->stylesheet('acme-reviews/reviews.css')
+    ->script('acme-reviews/reviews.js'),
+```
+
+| Method | Purpose |
+|--------|---------|
+| `stylesheet($path, $group = 'site')` | A `.css` file, linked in the `<head>` of every page |
+| `script($path, $group = 'site')` | A `.js` module, loaded through the importmap. Files it imports with relative paths (`import { chart } from './chart.js'`) get versioned URLs and are preloaded; packages of the site's importmap can be imported by name. |
+| `entrypoint($name, $group = 'site')` | An entrypoint of the site's `importmap.php`; mostly for the site's own `extend.php` |
+
+`$group` is `site` for the public pages and `admin` for the admin interface. Quire adds the files to the `head` slot, in the order extensions boot, then themes, then the site, so the site's styles can override everyone's. Templates link other files with `quire_asset()`, e.g. `<img src="{{ quire_asset('acme-reviews/star.svg') }}">`. No Node.js is needed. See [themes](themes.md#assets).
+
 #### `Extend\Views`
 
 | Method | Purpose |

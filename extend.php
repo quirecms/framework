@@ -14,4 +14,7 @@ declare(strict_types=1);
  *     ];
  */
 
-return [];
+return [
+    // The site's own JavaScript and styles: assets/app.js, an entrypoint of importmap.php.
+    new Quire\Extend\Assets()->entrypoint('app'),
+];

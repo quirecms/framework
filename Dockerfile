@@ -104,7 +104,7 @@ RUN composer install --no-cache --prefer-dist --no-dev --no-autoloader --no-scri
 COPY --link --exclude=frankenphp/ . ./
 
 RUN <<-EOF
-	mkdir -p var/cache var/log var/share
+	mkdir -p var/cache var/log var/share public/assets
 	composer dump-autoload --classmap-authoritative --no-dev
 	composer dump-env prod
 	composer run-script --no-dev post-install-cmd
@@ -170,10 +170,12 @@ RUN <<-EOF
 	find / -perm /6000 -type f -exec chmod a-s {} + 2>/dev/null || true
 EOF
 
-COPY --link --exclude=var --from=frankenphp_prod_builder /app /app
-# Group 0 + g=u for arbitrary-UID runtimes (e.g. OpenShift).
+COPY --link --exclude=var --exclude=public/assets --from=frankenphp_prod_builder /app /app
+# Writable at runtime: var/, and the compiled assets, which are rebuilt when extensions or the theme
+# change. Group 0 + g=u for arbitrary-UID runtimes (e.g. OpenShift).
 COPY --chown=www-data:0 --from=frankenphp_prod_builder /app/var /app/var
-RUN chmod g=u /app/var
+COPY --chown=www-data:0 --from=frankenphp_prod_builder /app/public/assets /app/public/assets
+RUN chmod -R g=u /app/var /app/public/assets
 
 COPY --link --chmod=755 frankenphp/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
 
