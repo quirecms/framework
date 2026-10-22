@@ -539,6 +539,19 @@ final readonly class ReviewsLoader implements RelationLoaderInterface
 
 `quire_content('product').with('reviews')` then calls the loader once for the whole page of products. For relations to other content items, query them with `$query->related('product')`, which applies the same visibility rules as the query that asked for the relation. Relation names can't be the names of content properties such as `title`.
 
+#### `Extend\Permissions`
+
+Declares roles, abilities and rules that decide what users may do. Check them with Symfony's `is_granted()`.
+
+```php
+new Extend\Permissions()
+    ->role('moderator', 'Moderator')
+    ->ability('acme-reviews.moderate', 'Moderate reviews', roles: ['moderator', 'editor'])
+    ->rule(Reviews\BannedReviewersRule::class),
+```
+
+See [permissions](permissions.md#declaring-them).
+
 #### `Extend\Migrations`
 
 Registers database migrations ([Doctrine Migrations](https://www.doctrine-project.org/projects/doctrine-migrations/en/stable/)) that create and change your extension's tables:

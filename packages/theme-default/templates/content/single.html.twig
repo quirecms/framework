@@ -1,8 +1,9 @@
 {#
     A content item: a post, a page, or an item of a type an extension adds.
 
-    Variables: content (the item), type (its content type), body (the body as HTML), canonical_url, and
-    anything ContentViewing listeners added.
+    Variables: content (the item), type (its content type), body (the body as HTML), canonical_url,
+    preview (true when the item isn't published and the viewer may preview it), and anything
+    ContentViewing listeners added.
     Slots: content.before_title, content.after_title, content.before_body, content.after_body,
     content.footer, each with { content }
 #}
@@ -12,6 +13,9 @@
 
 {% block content %}
     <article class="entry">
+        {% if preview|default(false) %}
+            <p class="notice" role="status">{{ 'Preview: this isn\'t published, so only people who may see unpublished content see it.'|trans({}, 'quire') }}</p>
+        {% endif %}
         <header class="entry-header">
             {{ quire_slot('content.before_title', { content }) }}
             <h1>{{ content.title }}</h1>

@@ -71,7 +71,7 @@ final class UserWriterTest extends KernelTestCase
         $this->assertInvalid([
             'displayName' => 'The display name must be 1 to 100 characters long.',
             'email' => '"not-an-email" isn\'t a valid email address.',
-            'roles' => 'Unknown role "wizard". Roles: member, editor, admin.',
+            'roles' => 'Unknown role "wizard". Roles: member, editor, admin, moderator.',
             'password' => 'Passwords must be at least 8 characters long.',
             'username' => 'Usernames are lowercase letters, digits and single hyphens, at most 64 characters, e.g. "ada-lovelace".',
         ], fn (): User => $this->writer->create(new CreateUser(' ', 'not-an-email', username: 'no spaces', password: 'short', roles: ['wizard'])));

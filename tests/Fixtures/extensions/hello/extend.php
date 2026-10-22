@@ -40,6 +40,12 @@ return [
 
     new Extend\Migrations('Quire\\Fixtures\\Hello\\Migrations', __DIR__.'/migrations'),
 
+    new Extend\Permissions()
+        ->role('moderator', 'Moderator')
+        ->ability('quire-fixture-hello.moderate', 'Moderate greetings', roles: ['moderator', 'editor'])
+        ->ability('quire-fixture-hello.purge', 'Delete all greetings for good', roles: [], strict: true)
+        ->rule(Hello\Permission\LockedContentRule::class),
+
     new Extend\Settings()
         ->define('quire-fixture-hello.greeting', 'string', 'Hello', label: 'Greeting', exposed: true)
         ->define('quire-fixture-hello.shout', 'bool', false, label: 'Shout the greeting'),
