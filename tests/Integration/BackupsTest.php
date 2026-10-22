@@ -87,7 +87,11 @@ final class BackupsTest extends WebTestCase
 
         self::assertSame(['In the backup'], $this->titles());
         self::assertSame(['Spring Cup', 'Summer Cup'], $connection->fetchFirstColumn('SELECT name FROM public.tournament ORDER BY name'), 'The application\'s data is neither backed up nor replaced.');
-        self::assertSame(8 + 2, self::getContainer()->get(Backups::class)->inspect($file)->tables, 'Quire\'s and the fixture extension\'s tables only.');
+        self::assertSame(
+            $this->countRows("SELECT count(*) FROM pg_tables WHERE schemaname = 'quire'"),
+            self::getContainer()->get(Backups::class)->inspect($file)->tables,
+            'Quire\'s and the fixture extension\'s tables only, not the application\'s.',
+        );
     }
 
     public function testRestoringIsRefusedWhenTheApplicationDependsOnQuiresTables(): void
@@ -113,7 +117,8 @@ final class BackupsTest extends WebTestCase
         self::assertSame([], self::getContainer()->get(Backups::class)->problems($backup));
 
         $output = $this->console('quire:restore', ['file' => $this->directory.'/in-the-backup.dump', '--dry-run' => true]);
-        self::assertStringContainsString('Migrations 6', $output);
+        self::assertStringContainsString(\sprintf('Migrations %d', \count($backup->migrations)), $output);
+        self::assertCount($this->countRows('SELECT count(*) FROM quire.migration_versions'), $backup->migrations);
         self::assertStringContainsString('It would replace the current data (1 content item).', $output);
     }
 
@@ -211,5 +216,13 @@ final class BackupsTest extends WebTestCase
     private function contents(array $migrations = [], array $extensions = []): BackupContents
     {
         return new BackupContents(null, 'app', '18.0', 8, $migrations, $extensions);
+    }
+
+    private function countRows(string $sql): int
+    {
+        $count = self::getContainer()->get(Connection::class)->fetchOne($sql);
+        \assert(is_numeric($count));
+
+        return (int) $count;
     }
 }

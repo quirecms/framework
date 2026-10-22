@@ -26,6 +26,12 @@ docker compose build --pull --no-cache
 docker compose up --wait
 ```
 
+Then set up the site and its first admin; you're asked for the site's title, its language, and your email and password:
+
+```bash
+docker compose exec php bin/console quire:install
+```
+
 Open <https://quire.localhost> and accept the locally generated TLS certificate. You should see your new site in the default theme; it lists your posts once you [write some](#content).
 
 Names ending in `.localhost` always point to your own machine. Browsers and curl resolve them without any `/etc/hosts` entry. To use a different name, set `SERVER_NAME`, e.g. `SERVER_NAME=mysite.localhost docker compose up --wait`.
@@ -88,6 +94,15 @@ docker compose exec php bin/console quire:theme:lint
 ```
 
 See [docs/themes.md](docs/themes.md).
+
+## Users
+
+```bash
+docker compose exec php bin/console quire:user:create grace@example.com --role=editor
+docker compose exec php bin/console quire:user:list
+```
+
+See [docs/users.md](docs/users.md).
 
 ## Settings
 
