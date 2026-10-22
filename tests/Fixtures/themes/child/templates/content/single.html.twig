@@ -1,0 +1,7 @@
+{# Overrides the parent theme's template and builds on it. #}
+{% extends '@quire-fixture-base/content/single.html.twig' %}
+
+{% block body %}
+    <p class="child-note">From the child theme</p>
+    {{ parent() }}
+{% endblock %}

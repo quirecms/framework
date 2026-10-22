@@ -90,7 +90,7 @@ quire:
         enabled: [acme-comments, acme-reviews]
 ```
 
-With `pinned: true`, the enable and disable commands refuse to make changes. To change the enabled extensions, edit the list and deploy again.
+With `pinned: true`, the enable and disable commands refuse to make changes. To change the enabled extensions, edit the list and deploy again. The site's theme is then pinned too, with `theme:` next to `enabled:` (see [themes](themes.md#pinning-the-theme-in-production)).
 
 ## Writing an extension
 
@@ -218,7 +218,7 @@ A route with the same name as an existing one replaces it. Extensions can overri
 
 | Method | Purpose |
 |--------|---------|
-| `namespace($name, $directory)` | Makes the Twig templates in `$directory` available as `@name/...`, e.g. `{% include '@reviews/stars.html.twig' %}` |
+| `namespace($name, $directory)` | Makes the Twig templates in `$directory` available as `@name/...`, e.g. `{% include '@reviews/stars.html.twig' %}`. Sites and themes can override them (see [themes](themes.md#changing-an-extensions-templates)). |
 | `global($name, $value)` | Adds a variable to every template. Values must be scalars or arrays of scalars. |
 
 #### `Extend\Events`

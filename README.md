@@ -71,6 +71,17 @@ docker compose exec php bin/console quire:make:extension acme/reviews
 
 See [docs/extensions.md](docs/extensions.md) for managing extensions and for writing your own.
 
+## Themes
+
+Themes are Composer packages of templates. A site uses one, and a theme can inherit from another:
+
+```bash
+docker compose exec php bin/console quire:theme:list
+docker compose exec php bin/console quire:theme:use acme-dark
+```
+
+See [docs/themes.md](docs/themes.md).
+
 ## Settings
 
 Change site settings while the site runs:

@@ -1,0 +1,10 @@
+{% extends 'layout.html.twig' %}
+
+{% block title %}{{ content.title }} – {{ site_title }}{% endblock %}
+
+{% block content %}
+    <article class="base-single">
+        <h1>{{ content.title }}</h1>
+        {% block body %}{{ body|raw }}{% endblock %}
+    </article>
+{% endblock %}
