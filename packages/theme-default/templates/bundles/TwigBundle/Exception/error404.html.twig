@@ -1,0 +1,12 @@
+{#
+    The page for addresses where nothing is published. Shown in production; development shows the error.
+#}
+{% extends 'layout.html.twig' %}
+
+{% block title %}{{ 'Page not found'|trans({}, 'quire-theme-default') }} – {{ site.title }}{% endblock %}
+
+{% block content %}
+    <h1>{{ 'Page not found'|trans({}, 'quire-theme-default') }}</h1>
+    <p>{{ "The page you're looking for doesn't exist or has moved."|trans({}, 'quire-theme-default') }}</p>
+    <p><a href="{{ quire_home_url() }}">{{ 'Go to the homepage'|trans({}, 'quire-theme-default') }}</a></p>
+{% endblock %}

@@ -1,0 +1,29 @@
+{#
+    A list of items of one content type, e.g. the blog, one page at a time.
+
+    Variables: type (the content type), page (iterate it for the items; page.page, page.pageCount),
+    is_home (whether it's the homepage), previous_url, next_url (null when there's no such page),
+    canonical_url.
+#}
+{% extends 'layout.html.twig' %}
+
+{% block title %}{{ is_home ? site.title : type.pluralLabel ~ ' – ' ~ site.title }}{% endblock %}
+
+{% block content %}
+    <h1{% if is_home %} class="visually-hidden"{% endif %}>{{ is_home ? site.title : type.pluralLabel }}</h1>
+
+    {% for item in page %}
+        <article class="card">
+            <h2><a href="{{ quire_url(item) }}">{{ item.title }}</a></h2>
+            {% if item.publishedAt and type.has('scheduling') and theme.settings.show_dates %}
+                <p class="entry-meta"><time datetime="{{ item.publishedAt|date('c') }}">{{ item.publishedAt|quire_date }}</time></p>
+            {% endif %}
+            {% set excerpt = quire_excerpt(item) %}
+            {% if excerpt %}<p>{{ excerpt }}</p>{% endif %}
+        </article>
+    {% else %}
+        <p>{{ 'Nothing here yet.'|trans({}, 'quire-theme-default') }}</p>
+    {% endfor %}
+
+    {{ include('partials/pagination.html.twig') }}
+{% endblock %}

@@ -73,7 +73,7 @@ See [docs/extensions.md](docs/extensions.md) for managing extensions and for wri
 
 ## Themes
 
-Themes are Composer packages of templates. A site uses one, and a theme can inherit from another:
+Themes are Composer packages of templates and assets. New sites use `quire/theme-default` (accessible, light and dark, no JavaScript); a theme can inherit from another and change only what it needs:
 
 ```bash
 docker compose exec php bin/console quire:theme:list
@@ -132,6 +132,8 @@ See [docs/backups.md](docs/backups.md).
 | Path | Contents |
 |------|----------|
 | `packages/core/` | `quire/core`, the engine |
+| `packages/theme-default/` | `quire/theme-default`, the default theme |
+| `packages/testing/` | `quire/testing`, for testing extensions and themes |
 | `config/`, `src/`, `templates/`, `public/` | The application that runs Quire. Site-specific overrides go here. |
 | `frankenphp/`, `Dockerfile`, `compose*.yaml` | The Docker setup. See [docs/docker.md](docs/docker.md). |
 

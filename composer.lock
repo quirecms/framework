@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "5d174aa5ed594fb771e2c25f9480e5b2",
+    "content-hash": "b635ad2933dc3033dfebb0eb09832df2",
     "packages": [
         {
             "name": "composer/semver",
@@ -2121,15 +2121,18 @@
             "dist": {
                 "type": "path",
                 "url": "packages/core",
-                "reference": "ef1d86d2987d6f2799a566f9becb00251526d411"
+                "reference": "cbc9671e23a44665fece3e94d52d69402250de05"
             },
             "require": {
                 "doctrine/dbal": "^4.2",
                 "doctrine/doctrine-bundle": "^3.0",
                 "doctrine/migrations": "^3.9",
+                "ext-intl": "*",
                 "league/commonmark": "^2.7",
                 "php": ">=8.5",
                 "psr/event-dispatcher": "^1.0",
+                "symfony/asset": "^8.1",
+                "symfony/asset-mapper": "^8.1",
                 "symfony/cache": "^8.1",
                 "symfony/config": "^8.1",
                 "symfony/console": "^8.1",
@@ -2143,6 +2146,7 @@
                 "symfony/routing": "^8.1",
                 "symfony/service-contracts": "^3.6",
                 "symfony/string": "^8.1",
+                "symfony/translation": "^8.1",
                 "symfony/twig-bundle": "^8.1",
                 "symfony/workflow": "^8.1"
             },
@@ -2173,6 +2177,53 @@
                 "extensible",
                 "quire",
                 "symfony"
+            ],
+            "transport-options": {
+                "relative": true
+            }
+        },
+        {
+            "name": "quire/theme-default",
+            "version": "0.1.x-dev",
+            "dist": {
+                "type": "path",
+                "url": "packages/theme-default",
+                "reference": "36123c42813f617884de278721fb6ffd7c409100"
+            },
+            "require": {
+                "php": ">=8.5",
+                "quire/core": "0.1.x-dev"
+            },
+            "require-dev": {
+                "quire/testing": "0.1.x-dev"
+            },
+            "type": "quire-theme",
+            "extra": {
+                "quire": {
+                    "title": "Default",
+                    "description": "Accessible, responsive, light and dark. Use it as it is, or as the parent of your own theme."
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Quire\\ThemeDefault\\Tests\\": "tests/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "YorvoLabs",
+                    "homepage": "https://quirecms.com"
+                }
+            ],
+            "description": "Quire's default theme: accessible, responsive, light and dark, in plain HTML and CSS. Use it as it is, or as the parent of your own theme.",
+            "homepage": "https://quirecms.com",
+            "keywords": [
+                "cms",
+                "quire",
+                "theme"
             ],
             "transport-options": {
                 "relative": true
@@ -5033,6 +5084,99 @@
             "time": "2026-10-03T15:16:03+00:00"
         },
         {
+            "name": "symfony/translation",
+            "version": "v8.1.5",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/translation.git",
+                "reference": "d9e1caba0d6b6f9a26710af8a2f88d37f001215a"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/translation/zipball/d9e1caba0d6b6f9a26710af8a2f88d37f001215a",
+                "reference": "d9e1caba0d6b6f9a26710af8a2f88d37f001215a",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.4.1",
+                "symfony/polyfill-mbstring": "^1.0",
+                "symfony/translation-contracts": "^3.6.1"
+            },
+            "conflict": {
+                "nikic/php-parser": "<5.0",
+                "symfony/http-client-contracts": "<2.5",
+                "symfony/service-contracts": "<2.5"
+            },
+            "provide": {
+                "symfony/translation-implementation": "2.3|3.0"
+            },
+            "require-dev": {
+                "nikic/php-parser": "^5.0",
+                "psr/log": "^1|^2|^3",
+                "symfony/config": "^7.4|^8.0",
+                "symfony/console": "^7.4|^8.0",
+                "symfony/dependency-injection": "^7.4|^8.0",
+                "symfony/finder": "^7.4|^8.0",
+                "symfony/http-client-contracts": "^2.5|^3.0",
+                "symfony/http-kernel": "^7.4|^8.0",
+                "symfony/intl": "^7.4|^8.0",
+                "symfony/polyfill-intl-icu": "^1.21",
+                "symfony/routing": "^7.4|^8.0",
+                "symfony/service-contracts": "^2.5|^3",
+                "symfony/yaml": "^7.4|^8.0"
+            },
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "Resources/functions.php"
+                ],
+                "psr-4": {
+                    "Symfony\\Component\\Translation\\": ""
+                },
+                "exclude-from-classmap": [
+                    "/Tests/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Fabien Potencier",
+                    "email": "fabien@symfony.com"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "Provides tools to internationalize your application",
+            "homepage": "https://symfony.com",
+            "support": {
+                "source": "https://github.com/symfony/translation/tree/v8.1.5"
+            },
+            "funding": [
+                {
+                    "url": "https://symfony.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://github.com/nicolas-grekas",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2026-08-21T17:47:34+00:00"
+        },
+        {
             "name": "symfony/translation-contracts",
             "version": "v3.7.1",
             "source": {
@@ -7301,7 +7445,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/testing",
-                "reference": "843da2956325f40eb87220172e2dd0d301a62b1e"
+                "reference": "a0a8bc39488e89b830ba0b0f2a17ed28b36c750e"
             },
             "require": {
                 "doctrine/doctrine-bundle": "^3.0",
@@ -9424,7 +9568,8 @@
     "minimum-stability": "stable",
     "stability-flags": {
         "quire/core": 20,
-        "quire/testing": 20
+        "quire/testing": 20,
+        "quire/theme-default": 20
     },
     "prefer-stable": true,
     "prefer-lowest": false,
@@ -9433,6 +9578,6 @@
         "ext-ctype": "*",
         "ext-iconv": "*"
     },
-    "platform-dev": [],
+    "platform-dev": {},
     "plugin-api-version": "2.9.0"
 }

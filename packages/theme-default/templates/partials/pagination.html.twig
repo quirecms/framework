@@ -1,0 +1,12 @@
+{#
+    Links to the newer and older pages of a list.
+
+    Variables: page (page.page, page.pageCount), previous_url, next_url
+#}
+{% if previous_url or next_url %}
+    <nav class="pagination" aria-label="{{ 'Pages'|trans({}, 'quire-theme-default') }}">
+        {% if previous_url %}<a href="{{ previous_url }}" rel="prev">← {{ 'Newer'|trans({}, 'quire-theme-default') }}</a>{% endif %}
+        <span>{{ 'Page {page} of {count}'|trans({ page: page.page, count: page.pageCount }, 'quire-theme-default') }}</span>
+        {% if next_url %}<a href="{{ next_url }}" rel="next">{{ 'Older'|trans({}, 'quire-theme-default') }} →</a>{% endif %}
+    </nav>
+{% endif %}

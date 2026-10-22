@@ -8,6 +8,7 @@ use Doctrine\DBAL\Connection;
 use Quire\Extension\Boot\CompileTimeState;
 use Quire\Runtime\BackgroundRefresher;
 use Quire\Runtime\StaleBuildDetector;
+use Quire\Theme\Themes;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
@@ -37,14 +38,14 @@ final class StaleBuildDetectorTest extends KernelTestCase
 
     public function testNothingHappensWhileTheBuildMatches(): void
     {
-        $this->request($this->detector(CompileTimeState::hashOf(['acme-comments'], null)));
+        $this->request($this->detector(CompileTimeState::hashOf(['acme-comments'], Themes::DEFAULT)));
 
         self::assertSame([], $this->spawned);
     }
 
     public function testAChangeElsewhereTriggersARefresh(): void
     {
-        $detector = $this->detector(CompileTimeState::hashOf(['acme-comments'], null));
+        $detector = $this->detector(CompileTimeState::hashOf(['acme-comments'], Themes::DEFAULT));
         $this->connection->executeStatement("UPDATE quire.extension SET enabled = true WHERE id = 'acme-seo'");
 
         $this->request($detector);
@@ -55,7 +56,7 @@ final class StaleBuildDetectorTest extends KernelTestCase
 
     public function testAThemeChangeElsewhereTriggersARefresh(): void
     {
-        $detector = $this->detector(CompileTimeState::hashOf(['acme-comments'], null));
+        $detector = $this->detector(CompileTimeState::hashOf(['acme-comments'], Themes::DEFAULT));
         $this->connection->executeStatement("INSERT INTO quire.setting (name, value, updated_at) VALUES ('theme.active', '\"acme-dark\"', now())");
 
         try {
@@ -69,7 +70,7 @@ final class StaleBuildDetectorTest extends KernelTestCase
 
     public function testChecksAtMostOncePerInterval(): void
     {
-        $detector = $this->detector(CompileTimeState::hashOf(['acme-comments'], null));
+        $detector = $this->detector(CompileTimeState::hashOf(['acme-comments'], Themes::DEFAULT));
         $this->request($detector);
 
         $this->connection->executeStatement("UPDATE quire.extension SET enabled = true WHERE id = 'acme-seo'");

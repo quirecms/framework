@@ -1,0 +1,16 @@
+# The default theme's texts, in ICU MessageFormat. Translate them in a file per language, e.g.
+# quire-theme-default+intl-icu.fr.yaml; a site overrides them in its own translations/ directory.
+'Skip to content': 'Skip to content'
+'Main': 'Main'
+'Sidebar': 'Sidebar'
+'Pages': 'Pages'
+'Newer': 'Newer'
+'Older': 'Older'
+'Page {page} of {count}': 'Page {page} of {count}'
+'Nothing here yet.': 'Nothing here yet.'
+'Powered by {name}': 'Powered by {name}'
+'Page not found': 'Page not found'
+"The page you're looking for doesn't exist or has moved.": "The page you're looking for doesn't exist or has moved."
+'Go to the homepage': 'Go to the homepage'
+'Something went wrong': 'Something went wrong'
+'Please try again in a moment.': 'Please try again in a moment.'

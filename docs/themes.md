@@ -2,15 +2,35 @@
 
 A theme decides how the site looks: it's a Composer package of templates and assets that the site uses instead of Quire's plain built-in templates. A site has one active theme. A theme can inherit from another and change only the templates it needs to.
 
+## The default theme
+
+New sites use `quire/theme-default` (ID `quire-theme-default`): plain semantic HTML and CSS, no JavaScript, responsive, with a light and a dark look that follows the visitor's system setting. It meets WCAG 2.2 AA: every colour combination has at least 4.5:1 contrast, it has a skip link, landmarks and visible focus, and it's checked with axe. It writes right-to-left languages mirrored, and it comes in English and German.
+
+Its settings:
+
+| Setting | Values | Default |
+|---------|--------|---------|
+| `theme.quire-theme-default.accent` | `blue`, `green`, `purple`, `orange`, `red`: the colour of links and highlights | `blue` |
+| `theme.quire-theme-default.show_dates` | Whether posts show their date | `true` |
+
+To change more, make a child theme with `"parent": "quire-theme-default"` (see [Writing a theme](#writing-a-theme)), or override single templates in the site's `templates/`. Its stylesheet is built on CSS custom properties, so a few lines restyle it:
+
+```css
+/* assets/styles/app.css of the site, or a child theme's stylesheet */
+:root { --font-body: Georgia, serif; --measure: 40rem; }
+```
+
+Its templates are the reference for writing your own: each one starts with a comment listing the variables, blocks and slots it has.
+
 ## Using a theme
 
-Install the theme with Composer, then make it the site's theme:
+Install another theme with Composer, then make it the site's theme:
 
 ```bash
 composer require acme/dark
 bin/console quire:theme:list
 bin/console quire:theme:use acme-dark
-bin/console quire:theme:use --none    # back to Quire's built-in templates
+bin/console quire:theme:use --none    # Quire's minimal built-in templates
 ```
 
 `quire:theme:use` checks that the theme, the themes it inherits from and the extensions they require are installed, stores the choice in the `theme.active` setting, and rebuilds the application. When Quire runs on several servers, the others notice the change within a few seconds and rebuild by themselves, as they do when an extension is enabled.
@@ -180,12 +200,15 @@ Every template, of a theme, an extension or the site, has:
 
 | Name | What it is |
 |------|------------|
-| `site` | `site.title`, `site.description`, `site.locale` (for `<html lang>`) and `site.url` (the homepage's absolute URL) |
+| `site` | `site.title`, `site.description`, `site.locale` (the site's language), `site.url` (the homepage's absolute URL) and `site.direction` (`ltr`, or `rtl` for languages such as Arabic and Hebrew) |
 | `theme` | `theme.id`, `theme.title` and `theme.settings` (see [theme settings](#theme-settings)) |
 | `quire_slot(name, context)`, `quire_slot_filled(name)` | Render a [slot](#slots), check whether anything fills it |
 | `quire_setting(key)` | A setting's value, for settings exposed to templates; others raise an error, so private settings such as API keys can't end up in a page |
 | `quire_extension_enabled(id)` | Whether an extension is enabled, e.g. to show a link to its page |
 | `quire_asset(path)` | The versioned URL of an [asset](#assets), e.g. `quire_asset('theme/logo.svg')` |
+| `quire_seo()` | In the `<head>`: the page's description, canonical URL, Open Graph and Twitter tags, and structured data (see [SEO](#seo)) |
+| `date\|quire_date(style)` | A date written the way the page's language writes it, e.g. "March 4, 2025" or "4. März 2025"; styles `long` (default), `medium`, `short`, `full` |
+| `app.request.locale` | The page's language: the site's, or a content item's own, e.g. for `<html lang="…">` |
 | `quire_content()`, `quire_url()`, `quire_listing_url()`, `quire_home_url()`, `quire_body()`, `quire_excerpt()` | Content and URLs (see [content](content.md)) |
 
 ## Theme settings
@@ -236,3 +259,33 @@ A stylesheet can refer to its neighbours with relative URLs (`url('fonts/inter.w
 The site has its own `assets/` directory and `importmap.php`, loaded on every page after the theme's: put site-specific styles in `assets/styles/app.css`, and add JavaScript packages with `bin/console importmap:require <package>`.
 
 Themes that want Sass, Tailwind or a bundler can use Symfony's `symfonycasts/tailwind-bundle`, `symfonycasts/sass-bundle` or `pentatrion/vite-bundle` and ship the built files in `assets/`; Quire neither requires nor prevents them.
+
+## Languages
+
+Quire's pages are in the site's language (`site.locale`), and an item's page in the item's own language when it's a translation. Write the theme's texts in English in the templates and translate them with Symfony's translator, in a domain named after the theme:
+
+```twig
+<a class="skip-link" href="#content">{{ 'Skip to content'|trans({}, 'acme-dark') }}</a>
+{{ 'Page {page} of {count}'|trans({ page: 2, count: 5 }, 'acme-dark') }}
+```
+
+The translations go in the theme's `translations/` directory, in ICU MessageFormat, one file per language: `acme-dark+intl-icu.en.yaml` (the English texts as they are, which other languages fall back to) and e.g. `acme-dark+intl-icu.de.yaml`. Extensions do the same with their ID as the domain. When several have the same text, the active theme's translation wins over its parent's, and the site's own `translations/` win over all of them, so a site can change any wording.
+
+Set `<html dir="{{ site.direction }}">` and use logical CSS properties (`margin-inline-start` rather than `margin-left`), and the theme works for right-to-left languages too.
+
+## SEO
+
+`quire_seo()` in the layout's `<head>` prints what search engines and social networks read: the description (the item's excerpt, or the site description), the canonical URL, Open Graph and Twitter tags, and structured data (JSON-LD), a `BlogPosting` for posts and a `WebSite` for the homepage. Extensions change them by listening to `Quire\Theme\Event\SeoTagsBuilding`:
+
+```php
+#[AsEventListener]
+public function __invoke(SeoTagsBuilding $event): void
+{
+    $event->tags->imageUrl ??= $this->covers->url($event->content);
+    $event->tags->meta['robots'] = 'max-image-preview:large';
+}
+```
+
+## Error pages
+
+A theme provides the pages for errors in `templates/bundles/TwigBundle/Exception/`: `error404.html.twig` for addresses where nothing is published, `error.html.twig` for everything else, as in any Symfony application. They're shown in production; development shows the error itself. The default theme has both.

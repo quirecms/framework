@@ -92,7 +92,7 @@ final class ContentCoreTest extends WebTestCase
         \assert($log instanceof QueryLog);
         $log->start();
         $client->request('GET', '/_fixture/posts');
-        self::assertCount(2, $log->stop(), 'One query for the posts, one for all of their likes.');
+        self::assertCount(3, $log->stop(), 'One query for the settings, one for the posts, one for all of their likes.');
     }
 
     /**

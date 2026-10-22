@@ -1,0 +1,52 @@
+{#
+    The page around every page.
+
+    Variables: site (title, description, url, locale, direction), theme (settings), canonical_url when
+    the page has one, is_home on the homepage, and the variables of the page's own template.
+    Blocks: title, head, content
+    Slots: head, body_start, header.nav, sidebar, footer, body_end
+#}
+<!doctype html>
+<html lang="{{ app.request.locale|default(site.locale) }}" dir="{{ site.direction }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <title>{% block title %}{{ site.title }}{% endblock %}</title>
+    {{ quire_seo() }}
+    {% block head %}{% endblock %}
+    {{ quire_slot('head') }}
+</head>
+<body class="accent-{{ theme.settings.accent }}">
+    <a class="skip-link" href="#content">{{ 'Skip to content'|trans({}, 'quire-theme-default') }}</a>
+    {{ quire_slot('body_start') }}
+
+    <header class="site-header">
+        <div class="container">
+            <a class="site-title" href="{{ quire_home_url() }}"{% if is_home|default(false) %} aria-current="page"{% endif %}>{{ site.title }}</a>
+            {% if site.description %}<p class="site-description">{{ site.description }}</p>{% endif %}
+            {% if quire_slot_filled('header.nav') %}
+                <nav class="site-nav" aria-label="{{ 'Main'|trans({}, 'quire-theme-default') }}">{{ quire_slot('header.nav') }}</nav>
+            {% endif %}
+        </div>
+    </header>
+
+    <div class="container page{{ quire_slot_filled('sidebar') ? ' has-sidebar' }}">
+        <main id="content" tabindex="-1">
+            {% block content %}{% endblock %}
+        </main>
+        {% if quire_slot_filled('sidebar') %}
+            <aside class="sidebar" aria-label="{{ 'Sidebar'|trans({}, 'quire-theme-default') }}">{{ quire_slot('sidebar') }}</aside>
+        {% endif %}
+    </div>
+
+    <footer class="site-footer">
+        <div class="container">
+            {{ quire_slot('footer') }}
+            <p class="credits">© {{ 'now'|date('Y') }} {{ site.title }} · {{ 'Powered by {name}'|trans({ name: 'Quire' }, 'quire-theme-default') }}</p>
+        </div>
+    </footer>
+
+    {{ quire_slot('body_end') }}
+</body>
+</html>
