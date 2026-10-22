@@ -103,7 +103,7 @@ acme-dark/
 
 The theme's ID comes from the package name (`acme/dark` becomes `acme-dark`) unless `extra.quire.id` sets one. IDs of themes and extensions share one namespace.
 
-`templates/layout.html.twig` is the page around every page Quire renders. Quire's own templates extend it and fill the blocks `title`, `head` and `content`, and give it the variables `site_title`, `site_locale` and, when the page has one, `canonical_url`.
+`templates/layout.html.twig` is the page around every page Quire renders. Quire's own templates extend it and fill the blocks `title`, `head` and `content`, and give it `canonical_url` when the page has one. A theme's templates must render the [standard slots](#slots).
 
 ### `extend.php`
 
@@ -126,3 +126,81 @@ final class DarkThemeTest extends ExtensionTestCase
     }
 }
 ```
+
+## Slots
+
+Slots are the places in a theme's templates where extensions add their parts, e.g. reviews below a post. A theme renders a slot with `quire_slot()`, passing what the slot is about:
+
+```twig
+<article>
+    <h1>{{ content.title }}</h1>
+    {{ body|raw }}
+    {{ quire_slot('content.after_body', { content }) }}
+</article>
+```
+
+Extensions fill slots in their `extend.php` (see [`Extend\Views`](extensions.md#extendviews)), with a template, which gets the context as variables, or with a PHP class:
+
+```php
+new Extend\Views()
+    ->namespace('reviews', __DIR__.'/templates')
+    ->slot('content.after_body', '@reviews/summary.html.twig', priority: 10)
+```
+
+A slot shows its fragments by priority, highest first. In debug mode, an HTML comment before each fragment names the extension it comes from, e.g. `<!-- slot content.after_body: acme-reviews -->`. When a fragment fails in production, it's left out and the error is logged, so one extension can't break every page.
+
+Every theme renders these standard slots, so extensions work with any theme. Quire's built-in templates render them too:
+
+| Slot | Where | Context |
+|------|-------|---------|
+| `head` | Inside `<head>`, e.g. meta tags and stylesheets | none |
+| `body_start` | Right after `<body>` | none |
+| `body_end` | Right before `</body>`, e.g. scripts | none |
+| `header.nav` | The navigation in the site header | none |
+| `content.before_title` | Before a content item's title | `content` |
+| `content.after_title` | After the title, e.g. date and author | `content` |
+| `content.before_body` | Before the body | `content` |
+| `content.after_body` | After the body, e.g. reviews or share buttons | `content` |
+| `content.footer` | At the end of the item, e.g. comments | `content` |
+| `sidebar` | The sidebar, when the theme has one | none |
+| `footer` | The site footer | none |
+
+Themes can add slots of their own; name them after the theme, e.g. `acme-dark.hero`. To leave out a wrapper when nothing fills a slot, check with `quire_slot_filled()`:
+
+```twig
+{% if quire_slot_filled('sidebar') %}<aside>{{ quire_slot('sidebar') }}</aside>{% endif %}
+```
+
+## The template API
+
+Every template, of a theme, an extension or the site, has:
+
+| Name | What it is |
+|------|------------|
+| `site` | `site.title`, `site.description`, `site.locale` (for `<html lang>`) and `site.url` (the homepage's absolute URL) |
+| `theme` | `theme.id`, `theme.title` and `theme.settings` (see [theme settings](#theme-settings)) |
+| `quire_slot(name, context)`, `quire_slot_filled(name)` | Render a [slot](#slots), check whether anything fills it |
+| `quire_setting(key)` | A setting's value, for settings exposed to templates; others raise an error, so private settings such as API keys can't end up in a page |
+| `quire_extension_enabled(id)` | Whether an extension is enabled, e.g. to show a link to its page |
+| `quire_content()`, `quire_url()`, `quire_listing_url()`, `quire_home_url()`, `quire_body()`, `quire_excerpt()` | Content and URLs (see [content](content.md)) |
+
+## Theme settings
+
+A theme declares its settings, such as colours or toggles, in its `extend.php`. Their keys start with `theme.`, the theme's ID and a dot:
+
+```php
+return [
+    new Extend\Settings()
+        ->define('theme.acme-dark.accent', 'string', '#7c3aed', label: 'Accent colour', widget: 'color')
+        ->define('theme.acme-dark.show_dates', 'bool', true, label: 'Show dates on posts'),
+];
+```
+
+Site admins change them like other settings (`quire:settings:set theme.acme-dark.accent "#0ea5e9"`), and templates read them without the prefix:
+
+```twig
+<style>:root { --accent: {{ theme.settings.accent }}; }</style>
+{% if theme.settings.show_dates %}…{% endif %}
+```
+
+`theme.settings` includes the settings of the themes the active theme inherits from. When a child theme declares a setting with the same name as its parent's, the child's wins.

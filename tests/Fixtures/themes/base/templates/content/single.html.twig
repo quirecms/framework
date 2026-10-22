@@ -1,10 +1,15 @@
 {% extends 'layout.html.twig' %}
 
-{% block title %}{{ content.title }} – {{ site_title }}{% endblock %}
+{% block title %}{{ content.title }} – {{ site.title }}{% endblock %}
 
 {% block content %}
     <article class="base-single">
+        {{ quire_slot('content.before_title', { content }) }}
         <h1>{{ content.title }}</h1>
+        {{ quire_slot('content.after_title', { content }) }}
+        {{ quire_slot('content.before_body', { content }) }}
         {% block body %}{{ body|raw }}{% endblock %}
+        {{ quire_slot('content.after_body', { content }) }}
+        {{ quire_slot('content.footer', { content }) }}
     </article>
 {% endblock %}

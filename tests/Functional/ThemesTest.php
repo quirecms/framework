@@ -16,6 +16,7 @@ use Quire\Theme\Themes;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Filesystem\Filesystem;
+use Twig\Environment;
 
 /**
  * A site with a theme that inherits from another: the fixture themes in tests/Fixtures/themes.
@@ -64,6 +65,30 @@ final class ThemesTest extends ExtensionTestCase
         self::assertSelectorTextSame('article.base-single h1', 'Hello world', 'The child\'s template extends the parent\'s.');
         self::assertSelectorTextSame('article .child-note', 'From the child theme');
         self::assertSelectorTextSame('article em', 'body');
+    }
+
+    public function testExtensionsFillTheSlotsOfTheTheme(): void
+    {
+        $this->publish('Hello world');
+
+        $this->client->request('GET', '/blog/hello-world');
+
+        self::assertSelectorTextSame('article.base-single .fixture-after-body', 'Thanks for reading "Hello world"');
+        self::assertSelectorTextSame('article.base-single .fixture-likes', 'Like "Hello world"');
+    }
+
+    public function testThemeSettingsIncludeTheParentsAndTheChildsWin(): void
+    {
+        $this->publish('Hello world');
+        $this->client->request('GET', '/blog/hello-world');
+        self::assertSelectorExists('body[data-accent="green"][data-dates="yes"]');
+
+        $this->setSetting('theme.quire-fixture-base.show_dates', false);
+        $this->setSetting('theme.quire-fixture-base.accent', 'red');
+        $this->client->request('GET', '/blog/hello-world');
+
+        self::assertSelectorExists('body[data-accent="green"][data-dates="no"]', 'The child\'s "accent" hides the parent\'s.');
+        self::assertSame('red', $this->service(Environment::class)->createTemplate("{{ quire_setting('theme.quire-fixture-base.accent') }}")->render(), 'Theme settings are exposed.');
     }
 
     public function testTheExtendersOfTheThemeAndItsParentsRun(): void
