@@ -9,6 +9,8 @@ Quire stores everything in PostgreSQL: content, revisions, settings, which exten
 | `quire.content_path_history` | Paths content items had before, so their old URLs redirect |
 | `quire.permalink_history` | URL patterns content types had before |
 | `quire.redirect` | Redirects added by hand |
+| `quire.app_user` | Users |
+| `quire.user_identity` | Identities that link users to other sign-in providers, e.g. single sign-on |
 | `quire.setting` | Site settings changed from their defaults |
 | `quire.extension` | Which extensions are enabled |
 | `quire.migration_versions` | Which of Quire's migrations have run |

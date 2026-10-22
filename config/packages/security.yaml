@@ -1,0 +1,31 @@
+security:
+    # Quire registers a password hasher for its users and the user provider "quire_users"; see
+    # docs/users.md. Hashers for other user classes of the application can be added here.
+    password_hashers:
+        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
+
+    firewalls:
+        dev:
+            # Ensure dev tools and static assets are always allowed
+            pattern: ^/(_profiler|_wdt|assets|build)/
+            security: false
+        main:
+            lazy: true
+            provider: quire_users
+            user_checker: Quire\User\Security\UserChecker
+
+    # Note: Only the *first* matching rule is applied
+    access_control:
+        # - { path: ^/admin, roles: ROLE_ADMIN }
+
+when@test:
+    security:
+        password_hashers:
+            # Password hashers are resource-intensive by design to ensure security.
+            # In tests, it's safe to reduce their cost to improve performance.
+            Quire\User\User: &test_hasher
+                algorithm: auto
+                cost: 4 # Lowest possible value for bcrypt
+                time_cost: 3 # Lowest possible value for argon
+                memory_cost: 10 # Lowest possible value for argon
+            Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: *test_hasher
