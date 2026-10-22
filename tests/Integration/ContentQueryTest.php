@@ -61,7 +61,7 @@ final class ContentQueryTest extends KernelTestCase
         $due = $this->create('Due');
         $due = $this->writer->transition($due->id, $due->version, Status::SCHEDULE, new \DateTimeImmutable('+1 day'));
         // Due, but not published yet by quire:content:publish-due.
-        $this->connection->executeStatement("UPDATE content SET published_at = now() - interval '1 minute' WHERE id = ?", [$due->id]);
+        $this->connection->executeStatement("UPDATE quire.content SET published_at = now() - interval '1 minute' WHERE id = ?", [$due->id]);
         $archived = $this->published('Archived');
         $this->writer->transition($archived->id, $archived->version, Status::ARCHIVE);
         $trashed = $this->published('Trashed');
@@ -123,13 +123,13 @@ final class ContentQueryTest extends KernelTestCase
     {
         // Enough rows for the planner to prefer an index, and few that match.
         $this->connection->executeStatement(<<<'SQL'
-            INSERT INTO content (type, status, locale, title, slug, body_format, published_at, fields)
+            INSERT INTO quire.content (type, status, locale, title, slug, body_format, published_at, fields)
             SELECT 'post', 'published', 'en', 'Post ' || g, 'post-' || g, 'markdown', now() - interval '1 day',
                    jsonb_build_object('rating', CASE WHEN g % 100 = 0 THEN 5 ELSE 1 END, 'tags', jsonb_build_array('tag' || (g % 200)),
                                       'event_at', to_char(timestamp '2026-01-01' + g * interval '1 hour', 'YYYY-MM-DD"T"HH24:MI:SS"+00:00"'))
             FROM generate_series(1, 5000) g
             SQL);
-        $this->connection->executeStatement('ANALYZE content');
+        $this->connection->executeStatement('ANALYZE quire.content');
 
         foreach ([
             $this->content->query('post')->where('fields.rating', '>=', 5),
@@ -399,7 +399,7 @@ final class ContentQueryTest extends KernelTestCase
     private function like(Content $item, string ...$names): void
     {
         foreach ($names as $name) {
-            $this->connection->insert('quire_fixture_hello_like', ['content_id' => $item->id, 'name' => $name]);
+            $this->connection->insert('quire.quire_fixture_hello_like', ['content_id' => $item->id, 'name' => $name]);
         }
     }
 

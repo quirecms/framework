@@ -65,7 +65,7 @@ final class ContentRendererTest extends KernelTestCase
         self::assertSame("<p>First</p>\n", $this->renderer->body($post));
 
         // A change that bypasses the writer, without a new version, isn't seen: the cache is keyed on the version.
-        $this->connection->executeStatement("UPDATE content SET body = 'Sneaky' WHERE id = ?", [$post->id]);
+        $this->connection->executeStatement("UPDATE quire.content SET body = 'Sneaky' WHERE id = ?", [$post->id]);
         self::assertSame("<p>First</p>\n", $this->renderer->body($this->reload($post)));
 
         $updated = $this->writer->update(new UpdateContent($post->id, $post->version)->body('Second'));

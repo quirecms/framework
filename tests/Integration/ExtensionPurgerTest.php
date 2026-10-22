@@ -10,6 +10,7 @@ use Doctrine\Migrations\MigratorConfiguration;
 use Doctrine\Migrations\Version\Version;
 use Quire\Content\Command\CreateContent;
 use Quire\Content\ContentWriter;
+use Quire\Database\MigrationsFactory;
 use Quire\Extension\Event\ExtensionPurging;
 use Quire\Extension\ExtensionPurger;
 use Quire\Extension\InstalledExtensions;
@@ -31,8 +32,8 @@ final class ExtensionPurgerTest extends KernelTestCase
 
     protected function tearDown(): void
     {
-        $this->connection->executeStatement('DELETE FROM setting');
-        $this->connection->executeStatement('DELETE FROM content');
+        $this->connection->executeStatement('DELETE FROM quire.setting');
+        $this->connection->executeStatement('DELETE FROM quire.content');
 
         // Executed migration objects are frozen, so restore the schema from a fresh kernel.
         self::ensureKernelShutdown();
@@ -62,7 +63,7 @@ final class ExtensionPurgerTest extends KernelTestCase
 
     public function testEnabledExtensionsAreMigrated(): void
     {
-        self::assertTrue($this->tableExists('quire_fixture_hello_visit'));
+        self::assertTrue($this->tableExists('quire.quire_fixture_hello_visit'));
     }
 
     public function testPurgeRollsBackMigrationsAndDeletesSettingsAndFields(): void
@@ -72,7 +73,7 @@ final class ExtensionPurgerTest extends KernelTestCase
         $container->get(Settings::class)->set('site.title', 'Untouched');
         $post = $container->get(ContentWriter::class)->create(new CreateContent('post', 'Hello', fields: ['mood' => 'happy', 'rating' => 3]));
         // A value no enabled extension declares, e.g. from an extension removed earlier: not this one's to delete.
-        $this->connection->executeStatement('UPDATE content SET fields = fields || \'{"other": 1}\' WHERE id = ?', [$post->id]);
+        $this->connection->executeStatement('UPDATE quire.content SET fields = fields || \'{"other": 1}\' WHERE id = ?', [$post->id]);
 
         $purging = [];
         $container->get(EventDispatcherInterface::class)->addListener(ExtensionPurging::class, static function (ExtensionPurging $event) use (&$purging): void {
@@ -88,13 +89,13 @@ final class ExtensionPurgerTest extends KernelTestCase
         );
 
         self::assertSame(['quire-fixture-hello'], $purging);
-        self::assertFalse($this->tableExists('quire_fixture_hello_visit'));
-        self::assertFalse($this->tableExists('quire_fixture_hello_like'));
+        self::assertFalse($this->tableExists('quire.quire_fixture_hello_visit'));
+        self::assertFalse($this->tableExists('quire.quire_fixture_hello_like'));
         self::assertFalse($this->migrations()->getMetadataStorage()->getExecutedMigrations()->hasMigration(new Version(\Quire\Fixtures\Hello\Migrations\Version20261022100000::class)));
-        self::assertEquals(['site.title'], $this->connection->fetchFirstColumn('SELECT name FROM setting'));
-        self::assertTrue($this->tableExists('setting'), 'Core migrations are untouched.');
-        self::assertSame('{"other": 1}', $this->connection->fetchOne('SELECT fields::text FROM content WHERE id = ?', [$post->id]));
-        self::assertSame('{}', $this->connection->fetchOne('SELECT fields::text FROM content_revision WHERE content_id = ?', [$post->id]), 'Revisions too.');
+        self::assertEquals(['site.title'], $this->connection->fetchFirstColumn('SELECT name FROM quire.setting'));
+        self::assertTrue($this->tableExists('quire.setting'), 'Core migrations are untouched.');
+        self::assertSame('{"other": 1}', $this->connection->fetchOne('SELECT fields::text FROM quire.content WHERE id = ?', [$post->id]));
+        self::assertSame('{}', $this->connection->fetchOne('SELECT fields::text FROM quire.content_revision WHERE content_id = ?', [$post->id]), 'Revisions too.');
         self::assertSame([
             'Purging "quire-fixture-hello"…',
             '  Rolled back 2 migration(s).',
@@ -106,12 +107,12 @@ final class ExtensionPurgerTest extends KernelTestCase
 
     private function tableExists(string $table): bool
     {
-        return $this->connection->createSchemaManager()->tablesExist([$table]);
+        return null !== $this->connection->fetchOne('SELECT to_regclass(?)', [$table]);
     }
 
     private function migrations(): DependencyFactory
     {
-        return self::getContainer()->get('doctrine.migrations.dependency_factory');
+        return self::getContainer()->get(MigrationsFactory::SERVICE);
     }
 
     private function migrateToLatest(): void

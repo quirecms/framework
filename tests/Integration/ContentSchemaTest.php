@@ -57,13 +57,13 @@ final class ContentSchemaTest extends KernelTestCase
         $this->insert(['slug' => 'hello', 'deleted_at' => '2026-10-01 10:00:00+00']);
         $this->insert(['slug' => 'hello']);
 
-        self::assertEquals(2, $this->connection->fetchOne("SELECT COUNT(*) FROM content WHERE slug = 'hello'"));
+        self::assertEquals(2, $this->connection->fetchOne("SELECT COUNT(*) FROM quire.content WHERE slug = 'hello'"));
     }
 
     public function testATranslationGroupHasOneItemPerLocale(): void
     {
         $group = $this->insert(['slug' => 'hello']);
-        $this->connection->executeStatement('UPDATE content SET translation_group_id = id WHERE id = ?', [$group]);
+        $this->connection->executeStatement('UPDATE quire.content SET translation_group_id = id WHERE id = ?', [$group]);
         $this->insert(['slug' => 'hallo', 'locale' => 'de', 'translation_group_id' => $group]);
 
         $this->expectException(UniqueConstraintViolationException::class);
@@ -104,7 +104,7 @@ final class ContentSchemaTest extends KernelTestCase
     {
         $this->insert(['slug' => 'a', 'status' => 'in_review']);
 
-        self::assertSame('in_review', $this->connection->fetchOne("SELECT status FROM content WHERE slug = 'a'"));
+        self::assertSame('in_review', $this->connection->fetchOne("SELECT status FROM quire.content WHERE slug = 'a'"));
     }
 
     public function testTheSearchVectorFollowsTheRowAndItsLanguage(): void
@@ -112,9 +112,9 @@ final class ContentSchemaTest extends KernelTestCase
         $id = $this->insert(['slug' => 'dogs', 'title' => 'Running dogs', 'excerpt' => 'About dogs', 'body' => 'The dogs ran home.', 'search_config' => 'english']);
 
         self::assertTrue($this->searchMatches($id, 'run'), 'Stemmed with the English configuration.');
-        self::assertSame("'dog':2A,4B,6C 'home':8C 'ran':7C 'run':1A", $this->connection->fetchOne('SELECT search::text FROM content WHERE id = ?', [$id]));
+        self::assertSame("'dog':2A,4B,6C 'home':8C 'ran':7C 'run':1A", $this->connection->fetchOne('SELECT search::text FROM quire.content WHERE id = ?', [$id]));
 
-        $this->connection->executeStatement("UPDATE content SET body = 'Cats too.' WHERE id = ?", [$id]);
+        $this->connection->executeStatement("UPDATE quire.content SET body = 'Cats too.' WHERE id = ?", [$id]);
 
         self::assertTrue($this->searchMatches($id, 'cat'), 'Updated with the row: it can\'t go stale.');
         self::assertFalse($this->searchMatches($id, 'home'));
@@ -124,19 +124,19 @@ final class ContentSchemaTest extends KernelTestCase
     {
         $id = $this->insert(['slug' => 'a']);
         $this->connection->executeStatement(
-            "INSERT INTO content_revision (content_id, content_version, title, body, body_format, fields) VALUES (?, 1, 'A', '', 'markdown', '{}')",
+            "INSERT INTO quire.content_revision (content_id, content_version, title, body, body_format, fields) VALUES (?, 1, 'A', '', 'markdown', '{}')",
             [$id],
         );
 
-        $this->connection->executeStatement('DELETE FROM content WHERE id = ?', [$id]);
+        $this->connection->executeStatement('DELETE FROM quire.content WHERE id = ?', [$id]);
 
-        self::assertEquals(0, $this->connection->fetchOne('SELECT COUNT(*) FROM content_revision'));
+        self::assertEquals(0, $this->connection->fetchOne('SELECT COUNT(*) FROM quire.content_revision'));
     }
 
     public function testEachVersionHasOneRevision(): void
     {
         $id = $this->insert(['slug' => 'a']);
-        $insert = "INSERT INTO content_revision (content_id, content_version, title, body, body_format, fields) VALUES (?, 1, 'A', '', 'markdown', '{}')";
+        $insert = "INSERT INTO quire.content_revision (content_id, content_version, title, body, body_format, fields) VALUES (?, 1, 'A', '', 'markdown', '{}')";
         $this->connection->executeStatement($insert, [$id]);
 
         $this->expectException(UniqueConstraintViolationException::class);
@@ -150,7 +150,7 @@ final class ContentSchemaTest extends KernelTestCase
 
         // Deleting a subtree is a decision (move the children, or delete them too), so it's never implicit.
         $this->expectException(ForeignKeyConstraintViolationException::class);
-        $this->connection->executeStatement('DELETE FROM content WHERE id = ?', [$parent]);
+        $this->connection->executeStatement('DELETE FROM quire.content WHERE id = ?', [$parent]);
     }
 
     /**
@@ -164,7 +164,7 @@ final class ContentSchemaTest extends KernelTestCase
         $columns = implode(', ', array_keys($row));
         $placeholders = implode(', ', array_fill(0, \count($row), '?'));
 
-        $id = $this->connection->fetchOne(\sprintf('INSERT INTO content (%s) VALUES (%s) RETURNING id', $columns, $placeholders), array_values($row));
+        $id = $this->connection->fetchOne(\sprintf('INSERT INTO quire.content (%s) VALUES (%s) RETURNING id', $columns, $placeholders), array_values($row));
         self::assertIsString($id);
 
         return $id;
@@ -172,6 +172,6 @@ final class ContentSchemaTest extends KernelTestCase
 
     private function searchMatches(string $id, string $word): bool
     {
-        return true === $this->connection->fetchOne("SELECT search @@ to_tsquery('english', ?) FROM content WHERE id = ?", [$word, $id]);
+        return true === $this->connection->fetchOne("SELECT search @@ to_tsquery('english', ?) FROM quire.content WHERE id = ?", [$word, $id]);
     }
 }

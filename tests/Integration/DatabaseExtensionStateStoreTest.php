@@ -17,7 +17,7 @@ final class DatabaseExtensionStateStoreTest extends KernelTestCase
     protected function setUp(): void
     {
         $this->connection = self::getContainer()->get(Connection::class);
-        $this->connection->executeStatement('DELETE FROM extension');
+        $this->connection->executeStatement('DELETE FROM quire.extension');
         $this->store = new DatabaseExtensionStateStore($this->connection);
     }
 
@@ -33,7 +33,7 @@ final class DatabaseExtensionStateStoreTest extends KernelTestCase
         self::assertSame(['quire-comments'], $this->store->enabledIds());
 
         // Disabled extensions keep their row, so their history isn't lost.
-        self::assertEquals(2, $this->connection->fetchOne('SELECT COUNT(*) FROM extension'));
+        self::assertEquals(2, $this->connection->fetchOne('SELECT COUNT(*) FROM quire.extension'));
     }
 
     public function testEnablingTwiceIsHarmless(): void

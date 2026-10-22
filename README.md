@@ -94,6 +94,16 @@ docker compose exec php bin/console quire:content-type:list
 
 See [docs/content.md](docs/content.md).
 
+## Database
+
+Quire keeps all its tables, and those of its extensions, in a PostgreSQL schema named `quire`. It can share a database with another application, and its migrations run separately from the application's:
+
+```bash
+docker compose exec php bin/console quire:migrations:status
+```
+
+See [docs/database.md](docs/database.md).
+
 ## Repository layout
 
 | Path | Contents |

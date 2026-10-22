@@ -14,8 +14,8 @@ final class ContentCommandsTest extends KernelTestCase
 {
     protected function tearDown(): void
     {
-        self::getContainer()->get(Connection::class)->executeStatement('DELETE FROM content WHERE parent_id IS NOT NULL');
-        self::getContainer()->get(Connection::class)->executeStatement('DELETE FROM content');
+        self::getContainer()->get(Connection::class)->executeStatement('DELETE FROM quire.content WHERE parent_id IS NOT NULL');
+        self::getContainer()->get(Connection::class)->executeStatement('DELETE FROM quire.content');
         parent::tearDown();
     }
 

@@ -23,12 +23,12 @@ final class SettingsTest extends KernelTestCase
     protected function setUp(): void
     {
         $this->connection = self::getContainer()->get(Connection::class);
-        $this->connection->executeStatement('DELETE FROM setting');
+        $this->connection->executeStatement('DELETE FROM quire.setting');
     }
 
     protected function tearDown(): void
     {
-        $this->connection->executeStatement('DELETE FROM setting');
+        $this->connection->executeStatement('DELETE FROM quire.setting');
         parent::tearDown();
     }
 
@@ -68,7 +68,7 @@ final class SettingsTest extends KernelTestCase
 
         self::assertSame('Quire', $settings->get('site.title'));
         self::assertSame('default', $settings->source('site.title'));
-        self::assertEquals(0, $this->connection->fetchOne('SELECT COUNT(*) FROM setting'));
+        self::assertEquals(0, $this->connection->fetchOne('SELECT COUNT(*) FROM quire.setting'));
         self::assertSame('Quire', $this->events[1]->newValue);
     }
 
@@ -91,7 +91,7 @@ final class SettingsTest extends KernelTestCase
     public function testStoredValuesThatNoLongerFitFallBackToTheDefault(): void
     {
         // E.g. stored before the setting's type changed in a new version of the extension.
-        $this->connection->executeStatement("INSERT INTO setting (name, value, updated_at) VALUES ('site.title', '123', now())");
+        $this->connection->executeStatement("INSERT INTO quire.setting (name, value, updated_at) VALUES ('site.title', '123', now())");
 
         self::assertSame('Quire', $this->settings()->get('site.title'));
         self::assertSame('default', $this->settings()->source('site.title'));
@@ -100,7 +100,7 @@ final class SettingsTest extends KernelTestCase
     public function testEnvironmentVariablesOverrideAndLockSettings(): void
     {
         $settings = $this->settings(['QUIRE_SETTING__SITE__TITLE' => 'From the environment']);
-        $this->connection->executeStatement("INSERT INTO setting (name, value, updated_at) VALUES ('site.title', '\"Stored\"', now())");
+        $this->connection->executeStatement("INSERT INTO quire.setting (name, value, updated_at) VALUES ('site.title', '\"Stored\"', now())");
 
         self::assertSame('From the environment', $settings->get('site.title'));
         self::assertSame('environment', $settings->source('site.title'));

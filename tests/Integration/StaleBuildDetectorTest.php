@@ -25,13 +25,13 @@ final class StaleBuildDetectorTest extends KernelTestCase
     protected function setUp(): void
     {
         $this->connection = self::getContainer()->get(Connection::class);
-        $this->connection->executeStatement('DELETE FROM extension');
-        $this->connection->executeStatement("INSERT INTO extension (id, enabled, updated_at) VALUES ('acme-comments', true, now()), ('acme-seo', false, now())");
+        $this->connection->executeStatement('DELETE FROM quire.extension');
+        $this->connection->executeStatement("INSERT INTO quire.extension (id, enabled, updated_at) VALUES ('acme-comments', true, now()), ('acme-seo', false, now())");
     }
 
     protected function tearDown(): void
     {
-        $this->connection->executeStatement('DELETE FROM extension');
+        $this->connection->executeStatement('DELETE FROM quire.extension');
         parent::tearDown();
     }
 
@@ -45,7 +45,7 @@ final class StaleBuildDetectorTest extends KernelTestCase
     public function testAChangeElsewhereTriggersARefresh(): void
     {
         $detector = $this->detector(CompileTimeState::hashOf(['acme-comments']));
-        $this->connection->executeStatement("UPDATE extension SET enabled = true WHERE id = 'acme-seo'");
+        $this->connection->executeStatement("UPDATE quire.extension SET enabled = true WHERE id = 'acme-seo'");
 
         $this->request($detector);
 
@@ -58,7 +58,7 @@ final class StaleBuildDetectorTest extends KernelTestCase
         $detector = $this->detector(CompileTimeState::hashOf(['acme-comments']));
         $this->request($detector);
 
-        $this->connection->executeStatement("UPDATE extension SET enabled = true WHERE id = 'acme-seo'");
+        $this->connection->executeStatement("UPDATE quire.extension SET enabled = true WHERE id = 'acme-seo'");
         $this->now += 4;
         $this->request($detector);
         self::assertSame([], $this->spawned, 'Not checked again within the interval.');

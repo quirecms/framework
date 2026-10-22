@@ -40,8 +40,9 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
 		echo 'The database is now ready and reachable'
 	fi
 
-	# Migrations come from the app and from Quire's packages, so always run whatever is pending
+	# Run whatever is pending: the app's own migrations, then those of Quire core and its extensions
 	php bin/console doctrine:migrations:migrate --no-interaction --all-or-nothing --allow-no-migration
+	php bin/console quire:migrations:migrate --no-interaction --allow-no-migration
 
 	if [ "$APP_ENV" = 'prod' ]; then
 		# The image is built without a database, so its cached app doesn't include the enabled

@@ -71,7 +71,7 @@ final class ContentWriterTest extends KernelTestCase
         self::assertSame('happy', $post->field('mood'));
         self::assertNull($post->publishedAt);
         self::assertFalse($post->isPublic());
-        self::assertSame('english', $this->connection->fetchOne('SELECT search_config::text FROM content WHERE id = ?', [$post->id]));
+        self::assertSame('english', $this->connection->fetchOne('SELECT search_config::text FROM quire.content WHERE id = ?', [$post->id]));
 
         $revisions = $this->revisions($post);
         self::assertCount(1, $revisions);
@@ -89,7 +89,7 @@ final class ContentWriterTest extends KernelTestCase
         $page = $this->writer->create(new CreateContent('page', 'Über uns'));
 
         self::assertSame(['de', 'ueber-uns'], [$page->locale, $page->slug], 'Transliterated for German.');
-        self::assertSame('german', $this->connection->fetchOne('SELECT search_config::text FROM content WHERE id = ?', [$page->id]));
+        self::assertSame('german', $this->connection->fetchOne('SELECT search_config::text FROM quire.content WHERE id = ?', [$page->id]));
     }
 
     public function testGeneratedSlugsAreMadeUnique(): void
@@ -142,7 +142,7 @@ final class ContentWriterTest extends KernelTestCase
             self::assertSame('No spam, please.', $e->getMessage());
         }
 
-        self::assertEquals(1, $this->connection->fetchOne('SELECT COUNT(*) FROM content'));
+        self::assertEquals(1, $this->connection->fetchOne('SELECT COUNT(*) FROM quire.content'));
         self::assertCount(1, $this->recorded(), 'No ContentCreated for the cancelled item.');
     }
 
@@ -338,7 +338,7 @@ final class ContentWriterTest extends KernelTestCase
         self::assertTrue($scheduled->isPublic(new \DateTimeImmutable('+2 days')));
         self::assertSame([], $this->writer->publishDue(), 'Not due yet.');
 
-        $this->connection->executeStatement("UPDATE content SET published_at = now() - interval '1 minute' WHERE id = ?", [$post->id]);
+        $this->connection->executeStatement("UPDATE quire.content SET published_at = now() - interval '1 minute' WHERE id = ?", [$post->id]);
         $this->events = [];
 
         $due = $this->writer->publishDue();
