@@ -82,7 +82,7 @@ final class ContentListingTest extends WebTestCase
         $writer->transition($post->id, $post->version, Status::PUBLISH, new \DateTimeImmutable('-1 hour'));
 
         foreach ($likes as $name) {
-            $this->connection->insert('quire_fixture_hello_like', ['content_id' => $post->id, 'name' => $name]);
+            $this->connection->insert('quire.quire_fixture_hello_like', ['content_id' => $post->id, 'name' => $name]);
         }
     }
 }

@@ -2044,13 +2044,12 @@
             "dist": {
                 "type": "path",
                 "url": "packages/core",
-                "reference": "cd0bafac3acb23ee94df400efc790045696c51b7"
+                "reference": "ef1d86d2987d6f2799a566f9becb00251526d411"
             },
             "require": {
                 "doctrine/dbal": "^4.2",
                 "doctrine/doctrine-bundle": "^3.0",
-                "doctrine/doctrine-migrations-bundle": "^4.0",
-                "doctrine/orm": "^3.5",
+                "doctrine/migrations": "^3.9",
                 "league/commonmark": "^2.7",
                 "php": ">=8.5",
                 "psr/event-dispatcher": "^1.0",
@@ -6972,11 +6971,10 @@
             "dist": {
                 "type": "path",
                 "url": "packages/testing",
-                "reference": "f75eeaae166faf7c5fc218d1af227c413a62f815"
+                "reference": "843da2956325f40eb87220172e2dd0d301a62b1e"
             },
             "require": {
                 "doctrine/doctrine-bundle": "^3.0",
-                "doctrine/doctrine-migrations-bundle": "^4.0",
                 "php": ">=8.5",
                 "phpunit/phpunit": "^13.4",
                 "quire/core": "0.1.x-dev",

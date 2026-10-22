@@ -233,11 +233,11 @@ Each relation costs one database query per page of results, however many items t
 
 ## How content is stored
 
-All content lives in PostgreSQL, in one `content` table, together with everything else about the site, so one database backup contains the whole site.
+All content lives in PostgreSQL, in one `quire.content` table, together with everything else about the site, so one database backup contains the whole site. See [docs/database.md](database.md).
 
 - **IDs** are time-ordered UUIDs (version 7), so they sort by creation time and are safe to show in URLs.
 - **Slugs** are unique among items of the same type, parent and language. Items in the trash don't hold on to their slug.
 - **Languages:** every item has a `locale`, such as `en` or `pt-BR`. Translations of the same item share a `translation_group_id`, with at most one translation per language.
 - **Search:** each item's title, excerpt and body are indexed for full-text search in the item's language. The database maintains the index itself, so it never goes stale.
-- **History:** revisions are stored in `content_revision` and deleted together with their item.
+- **History:** revisions are stored in `quire.content_revision` and deleted together with their item.
 - **Integrity:** a page that still has child pages can't be deleted. Its children first need to be moved or deleted.

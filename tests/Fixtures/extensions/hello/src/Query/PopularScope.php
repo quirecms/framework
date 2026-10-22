@@ -14,8 +14,8 @@ final readonly class PopularScope
     public function __invoke(ContentQuery $query, int $minimum = 0): ContentQuery
     {
         return $query
-            ->select('like_count', 'SELECT count(*) FROM quire_fixture_hello_like l WHERE l.content_id = c.id')
-            ->whereSql('(SELECT count(*) FROM quire_fixture_hello_like l WHERE l.content_id = c.id) >= ?', [$minimum])
+            ->select('like_count', 'SELECT count(*) FROM quire.quire_fixture_hello_like l WHERE l.content_id = c.id')
+            ->whereSql('(SELECT count(*) FROM quire.quire_fixture_hello_like l WHERE l.content_id = c.id) >= ?', [$minimum])
             ->orderBy('like_count', 'desc');
     }
 }

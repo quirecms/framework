@@ -16,11 +16,11 @@ final class Version20261022100000 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        $this->addSql('CREATE TABLE quire_fixture_hello_visit (id SERIAL PRIMARY KEY, name VARCHAR(100) NOT NULL)');
+        $this->addSql('CREATE TABLE quire.quire_fixture_hello_visit (id SERIAL PRIMARY KEY, name VARCHAR(100) NOT NULL)');
     }
 
     public function down(Schema $schema): void
     {
-        $this->addSql('DROP TABLE quire_fixture_hello_visit');
+        $this->addSql('DROP TABLE quire.quire_fixture_hello_visit');
     }
 }

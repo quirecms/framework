@@ -56,11 +56,11 @@ final class FieldIndexesTest extends KernelTestCase
     public function testDropsIndexesNoLongerDeclaredAndRebuildsInvalidOnes(): void
     {
         $this->indexes->sync();
-        $this->connection->executeStatement("CREATE INDEX content_field_post_removed_00000000 ON content ((fields ->> 'removed'))");
+        $this->connection->executeStatement("CREATE INDEX content_field_post_removed_00000000 ON quire.content ((fields ->> 'removed'))");
         $rating = array_key_first($this->indexes->desired());
         self::assertIsString($rating);
         // What a failed concurrent build leaves behind.
-        $this->connection->executeStatement('UPDATE pg_index SET indisvalid = false WHERE indexrelid = CAST(? AS regclass)', [$rating]);
+        $this->connection->executeStatement('UPDATE pg_index SET indisvalid = false WHERE indexrelid = CAST(? AS regclass)', ['quire.'.$rating]);
 
         $result = $this->indexes->sync();
 
@@ -90,7 +90,7 @@ final class FieldIndexesTest extends KernelTestCase
             $this->connection->executeStatement('SET LOCAL enable_seqscan = off');
             /** @var list<string> $lines */
             $lines = $this->connection->fetchFirstColumn(\sprintf(
-                "EXPLAIN SELECT id FROM content WHERE type = 'post' AND %1\$s >= 3 ORDER BY %1\$s DESC LIMIT 10",
+                "EXPLAIN SELECT id FROM quire.content WHERE type = 'post' AND %1\$s >= 3 ORDER BY %1\$s DESC LIMIT 10",
                 FieldExpression::value($rating),
             ));
             $plan = implode("\n", $lines);
@@ -104,7 +104,7 @@ final class FieldIndexesTest extends KernelTestCase
     private function dropManagedIndexes(): void
     {
         foreach (array_keys($this->indexes->existing()) as $name) {
-            $this->connection->executeStatement(\sprintf('DROP INDEX IF EXISTS %s', $name));
+            $this->connection->executeStatement(\sprintf('DROP INDEX IF EXISTS quire.%s', $name));
         }
     }
 }

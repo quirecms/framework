@@ -26,7 +26,7 @@ final readonly class LikesLoader implements RelationLoaderInterface
 
         /** @var list<array{content_id: string, name: string}> $rows */
         $rows = $this->connection->fetchAllAssociative(
-            'SELECT content_id, name FROM quire_fixture_hello_like WHERE content_id IN (?) ORDER BY id',
+            'SELECT content_id, name FROM quire.quire_fixture_hello_like WHERE content_id IN (?) ORDER BY id',
             [array_keys($likes)],
             [ArrayParameterType::STRING],
         );

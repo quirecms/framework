@@ -480,7 +480,7 @@ final readonly class TopRatedScope
     public function __invoke(ContentQuery $query, int $minimum = 4): ContentQuery
     {
         return $query
-            ->join('LEFT JOIN acme_review_stats rs ON rs.content_id = c.id')
+            ->join('LEFT JOIN quire.acme_reviews_stats rs ON rs.content_id = c.id')
             ->select('rating_avg', 'rs.average')
             ->whereSql('rs.average >= ?', [$minimum])
             ->orderBy('rating_avg', 'desc');
@@ -488,7 +488,7 @@ final readonly class TopRatedScope
 }
 ```
 
-Scopes may use SQL, which templates can't: `whereSql()` adds a condition, `join()` joins a table that has at most one row per item, and `select()` adds a value to each item, which templates read as `{{ product.rating_avg }}` and PHP as `$product->attribute('rating_avg')`. The content table is aliased `c`, and values are passed as `?` placeholders.
+Scopes may use SQL, which templates can't: `whereSql()` adds a condition, `join()` joins a table that has at most one row per item, and `select()` adds a value to each item, which templates read as `{{ product.rating_avg }}` and PHP as `$product->attribute('rating_avg')`. The content table is aliased `c`, your own tables are written with the schema (`quire.acme_reviews_stats`), and values are passed as `?` placeholders.
 
 A **visibility rule** is a condition that every query applies automatically, for example to hide reviews nobody has approved. It's an invokable class like a scope, without arguments, and it may only add conditions. A rule for some types leaves other types in the same query alone. Only code that calls `withoutVisibilityScope()`, such as an admin interface, sees what it hides.
 
@@ -503,7 +503,7 @@ final readonly class ReviewsLoader implements RelationLoaderInterface
     {
         $reviews = array_fill_keys(array_map(fn (Content $item) => $item->id, $items), []);
         $rows = $this->connection->fetchAllAssociative(
-            'SELECT * FROM acme_review WHERE content_id IN (?) ORDER BY created_at',
+            'SELECT * FROM quire.acme_reviews_review WHERE content_id IN (?) ORDER BY created_at',
             [array_keys($reviews)],
             [ArrayParameterType::STRING],
         );
@@ -541,21 +541,21 @@ final class Version20261101120000 extends AbstractMigration
 {
     public function up(Schema $schema): void
     {
-        $this->addSql('CREATE TABLE acme_reviews_review (id SERIAL PRIMARY KEY, rating SMALLINT NOT NULL)');
+        $this->addSql('CREATE TABLE quire.acme_reviews_review (id SERIAL PRIMARY KEY, content_id UUID NOT NULL REFERENCES quire.content (id) ON DELETE CASCADE, rating SMALLINT NOT NULL)');
     }
 
     public function down(Schema $schema): void
     {
-        $this->addSql('DROP TABLE acme_reviews_review');
+        $this->addSql('DROP TABLE quire.acme_reviews_review');
     }
 }
 ```
 
-- Migrations run when the extension is enabled, and when it's updated and the container starts (or when you run `bin/console doctrine:migrations:migrate`).
+- Migrations run when the extension is enabled, and when it's updated and the container starts (or when you run `bin/console quire:migrations:migrate`).
 - `down()` must undo `up()`: it runs when the extension is disabled with `--purge`.
 - Use your own namespace, and keep the directory out of your Composer autoload paths. Doctrine loads migration files itself.
-- Prefix your table names with your extension's ID, e.g. `acme_reviews_review`, so they can't clash with other extensions.
-- Migrations run in dependency order: Quire core first, then extensions in boot order, then the application's own migrations. Your migrations can rely on the tables of the extensions you require.
+- Create your tables in Quire's `quire` schema and prefix their names with your extension's ID, e.g. `quire.acme_reviews_review`, so they can't clash with other extensions or with the application's tables. Always write the schema in your SQL. See [docs/database.md](database.md).
+- Migrations run in dependency order: Quire core first, then extensions in boot order. Your migrations can rely on the tables of the extensions you require. They're kept apart from the application's own migrations (`doctrine:migrations:*`).
 
 #### `Extend\Conditional`
 
@@ -649,7 +649,7 @@ final class ReviewsTest extends ExtensionTestCase
 What `ExtensionTestCase` does for you:
 
 - **Enables exactly the listed extensions** in a minimal application that doesn't use the host site's configuration, so tests behave the same everywhere. The package you're developing counts as installed, even though Composer never lists a project inside itself.
-- **Prepares the database:** before the first test it creates the test database (your `DATABASE_URL` with `_test` added to the name) and runs all migrations.
+- **Prepares the database:** before the first test it creates the test database (your `DATABASE_URL` with `_test` added to the name) and runs Quire's migrations: core's and those of the enabled extensions.
 - **Isolates tests:** each test runs in a database transaction that's rolled back afterwards, so tests never see each other's data. The transaction spans all requests a test makes with `$this->client`.
 
 It extends Symfony's `WebTestCase`, so all its assertions work (`assertResponseIsSuccessful()`, `assertSelectorTextContains()`, …). It adds:

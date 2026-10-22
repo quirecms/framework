@@ -14,7 +14,7 @@ final class SettingsFunctionalTest extends WebTestCase
 {
     protected function tearDown(): void
     {
-        self::getContainer()->get(Connection::class)->executeStatement('DELETE FROM setting');
+        self::getContainer()->get(Connection::class)->executeStatement('DELETE FROM quire.setting');
         parent::tearDown();
     }
 

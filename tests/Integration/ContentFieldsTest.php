@@ -107,7 +107,7 @@ final class ContentFieldsTest extends KernelTestCase
     {
         $post = $this->writer->create(new CreateContent('post', 'Hello', fields: ['mood' => 'happy']));
         // Left behind by an extension that was disabled.
-        $this->connection->executeStatement('UPDATE content SET fields = fields || \'{"legacy": true}\' WHERE id = ?', [$post->id]);
+        $this->connection->executeStatement('UPDATE quire.content SET fields = fields || \'{"legacy": true}\' WHERE id = ?', [$post->id]);
 
         $updated = $this->writer->update(new UpdateContent($post->id, 1)->title('Changed')->field('mood', 'sad'));
 
@@ -119,8 +119,8 @@ final class ContentFieldsTest extends KernelTestCase
     {
         $post = $this->writer->create(new CreateContent('post', 'One', fields: ['mood' => 'happy']));
         $post = $this->writer->update(new UpdateContent($post->id, 1)->title('Two')->field('mood', 'sad'));
-        $this->connection->executeStatement('UPDATE content SET fields = fields || \'{"legacy": true}\' WHERE id = ?', [$post->id]);
-        $this->connection->executeStatement('UPDATE content_revision SET fields = fields || \'{"old": 1}\' WHERE content_id = ?', [$post->id]);
+        $this->connection->executeStatement('UPDATE quire.content SET fields = fields || \'{"legacy": true}\' WHERE id = ?', [$post->id]);
+        $this->connection->executeStatement('UPDATE quire.content_revision SET fields = fields || \'{"old": 1}\' WHERE content_id = ?', [$post->id]);
 
         $first = self::getContainer()->get(RevisionRepository::class)->forContent($post->id)[1];
         $restored = $this->writer->restoreRevision($post->id, $first->id, 2);

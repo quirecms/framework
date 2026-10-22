@@ -16,12 +16,12 @@ final class Version20261022150000 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        $this->addSql('CREATE TABLE quire_fixture_hello_like (id SERIAL PRIMARY KEY, content_id UUID NOT NULL REFERENCES content (id) ON DELETE CASCADE, name VARCHAR(100) NOT NULL)');
-        $this->addSql('CREATE INDEX quire_fixture_hello_like_content_idx ON quire_fixture_hello_like (content_id)');
+        $this->addSql('CREATE TABLE quire.quire_fixture_hello_like (id SERIAL PRIMARY KEY, content_id UUID NOT NULL REFERENCES quire.content (id) ON DELETE CASCADE, name VARCHAR(100) NOT NULL)');
+        $this->addSql('CREATE INDEX quire_fixture_hello_like_content_idx ON quire.quire_fixture_hello_like (content_id)');
     }
 
     public function down(Schema $schema): void
     {
-        $this->addSql('DROP TABLE quire_fixture_hello_like');
+        $this->addSql('DROP TABLE quire.quire_fixture_hello_like');
     }
 }
