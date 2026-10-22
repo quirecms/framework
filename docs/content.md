@@ -152,6 +152,85 @@ A page with child pages can't be moved to the trash or deleted. Move or delete i
 
 Pass `--translation-of <id>` and `--locale` to create a translation of an item. Each item can have one translation per language. New items use the site language (the `site.locale` setting) unless you pass `--locale`.
 
+## Querying content
+
+Templates and code list content with the **content query builder**. In Twig:
+
+```twig
+{% for post in quire_content('post').latest.limit(5) %}
+    <a href="…">{{ post.title }}</a>
+{% endfor %}
+```
+
+In PHP, inject `Quire\Content\ContentRepository`:
+
+```php
+$posts = $content->query('post')
+    ->where('fields.rating', '>=', 4)
+    ->orderBy('fields.rating', 'desc')
+    ->paginate(page: 2, perPage: 10);
+```
+
+Each method returns a new query, so a query can be stored and refined without changing the original. Nothing is read from the database until the query is iterated or you call `get()`, `first()`, `count()` or `paginate()`.
+
+### What queries return
+
+Queries only return what visitors may see: items that are **published** (or scheduled, once their date has passed), that aren't in the **trash**, and that no extension's **visibility rule** hides (for example, unapproved reviews). This applies everywhere, so a template can't leak drafts by forgetting a condition.
+
+Code that shows content to editors, such as admin screens and the command line, opts out explicitly:
+
+```php
+$content->query('post')->withoutVisibilityScope();            // drafts, archived, scheduled, hidden
+$content->query('post')->withoutVisibilityScope()->onlyTrashed(); // the trash
+```
+
+Templates can't opt out: `withoutVisibilityScope()`, `withTrashed()` and raw SQL aren't available in them.
+
+### Filtering and sorting
+
+| Method | Example |
+|--------|---------|
+| `where($field, $value)` / `where($field, $operator, $value)` | `where('fields.featured', true)`, `where('fields.rating', '>=', 4)`, `where('fields.color', 'in', ['red', 'blue'])`, `where('fields.tags', 'contains', 'php')` |
+| `status(...)`, `locale($locale)`, `childrenOf($parent)` | `childrenOf(null)` lists top-level pages |
+| `scope($name, ...$arguments)` | A filter an extension registered, e.g. `scope('featured')` |
+| `orderBy($field, 'asc'\|'desc')`, `latest()`, `oldest()` | `orderBy('fields.rating', 'desc')` |
+| `limit($n)`, `offset($n)` | |
+
+Operators are `=`, `!=`, `<`, `<=`, `>`, `>=`, `in`, `not in`, and for list fields `contains` (has all of the values) and `contains any`. Comparing with `null` finds items without a value.
+
+Queries can sort by `published_at`, `created_at`, `updated_at`, `title` and `position`, and filter by `id`, `slug`, `locale`, `status`, `parent_id`, `author_id`, `translation_group_id`, `published_at`, `created_at` and `updated_at`. Both work with fields declared `sortable` or `filterable`, written as `fields.<name>`. Those fields have a database index, which the query uses, so listings stay fast as the site grows. Using any other field is an error that names the fields you can use. Values are checked against the field's type: `where('fields.rating', 'five')` fails with a clear message instead of matching nothing.
+
+Without `orderBy()`, a query uses its type's default order (newest first for posts, by position for pages). Items without a value for the sort field come last. Items that sort the same are ordered by ID, so pages never repeat or skip an item.
+
+### Pagination
+
+`paginate($page, $perPage)` returns one page, with the total number of matching items:
+
+```twig
+{% set posts = quire_content('post').paginate(app.request.query.getInt('page', 1), 10) %}
+{% for post in posts %}…{% endfor %}
+<p>Page {{ posts.page }} of {{ posts.pageCount }}</p>
+{% if posts.hasNextPage %}<a href="?page={{ posts.page + 1 }}">Older posts</a>{% endif %}
+```
+
+Page numbers below 1 count as the first page, so a number from the URL can be passed as is. `isOutOfRange()` tells you when a page is past the last one, so the listing can respond with 404.
+
+In templates, queries return 10 items unless you set a limit, and at most 100 at once (`limit()` and `paginate()` refuse more). An accidental `quire_content('post')` therefore never loads the whole site.
+
+### Related content
+
+Load relations for all items of a query at once with `with()`. Core provides `parent`, `children` (by position) and `translations` (by language); extensions add their own, such as comments:
+
+```twig
+{% for page in quire_content('page').childrenOf(null).with('children') %}
+    <li>{{ page.title }}
+        <ul>{% for child in page.children %}<li>{{ child.title }}</li>{% endfor %}</ul>
+    </li>
+{% endfor %}
+```
+
+Each relation costs one database query per page of results, however many items the page shows. Related items follow the same visibility rules: visitors don't see draft children. In PHP, read a relation with `$page->attribute('children')`. Reading one that wasn't loaded never runs a query per item: PHP code gets an error that tells you to add `with()`, and so do templates in development.
+
 ## How content is stored
 
 All content lives in PostgreSQL, in one `content` table, together with everything else about the site, so one database backup contains the whole site.

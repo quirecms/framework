@@ -461,6 +461,64 @@ final class RequireAnExcerpt
 }
 ```
 
+#### `Extend\Query`
+
+Extends content queries (see [Querying content](content.md#querying-content)) with named scopes, visibility rules and relations:
+
+```php
+new Extend\Query()
+    ->scope('top_rated', Reviews\TopRatedScope::class, types: ['product'])
+    ->visibility(Reviews\HideUnapproved::class, types: ['review'])
+    ->relation('reviews', Reviews\ReviewsLoader::class, types: ['product']),
+```
+
+A **scope** is a reusable filter that code calls with `->scope('top_rated')` and templates with `.scope('top_rated')`. It's an invokable class that takes the query, plus any arguments, and returns it refined:
+
+```php
+final readonly class TopRatedScope
+{
+    public function __invoke(ContentQuery $query, int $minimum = 4): ContentQuery
+    {
+        return $query
+            ->join('LEFT JOIN acme_review_stats rs ON rs.content_id = c.id')
+            ->select('rating_avg', 'rs.average')
+            ->whereSql('rs.average >= ?', [$minimum])
+            ->orderBy('rating_avg', 'desc');
+    }
+}
+```
+
+Scopes may use SQL, which templates can't: `whereSql()` adds a condition, `join()` joins a table that has at most one row per item, and `select()` adds a value to each item, which templates read as `{{ product.rating_avg }}` and PHP as `$product->attribute('rating_avg')`. The content table is aliased `c`, and values are passed as `?` placeholders.
+
+A **visibility rule** is a condition that every query applies automatically, for example to hide reviews nobody has approved. It's an invokable class like a scope, without arguments, and it may only add conditions. A rule for some types leaves other types in the same query alone. Only code that calls `withoutVisibilityScope()`, such as an admin interface, sees what it hides.
+
+A **relation** loads related data for many items at once, so a listing doesn't query the database once per item. Implement `Quire\Content\Query\RelationLoaderInterface` and return a value for each item ID:
+
+```php
+final readonly class ReviewsLoader implements RelationLoaderInterface
+{
+    public function __construct(private Connection $connection) {}
+
+    public function load(array $items, ContentQuery $query): array
+    {
+        $reviews = array_fill_keys(array_map(fn (Content $item) => $item->id, $items), []);
+        $rows = $this->connection->fetchAllAssociative(
+            'SELECT * FROM acme_review WHERE content_id IN (?) ORDER BY created_at',
+            [array_keys($reviews)],
+            [ArrayParameterType::STRING],
+        );
+
+        foreach ($rows as $row) {
+            $reviews[$row['content_id']][] = $row;
+        }
+
+        return $reviews;
+    }
+}
+```
+
+`quire_content('product').with('reviews')` then calls the loader once for the whole page of products. For relations to other content items, query them with `$query->related('product')`, which applies the same visibility rules as the query that asked for the relation. Relation names can't be the names of content properties such as `title`.
+
 #### `Extend\Migrations`
 
 Registers database migrations ([Doctrine Migrations](https://www.doctrine-project.org/projects/doctrine-migrations/en/stable/)) that create and change your extension's tables:
@@ -527,7 +585,7 @@ $post = $writer->update(new UpdateContent($post->id, $post->version)->title('Hel
 $writer->trash($post->id, $post->version);
 ```
 
-Methods that change an item take the version the change is based on, and throw `ContentConflictException` when someone saved the item since. Invalid changes throw `InvalidContentException`, whose `violations` property maps each property (`title`, `slug`, …) to a message. `Quire\Content\ContentRepository` loads items by ID, and `Quire\Content\Revision\RevisionRepository` loads their revisions.
+Methods that change an item take the version the change is based on, and throw `ContentConflictException` when someone saved the item since. Invalid changes throw `InvalidContentException`, whose `violations` property maps each property (`title`, `slug`, …) to a message. `Quire\Content\ContentRepository` loads items by ID and lists them with `query()` (see [Querying content](content.md#querying-content)), and `Quire\Content\Revision\RevisionRepository` loads their revisions.
 
 Each change dispatches events from `Quire\Content\Event`:
 
@@ -603,6 +661,7 @@ It extends Symfony's `WebTestCase`, so all its assertions work (`assertResponseI
 | `connection()` | The database connection, e.g. to insert test data |
 | `service($class)` | Any service from the container |
 | `assertExtensionRunning($id)` | Fails with the reason if an extension can't run, e.g. a missing requirement |
+| `assertQueryCount($n, $callback)` | Runs the callback and fails if it didn't make exactly `$n` database queries, listing them. Use it to check that a listing doesn't make a query per item. |
 
 Set `DATABASE_URL` for your tests, for example in `phpunit.dist.xml`:
 

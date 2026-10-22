@@ -17,6 +17,7 @@ return [
 
     new Extend\Routes()
         ->get('/_fixture/hello/{name}', 'fixture_hello', Hello\HelloController::class, defaults: ['name' => 'world'])
+        ->get('/_fixture/posts', 'fixture_posts', Hello\PostsController::class)
         ->controllers('Quire\\Fixtures\\Hello\\Controller\\', __DIR__.'/src/Controller', prefix: '/_fixture'),
 
     new Extend\Views()
@@ -54,6 +55,13 @@ return [
         ->field('due', 'date')
         ->field('event_at', 'datetime', sortable: true)
         ->field('extra', 'json'),
+
+    new Extend\Query()
+        ->scope('featured', Hello\Query\FeaturedScope::class, types: ['post'])
+        ->scope('tagged', Hello\Query\TaggedScope::class, types: ['post'])
+        ->scope('popular', Hello\Query\PopularScope::class)
+        ->visibility(Hello\Query\HideUnaddressedCards::class, types: ['greeting_card'])
+        ->relation('likes', Hello\Query\LikesLoader::class, types: ['post']),
 
     new Extend\Formatter()
         ->shortcode('greeting', Hello\Formatter\GreetingShortcode::class)
