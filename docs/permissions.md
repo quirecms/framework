@@ -29,7 +29,7 @@ Every content type has seven abilities, e.g. for posts:
 
 On the site, they mean:
 
-- **Viewing**: visitors who may not view a type are asked to sign in, and signed-in users who may not are refused (403). Lists and `quire_content()` queries leave out the types the viewer may not view. To make posts members-only:
+- **Viewing**: visitors who may not view a type are asked to sign in by the firewall (on the sign-in page, then back), and signed-in users who may not are refused (403). Lists and `quire_content()` queries leave out the types the viewer may not view. To make posts members-only:
 
   ```bash
   bin/console quire:permissions:revoke guest content.post.view
@@ -107,7 +107,7 @@ final class BannedReviewersRule implements AbilityRuleInterface
 }
 ```
 
-It returns `true` to grant, `false` to refuse, or `null` to leave it to roles and other rules. A refusal wins over everything, admins included. Rules are asked about every ability, so return `null` quickly for those they aren't about.
+It returns `true` to grant, `false` to refuse, or `null` to leave it to roles and other rules. A refusal wins over everything, admins included. Rules are asked about every ability, so return `null` quickly for those they aren't about. `$user` is the user the firewall signed in: a Quire user, or the application's own when Quire uses its users (see [users](users.md#users-of-the-application-quire-is-installed-in)).
 
 Plain Symfony voters work too, e.g. one registered by a host application. With Symfony's default strategy, any voter that grants an ability grants it; Quire's own refusals are decided in one vote, so a rule's refusal stays a refusal only among Quire's rules. Use the `unanimous` strategy if any voter's refusal should win.
 

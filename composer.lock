@@ -2169,7 +2169,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/core",
-                "reference": "155b5f2e855da1191f07c6ae2f59921399187f07"
+                "reference": "8155998d7e485d3ea3212d3f1375ae5f1340f157"
             },
             "require": {
                 "doctrine/dbal": "^4.2",
@@ -2191,6 +2191,8 @@
                 "symfony/html-sanitizer": "^8.1",
                 "symfony/http-kernel": "^8.1",
                 "symfony/process": "^8.1",
+                "symfony/property-access": "^8.1",
+                "symfony/rate-limiter": "^8.1",
                 "symfony/routing": "^8.1",
                 "symfony/security-bundle": "^8.1",
                 "symfony/service-contracts": "^3.6",

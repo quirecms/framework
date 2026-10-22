@@ -13,6 +13,8 @@ security:
             lazy: true
             provider: quire_users
             user_checker: Quire\User\Security\UserChecker
+            # Ways to sign in that extensions add (Extend\Auth), e.g. single sign-on.
+            custom_authenticators: [Quire\User\Security\ExtensionAuthenticators]
             # Quire's sign-in page; its texts and look come from the theme.
             form_login:
                 login_path: quire_login

@@ -46,6 +46,9 @@ return [
         ->ability('quire-fixture-hello.purge', 'Delete all greetings for good', roles: [], strict: true)
         ->rule(Hello\Permission\LockedContentRule::class),
 
+    new Extend\Auth()
+        ->authenticator(Hello\Security\HeaderAuthenticator::class),
+
     new Extend\Settings()
         ->define('quire-fixture-hello.greeting', 'string', 'Hello', label: 'Greeting', exposed: true)
         ->define('quire-fixture-hello.shout', 'bool', false, label: 'Shout the greeting'),
