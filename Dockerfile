@@ -31,6 +31,21 @@ RUN <<-EOF
 	rm -rf /var/lib/apt/lists/*
 EOF
 
+# PostgreSQL client tools for quire:backup and quire:restore (pg_dump must be at least the server's
+# version, so they come from the PostgreSQL project's repository, not Debian's)
+ARG POSTGRES_CLIENT_VERSION=18
+# hadolint ignore=DL3008
+RUN <<-EOF
+	apt-get update
+	apt-get install -y --no-install-recommends ca-certificates curl
+	curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc -o /usr/share/keyrings/postgresql.asc
+	. /etc/os-release
+	echo "deb [signed-by=/usr/share/keyrings/postgresql.asc] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" > /etc/apt/sources.list.d/pgdg.list
+	apt-get update
+	apt-get install -y --no-install-recommends "postgresql-client-${POSTGRES_CLIENT_VERSION}"
+	rm -rf /var/lib/apt/lists/*
+EOF
+
 # https://getcomposer.org/doc/03-cli.md#composer-allow-superuser
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
@@ -109,6 +124,7 @@ RUN <<-'EOF'
 	mkdir -p /tmp/libs
 	BINARIES=(frankenphp php file)
 	for target in $(printf '%s\n' "${BINARIES[@]}" | xargs -I{} which {}) \
+		/usr/lib/postgresql/*/bin/pg_dump /usr/lib/postgresql/*/bin/pg_restore \
 		$(find "$(php -r 'echo ini_get("extension_dir");')" -maxdepth 2 -name "*.so"); do
 		libtree -pv "$target" 2>/dev/null | grep -oP '(?:── )\K/\S+(?= \[)' | while IFS= read -r lib; do
 			[ -f "$lib" ] && cp -n "$lib" /tmp/libs/
@@ -142,6 +158,8 @@ COPY --from=frankenphp_prod_builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/
 COPY --from=frankenphp_prod_builder /etc/ssl/openssl.cnf /etc/ssl/openssl.cnf
 COPY --from=frankenphp_prod_builder /usr/bin/file /usr/bin/file
 COPY --from=frankenphp_prod_builder /usr/lib/file/magic.mgc /usr/lib/file/magic.mgc
+# PostgreSQL client tools for quire:backup and quire:restore
+COPY --from=frankenphp_prod_builder /usr/lib/postgresql/*/bin/pg_dump /usr/lib/postgresql/*/bin/pg_restore /usr/local/bin/
 
 ENV  OPENSSL_CONF=/etc/ssl/openssl.cnf XDG_CONFIG_HOME=/config XDG_DATA_HOME=/data SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 

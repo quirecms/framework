@@ -74,7 +74,7 @@ Keep these volumes:
 
 | Volume | Contents |
 |--------|----------|
-| `database_data` | PostgreSQL data, i.e. your whole site. Back this up. |
+| `database_data` | PostgreSQL data, i.e. your whole site. Back it up with `quire:backup` (see [backups](backups.md)). |
 | `caddy_data` | TLS certificates and keys |
 | `caddy_config` | Caddy's runtime configuration |
 
