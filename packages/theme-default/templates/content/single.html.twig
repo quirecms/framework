@@ -1,0 +1,32 @@
+{#
+    A content item: a post, a page, or an item of a type an extension adds.
+
+    Variables: content (the item), type (its content type), body (the body as HTML), canonical_url, and
+    anything ContentViewing listeners added.
+    Slots: content.before_title, content.after_title, content.before_body, content.after_body,
+    content.footer, each with { content }
+#}
+{% extends 'layout.html.twig' %}
+
+{% block title %}{{ content.title }} – {{ site.title }}{% endblock %}
+
+{% block content %}
+    <article class="entry">
+        <header class="entry-header">
+            {{ quire_slot('content.before_title', { content }) }}
+            <h1>{{ content.title }}</h1>
+            {% if content.publishedAt and type.has('scheduling') and theme.settings.show_dates %}
+                <p class="entry-meta"><time datetime="{{ content.publishedAt|date('c') }}">{{ content.publishedAt|quire_date }}</time></p>
+            {% endif %}
+            {{ quire_slot('content.after_title', { content }) }}
+        </header>
+
+        {{ quire_slot('content.before_body', { content }) }}
+        <div class="prose">{{ body|raw }}</div>
+        {{ quire_slot('content.after_body', { content }) }}
+
+        {% if quire_slot_filled('content.footer') %}
+            <footer class="entry-footer">{{ quire_slot('content.footer', { content }) }}</footer>
+        {% endif %}
+    </article>
+{% endblock %}

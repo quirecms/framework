@@ -1,0 +1,14 @@
+{#
+    The page for other errors. Shown in production; development shows the error.
+
+    Variables: status_code, status_text
+#}
+{% extends 'layout.html.twig' %}
+
+{% block title %}{{ 'Something went wrong'|trans({}, 'quire-theme-default') }} – {{ site.title }}{% endblock %}
+
+{% block content %}
+    <h1>{{ 'Something went wrong'|trans({}, 'quire-theme-default') }}</h1>
+    <p>{{ 'Please try again in a moment.'|trans({}, 'quire-theme-default') }}</p>
+    <p><a href="{{ quire_home_url() }}">{{ 'Go to the homepage'|trans({}, 'quire-theme-default') }}</a></p>
+{% endblock %}

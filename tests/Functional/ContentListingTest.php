@@ -39,6 +39,8 @@ final class ContentListingTest extends WebTestCase
     public function testTheQueryCountDoesNotGrowWithTheNumberOfItems(): void
     {
         $this->post('Liked twice', 'Ann', 'Bob');
+        $this->queriesFor('/_fixture/posts');
+        // Measured on a second request, which starts without anything loaded, like the one below.
         $onePost = $this->queriesFor('/_fixture/posts');
 
         self::assertSelectorTextSame('li.post', 'Liked twice: Ann, Bob');
@@ -51,7 +53,7 @@ final class ContentListingTest extends WebTestCase
 
         self::assertSame(['Liked thrice: Ann, Bob, Cy', 'Liked twice: Ann, Bob', 'Liked once: Cy'], $this->client->getCrawler()->filter('li.post')->each(static fn ($li): string => $li->text()));
         self::assertSelectorTextSame('.total', '4 posts, page 1 of 2');
-        self::assertCount(2, $fullPage, "The whole request makes one query for the page and its total, and one for the likes:\n".implode("\n", $fullPage));
+        self::assertCount(3, $fullPage, "The whole request makes one query for the settings (the page's language), one for the page and its total, and one for the likes:\n".implode("\n", $fullPage));
         self::assertCount(\count($onePost), $fullPage);
 
         $this->queriesFor('/_fixture/posts?page=2');

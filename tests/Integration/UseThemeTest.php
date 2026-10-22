@@ -70,7 +70,7 @@ final class UseThemeTest extends KernelTestCase
 
         self::assertSame(1, $status);
         self::assertStringContainsString('inherits from "quire-fixture-gone", which isn\'t installed', $output);
-        self::assertNull($this->settings->get(Themes::SETTING));
+        self::assertSame(Themes::DEFAULT, $this->settings->get(Themes::SETTING), 'Unchanged.');
         self::assertSame([], $this->rebuilder->calls);
 
         $this->expectException(InvalidSettingValueException::class);
@@ -86,7 +86,7 @@ final class UseThemeTest extends KernelTestCase
 
         self::assertSame(1, $status);
         self::assertStringContainsString('The theme\'s extend.php failed. The previous theme is back in use.', $output);
-        self::assertNull($this->settings->get(Themes::SETTING));
+        self::assertSame(Themes::DEFAULT, $this->settings->get(Themes::SETTING));
         self::assertSame([true, false], $this->rebuilder->calls);
     }
 
