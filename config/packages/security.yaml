@@ -13,6 +13,25 @@ security:
             lazy: true
             provider: quire_users
             user_checker: Quire\User\Security\UserChecker
+            # Quire's sign-in page; its texts and look come from the theme.
+            form_login:
+                login_path: quire_login
+                check_path: quire_login
+                enable_csrf: true
+                default_target_path: quire_home
+            logout:
+                path: quire_logout
+                target: quire_home
+                enable_csrf: true
+            # "Keep me signed in": a signed cookie, which stops working once the password changes.
+            remember_me:
+                secret: '%kernel.secret%'
+                lifetime: 2592000 # 30 days
+                signature_properties: [password]
+            # After 5 failed attempts for an account from one address within a minute, wait a minute.
+            login_throttling:
+                max_attempts: 5
+                interval: '1 minute'
 
     # Note: Only the *first* matching rule is applied
     access_control:

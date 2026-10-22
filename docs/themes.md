@@ -288,6 +288,16 @@ The site has its own `assets/` directory and `importmap.php`, loaded on every pa
 
 Themes that want Sass, Tailwind or a bundler can use Symfony's `symfonycasts/tailwind-bundle`, `symfonycasts/sass-bundle` or `pentatrion/vite-bundle` and ship the built files in `assets/`; Quire neither requires nor prevents them.
 
+## The sign-in page
+
+Quire's sign-in page, `security/login.html.twig`, extends the theme's `layout.html.twig`, so it looks like the rest of the site; style it with the classes it uses (`sign-in`, `form`, `form-field`, `form-check`, `form-error`), or replace it with a `templates/security/login.html.twig` of the theme. A replacement keeps:
+
+- the form posting `_username`, `_password`, `_remember_me` and `_csrf_token` (`csrf_token('authenticate')`) to `path('quire_login')`, and `_target_path` when `target_path` is set;
+- the error, `error.messageKey|trans(error.messageData, 'security')`;
+- the slot `auth.login_options`, with `{ target_path }`, where extensions add other ways to sign in, e.g. "Continue with Google".
+
+The variables are listed at the top of Quire's template.
+
 ## Languages
 
 Quire's pages are in the site's language (`site.locale`), and an item's page in the item's own language when it's a translation. Write the theme's texts in English in the templates and translate them with Symfony's translator, in a domain named after the theme:

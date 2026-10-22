@@ -18,7 +18,8 @@ final class ThemeLintTest extends KernelTestCase
         [$status, $output] = $this->lint('quire-fixture-child');
 
         self::assertSame(0, $status, $output);
-        self::assertStringContainsString('The theme "quire-fixture-child" is fine: 5 templates, every standard slot rendered.', $output);
+        // The count includes Quire's built-in templates, which grow over time.
+        self::assertMatchesRegularExpression('/The theme "quire-fixture-child" is fine: \d+ templates, every standard slot rendered\./', $output);
         self::assertStringContainsString('No template calls quire_seo()', $output, 'Only a warning.');
     }
 
