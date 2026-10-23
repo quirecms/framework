@@ -367,7 +367,8 @@ Fields hold an item's structured data, next to its title and body. Values are st
 | `min`, `max` | The allowed range, for `int` and `float` |
 | `maxLength` | Most characters, for `string`, `text` and each item of a `list` |
 | `sortable`, `filterable` | Listings can sort or filter by the field, and it gets a database index. Not available for `text` and `json`; `list` fields can be filtered but not sorted. Indexed `string` fields have a `maxLength` of 255 unless you set one, and at most 1000. |
-| `label`, `help`, `group`, `widget`, `order` | How admin forms present the field |
+| `label`, `help`, `group`, `widget`, `order` | How admin forms present the field. Without a `widget`, the type's own is used. |
+| `options` | The type's own options, for types of extensions (see [below](#extendfieldtypes)) |
 
 Field names are lowercase letters, digits and underscores, and unique per type: if two extensions declare the same field for a type, Quire refuses to start and names both.
 
@@ -382,6 +383,57 @@ foreach ($registry->withCapability('commentable') as $id => $type) {
     // ...
 }
 ```
+
+#### `Extend\FieldTypes`
+
+Adds kinds of values fields can hold, next to core's. A type decides how values are checked and stored, how queries compare them, whether they can be indexed, and which admin widget edits them:
+
+```php
+new Extend\FieldTypes()
+    ->type('acme-maps.location', Maps\LocationField::class),
+
+Extend\ContentType::existing('post')
+    ->field('venue', 'acme-maps.location', filterable: true, options: ['precision' => 6]),
+```
+
+A type extends `Quire\Content\Field\AbstractFieldType` and overrides what differs:
+
+```php
+final class ColorField extends AbstractFieldType
+{
+    public function options(): array
+    {
+        return ['palette'];                     // its own options, passed as field(options: [...])
+    }
+
+    public function normalize(mixed $value, FieldDefinition $field): mixed
+    {
+        return \is_string($value) ? strtolower($value) : $value;   // the stored form: "#FF8800" → "#ff8800"
+    }
+
+    public function validate(mixed $value, FieldDefinition $field): ?string
+    {
+        return \is_string($value) && 1 === preg_match('/^#[0-9a-f]{6}$/', $value) ? null : 'Expected a color such as "#ff8800".';
+    }
+
+    public function widget(FieldDefinition $field): string
+    {
+        return 'color';
+    }
+}
+```
+
+| Method | Decides |
+|--------|---------|
+| `options()` | Which options of `field()` apply: any of `choices`, `min`, `max` and `maxLength`, and its own. Others are refused. |
+| `definitionError()` | Whether a field's declaration suits the type, e.g. that an option is valid |
+| `storage()` | How values are stored and compared (`FieldStorage::Text`, `Number`, `Boolean`, `TextList` or `Unindexed`), and so whether the field can be sorted, filtered and indexed. `Text` by default. |
+| `normalize()`, `validate()` | The stored form of a value, and why a value isn't valid |
+| `queryValue()`, `expected()` | What a query compares the field with: by default the normalized value, so `where('fields.accent', '=', '#FF8800')` finds `#ff8800` |
+| `widget()` | The admin widget, unless the field names one |
+
+- **Names** start with your extension's ID and a dot (the site's own with `custom.`). Declare a type before the fields that use it. An extension that uses another extension's type requires that extension.
+- **Types are plain classes**, created with `new` and used while the application is built too (to check declared defaults). So they have no constructor arguments and keep no state: what they need comes from the field's definition. Checks that need services, e.g. that a referenced record exists, belong in listeners of the [content events](#reading-and-writing-content).
 
 #### `Extend\Formatter`
 

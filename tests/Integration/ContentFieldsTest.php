@@ -58,6 +58,30 @@ final class ContentFieldsTest extends KernelTestCase
         self::assertFalse($stored->field('featured'), 'The declared default.');
     }
 
+    public function testFieldTypesOfExtensions(): void
+    {
+        // The fixture's color type: "#F80" is stored as "#ff8800", and must be one of the field's palette.
+        $post = $this->writer->create(new CreateContent('post', 'Colorful', fields: ['accent' => '#F80']));
+        self::assertSame('#ff8800', $this->get($post)->field('accent'));
+
+        foreach (['orange' => 'Expected a color such as "#ff8800".', '#123456' => 'Expected one of the palette\'s colors.'] as $value => $message) {
+            try {
+                $this->writer->create(new CreateContent('post', 'Wrong', fields: ['accent' => $value]));
+                self::fail(\sprintf('"%s" was accepted.', $value));
+            } catch (InvalidContentException $e) {
+                self::assertSame(['fields.accent' => $message], $e->violations);
+            }
+        }
+
+        $this->writer->create(new CreateContent('post', 'Dark', fields: ['accent' => '#222']));
+        $query = self::getContainer()->get(ContentRepository::class)->query('post')->withoutVisibilityScope();
+        self::assertSame(['Colorful'], array_map(static fn (Content $item): string => $item->title, $query->where('fields.accent', '=', '#FF8800')->get()), 'Queries compare in the stored form.');
+        self::assertSame(['Dark', 'Colorful'], array_map(static fn (Content $item): string => $item->title, $query->where('fields.accent', '!=', '')->orderBy('fields.accent')->get()));
+
+        $type = self::getContainer()->get(\Quire\Content\Type\ContentTypeRegistry::class)->get('post')->field('accent');
+        self::assertSame(['quire-fixture-hello.color', 'color'], [$type?->type, $type?->widget()]);
+    }
+
     public function testDateTimesNeedAnOffset(): void
     {
         $post = $this->writer->create(new CreateContent('post', 'Hello', fields: ['event_at' => '2026-12-24T18:00:00+01:00']));
@@ -90,7 +114,7 @@ final class ContentFieldsTest extends KernelTestCase
             'fields.subtitle' => 'At most 100 characters.',
             'fields.tags' => 'Expected a list of texts.',
             'fields.due' => 'Expected a date such as "2026-12-24".',
-            'fields.nope' => 'Posts have no field "nope". Their fields are: mood, rating, score, featured, subtitle, color, size, tags, due, event_at, extra.',
+            'fields.nope' => 'Posts have no field "nope". Their fields are: mood, rating, score, featured, subtitle, color, size, tags, due, event_at, extra, accent.',
         ], $violations);
     }
 
@@ -112,7 +136,7 @@ final class ContentFieldsTest extends KernelTestCase
         $updated = $this->writer->update(new UpdateContent($post->id, 1)->title('Changed')->field('mood', 'sad'));
 
         self::assertTrue($updated->field('legacy'), 'Saving other changes still works and keeps the value.');
-        self::assertSame(['fields.legacy' => 'Posts have no field "legacy". Their fields are: mood, rating, score, featured, subtitle, color, size, tags, due, event_at, extra.'], $this->violations(fn (): Content => $this->writer->update(new UpdateContent($post->id, 2)->field('legacy', false))));
+        self::assertSame(['fields.legacy' => 'Posts have no field "legacy". Their fields are: mood, rating, score, featured, subtitle, color, size, tags, due, event_at, extra, accent.'], $this->violations(fn (): Content => $this->writer->update(new UpdateContent($post->id, 2)->field('legacy', false))));
     }
 
     public function testRestoringARevisionKeepsValuesNoLongerDeclared(): void

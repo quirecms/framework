@@ -42,7 +42,7 @@ Extensions add their own capabilities, for example `commentable`, and can add th
 
 ### Fields
 
-Content types and extensions can declare **fields**: typed values such as a product's price, an event's date or a post's rating. To see a type's fields and their rules:
+Content types and extensions can declare **fields**: typed values such as a product's price, an event's date or a post's rating. Core has types for text, numbers, booleans, choices, lists, dates and JSON, and extensions add more, e.g. a location or a color (see [extensions](extensions.md#extendfieldtypes)). To see a type's fields and their rules:
 
 ```bash
 bin/console quire:content-type:show post

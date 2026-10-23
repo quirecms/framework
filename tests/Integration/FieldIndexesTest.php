@@ -40,8 +40,8 @@ final class FieldIndexesTest extends KernelTestCase
         });
 
         $fields = array_map(static fn (array $index): string => $index['type'].'.'.$index['field'], array_values($this->indexes->desired()));
-        self::assertSame(['post.rating', 'post.featured', 'post.tags', 'post.event_at', 'greeting_card.recipient'], $fields);
-        self::assertCount(5, $result['created']);
+        self::assertSame(['post.rating', 'post.featured', 'post.tags', 'post.event_at', 'post.accent', 'greeting_card.recipient'], $fields);
+        self::assertCount(6, $result['created']);
         self::assertSame([], $result['dropped']);
         self::assertStringStartsWith('Creating content_field_post_rating_', $lines[0]);
         $existing = $this->indexes->existing();
@@ -73,7 +73,7 @@ final class FieldIndexesTest extends KernelTestCase
     {
         $result = $this->indexes->sync(dryRun: true);
 
-        self::assertCount(5, $result['created']);
+        self::assertCount(6, $result['created']);
         self::assertSame([], $this->indexes->existing());
     }
 
