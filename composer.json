@@ -25,7 +25,6 @@
         "ext-iconv": "*",
         "doctrine/doctrine-bundle": "^3.3",
         "doctrine/doctrine-migrations-bundle": "^4.0",
-        "doctrine/orm": "^3.7",
         "quire/core": "0.1.x-dev",
         "quire/theme-default": "0.1.x-dev",
         "symfony/asset": "8.1.*",

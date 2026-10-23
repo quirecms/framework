@@ -10,13 +10,13 @@ use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 /**
  * Sessions in PostgreSQL, through a connection of their own. (Tests themselves use Symfony's mock
- * session storage.).
+ * session storage, so the container has no session handler service: the test makes one with the factory.).
  */
 final class SessionHandlerTest extends KernelTestCase
 {
     public function testStoresSessionsInQuiresSchema(): void
     {
-        $handler = self::getContainer()->get(SessionHandlerFactory::SERVICE);
+        $handler = new SessionHandlerFactory(self::getContainer()->get(Connection::class))->create();
         $id = 'quire-test-'.bin2hex(random_bytes(8));
 
         try {
