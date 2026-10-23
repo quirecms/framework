@@ -15,7 +15,7 @@ Users have one or more roles (see [users](users.md#roles)). Extensions can add r
 
 ## Abilities of content
 
-Every content type has seven abilities, e.g. for posts:
+Every content type has eight abilities, e.g. for posts:
 
 | Ability | Default roles |
 |---------|---------------|
@@ -25,6 +25,7 @@ Every content type has seven abilities, e.g. for posts:
 | `content.post.edit_own` | editor |
 | `content.post.edit_any` | editor |
 | `content.post.publish` | editor |
+| `content.post.review` | editor |
 | `content.post.delete` | editor |
 
 On the site, they mean:
@@ -39,6 +40,8 @@ On the site, they mean:
 - **Previewing**: those who may view a type's drafts see its unpublished items at their URL, with a notice that the page is a preview. Previews are never cached or indexed. Lists show published items only, even to editors.
 
 - `edit_own` is granted only for items the user wrote.
+
+- `review` is for approving [pending revisions](content.md#pending-revisions), or asking for changes to them. Quire checks that authors don't approve their own changes; admin interfaces check the ability.
 
 ## Changing them
 

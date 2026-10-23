@@ -138,13 +138,28 @@ bin/console quire:content:revisions <id> --restore <revision-id>
 
 Restoring a revision saves its text as a new revision, so the history is never rewritten. The `quire.content.revisions_keep` setting (default `50`) sets how many revisions each item keeps.
 
+### Pending revisions
+
+Editing a published item shouldn't publish every keystroke. Admin interfaces therefore save changes to published content as a **pending revision**: a working copy of the item's text and fields, saved as you type, that visitors don't see until someone publishes it. Publishing saves a revision as usual. Saving the item directly, as `quire:content:update` does, still changes it at once.
+
+A pending revision remembers the version of the item it started from. When it's published, Quire merges it with whatever was published since, the way version control systems merge: each field separately, and the text line by line. One editor can fix a typo in the first paragraph while another rewrites the last, and neither loses their work. Only changes to the same lines or fields **conflict**. Publishing then stops, the item stays as it is, and the conflicting parts are listed. Resolve them in the pending revision and publish again. An item can have several pending revisions, e.g. one per editor.
+
+Changes can be **reviewed** before they're published. The author asks for a review; a reviewer sees the diff of the text, then approves it, asks for changes, or comments. Changes saved after an approval need approving again, and authors can't approve their own changes. Review is optional, unless the `quire.content.changes_need_approval` setting is on: then only approved changes can be published, and the revision records who approved them. Who may review is the `review` ability of each content type (see [permissions](permissions.md)).
+
+```bash
+bin/console quire:content:pending <id>                         # the item's pending revisions
+bin/console quire:content:pending <id> --show <pending-id>     # what it changes, as a diff, and whether it merges
+bin/console quire:content:pending <id> --publish <pending-id>
+bin/console quire:content:pending <id> --discard <pending-id>
+```
+
 ### Editing conflicts
 
 Each save increases the item's **version**. Editing tools send the version they started from, and if someone else saved the item in the meantime, the save fails instead of overwriting the other person's work. On the command line, pass `--expect-version` to get the same protection.
 
 ### Trash
 
-`quire:content:delete` moves an item to the trash: visitors no longer see it, and its slug is free for other items. `quire:content:restore` brings it back; if its slug was taken meanwhile, it gets a numbered one. `quire:content:delete --purge` deletes an item permanently, together with its revisions and the data extensions keep about it.
+`quire:content:delete` moves an item to the trash: visitors no longer see it, and its slug is free for other items. `quire:content:restore` brings it back; if its slug was taken meanwhile, it gets a numbered one. `quire:content:delete --purge` deletes an item permanently, together with its revisions, pending revisions and the data extensions keep about it. Pending revisions of an item in the trash wait for it to be restored.
 
 A page with child pages can't be moved to the trash or deleted. Move or delete its children first.
 

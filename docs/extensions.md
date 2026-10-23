@@ -373,7 +373,7 @@ Fields hold an item's structured data, next to its title and body. Values are st
 
 Field names are lowercase letters, digits and underscores, and unique per type: if two extensions declare the same field for a type, Quire refuses to start and names both.
 
-Only the values being saved are checked. Values an item already has stay as they are, even when no enabled extension declares them any more, so disabling an extension never makes content unsaveable. Purging an extension (`quire:extension:disable --purge`) deletes the values of the fields it declares, also from revisions.
+Only the values being saved are checked. Values an item already has stay as they are, even when no enabled extension declares them any more, so disabling an extension never makes content unsaveable. Purging an extension (`quire:extension:disable --purge`) deletes the values of the fields it declares, also from revisions and pending revisions.
 
 Quire creates and drops the database indexes of sortable and filterable fields itself: when the container starts and after an extension is enabled. In development, run `bin/console quire:content:sync-indexes` after changing a declaration. Indexes are built without blocking writes.
 
@@ -696,6 +696,29 @@ $writer->trash($post->id, $post->version);
 
 Methods that change an item take the version the change is based on, and throw `ContentConflictException` when someone saved the item since. Invalid changes throw `InvalidContentException`, whose `violations` property maps each property (`title`, `slug`, …) to a message. `Quire\Content\ContentRepository` loads items by ID and lists them with `query()` (see [Querying content](content.md#querying-content)), and `Quire\Content\Revision\RevisionRepository` loads their revisions.
 
+#### Pending revisions
+
+To change published content without publishing at once, e.g. to autosave in an editor, write a pending revision with `Quire\Content\Revision\PendingRevisionWriter` and publish it with the content writer (see [pending revisions](content.md#pending-revisions)):
+
+```php
+use Quire\Content\Command\UpdatePendingRevision;
+use Quire\Content\Revision\Verdict;
+
+$pending = $pendingWriter->create($post->id, authorId: $user->id, message: 'Fix the opening hours');
+$pending = $pendingWriter->update(new UpdatePendingRevision($pending->id, $pending->version)->body($markdown)->field('rating', 5));
+
+$pendingWriter->submit($pending->id, $pending->version);                                   // ask for a review
+$pendingWriter->review($pending->id, $pending->version, Verdict::Approve, $reviewer->id);   // or RequestChanges, Comment
+
+$post = $writer->publishPendingRevision($pending->id, $pending->version, actorId: $reviewer->id);
+```
+
+Saving accepts work in progress, such as an empty title; the item's rules are checked when the changes are published. Like items, pending revisions have a version: saving, reviewing and publishing take the version the user saw, and throw `PendingRevisionConflictException` if it was saved since, e.g. in another tab. So nobody approves or publishes changes they haven't seen.
+
+`Quire\Content\Revision\PendingRevisionRepository` lists an item's pending revisions (`forContent()`, optionally only one author's), their `reviews()`, and shows what publishing would give: `merge()` returns the merged text and fields and any conflicts, and `preview()` the item with the changes, ready to render in its templates. When the changes conflict with what was published meanwhile, publishing throws `MergeConflictException`. Its `conflicts` are keyed by property like `violations`. Set the resolved values and rebase onto the live version, `->rebase($post->version)`, then publish again.
+
+`$pending->diff()` says what a pending revision changes, and `Quire\Content\Revision\Diff::between(Snapshot::of($old), Snapshot::of($new))` compares any two versions, e.g. two revisions. A diff lists the changed properties, and the body line by line (`bodyLines`) or as a unified diff (`unified()`).
+
 Each change dispatches events from `Quire\Content\Event`:
 
 | Before the change (can cancel or modify it) | After the change |
@@ -705,6 +728,8 @@ Each change dispatches events from `Quire\Content\Event`:
 | `ContentPublishing` | `ContentPublished`, `ContentUnpublished`, `ContentStatusChanged` |
 | `ContentDeleting` (to the trash) | `ContentDeleted`, `ContentRestored` |
 | `ContentPurging` (permanently) | `ContentPurged` |
+| | `PendingRevisionSaved`, `PendingRevisionSubmitted`, `PendingRevisionReviewed`, `PendingRevisionDiscarded` |
+| `ContentUpdating` (publishing a pending revision) | `ContentUpdated`, `PendingRevisionPublished` |
 
 `ContentViewing` is dispatched before an item's page is rendered. Its listeners can add template variables with `$event->set('related', $items)`, or call `$event->deny()` to respond with "404 Not Found".
 
