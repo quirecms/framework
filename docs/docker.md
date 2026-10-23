@@ -79,8 +79,8 @@ Keep these volumes:
 
 | Volume | Contents |
 |--------|----------|
-| `database_data` | PostgreSQL data: everything but the bytes of uploaded files. Back it up with `quire:backup` (see [backups](backups.md)). |
-| `storage_data` | Uploaded files on local [storage disks](storage.md). Back it up too, or put the disks on S3. |
+| `database_data` | PostgreSQL data: everything but the bytes of uploaded files. Back it up, and the files, with `quire:backup` (see [backups](backups.md)). |
+| `storage_data` | Uploaded files on local [storage disks](storage.md). `quire:backup` includes them. |
 | `caddy_data` | TLS certificates and keys |
 | `caddy_config` | Caddy's runtime configuration |
 

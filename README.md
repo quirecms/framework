@@ -158,11 +158,11 @@ See [docs/storage.md](docs/storage.md).
 
 ## Backups
 
-One file holds the site's database. Restoring checks first that the code is new enough for the backup:
+One file holds the site: its database and its uploaded files. Restoring checks first that the code is new enough for the backup:
 
 ```bash
-docker compose exec -T php bin/console quire:backup - > site.dump
-docker compose exec -T php bin/console quire:restore - < site.dump
+docker compose exec -T php bin/console quire:backup - > site.tar
+docker compose exec -T php bin/console quire:restore - < site.tar
 ```
 
 See [docs/backups.md](docs/backups.md).

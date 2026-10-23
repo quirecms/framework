@@ -108,4 +108,4 @@ Storing the same content again restarts an object's grace period. Run the collec
 
 ## Backups
 
-> **Files aren't in backups yet.** `quire:backup` contains the database, including the record of every stored file, but not the files themselves. Until it does, back up local disks yourself (the `storage_data` volume, or `storage/`), and turn on versioning or replication for buckets.
+`quire:backup` copies the files of local disks with the database, checked against their checksums, and `quire:restore` puts them back on the disks, wherever they are by then. Files on S3 disks are copied with `--files=all`; otherwise turn on versioning or replication for their buckets. See [backups](backups.md#which-files).

@@ -9,6 +9,8 @@ use App\Tests\Support\ScratchDatabases;
 use Doctrine\DBAL\Connection;
 use Quire\Content\ContentRepository;
 use Quire\Extension\Rebuild\AppRebuilderInterface;
+use Quire\Storage\ObjectStore;
+use Quire\Storage\StorageDisks;
 use Quire\Testing\Database\QueryLog;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -16,11 +18,15 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 /**
  * Milestone 2 ("content core") end to end: content created with the CLI renders at configurable URLs;
  * the fixture extension adds a typed field, a shortcode, and its own table with a relation that's loaded
- * for a whole listing at once; and a backup restored into an empty database reproduces the site.
+ * for a whole listing at once; and a backup restored into an empty database reproduces the site, its
+ * stored files included.
  */
 final class ContentCoreTest extends WebTestCase
 {
     use ScratchDatabases;
+
+    /** URL of the stored file the site has */
+    private string $attachment = '';
 
     public function testASiteBuiltFromTheCommandLineSurvivesABackupAndARestoreIntoAnEmptyDatabase(): void
     {
@@ -30,10 +36,12 @@ final class ContentCoreTest extends WebTestCase
         $site = $this->snapshot($client);
         $this->assertSiteWorks($site, $client);
 
-        $backup = sys_get_temp_dir().'/quire-acceptance-'.bin2hex(random_bytes(4)).'.dump';
+        $backup = sys_get_temp_dir().'/quire-acceptance-'.bin2hex(random_bytes(4)).'.tar';
 
         try {
             $this->console('quire:backup', ['file' => $backup]);
+            // The disk loses the stored file: the backup has it.
+            self::getContainer()->get(StorageDisks::class)->get('quire-fixture-hello')->files->delete(substr($this->attachment, \strlen('/storage/quire-fixture-hello/')));
 
             $client = $this->clientForNewDatabase('restored', migrate: false);
             $rebuilds = $this->recordRebuilds();
@@ -68,6 +76,12 @@ final class ContentCoreTest extends WebTestCase
         foreach (['Ann', 'Bob'] as $name) {
             $connection->insert('quire.quire_fixture_hello_like', ['content_id' => $hello, 'name' => $name]);
         }
+
+        // A stored file the extension refers to.
+        $objects = self::getContainer()->get(ObjectStore::class);
+        $file = $objects->store('quire-fixture-hello', 'An attachment, kept by the acceptance test '.bin2hex(random_bytes(8)));
+        $connection->insert('quire.quire_fixture_hello_attachment', ['object_id' => $file->id, 'name' => 'attachment']);
+        $this->attachment = $objects->url($file);
     }
 
     /**
@@ -83,6 +97,7 @@ final class ContentCoreTest extends WebTestCase
         self::assertSame([301, $post], [$snapshot[$this->postUrl('hello')]['status'], $snapshot[$this->postUrl('hello')]['location']]);
         self::assertSame([301, $post], [$snapshot['/2019/05/hello']['status'], $snapshot['/2019/05/hello']['location']]);
         self::assertSame(200, $snapshot['/about/team']['status']);
+        self::assertStringStartsWith('An attachment', $snapshot[$this->attachment]['body']);
         self::assertSame(404, $snapshot['/'.date('Y/m').'/draft']['status']);
         self::assertStringContainsString('Second', $snapshot['/']['body']);
         self::assertStringContainsString('Hello: Ann, Bob', $snapshot['/_fixture/posts']['body'], 'The extension\'s relation is loaded.');
@@ -103,13 +118,13 @@ final class ContentCoreTest extends WebTestCase
      */
     private function snapshot(KernelBrowser $client): array
     {
-        $urls = ['/', '/blog', $this->postUrl('hello-world'), $this->postUrl('second'), $this->postUrl('hello'), '/'.date('Y/m').'/draft', '/2019/05/hello', '/about', '/about/team', '/_fixture/posts', '/missing'];
+        $urls = ['/', '/blog', $this->postUrl('hello-world'), $this->postUrl('second'), $this->postUrl('hello'), '/'.date('Y/m').'/draft', '/2019/05/hello', '/about', '/about/team', '/_fixture/posts', '/missing', $this->attachment];
         $snapshot = [];
 
         foreach ($urls as $url) {
             $client->request('GET', $url);
             $response = $client->getResponse();
-            $snapshot[$url] = ['status' => $response->getStatusCode(), 'location' => $response->headers->get('Location'), 'body' => $response->isSuccessful() ? (string) $response->getContent() : ''];
+            $snapshot[$url] = ['status' => $response->getStatusCode(), 'location' => $response->headers->get('Location'), 'body' => $response->isSuccessful() ? $client->getInternalResponse()->getContent() : ''];
         }
 
         return $snapshot;

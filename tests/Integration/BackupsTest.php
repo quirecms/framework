@@ -15,6 +15,7 @@ use Quire\Content\ContentWriter;
 use Quire\Extension\InstalledExtensions;
 use Quire\Extension\Rebuild\AppRebuilderInterface;
 use Quire\Extension\State\ExtensionStateStoreInterface;
+use Quire\Storage\StorageDisks;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 /**
@@ -164,6 +165,7 @@ final class BackupsTest extends WebTestCase
                 {
                 }
             },
+            $container->get(StorageDisks::class),
             $container->getParameter('kernel.project_dir'),
             'test',
         );
