@@ -2,8 +2,6 @@
 
 Quire keeps its users in PostgreSQL, like everything else. A user has an email, a username and a display name, a password (stored only as a hash), roles, and a status: active or suspended. Users who sign in another way, e.g. with single sign-on, can do without an email or a password.
 
-> Permissions and single sign-on come in the next releases.
-
 ## The first admin
 
 A new site gets its first admin from the installer, which also prepares the database and asks for the site's title and language:
@@ -85,7 +83,13 @@ Emails need a mailer: set `MAILER_DSN` (see [Docker](docker.md#environment-varia
 
 Extensions add ways to sign in, e.g. single sign-on, as Symfony authenticators with `Extend\Auth` (see [extensions](extensions.md#extendauth)). They're used by the firewall that lists `Quire\User\Security\ExtensionAuthenticators`, as Quire's `security.yaml` does, so installing such an extension needs no change to the security configuration. A link to them goes on the sign-in page through the `auth.login_options` slot.
 
-Accounts at other providers are linked to users with `UserWriter::linkIdentity()`, e.g. on their first sign-in. Listeners of `Quire\User\Event\IdentityLinking` can refuse a link, e.g. for accounts outside the organisation:
+Accounts at other providers are linked to users with `UserWriter::linkIdentity()`, e.g. on their first sign-in. An authenticator that signs people in this way should:
+
+- **Find the user** with `UserRepository::findByIdentity()`, and on the first sign-in create one (as a member, like registration does) and link the account in one database transaction, so a refused link leaves no user behind.
+- **Send the user back** to the page that asked them to sign in. The firewall keeps its URL in the session; Symfony's `TargetPathTrait` reads it. A `next` path from the sign-in page's link (`target_path` in the slot) must be a path on the site, never another site's address.
+- **Report failures on the sign-in page**: store the exception in the session under `SecurityRequestAttributes::AUTHENTICATION_ERROR` and redirect to `/login`. A `CustomUserMessageAuthenticationException` shows its message there.
+
+Quire's test extension does all three, in `tests/Fixtures/extensions/hello/src/Security/SsoAuthenticator.php` of the [framework repository](https://github.com/quirecms/framework). Listeners of `Quire\User\Event\IdentityLinking` can refuse a link, e.g. for accounts outside the organisation:
 
 ```php
 #[AsEventListener]

@@ -122,18 +122,35 @@ final class IdentityTest extends WebTestCase
 
     public function testExtensionsAddWaysToSignIn(): void
     {
-        $this->user('ada');
+        $this->continueWithFixture('ada', next: '/_fixture/whoami');
+        self::assertResponseRedirects('/_fixture/whoami');
+        self::assertSame('ada', $this->whoami());
 
-        $this->client->request('GET', '/_fixture/whoami', server: ['HTTP_X_FIXTURE_USER' => 'ada']);
-        self::assertResponseIsSuccessful();
-        self::assertSame('ada', $this->client->getResponse()->getContent());
+        $ada = self::getContainer()->get(UserRepository::class)->findByIdentity('fixture', 'ada');
+        self::assertSame(['Ada', 'ada@fixture.example'], [$ada?->displayName, $ada?->email], 'Linked on the first sign-in.');
 
-        $this->client->request('GET', '/_fixture/whoami', server: ['HTTP_X_FIXTURE_USER' => 'nobody']);
-        self::assertResponseStatusCodeSame(401);
+        $this->client->getCookieJar()->clear();
+        $this->continueWithFixture('ada', next: 'https://evil.example/');
+        self::assertResponseRedirects('/', message: 'Other sites\' addresses are ignored.');
+        self::assertSame(1, $this->userCount(), 'The same user signs in again.');
 
         $this->client->getCookieJar()->clear();
         $this->client->request('GET', '/_fixture/whoami');
         self::assertSame('anonymous', $this->client->getResponse()->getContent(), 'Other requests are left to the other ways.');
+    }
+
+    public function testRefusedLinksSignNobodyIn(): void
+    {
+        self::getContainer()->get(EventDispatcherInterface::class)->addListener(IdentityLinking::class, static function (IdentityLinking $event): void {
+            $event->cancel('Only invited accounts can sign in.');
+        });
+
+        $this->continueWithFixture('mallory');
+        self::assertResponseRedirects('/login');
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('#sign-in-error', 'Only invited accounts can sign in.');
+        self::assertSame('anonymous', $this->whoami());
+        self::assertSame(0, $this->userCount(), 'No user without its link.');
     }
 
     public function testContentCantTakeURLsOfTheSite(): void
@@ -151,6 +168,30 @@ final class IdentityTest extends WebTestCase
 
         $this->expectException(InvalidContentException::class);
         $this->content->update(new UpdateContent($page->id, $page->version)->slug('login'));
+    }
+
+    /**
+     * Clicks the fixture extension's button on the sign-in page, and continues at its pretend provider.
+     */
+    private function continueWithFixture(string $account, ?string $next = null): void
+    {
+        $this->client->request('GET', '/login'.(null === $next ? '' : '?next='.rawurlencode($next)));
+        $this->client->clickLink('Continue with Fixture');
+        $this->client->submitForm('Continue', ['account' => $account]);
+    }
+
+    private function whoami(): string
+    {
+        $this->client->request('GET', '/_fixture/whoami');
+
+        return (string) $this->client->getResponse()->getContent();
+    }
+
+    private function userCount(): int
+    {
+        $count = $this->connection->fetchOne('SELECT count(*) FROM quire.app_user');
+
+        return \is_int($count) ? $count : -1;
     }
 
     private function user(string $name): User

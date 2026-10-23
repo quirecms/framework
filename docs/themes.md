@@ -288,6 +288,10 @@ The site has its own `assets/` directory and `importmap.php`, loaded on every pa
 
 Themes that want Sass, Tailwind or a bundler can use Symfony's `symfonycasts/tailwind-bundle`, `symfonycasts/sass-bundle` or `pentatrion/vite-bundle` and ship the built files in `assets/`; Quire neither requires nor prevents them.
 
+## Previews
+
+Users who may preview unpublished items (see [permissions](permissions.md#abilities-of-content)) see them at their URL. The content template then gets `preview` set to true. A theme's own `content/single.html.twig` should say so on the page, as the default theme does with a `.notice`, so nobody mistakes a draft for what visitors see.
+
 ## The sign-in page
 
 Quire's sign-in page, `security/login.html.twig`, extends the theme's `layout.html.twig`, so it looks like the rest of the site; style it with the classes it uses (`sign-in`, `form`, `form-field`, `form-check`, `form-error`), or replace it with a `templates/security/login.html.twig` of the theme. A replacement keeps:

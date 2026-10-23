@@ -9,7 +9,7 @@
 
 Quire has a small core, and everything else is an extension: the admin panel, single sign-on, comments, reviews. You write content in Markdown, and PostgreSQL is the single source of truth, so one database backup holds your whole site. Quire runs on its own or inside an existing Symfony application.
 
-> **Status:** early development, no stable release yet. Content, URLs, extensions, themes and backups work; the admin panel, users and permissions come next.
+> **Status:** early development, no stable release yet. Content, URLs, extensions, themes, backups, users and permissions work; the admin panel and single sign-on come next.
 
 ## Requirements
 
@@ -102,7 +102,7 @@ docker compose exec php bin/console quire:user:create grace@example.com --role=e
 docker compose exec php bin/console quire:user:list
 ```
 
-See [docs/users.md](docs/users.md). What each role may do is set by abilities, such as `content.post.publish`:
+Users sign in at `/login`. Registration and password reset by email are off until you turn them on. See [docs/users.md](docs/users.md). What each role may do is set by abilities, such as `content.post.publish`:
 
 ```bash
 docker compose exec php bin/console quire:permissions:list
