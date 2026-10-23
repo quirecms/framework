@@ -1,3 +1,6 @@
+# Files of local storage disks (see docs/storage.md)
+/storage/
+
 ###> symfony/framework-bundle ###
 /.env.local
 /.env.local.php

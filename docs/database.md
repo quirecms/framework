@@ -1,6 +1,6 @@
 # Database
 
-Quire stores everything in PostgreSQL: content, revisions, settings, which extensions are enabled, and the data of every extension. All of it lives in a PostgreSQL schema of its own, named `quire`:
+Quire stores everything in PostgreSQL: content, revisions, settings, which extensions are enabled, the data of every extension, and the record of every uploaded file (the files themselves are on [storage disks](storage.md)). All of it lives in a PostgreSQL schema of its own, named `quire`:
 
 | Table | Contents |
 |-------|----------|

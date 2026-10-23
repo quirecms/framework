@@ -7,7 +7,7 @@
 
 <p align="center"><strong>The extensible CMS for PHP, built on Symfony.</strong> By <a href="https://quirecms.com">YorvoLabs</a>.</p>
 
-Quire has a small core, and everything else is an extension: the admin panel, single sign-on, comments, reviews. You write content in Markdown, and PostgreSQL is the single source of truth, so one database backup holds your whole site. Quire runs on its own or inside an existing Symfony application.
+Quire has a small core, and everything else is an extension: the admin panel, single sign-on, comments, reviews. You write content in Markdown, and PostgreSQL is the source of truth for everything, with uploaded files on a volume or any S3-compatible service. Quire runs on its own or inside an existing Symfony application.
 
 > **Status:** early development, no stable release yet. Content, URLs, extensions, themes, backups, users and permissions work; the admin panel and single sign-on come next.
 
@@ -145,9 +145,20 @@ docker compose exec php bin/console quire:migrations:status
 
 See [docs/database.md](docs/database.md).
 
+## Storage
+
+Uploaded files are kept on storage disks: a volume by default, or any S3-compatible service, with everything about them in PostgreSQL. Extensions declare the disks they need, and the site decides where each one is:
+
+```bash
+docker compose exec php bin/console quire:storage:list
+docker compose exec php bin/console quire:storage:check
+```
+
+See [docs/storage.md](docs/storage.md).
+
 ## Backups
 
-One file holds the whole site. Restoring checks first that the code is new enough for the backup:
+One file holds the site's database. Restoring checks first that the code is new enough for the backup:
 
 ```bash
 docker compose exec -T php bin/console quire:backup - > site.dump

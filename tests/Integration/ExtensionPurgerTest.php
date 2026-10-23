@@ -61,8 +61,10 @@ final class ExtensionPurgerTest extends KernelTestCase
             \Quire\Migrations\Version20261022230000::class,
             \Quire\Migrations\Version20261023180000::class,
             \Quire\Migrations\Version20261023200000::class,
+            \Quire\Migrations\Version20261023220000::class,
             \Quire\Fixtures\Hello\Migrations\Version20261022100000::class,
             \Quire\Fixtures\Hello\Migrations\Version20261022150000::class,
+            \Quire\Fixtures\Hello\Migrations\Version20261023230000::class,
         ], $versions);
     }
 
@@ -103,7 +105,7 @@ final class ExtensionPurgerTest extends KernelTestCase
         self::assertSame('{}', $this->connection->fetchOne('SELECT fields::text FROM quire.content_revision WHERE content_id = ?', [$post->id]), 'Revisions too.');
         self::assertSame([
             'Purging "quire-fixture-hello"…',
-            '  Rolled back 2 migration(s).',
+            '  Rolled back 3 migration(s).',
             '  Deleted 1 stored setting(s).',
             '  Deleted the fields mood, rating, score, featured, subtitle, color, size, tags, due, event_at, extra from 1 post.',
             '  Deleted the fields recipient from 0 greeting cards.',

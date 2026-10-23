@@ -9,9 +9,9 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
 
 	if [ "$APP_ENV" != 'prod' ]; then
 		# In development, commands run either as root or as the host user (`docker compose exec -u`),
-		# so var/ must stay writable for both
-		mkdir -p var/cache var/log var/share
-		chmod -R a+rwX var
+		# so var/ and the local storage disks must stay writable for both
+		mkdir -p var/cache var/log var/share storage/public storage/private
+		chmod -R a+rwX var storage
 	fi
 
 	# Display information about the current project

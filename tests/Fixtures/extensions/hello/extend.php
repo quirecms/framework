@@ -46,6 +46,10 @@ return [
         ->ability('quire-fixture-hello.purge', 'Delete all greetings for good', roles: [], strict: true)
         ->rule(Hello\Permission\LockedContentRule::class),
 
+    new Extend\Storage()
+        ->disk('quire-fixture-hello', public: true, label: 'Greeting pictures')
+        ->disk('quire-fixture-hello-private', public: false, label: 'Greeting downloads'),
+
     new Extend\Auth()
         ->authenticator(Hello\Security\SsoAuthenticator::class),
 

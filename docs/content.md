@@ -362,7 +362,7 @@ Each relation costs one database query per page of results, however many items t
 
 ## How content is stored
 
-All content lives in PostgreSQL, in one `quire.content` table, together with everything else about the site, so one database backup contains the whole site. See [docs/database.md](database.md).
+All content lives in PostgreSQL, in one `quire.content` table, together with everything else about the site, so one database backup contains all of it (uploaded files are on [storage disks](storage.md)). See [docs/database.md](database.md).
 
 - **IDs** are time-ordered UUIDs (version 7), so they sort by creation time and are safe to show in URLs.
 - **Slugs** are unique among items of the same type, parent and language. Items in the trash don't hold on to their slug.

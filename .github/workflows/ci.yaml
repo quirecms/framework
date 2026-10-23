@@ -108,6 +108,8 @@ jobs:
         run: curl -v --insecure --fail-with-body https://quire.localhost/_quire/health
       - name: Check the app runs as a non-root user
         run: test "$(docker compose -f compose.yaml -f compose.prod.yaml exec -T php id -u)" != "0"
+      - name: Check the app can write to its storage volume
+        run: docker compose -f compose.yaml -f compose.prod.yaml exec -T php sh -c 'touch storage/public/.check storage/private/.check && rm storage/public/.check storage/private/.check'
       - name: Show logs on failure
         if: failure()
         run: docker compose -f compose.yaml -f compose.prod.yaml logs
