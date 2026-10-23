@@ -149,8 +149,8 @@ final class ContentQueryTest extends KernelTestCase
     {
         $query = $this->content->query('post');
 
-        $this->assertInvalid('Post can\'t be filtered by "fields.mood": the field isn\'t declared with "sortable: true" or "filterable: true", so it has no index. Fields that can be filtered: rating, featured, tags, event_at.', static fn (): ContentQuery => $query->where('fields.mood', 'happy'));
-        $this->assertInvalid('Post can\'t be sorted by "fields.nope": the field isn\'t declared. Fields that can be sorted: rating, featured, event_at.', static fn (): ContentQuery => $query->orderBy('fields.nope'));
+        $this->assertInvalid('Post can\'t be filtered by "fields.mood": the field isn\'t declared with "sortable: true" or "filterable: true", so it has no index. Fields that can be filtered: rating, featured, tags, event_at, accent.', static fn (): ContentQuery => $query->where('fields.mood', 'happy'));
+        $this->assertInvalid('Post can\'t be sorted by "fields.nope": the field isn\'t declared. Fields that can be sorted: rating, featured, event_at, accent.', static fn (): ContentQuery => $query->orderBy('fields.nope'));
         $this->assertInvalid('Content can\'t be filtered by "body".', static fn (): ContentQuery => $query->where('body', 'x'));
         $this->assertInvalid('Content can\'t be sorted by "body".', static fn (): ContentQuery => $query->orderBy('body'));
         $this->assertInvalid('"fields.rating" can\'t be compared with string: expected a number.', static fn (): ContentQuery => $query->where('fields.rating', 'five'));

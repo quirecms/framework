@@ -107,7 +107,7 @@ final class ExtensionPurgerTest extends KernelTestCase
             'Purging "quire-fixture-hello"…',
             '  Rolled back 3 migration(s).',
             '  Deleted 1 stored setting(s).',
-            '  Deleted the fields mood, rating, score, featured, subtitle, color, size, tags, due, event_at, extra from 1 post.',
+            '  Deleted the fields mood, rating, score, featured, subtitle, color, size, tags, due, event_at, extra, accent from 1 post.',
             '  Deleted the fields recipient from 0 greeting cards.',
         ], $output);
     }

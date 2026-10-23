@@ -63,6 +63,9 @@ return [
         ->field('recipient', 'string', required: true, filterable: true, label: 'Recipient')
         ->permalink('/cards/{id}'),
 
+    new Extend\FieldTypes()
+        ->type('quire-fixture-hello.color', Hello\Field\ColorField::class),
+
     Extend\ContentType::existing('post')
         ->addCapabilities('greetable')
         ->field('mood', 'enum', choices: ['happy', 'sad'])
@@ -75,7 +78,8 @@ return [
         ->field('tags', 'list', filterable: true)
         ->field('due', 'date')
         ->field('event_at', 'datetime', sortable: true)
-        ->field('extra', 'json'),
+        ->field('extra', 'json')
+        ->field('accent', 'quire-fixture-hello.color', filterable: true, sortable: true, options: ['palette' => ['#F80', '#0055aa', '#222222']]),
 
     new Extend\Query()
         ->scope('featured', Hello\Query\FeaturedScope::class, types: ['post'])
