@@ -65,6 +65,7 @@ final class ExtensionPurgerTest extends KernelTestCase
             \Quire\Migrations\Version20261023220000::class,
             \Quire\Migrations\Version20261023230000::class,
             \Quire\Migrations\Version20261023233000::class,
+            \Quire\Migrations\Version20261023235000::class,
             \Quire\Fixtures\Hello\Migrations\Version20261022100000::class,
             \Quire\Fixtures\Hello\Migrations\Version20261022150000::class,
             \Quire\Fixtures\Hello\Migrations\Version20261023230000::class,

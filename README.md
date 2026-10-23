@@ -167,6 +167,16 @@ docker compose exec -T php bin/console quire:restore - < site.tar
 
 See [docs/backups.md](docs/backups.md).
 
+## Background jobs
+
+Emails, publishing scheduled content and the work of extensions run in the background, in a worker (the `worker` service). Jobs wait in PostgreSQL, saved in the same transaction as the change that caused them, and failed ones are retried:
+
+```bash
+docker compose exec php bin/console quire:jobs:status
+```
+
+See [docs/jobs.md](docs/jobs.md).
+
 ## Repository layout
 
 | Path | Contents |

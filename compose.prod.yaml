@@ -10,3 +10,12 @@ services:
       APP_SECRET: ${APP_SECRET}
       # Where emails go, e.g. smtp://user:pass@smtp.example.com:587. Without it, no email is sent.
       MAILER_DSN: ${MAILER_DSN:-null://null}
+
+  worker:
+    image: ${IMAGES_PREFIX:-}quire-php-prod
+    build:
+      context: .
+      target: frankenphp_prod
+    environment:
+      APP_SECRET: ${APP_SECRET}
+      MAILER_DSN: ${MAILER_DSN:-null://null}

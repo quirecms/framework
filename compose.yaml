@@ -31,6 +31,26 @@ services:
         published: ${HTTP3_PORT:-443}
         protocol: udp
 
+  # Runs background jobs and scheduled tasks (see docs/jobs.md), with the php service's image. It starts
+  # once php is healthy, i.e. migrations ran, and restarts by itself, e.g. after extensions change.
+  worker:
+    restart: unless-stopped
+    depends_on:
+      php:
+        condition: service_healthy
+    command: ["php", "bin/console", "messenger:consume", "quire", "--time-limit=3600", "--memory-limit=256M"]
+    environment:
+      DEFAULT_URI: https://${SERVER_NAME:-quire.localhost}:${HTTPS_PORT:-443}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-!ChangeMe!}@database:5432/${POSTGRES_DB:-app}?serverVersion=${POSTGRES_VERSION:-18}&charset=${POSTGRES_CHARSET:-utf8}
+      # The php service runs the migrations.
+      QUIRE_SKIP_MIGRATIONS: 1
+    volumes:
+      - storage_data:/app/storage
+    healthcheck:
+      # The worker touches this file every 15 seconds; long jobs delay it.
+      test: ["CMD", "php", "-r", "exit(time() - (int) @filemtime('var/quire-worker.heartbeat') < 600 ? 0 : 1);"]
+      start_period: 60s
+
 ###> doctrine/doctrine-bundle ###
   database:
     image: postgres:${POSTGRES_VERSION:-18}-alpine

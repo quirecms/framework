@@ -7,6 +7,7 @@ Quire runs on [FrankenPHP](https://frankenphp.dev) (a PHP application server bui
 | Service | Image | Purpose |
 |---------|-------|---------|
 | `php` | Built from `Dockerfile` | FrankenPHP + PHP 8.5. Serves HTTP, HTTPS and HTTP/3. |
+| `worker` | The `php` service's image | Runs [background jobs](jobs.md) and scheduled tasks, e.g. sending emails and publishing scheduled content. It starts once `php` is healthy (the migrations ran), restarts by itself after extensions change, and in development every 5 minutes, to run code you changed. Its health check reads its heartbeat. |
 | `database` | `postgres:18-alpine` | Stores all of Quire's data |
 | `mailer` | `axllent/mailpit` | Development only: catches the emails Quire sends, e.g. to reset passwords, and shows them in a web inbox |
 | `s3` | `chrislusf/seaweedfs` | Development only: an S3-compatible service, to try [storage disks](storage.md) on S3 and to test them. Its S3 API is at the address `docker compose port s3 8333` shows; it accepts any credentials. |
@@ -21,7 +22,7 @@ Quire runs on [FrankenPHP](https://frankenphp.dev) (a PHP application server bui
 | `Dockerfile` | One file with three targets: `frankenphp_dev`, `frankenphp_prod_builder` and `frankenphp_prod` |
 | `frankenphp/Caddyfile` | Web server configuration |
 | `frankenphp/conf.d/` | PHP settings: shared, dev-only and prod-only |
-| `frankenphp/docker-entrypoint.sh` | Installs dependencies if needed, waits for the database, runs migrations |
+| `frankenphp/docker-entrypoint.sh` | Installs dependencies if needed, waits for the database, runs migrations (unless `QUIRE_SKIP_MIGRATIONS=1`) |
 
 ## Development
 
@@ -86,7 +87,7 @@ Keep these volumes:
 
 ### Running several servers
 
-The app containers keep no data of their own (sessions too are in PostgreSQL), so you can run several behind a load balancer, all using the same PostgreSQL database; users stay signed in whichever server answers. Put [storage disks](storage.md) on S3 (or a volume all servers share), since a local disk is only on the server that wrote to it. When an extension is enabled or disabled on one of them, the others notice within a few seconds, rebuild in the background and restart their workers, with no extra setup and no message broker. Tune or disable the check with `quire.extensions.check_interval` (in seconds; default `5`, `0` turns it off).
+The app containers keep no data of their own (sessions too are in PostgreSQL), so you can run several behind a load balancer, all using the same PostgreSQL database; users stay signed in whichever server answers. Put [storage disks](storage.md) on S3 (or a volume all servers share), since a local disk is only on the server that wrote to it. When an extension is enabled or disabled on one of them, the others notice within a few seconds, rebuild in the background and restart their workers, with no extra setup and no message broker. Run the `worker` service on as many servers as you like: each job and each scheduled task runs once. Tune or disable the check with `quire.extensions.check_interval` (in seconds; default `5`, `0` turns it off).
 
 For the same set of extensions everywhere, set by your deployment instead of at runtime, pin them in `config/packages/quire.yaml` (see [extensions](extensions.md#pinning-extensions-in-production)).
 
@@ -102,6 +103,8 @@ For the same set of extensions everywhere, set by your deployment instead of at 
 | `MAILER_DSN` | `null://null` (Mailpit in development) | Where emails go, e.g. `smtp://user:pass@smtp.example.com:587`. Needed for registration and password reset. |
 | `DEFAULT_URI` | `https://$SERVER_NAME:$HTTPS_PORT` | The site's address, used for links in emails and from the command line |
 | `XDEBUG_MODE` | `off` | Xdebug mode (development only) |
+| `QUIRE_JOBS_DSN` | `quire://` (PostgreSQL) | Where [background jobs](jobs.md) wait for workers; `sync://` runs them at once, without a worker |
+| `QUIRE_SKIP_MIGRATIONS` | `0` | `1` makes the entrypoint skip migrations, for containers started next to the one that runs them (the `worker` service) |
 | `QUIRE_FRANKENPHP_ADMIN_URL` | `http://localhost:2019` | Where Quire reaches FrankenPHP's admin API to restart PHP workers after extensions change |
 
 ## Health checks

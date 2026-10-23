@@ -90,6 +90,6 @@ The command fails when the backup does, so the `mv` only keeps complete backups.
 
 A backup you've never restored is only a hope: restore one into a test environment now and then (`--dry-run` alone doesn't prove the data is complete).
 
-Run [`quire:storage:gc`](storage.md#cleaning-up) with a grace period at least as long as you keep backups that use a files directory or S3 versions, so the files an older database refers to are still there.
+Unused files are deleted after a grace period (see [cleaning up](storage.md#cleaning-up)). When you keep backups that use a files directory or S3 versions, set `quire.storage.gc_grace_days` at least as long as you keep them, so the files an older database refers to are still there: `bin/console quire:settings:set quire.storage.gc_grace_days 15`.
 
 Managed PostgreSQL services usually offer point-in-time recovery of the whole database. That includes Quire's data, and complements `quire:backup`: it can go back to any moment, while `quire:backup` files are portable to any server and contain Quire's data alone, with the files.

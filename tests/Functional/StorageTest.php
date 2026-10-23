@@ -6,12 +6,17 @@ namespace App\Tests\Functional;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\DriverException;
+use Quire\Settings\Settings;
 use Quire\Storage\Internal\GarbageCollector;
+use Quire\Storage\Job\CollectGarbage;
+use Quire\Storage\Job\CollectGarbageHandler;
 use Quire\Storage\ObjectStore;
 use Quire\Storage\StorageDisks;
 use Quire\Storage\StoredObject;
+use Quire\Testing\JobRunner;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 /**
  * Storage disks: files named after their content, served publicly or through signed URLs, and
@@ -119,6 +124,24 @@ final class StorageTest extends WebTestCase
 
         $this->client->request('GET', $this->objects->temporaryUrl($object, new \DateTimeImmutable('-1 second')));
         self::assertResponseStatusCodeSame(403, 'Expired.');
+    }
+
+    public function testTheDailyCleanUpKeepsUnusedFilesForTheGracePeriod(): void
+    {
+        $unused = $this->objects->store('quire-fixture-hello', 'Not used for two days.');
+        $this->connection->executeStatement("UPDATE quire.storage_object SET stored_at = now() - interval '2 days' WHERE id = ?", [$unused->id]);
+        $settings = self::getContainer()->get(Settings::class);
+        $bus = self::getContainer()->get(MessageBusInterface::class);
+
+        $settings->set(CollectGarbageHandler::GRACE_SETTING, 3);
+        $bus->dispatch(new CollectGarbage());
+        JobRunner::run(self::getContainer());
+        self::assertNotNull($this->objects->find($unused->id), 'Kept for 3 days.');
+
+        $settings->set(CollectGarbageHandler::GRACE_SETTING, 1);
+        $bus->dispatch(new CollectGarbage());
+        JobRunner::run(self::getContainer());
+        self::assertNull($this->objects->find($unused->id));
     }
 
     public function testUnusedObjectsAndUnrecordedFilesAreCollected(): void

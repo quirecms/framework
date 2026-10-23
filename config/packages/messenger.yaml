@@ -1,0 +1,17 @@
+# Quire adds the transport "quire", its jobs (everything implementing Quire\Jobs\Job) and their
+# retries (see docs/jobs.md). Run a worker with: bin/console messenger:consume quire
+framework:
+    messenger:
+        transports:
+            sync: 'sync://'
+
+        routing:
+            # Emails are sent in the background, retried when the mail server is unavailable.
+            Symfony\Component\Mailer\Messenger\SendEmailMessage: quire
+
+when@test:
+    framework:
+        messenger:
+            routing:
+                # Tests read sent emails right away.
+                Symfony\Component\Mailer\Messenger\SendEmailMessage: sync
