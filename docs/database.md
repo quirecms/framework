@@ -6,6 +6,8 @@ Quire stores everything in PostgreSQL: content, revisions, settings, which exten
 |-------|----------|
 | `quire.content` | Every content item: posts, pages and the types extensions add |
 | `quire.content_revision` | Earlier versions of content items |
+| `quire.content_pending_revision` | [Changes to content items](content.md#pending-revisions) that aren't published yet |
+| `quire.content_revision_review` | Reviews of those changes |
 | `quire.content_relation` | Links of [relation fields](content.md#relation-fields) between content items |
 | `quire.content_path_history` | Paths content items had before, so their old URLs redirect |
 | `quire.permalink_history` | URL patterns content types had before |

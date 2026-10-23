@@ -10,6 +10,7 @@ use Doctrine\Migrations\MigratorConfiguration;
 use Doctrine\Migrations\Version\Version;
 use Quire\Content\Command\CreateContent;
 use Quire\Content\ContentWriter;
+use Quire\Content\Revision\PendingRevisionWriter;
 use Quire\Database\MigrationsFactory;
 use Quire\Extension\Event\ExtensionPurging;
 use Quire\Extension\ExtensionPurger;
@@ -63,6 +64,7 @@ final class ExtensionPurgerTest extends KernelTestCase
             \Quire\Migrations\Version20261023200000::class,
             \Quire\Migrations\Version20261023220000::class,
             \Quire\Migrations\Version20261023230000::class,
+            \Quire\Migrations\Version20261023233000::class,
             \Quire\Fixtures\Hello\Migrations\Version20261022100000::class,
             \Quire\Fixtures\Hello\Migrations\Version20261022150000::class,
             \Quire\Fixtures\Hello\Migrations\Version20261023230000::class,
@@ -82,6 +84,7 @@ final class ExtensionPurgerTest extends KernelTestCase
         $post = $container->get(ContentWriter::class)->create(new CreateContent('post', 'Hello', fields: ['mood' => 'happy', 'rating' => 3]));
         // A value no enabled extension declares, e.g. from an extension removed earlier: not this one's to delete.
         $this->connection->executeStatement('UPDATE quire.content SET fields = fields || \'{"other": 1}\' WHERE id = ?', [$post->id]);
+        $container->get(PendingRevisionWriter::class)->create($post->id);
 
         $purging = [];
         $container->get(EventDispatcherInterface::class)->addListener(ExtensionPurging::class, static function (ExtensionPurging $event) use (&$purging): void {
@@ -104,6 +107,7 @@ final class ExtensionPurgerTest extends KernelTestCase
         self::assertTrue($this->tableExists('quire.setting'), 'Core migrations are untouched.');
         self::assertSame('{"other": 1}', $this->connection->fetchOne('SELECT fields::text FROM quire.content WHERE id = ?', [$post->id]));
         self::assertSame('{}', $this->connection->fetchOne('SELECT fields::text FROM quire.content_revision WHERE content_id = ?', [$post->id]), 'Revisions too.');
+        self::assertSame(['{"other": 1}', '{"other": 1}'], $this->connection->fetchNumeric("SELECT fields::text, (base -> 'fields')::text FROM quire.content_pending_revision WHERE content_id = ?", [$post->id]), 'And pending revisions, and what they started from.');
         self::assertSame([
             'Purging "quire-fixture-hello"…',
             '  Rolled back 3 migration(s).',

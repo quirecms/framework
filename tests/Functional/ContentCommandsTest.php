@@ -5,7 +5,12 @@ declare(strict_types=1);
 namespace App\Tests\Functional;
 
 use Doctrine\DBAL\Connection;
+use Quire\Content\Command\CreateContent;
+use Quire\Content\Command\UpdateContent;
+use Quire\Content\Command\UpdatePendingRevision;
 use Quire\Content\ContentRepository;
+use Quire\Content\ContentWriter;
+use Quire\Content\Revision\PendingRevisionWriter;
 use Quire\User\CreateUser;
 use Quire\User\UserWriter;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
@@ -104,6 +109,40 @@ final class ContentCommandsTest extends KernelTestCase
         $due = $this->command('quire:content:publish-due');
         $due->execute([]);
         self::assertStringContainsString('Published 0 scheduled items.', $due->getDisplay());
+    }
+
+    public function testPendingRevisionsFromTheCommandLine(): void
+    {
+        $container = self::getContainer();
+        $writer = $container->get(ContentWriter::class);
+        $post = $writer->create(new CreateContent('post', 'Hours', body: "Monday to Friday.\nClosed on Sundays.\n"));
+        $post = $writer->transition($post->id, $post->version, 'publish');
+        $pendingWriter = $container->get(PendingRevisionWriter::class);
+        $pending = $pendingWriter->create($post->id, message: 'Weekends <too>');
+        $pending = $pendingWriter->update(new UpdatePendingRevision($pending->id, 1)->body("Monday to Saturday.\nClosed on Sundays.\n")->field('mood', 'happy'));
+
+        $command = $this->command('quire:content:pending');
+        $command->execute(['id' => $post->id]);
+        self::assertMatchesRegularExpression('/'.$pending->id.'\s+editing\s+2\s+2\s+\S+ \S+\s+Weekends <too>/', $command->getDisplay());
+
+        $command->execute(['id' => $post->id, '--show' => $pending->id]);
+        self::assertStringContainsString("@@ -1,2 +1,2 @@\n-Monday to Friday.\n+Monday to Saturday.\n Closed on Sundays.\n", $command->getDisplay());
+        self::assertStringContainsString('fields.mood: (none) → "happy"', $command->getDisplay());
+
+        // Someone changes the same line meanwhile.
+        $writer->update(new UpdateContent($post->id, $post->version)->body("Monday to Friday, 9 to 5.\nClosed on Sundays.\n"));
+        $command->execute(['id' => $post->id, '--show' => $pending->id]);
+        self::assertStringContainsString('body: The same lines were changed', $this->flat($command));
+        self::assertSame(1, $command->execute(['id' => $post->id, '--publish' => $pending->id]));
+        self::assertStringContainsString('The changes conflict with what was published since they were started: body.', $this->flat($command));
+
+        self::assertSame(0, $command->execute(['id' => $post->id, '--discard' => $pending->id]));
+        $other = $pendingWriter->create($post->id);
+        $pendingWriter->update(new UpdatePendingRevision($other->id, 1)->title('Opening hours'));
+        self::assertSame(0, $command->execute(['id' => $post->id, '--publish' => $other->id]));
+        self::assertStringContainsString('Published the changes. "Opening hours" is now at version 4.', $this->flat($command));
+        self::assertSame(1, $command->execute(['id' => $post->id, '--show' => $other->id]));
+        self::assertStringContainsString('No pending revision with ID', $this->flat($command));
     }
 
     private function command(string $name): CommandTester

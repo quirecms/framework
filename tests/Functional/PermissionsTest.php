@@ -51,7 +51,7 @@ final class PermissionsTest extends WebTestCase
     {
         self::assertSame(['guest', 'member', 'editor', 'admin', 'moderator'], array_keys($this->permissions->roles()));
 
-        foreach (['view', 'view_drafts', 'create', 'edit_own', 'edit_any', 'publish', 'delete'] as $action) {
+        foreach (['view', 'view_drafts', 'create', 'edit_own', 'edit_any', 'publish', 'review', 'delete'] as $action) {
             self::assertTrue($this->permissions->has('content.greeting_card.'.$action), $action);
         }
 
