@@ -53,6 +53,10 @@ return [
     new Extend\Auth()
         ->authenticator(Hello\Security\SsoAuthenticator::class),
 
+    new Extend\Jobs()
+        ->handler(Hello\Job\SendGreetingHandler::class)
+        ->schedule('quire-fixture-hello.tick', 'every 5 minutes', Hello\Job\Tick::class),
+
     new Extend\Settings()
         ->define('quire-fixture-hello.greeting', 'string', 'Hello', label: 'Greeting', exposed: true)
         ->define('quire-fixture-hello.shout', 'bool', false, label: 'Shout the greeting'),

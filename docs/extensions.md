@@ -628,6 +628,21 @@ new Extend\Storage()
 
 Start disk names with your extension's ID. Store files with `Quire\Storage\ObjectStore`, and refer to them from your tables with a foreign key to `quire.storage_object (id) ON DELETE RESTRICT`, so they're kept while you use them and cleaned up afterwards. See [storage](storage.md).
 
+#### `Extend\Jobs`
+
+Registers handlers of [background jobs](jobs.md), and schedules jobs:
+
+```php
+new Extend\Jobs()
+    ->handler(GenerateVariantsHandler::class)
+    ->schedule('acme-feeds.fetch', 'every 15 minutes', FetchFeeds::class)
+    ->schedule('acme-reports.weekly', '0 6 * * 1', SendWeeklyReport::class, timezone: 'Europe/Berlin'),
+```
+
+A job is a message implementing `Quire\Jobs\Job`; dispatch it on the message bus, and a worker handles it. Handlers that `Extend\Services` loads need no `handler()` call when they're marked `#[AsMessageHandler]`.
+
+A schedule's frequency is a cron expression (`30 3 * * *`, `@hourly`) or an interval (`every 15 minutes`, `every 2 hours`, `every 1 day`). Intervals count from midnight UTC, so they fall at the same times on every server; cron times are in the given time zone, or PHP's (usually UTC). The message is created without arguments. Start task names with your extension's ID. Each occurrence runs once, however many workers there are. See [background jobs](jobs.md#scheduled-tasks).
+
 #### `Extend\Migrations`
 
 Registers database migrations ([Doctrine Migrations](https://www.doctrine-project.org/projects/doctrine-migrations/en/stable/)) that create and change your extension's tables:
@@ -796,6 +811,7 @@ It extends Symfony's `WebTestCase`, so all its assertions work (`assertResponseI
 | `setSetting($key, $value)` / `settings()` | Change or read settings, for this test only |
 | `connection()` | The database connection, e.g. to insert test data |
 | `service($class)` | Any service from the container |
+| `runJobs()` | Runs the [background jobs](jobs.md) waiting in the queue, as a worker would, and returns how many ran |
 | `assertExtensionRunning($id)` | Fails with the reason if an extension can't run, e.g. a missing requirement |
 | `assertQueryCount($n, $callback)` | Runs the callback and fails if it didn't make exactly `$n` database queries, listing them. Use it to check that a listing doesn't make a query per item. |
 

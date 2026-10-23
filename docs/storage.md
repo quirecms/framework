@@ -104,7 +104,7 @@ It deletes two kinds of garbage, both only after the grace period:
 - **Objects that nothing refers to.** It finds out what refers to objects from PostgreSQL itself: every foreign key to `quire.storage_object`, in core's tables and every extension's, counts.
 - **Files on a disk that no object records**, e.g. from an upload whose transaction was rolled back.
 
-Storing the same content again restarts an object's grace period. Run the collector regularly, e.g. daily from cron. Choose a grace period at least as long as the time you might want to restore an older database backup, because the files it refers to must still be there.
+Storing the same content again restarts an object's grace period. The [scheduled task](jobs.md#scheduled-tasks) `quire.collect-garbage` runs the collector daily, with a grace period of `quire.storage.gc_grace_days` days (default `1`). Choose a grace period at least as long as the time you might want to restore an older database backup, because the files it refers to must still be there.
 
 ## Backups
 

@@ -123,7 +123,7 @@ bin/console quire:content:transition <id> schedule --at "2026-12-24 09:00"
 bin/console quire:content:transition <id>          # lists the transitions possible now
 ```
 
-Scheduled items become public on their date by themselves. To also run what extensions do when content is published (feeds, notifications, …), run `bin/console quire:content:publish-due` every minute or so, e.g. from cron. Several servers can run it at the same time.
+Scheduled items become public on their date by themselves. What extensions do when content is published (feeds, notifications, …) runs within a minute: the [scheduled task](jobs.md#scheduled-tasks) `quire.publish-due` publishes them. `bin/console quire:content:publish-due` does the same at once.
 
 Extensions can add statuses, such as an editorial review step, and conditions for transitions.
 

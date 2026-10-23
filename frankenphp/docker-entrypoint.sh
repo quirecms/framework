@@ -40,9 +40,12 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
 		echo 'The database is now ready and reachable'
 	fi
 
-	# Run whatever is pending: the app's own migrations, then those of Quire core and its extensions
-	php bin/console doctrine:migrations:migrate --no-interaction --all-or-nothing --allow-no-migration
-	php bin/console quire:migrations:migrate --no-interaction --allow-no-migration
+	# Run whatever is pending: the app's own migrations, then those of Quire core and its extensions.
+	# Containers started alongside the one that does (e.g. the worker) set QUIRE_SKIP_MIGRATIONS=1.
+	if [ "${QUIRE_SKIP_MIGRATIONS:-0}" != '1' ]; then
+		php bin/console doctrine:migrations:migrate --no-interaction --all-or-nothing --allow-no-migration
+		php bin/console quire:migrations:migrate --no-interaction --allow-no-migration
+	fi
 
 	if [ "$APP_ENV" = 'prod' ]; then
 		# The image is built without a database, so its cached app and compiled assets don't include the
@@ -52,7 +55,9 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
 	fi
 
 	# Indexes of sortable and filterable content fields follow the enabled extensions' declarations
-	php bin/console quire:content:sync-indexes
+	if [ "${QUIRE_SKIP_MIGRATIONS:-0}" != '1' ]; then
+		php bin/console quire:content:sync-indexes
+	fi
 
 	echo 'PHP app ready!'
 fi

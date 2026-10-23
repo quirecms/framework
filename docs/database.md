@@ -17,6 +17,9 @@ Quire stores everything in PostgreSQL: content, revisions, settings, which exten
 | `quire.user_token` | One-time tokens of emailed links, e.g. to reset a password (only their hashes) |
 | `quire.session` | Sessions of signed-in users |
 | `quire.storage_object` | Every file on the [storage disks](storage.md): where it is, its size, type and checksum |
+| `quire.job` | [Background jobs](jobs.md) waiting for a worker, and failed ones |
+| `quire.job_schedule` | When each scheduled task last ran |
+| `quire.job_worker` | Workers running jobs, and when they were last seen |
 | `quire.setting` | Site settings changed from their defaults |
 | `quire.extension` | Which extensions are enabled |
 | `quire.migration_versions` | Which of Quire's migrations have run |
