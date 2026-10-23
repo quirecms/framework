@@ -310,9 +310,14 @@ final class AccountsTest extends WebTestCase
         return $user;
     }
 
+    /**
+     * The configured address as the router writes it, without a default port (CI's DEFAULT_URI has ":443").
+     */
     private function siteUri(): string
     {
-        return rtrim(self::getContainer()->getParameter('router.request_context.base_url'), '/');
+        $uri = rtrim(self::getContainer()->getParameter('router.request_context.base_url'), '/');
+
+        return preg_replace('~^(https://[^/:]+):443(?=/|$)|^(http://[^/:]+):80(?=/|$)~', '$1$2', $uri) ?? $uri;
     }
 
     private function userCount(): int
