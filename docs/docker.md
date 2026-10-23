@@ -9,6 +9,7 @@ Quire runs on [FrankenPHP](https://frankenphp.dev) (a PHP application server bui
 | `php` | Built from `Dockerfile` | FrankenPHP + PHP 8.5. Serves HTTP, HTTPS and HTTP/3. |
 | `database` | `postgres:18-alpine` | Stores all of Quire's data |
 | `mailer` | `axllent/mailpit` | Development only: catches the emails Quire sends, e.g. to reset passwords, and shows them in a web inbox |
+| `s3` | `chrislusf/seaweedfs` | Development only: an S3-compatible service, to try [storage disks](storage.md) on S3 and to test them. Its S3 API is at the address `docker compose port s3 8333` shows; it accepts any credentials. |
 
 ## Files
 
@@ -34,6 +35,7 @@ In development:
 - PHP workers restart automatically when PHP files change (FrankenPHP watch mode).
 - Xdebug is installed but off. To turn it on, start the stack with `XDEBUG_MODE=debug docker compose up --wait`.
 - Emails go to Mailpit, never to real inboxes. Open its inbox at the address `docker compose port mailer 8025` shows, e.g. `http://localhost:55123`.
+- Uploaded files are kept on the `storage_data` volume, mounted at `storage/`, so they aren't in your working copy.
 
 ### File ownership on Linux
 
@@ -77,13 +79,14 @@ Keep these volumes:
 
 | Volume | Contents |
 |--------|----------|
-| `database_data` | PostgreSQL data, i.e. your whole site. Back it up with `quire:backup` (see [backups](backups.md)). |
+| `database_data` | PostgreSQL data: everything but the bytes of uploaded files. Back it up with `quire:backup` (see [backups](backups.md)). |
+| `storage_data` | Uploaded files on local [storage disks](storage.md). Back it up too, or put the disks on S3. |
 | `caddy_data` | TLS certificates and keys |
 | `caddy_config` | Caddy's runtime configuration |
 
 ### Running several servers
 
-The app containers keep no data (sessions too are in PostgreSQL), so you can run several behind a load balancer, all using the same PostgreSQL database; users stay signed in whichever server answers. When an extension is enabled or disabled on one of them, the others notice within a few seconds, rebuild in the background and restart their workers, with no extra setup and no message broker. Tune or disable the check with `quire.extensions.check_interval` (in seconds; default `5`, `0` turns it off).
+The app containers keep no data of their own (sessions too are in PostgreSQL), so you can run several behind a load balancer, all using the same PostgreSQL database; users stay signed in whichever server answers. Put [storage disks](storage.md) on S3 (or a volume all servers share), since a local disk is only on the server that wrote to it. When an extension is enabled or disabled on one of them, the others notice within a few seconds, rebuild in the background and restart their workers, with no extra setup and no message broker. Tune or disable the check with `quire.extensions.check_interval` (in seconds; default `5`, `0` turns it off).
 
 For the same set of extensions everywhere, set by your deployment instead of at runtime, pin them in `config/packages/quire.yaml` (see [extensions](extensions.md#pinning-extensions-in-production)).
 

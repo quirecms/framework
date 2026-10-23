@@ -563,6 +563,18 @@ new Extend\Permissions()
 
 See [permissions](permissions.md#declaring-them).
 
+#### `Extend\Storage`
+
+Declares the disks your extension keeps files on. They work without configuration, as directories under the site's `storage/`, and the site can move each one, e.g. to S3, without your code changing.
+
+```php
+new Extend\Storage()
+    ->disk('acme-gallery', public: true, label: 'Gallery photos')
+    ->disk('acme-gallery-originals', public: false, label: 'Full-size originals'),
+```
+
+Start disk names with your extension's ID. Store files with `Quire\Storage\ObjectStore`, and refer to them from your tables with a foreign key to `quire.storage_object (id) ON DELETE RESTRICT`, so they're kept while you use them and cleaned up afterwards. See [storage](storage.md).
+
 #### `Extend\Migrations`
 
 Registers database migrations ([Doctrine Migrations](https://www.doctrine-project.org/projects/doctrine-migrations/en/stable/)) that create and change your extension's tables:

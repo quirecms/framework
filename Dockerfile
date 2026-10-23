@@ -175,7 +175,12 @@ COPY --link --exclude=var --exclude=public/assets --from=frankenphp_prod_builder
 # change. Group 0 + g=u for arbitrary-UID runtimes (e.g. OpenShift).
 COPY --chown=www-data:0 --from=frankenphp_prod_builder /app/var /app/var
 COPY --chown=www-data:0 --from=frankenphp_prod_builder /app/public/assets /app/public/assets
-RUN chmod -R g=u /app/var /app/public/assets
+# storage/ holds the local storage disks; mount a volume there (see docs/storage.md).
+RUN <<-EOF
+	mkdir -p /app/storage/public /app/storage/private
+	chown -R www-data:0 /app/storage
+	chmod -R g=u /app/var /app/public/assets /app/storage
+EOF
 
 COPY --link --chmod=755 frankenphp/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
 

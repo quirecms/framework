@@ -1,6 +1,8 @@
 # Backups
 
-Everything a Quire site stores is in PostgreSQL, in the `quire` schema (see [database](database.md)). One backup of that schema holds the whole site: content, revisions, settings, redirects, which extensions are enabled, the data of every extension, and the migration history.
+Everything a Quire site stores is in PostgreSQL, in the `quire` schema (see [database](database.md)), except the bytes of uploaded files, which are on [storage disks](storage.md). One backup of that schema holds content, revisions, settings, redirects, which extensions are enabled, the data of every extension, the record of every stored file, and the migration history.
+
+> **Uploaded files aren't in the backup yet.** Back up local storage disks yourself (the `storage_data` volume, or `storage/`), and turn on versioning or replication for buckets. A later release adds them to `quire:backup`.
 
 ## Making a backup
 

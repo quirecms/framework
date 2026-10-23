@@ -29,8 +29,34 @@
 	}
 	header @compiledAssets Cache-Control "public, max-age=31536000, immutable"
 
+	# Files of local public storage disks (storage/public/<disk>, see docs/storage.md): named after their
+	# content, so they never change. Uploads are someone's content: never sniffed into another type, and
+	# never able to run scripts as the site. Without a file, the request goes on to Quire, which says 404.
+	@storedFile {
+		path_regexp ^/storage/[a-z][a-z0-9_-]*/[0-9a-f]{2}/[0-9a-f]{2}/[0-9a-f]{64}\.[a-z0-9]+$
+		file {
+			root /app/storage/public
+			try_files /{http.request.uri.path.1}/{http.request.uri.path.2}/{http.request.uri.path.3}/{http.request.uri.path.4}
+		}
+	}
+	handle @storedFile {
+		rewrite * /{http.request.uri.path.1}/{http.request.uri.path.2}/{http.request.uri.path.3}/{http.request.uri.path.4}
+		root * /app/storage/public
+		header Cache-Control "public, max-age=31536000, immutable"
+		header X-Content-Type-Options nosniff
+		header Content-Security-Policy "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; media-src 'self'; sandbox"
+		file_server
+	}
+
 	@phpRoute {
 		not file {path}
+		not {
+			path_regexp ^/storage/[a-z][a-z0-9_-]*/[0-9a-f]{2}/[0-9a-f]{2}/[0-9a-f]{64}\.[a-z0-9]+$
+			file {
+				root /app/storage/public
+				try_files /{http.request.uri.path.1}/{http.request.uri.path.2}/{http.request.uri.path.3}/{http.request.uri.path.4}
+			}
+		}
 	}
 	rewrite @phpRoute index.php
 

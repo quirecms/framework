@@ -961,6 +961,23 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *             email?: scalar|Param|null, // Property path of the email of the application's users, e.g. "email"; none by default. // Default: null
  *         },
  *     },
+ *     storage?: array{ // Where uploaded files are kept. See docs/storage.md.
+ *         root?: scalar|Param|null, // Directory of local disks without a "path": public disks in "public/<disk>", private ones in "private/<disk>". Keep it on a volume that survives deployments. // Default: "%kernel.project_dir%/storage"
+ *         disks?: array<string, array{ // Default: []
+ *             adapter?: "local"|"s3"|"service"|Param, // "local" (a directory), "s3" (any S3-compatible service; needs league/flysystem-async-aws-s3), or "service" (a Flysystem FilesystemOperator service of the application, e.g. from flysystem-bundle) // Default: "local"
+ *             public?: bool|Param|null, // Whether files are served to everyone. Set by the extension that declares the disk; required for the site's own disks. // Default: null
+ *             url?: scalar|Param|null, // Base URL of the files of a public disk, e.g. a CDN in front of the bucket. By default Quire serves local disks at /storage/<disk>, and S3 disks link to the bucket. // Default: null
+ *             path?: scalar|Param|null, // local: the directory; "<root>/public/<disk>" or "<root>/private/<disk>" by default // Default: null
+ *             bucket?: scalar|Param|null, // s3: the bucket // Default: null
+ *             region?: scalar|Param|null, // s3: the region // Default: "us-east-1"
+ *             endpoint?: scalar|Param|null, // s3: the service's address, for services other than AWS, e.g. "https://<account>.r2.cloudflarestorage.com" // Default: null
+ *             access_key?: scalar|Param|null, // s3: the access key ID, e.g. "%env(S3_ACCESS_KEY)%" // Default: null
+ *             secret_key?: scalar|Param|null, // s3: the secret access key, e.g. "%env(S3_SECRET_KEY)%" // Default: null
+ *             prefix?: scalar|Param|null, // s3: a directory in the bucket, so disks can share one // Default: ""
+ *             path_style?: bool|Param, // s3: address the bucket in the path ("https://host/bucket/…"), as most services other than AWS need // Default: false
+ *             service?: scalar|Param|null, // service: the ID of the FilesystemOperator service // Default: null
+ *         }>,
+ *     },
  *     extensions?: array{
  *         pinned?: bool|Param, // Fix the enabled extensions in configuration instead of the database. Use it for immutable production images; enabling or disabling at runtime is then refused. // Default: false
  *         enabled?: list<scalar|Param|null>,

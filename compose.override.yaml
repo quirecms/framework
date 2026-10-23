@@ -22,6 +22,8 @@ services:
       APP_ENV: "${APP_ENV:-dev}"
       # Emails go to Mailpit; read them at the address "docker compose port mailer 8025" shows.
       MAILER_DSN: smtp://mailer:1025
+      # The S3 service below, for the tests of S3 disks.
+      QUIRE_TEST_S3_ENDPOINT: http://s3:8333
     extra_hosts:
       # Ensure that host.docker.internal is correctly defined on Linux
       - host.docker.internal:host-gateway
@@ -43,3 +45,16 @@ services:
       MP_SMTP_AUTH_ACCEPT_ANY: 1
       MP_SMTP_AUTH_ALLOW_INSECURE: 1
 ###< symfony/mailer ###
+
+  # An S3-compatible service (SeaweedFS), to develop and test storage disks on S3. Its S3 API is at
+  # "docker compose port s3 8333"; it accepts any credentials.
+  s3:
+    image: chrislusf/seaweedfs:4.48
+    command: server -s3 -dir=/data
+    ports:
+      - "8333"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8333/healthz"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
