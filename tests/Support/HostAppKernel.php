@@ -61,6 +61,7 @@ final class HostAppKernel extends Kernel
             'http_method_override' => false,
             'handle_all_throwables' => true,
             'session' => ['storage_factory_id' => 'session.storage.factory.mock_file'],
+            'mailer' => ['dsn' => 'null://null'],
         ]);
         $container->extension('twig', ['strict_variables' => true]);
         $container->extension('framework', ['asset_mapper' => ['paths' => ['assets/']]]);
