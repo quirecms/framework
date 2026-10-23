@@ -57,11 +57,15 @@ jobs:
         run: |
           docker compose exec -T php bin/console quire:content:create post "Hello world" --body "Welcome to **Quire**, with a [link](https://example.com)." --publish
           docker compose exec -T php bin/console quire:content:create page "About" --body "About this site." --publish
+          # The account pages, which are off by default.
+          for setting in quire.auth.registration quire.auth.email_verification quire.auth.password_reset; do
+            docker compose exec -T php bin/console quire:settings:set "$setting" true
+          done
           # The image's browsers must match the playwright package, so its version comes from package.json
           # (and Dependabot's updates of the package update the image too).
           playwright=$(jq -r '.dependencies.playwright' tests/Accessibility/package.json)
           docker run --rm --network host -v "$PWD/tests/Accessibility:/work" -w /work "mcr.microsoft.com/playwright:v${playwright}-noble" \
-            sh -c 'npm ci --no-audit --no-fund && node check.mjs https://quire.localhost / /blog/hello-world /about'
+            sh -c 'npm ci --no-audit --no-fund && node check.mjs https://quire.localhost / /blog/hello-world /about /login /register /forgot-password /verify-email'
       - name: Show logs on failure
         if: failure()
         run: docker compose logs

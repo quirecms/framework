@@ -298,6 +298,8 @@ Quire's sign-in page, `security/login.html.twig`, extends the theme's `layout.ht
 
 The variables are listed at the top of Quire's template.
 
+The account pages work the same way, with the same classes plus `form-hint`, and can be replaced the same way: `security/register.html.twig`, `forgot_password.html.twig`, `reset_password.html.twig`, `resend_verification.html.twig`, `check_inbox.html.twig` and `link_expired.html.twig`. Each form posts its `_csrf_token` (`csrf_token('register')`, `'forgot_password'`, `'reset_password'`, `'resend_verification'`) and its fields, as Quire's templates show. So do the emails, in `templates/email/`: `layout.html.twig`, and an `.html.twig` and a `.txt.twig` for each of `verify_email`, `password_reset` and `account_exists`. Style emails inline: email clients ignore most CSS.
+
 ## Languages
 
 Quire's pages are in the site's language (`site.locale`), and an item's page in the item's own language when it's a translation. Write the theme's texts in English in the templates and translate them with Symfony's translator, in a domain named after the theme:

@@ -85,6 +85,10 @@ Values use the same format as `quire:settings:set`. A setting fixed by an enviro
 | `site.description` | string | (empty) | A short description of the site, used by search engines and when the site is shared |
 | `site.locale` | string | `en` | The language of the site and of new content, as a language tag such as `en`, `de` or `pt-BR` |
 | `quire.auth.password_login` | bool | `true` | Whether users can sign in with a password (see [users](users.md#signing-in)) |
+| `quire.auth.registration` | bool | `false` | Whether visitors can create an account, as members (see [users](users.md#registration-and-password-reset)) |
+| `quire.auth.email_verification` | bool | `false` | Whether people who register confirm their email before they can sign in |
+| `quire.auth.password_reset` | bool | `false` | Whether users who forgot their password can choose a new one through an emailed link |
+| `quire.mail.from` | string | (empty) | Who emails come from, e.g. `News <news@example.com>`; empty for the site title and `noreply@` the site's domain |
 | `quire.permissions.grants` | json | `[]` | Abilities granted to or revoked from roles, on top of the defaults. Change them with `quire:permissions:grant` and `revoke` (see [permissions](permissions.md)). |
 | `theme.active` | string | `quire-theme-default` | The site's theme. Change it with `quire:theme:use` (see [themes](themes.md)). |
 | `quire.content.revisions_keep` | int | `50` | How many revisions to keep per content item. Older ones are deleted when a new one is saved. `0` keeps all. |

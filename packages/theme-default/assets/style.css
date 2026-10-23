@@ -362,6 +362,26 @@ button:hover,
     border-radius: var(--radius);
 }
 
+/* Hints and errors under a field */
+.form-hint,
+.form-field .form-error {
+    display: block;
+    margin-block-start: 0.3rem;
+    font-size: 0.9rem;
+}
+
+.form-hint {
+    color: var(--color-muted);
+}
+
+.form-field .form-error {
+    padding: 0.25rem 0.75rem;
+}
+
+.form-field input[aria-invalid="true"] {
+    border-color: var(--color-danger);
+}
+
 .sign-in-options {
     margin-block-start: calc(1.5 * var(--space));
     padding-block-start: var(--space);

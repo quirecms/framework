@@ -75,7 +75,7 @@ final class UserSecurityTest extends WebTestCase
 
         $this->expectException(CustomUserMessageAccountStatusException::class);
         $this->expectExceptionMessageIsOrContains('This account is suspended.');
-        new UserChecker()->checkPostAuth($grace);
+        self::getContainer()->get(UserChecker::class)->checkPostAuth($grace);
     }
 
     public function testASignedInUserStaysSignedIn(): void

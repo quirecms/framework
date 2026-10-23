@@ -8,6 +8,7 @@ Quire runs on [FrankenPHP](https://frankenphp.dev) (a PHP application server bui
 |---------|-------|---------|
 | `php` | Built from `Dockerfile` | FrankenPHP + PHP 8.5. Serves HTTP, HTTPS and HTTP/3. |
 | `database` | `postgres:18-alpine` | Stores all of Quire's data |
+| `mailer` | `axllent/mailpit` | Development only: catches the emails Quire sends, e.g. to reset passwords, and shows them in a web inbox |
 
 ## Files
 
@@ -32,6 +33,7 @@ In development:
 - The project directory is mounted into the container, so code changes apply immediately.
 - PHP workers restart automatically when PHP files change (FrankenPHP watch mode).
 - Xdebug is installed but off. To turn it on, start the stack with `XDEBUG_MODE=debug docker compose up --wait`.
+- Emails go to Mailpit, never to real inboxes. Open its inbox at the address `docker compose port mailer 8025` shows, e.g. `http://localhost:55123`.
 
 ### File ownership on Linux
 
@@ -94,6 +96,8 @@ For the same set of extensions everywhere, set by your deployment instead of at 
 | `APP_SECRET` | none (required in prod) | Symfony's application secret |
 | `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` | `app` / `app` / `!ChangeMe!` | Database credentials. **Always change the password in production.** |
 | `POSTGRES_VERSION` | `18` | PostgreSQL major version |
+| `MAILER_DSN` | `null://null` (Mailpit in development) | Where emails go, e.g. `smtp://user:pass@smtp.example.com:587`. Needed for registration and password reset. |
+| `DEFAULT_URI` | `https://$SERVER_NAME` | The site's address, used for links in emails and from the command line |
 | `XDEBUG_MODE` | `off` | Xdebug mode (development only) |
 | `QUIRE_FRANKENPHP_ADMIN_URL` | `http://localhost:2019` | Where Quire reaches FrankenPHP's admin API to restart PHP workers after extensions change |
 
