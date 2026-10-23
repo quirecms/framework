@@ -62,6 +62,7 @@ final class ExtensionPurgerTest extends KernelTestCase
             \Quire\Migrations\Version20261023180000::class,
             \Quire\Migrations\Version20261023200000::class,
             \Quire\Migrations\Version20261023220000::class,
+            \Quire\Migrations\Version20261023230000::class,
             \Quire\Fixtures\Hello\Migrations\Version20261022100000::class,
             \Quire\Fixtures\Hello\Migrations\Version20261022150000::class,
             \Quire\Fixtures\Hello\Migrations\Version20261023230000::class,
@@ -108,7 +109,8 @@ final class ExtensionPurgerTest extends KernelTestCase
             '  Rolled back 3 migration(s).',
             '  Deleted 1 stored setting(s).',
             '  Deleted the fields mood, rating, score, featured, subtitle, color, size, tags, due, event_at, extra, accent from 1 post.',
-            '  Deleted the fields recipient from 0 greeting cards.',
+            '  Deleted the fields related from 0 pages.',
+            '  Deleted the fields recipient, posts, reply_to from 0 greeting cards.',
         ], $output);
     }
 

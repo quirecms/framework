@@ -358,6 +358,7 @@ Fields hold an item's structured data, next to its title and body. Values are st
 | `date` | A date, or a `DateTimeInterface` | `"2026-12-24"` |
 | `datetime` | A `DateTimeInterface`, or ISO 8601 text with an offset | UTC text, `"2026-12-24T17:00:00+00:00"` |
 | `json` | Anything JSON can hold | as is |
+| `relation` | Other content items, or their IDs | the IDs (see [content](content.md#relation-fields)) |
 
 | Option | Description |
 |--------|-------------|
@@ -368,7 +369,7 @@ Fields hold an item's structured data, next to its title and body. Values are st
 | `maxLength` | Most characters, for `string`, `text` and each item of a `list` |
 | `sortable`, `filterable` | Listings can sort or filter by the field, and it gets a database index. Not available for `text` and `json`; `list` fields can be filtered but not sorted. Indexed `string` fields have a `maxLength` of 255 unless you set one, and at most 1000. |
 | `label`, `help`, `group`, `widget`, `order` | How admin forms present the field. Without a `widget`, the type's own is used. |
-| `options` | The type's own options, for types of extensions (see [below](#extendfieldtypes)) |
+| `options` | The type's own options: `types`, `multiple`, `limit` and `inverse` for `relation` (see [content](content.md#relation-fields)), and those of extensions' types (see [below](#extendfieldtypes)) |
 
 Field names are lowercase letters, digits and underscores, and unique per type: if two extensions declare the same field for a type, Quire refuses to start and names both.
 

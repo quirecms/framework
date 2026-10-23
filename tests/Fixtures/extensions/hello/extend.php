@@ -61,7 +61,12 @@ return [
         ->label('Greeting card')
         ->capabilities('listable', 'printable')
         ->field('recipient', 'string', required: true, filterable: true, label: 'Recipient')
+        ->field('posts', 'relation', options: ['types' => ['post'], 'limit' => 3, 'inverse' => 'cards'])
+        ->field('reply_to', 'relation', options: ['types' => ['greeting_card'], 'multiple' => false])
         ->permalink('/cards/{id}'),
+
+    Extend\ContentType::existing('page')
+        ->field('related', 'relation', options: ['types' => ['page', 'post']]),
 
     new Extend\FieldTypes()
         ->type('quire-fixture-hello.color', Hello\Field\ColorField::class),

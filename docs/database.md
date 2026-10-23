@@ -6,12 +6,15 @@ Quire stores everything in PostgreSQL: content, revisions, settings, which exten
 |-------|----------|
 | `quire.content` | Every content item: posts, pages and the types extensions add |
 | `quire.content_revision` | Earlier versions of content items |
+| `quire.content_relation` | Links of [relation fields](content.md#relation-fields) between content items |
 | `quire.content_path_history` | Paths content items had before, so their old URLs redirect |
 | `quire.permalink_history` | URL patterns content types had before |
 | `quire.redirect` | Redirects added by hand |
 | `quire.app_user` | Users |
 | `quire.user_identity` | Identities that link users to other sign-in providers, e.g. single sign-on |
+| `quire.user_token` | One-time tokens of emailed links, e.g. to reset a password (only their hashes) |
 | `quire.session` | Sessions of signed-in users |
+| `quire.storage_object` | Every file on the [storage disks](storage.md): where it is, its size, type and checksum |
 | `quire.setting` | Site settings changed from their defaults |
 | `quire.extension` | Which extensions are enabled |
 | `quire.migration_versions` | Which of Quire's migrations have run |

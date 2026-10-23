@@ -360,6 +360,35 @@ Load relations for all items of a query at once with `with()`. Core provides `pa
 
 Each relation costs one database query per page of results, however many items the page shows. Related items follow the same visibility rules: visitors don't see draft children. In PHP, read a relation with `$page->attribute('children')`. Reading one that wasn't loaded never runs a query per item: PHP code gets an error that tells you to add `with()`, and so do templates in development.
 
+### Relation fields
+
+A `relation` field links an item to other items, e.g. a post to its tags, or a page to related pages:
+
+```php
+Extend\ContentType::existing('post')
+    ->field('tags', 'relation', options: ['types' => ['tag'], 'inverse' => 'posts'])
+    ->field('series', 'relation', options: ['types' => ['series'], 'multiple' => false]),
+```
+
+| Option | |
+|--------|-|
+| `types` | The content types it links to (required) |
+| `multiple` | A list of items, in order (`true`, the default), or one item (`false`) |
+| `limit` | The most items of a list |
+| `inverse` | The name of the relation on the linked types that lists the items linking to them, e.g. a tag's `posts` |
+
+Its value is the IDs of the linked items: `$post->field('tags')` is a list of IDs. Set it with items or IDs (`fields: ['tags' => [$php, $symfony]]`). Saving checks that the items exist, aren't in the trash, are of the right types, and aren't the item itself.
+
+- **Load the linked items** with `with()`, under the same visibility rules as everything else, so a visitor never sees a draft tag: `quire_content('post').with('tags')`, then `{% for tag in post.tags %}`. The inverse works the same way: `quire_content('tag').with('posts')`. For a long list, e.g. a tag's page with hundreds of posts, query and paginate it instead (below).
+- **Filter by links:** lists with `contains` (links to all the items given) and `contains any`, single relations with `=`, `!=`, `in` and `not in`. Comparing with `null` finds items without a link.
+
+  ```twig
+  {% set posts = quire_content('post').where('fields.tags', 'contains', tag).paginate(page, 10) %}
+  ```
+
+- **The database keeps links consistent.** Links are also kept in the table `quire.content_relation`, with foreign keys, which filters use. Deleting an item for good removes the links to it, from the table and from the items' fields. Restoring a revision drops links to items deleted since.
+- Relations can't be sorted by, and have no default value.
+
 ## How content is stored
 
 All content lives in PostgreSQL, in one `quire.content` table, together with everything else about the site, so one database backup contains all of it (uploaded files are on [storage disks](storage.md)). See [docs/database.md](database.md).
