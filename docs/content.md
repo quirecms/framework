@@ -188,7 +188,9 @@ bin/console quire:settings:set quire.permalinks.post "/{year}/{month}/{slug}"
 
 Changes apply right away, with no cache to clear. Two types can't have patterns that produce the same URLs (`/blog/{slug}` and `/blog/{id}`): saving such a pattern fails and names the other type. Patterns that only overlap, such as `/{slug}` for posts and `/{path}` for pages, are allowed. The more specific one is tried first, in the order `quire:permalink:list` shows.
 
-Only items visitors may see have a working URL: drafts, scheduled items that aren't due and items in the trash respond with "404 Not Found".
+Only items visitors may see have a working URL: drafts, scheduled items that aren't due and items in the trash respond with "404 Not Found". Users who may preview unpublished items see drafts at their URL (see [permissions](permissions.md#abilities-of-content)).
+
+Every other route of the site matches before content URLs: the application's, those of extensions, and Quire's own, such as `/login`. So an item can't have a URL that one of them takes: saving it fails and names the route, e.g. "The URL /login is taken by a page of the site itself (the route "quire_login"). Choose another slug."
 
 ### Old URLs keep working
 

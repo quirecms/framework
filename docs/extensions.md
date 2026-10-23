@@ -539,6 +539,17 @@ final readonly class ReviewsLoader implements RelationLoaderInterface
 
 `quire_content('product').with('reviews')` then calls the loader once for the whole page of products. For relations to other content items, query them with `$query->related('product')`, which applies the same visibility rules as the query that asked for the relation. Relation names can't be the names of content properties such as `title`.
 
+#### `Extend\Auth`
+
+Adds ways to sign in, as Symfony authenticators (services; autowired when not registered otherwise). The firewall that lists `Quire\User\Security\ExtensionAuthenticators` uses them, so extensions don't edit `security.yaml`. Each request goes to the first one whose `supports()` accepts it.
+
+```php
+new Extend\Auth()
+    ->authenticator(Sso\OidcAuthenticator::class),
+```
+
+Link the accounts they sign in to users with `UserWriter::linkIdentity()`, and show a link on the sign-in page with the `auth.login_options` slot. See [users](users.md#other-ways-to-sign-in).
+
 #### `Extend\Permissions`
 
 Declares roles, abilities and rules that decide what users may do. Check them with Symfony's `is_granted()`.

@@ -80,7 +80,7 @@ final class ThemingTest extends TestCase
         try {
             $writer = $this->service($kernel, ContentWriter::class);
             $post = $writer->create(new CreateContent('post', 'Hello world', body: 'The body.'));
-            $writer->transition($post->id, $post->version, Status::PUBLISH, new \DateTimeImmutable('-1 hour'));
+            $writer->transition($post->id, $post->version, Status::PUBLISH, new \DateTimeImmutable('2026-01-15 10:00:00'));
 
             $pages = [$client->request('GET', '/blog/hello-world'), $client->request('GET', '/')];
             self::assertSame(200, $client->getResponse()->getStatusCode());

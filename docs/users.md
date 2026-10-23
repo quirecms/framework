@@ -30,9 +30,12 @@ bin/console quire:user:password grace
 bin/console quire:user:role grace --add=admin --remove=editor
 bin/console quire:user:suspend grace
 bin/console quire:user:activate grace
+bin/console quire:user:delete grace --reassign=ada
 ```
 
 Commands that take a user accept their ID, email or username.
+
+**Deleting a user** who wrote content needs a choice: `--reassign=<user>` gives their content to another user, and `--keep-content` keeps it without an author. Revisions forget who made them either way. Extensions deal with what they keep about the user on the `Quire\User\Event\UserDeleting` event. To keep someone from signing in but keep their account, suspend them instead.
 
 - **Passwords** are asked for twice, without being shown, and must have at least 8 characters. Without a terminal, a strong password is generated and shown once. Passwords are never options, so they don't end up in the shell history or the list of running processes. `--no-password` (when creating) and `--remove` (on `quire:user:password`) leave a user without a password, for users who sign in another way.
 - **Usernames** are derived from the email unless you choose one: `grace.hopper@example.com` becomes `grace-hopper`, or `grace-hopper-2` when that's taken. Emails are unique regardless of case.
@@ -56,6 +59,22 @@ bin/console quire:settings:set quire.auth.password_login false
 ```
 
 The sign-in page then shows only the other ways to sign in that extensions add.
+
+### Other ways to sign in
+
+Extensions add ways to sign in, e.g. single sign-on, as Symfony authenticators with `Extend\Auth` (see [extensions](extensions.md#extendauth)). They're used by the firewall that lists `Quire\User\Security\ExtensionAuthenticators`, as Quire's `security.yaml` does, so installing such an extension needs no change to the security configuration. A link to them goes on the sign-in page through the `auth.login_options` slot.
+
+Accounts at other providers are linked to users with `UserWriter::linkIdentity()`, e.g. on their first sign-in. Listeners of `Quire\User\Event\IdentityLinking` can refuse a link, e.g. for accounts outside the organisation:
+
+```php
+#[AsEventListener]
+public function __invoke(IdentityLinking $event): void
+{
+    if ('google' === $event->provider && !str_ends_with((string) ($event->claims['email'] ?? ''), '@example.com')) {
+        $event->cancel('Only accounts of example.com can sign in.');
+    }
+}
+```
 
 ### Events
 
@@ -103,6 +122,33 @@ $writer->update(new UpdateUser($user->id)->displayName('Grace B. Hopper'));
 $writer->linkIdentity($user->id, 'github', '1234567', ['login' => 'grace']);
 ```
 
+## Users of the application Quire is installed in
+
+When Quire is added to an application that has users of its own, such as a tournament manager with organisers, Quire can use them: whoever the application signs in is a user in Quire too. Map the application's Symfony roles to Quire's in `config/packages/quire.yaml`:
+
+```yaml
+quire:
+    users:
+        host:
+            roles:
+                ROLE_ORGANIZER: editor
+                ROLE_SUPER_ADMIN: [admin]
+            display_name: fullName   # optional: a property of the application's user
+            email: email             # optional
+```
+
+- **Quire signs nobody in.** The application's firewall does, and Quire's sign-in page and `/login` and `/logout` URLs are gone (set `quire.users.login: true` to keep them). Pages that need signing in use the firewall's own way of asking, e.g. the application's sign-in page.
+- **Each of the application's users gets a linked Quire user** on their first visit, so content can name them as its author. Quire never reads or changes the application's tables. The link is an identity with the provider `host` and the user identifier as its subject.
+- **Roles are mapped on every request**, from the user's Symfony roles including the role hierarchy. A user who stops being an organiser in the application is no longer an editor in Quire on their next request; nothing needs syncing. Roles given in Quire, with `quire:user:role`, add to the mapped ones. The mapped roles are kept with the link for display only.
+- **Suspending** a linked user in Quire takes their Quire roles away; they stay signed in to the application.
+- **Rules that depend on the application's data**, e.g. "organisers edit the news of their own tournaments", are [rules](permissions.md#rules) in an extension of the application. They get the application's user.
+
+`Quire\User\CurrentUser` gives the Quire user of whoever is signed in, whichever way they were signed in:
+
+```php
+$author = $this->currentUser->get();   // null for visitors
+```
+
 ## Security configuration
 
 Quire adds two things to Symfony's security configuration: a password hasher for its users, and a user provider named `quire_users`. Which firewalls use them, and how, is up to the application, so an application that Quire was added to keeps its own security setup. The application in this repository signs users in on Quire's sign-in page, in `config/packages/security.yaml`:
@@ -114,6 +160,7 @@ security:
             lazy: true
             provider: quire_users
             user_checker: Quire\User\Security\UserChecker
+            custom_authenticators: [Quire\User\Security\ExtensionAuthenticators]
             form_login:
                 login_path: quire_login
                 check_path: quire_login
@@ -132,4 +179,4 @@ security:
                 interval: '1 minute'
 ```
 
-`Quire\User\Security\UserChecker` refuses suspended users, whichever way they sign in. Sessions are kept in PostgreSQL by `framework.session.handler_id: quire.session_handler` in `config/packages/framework.yaml`; the handler uses a database connection of its own and the table `quire.session`. Using an application's own users for Quire is described with single sign-on and host applications in a later release.
+`Quire\User\Security\UserChecker` refuses suspended users, whichever way they sign in. Sessions are kept in PostgreSQL by `framework.session.handler_id: quire.session_handler` in `config/packages/framework.yaml`; the handler uses a database connection of its own and the table `quire.session`. To use an application's own users instead, see [above](#users-of-the-application-quire-is-installed-in).

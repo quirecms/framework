@@ -163,9 +163,10 @@ final class PermissionsTest extends WebTestCase
         $this->publish('Members news');
 
         $this->client->request('GET', '/blog/members-news');
-        self::assertResponseRedirects('/login?next=/blog/members-news', message: 'Visitors are asked to sign in.');
+        self::assertResponseRedirects('http://localhost/login', message: 'Visitors are asked to sign in…');
+        self::assertSame('http://localhost/blog/members-news', $this->client->getRequest()->getSession()->get('_security.main.target_path'), '…and come back afterwards.');
         $this->client->request('GET', '/');
-        self::assertResponseRedirects('/login?next=/', message: 'So is a list of them.');
+        self::assertResponseRedirects('http://localhost/login', message: 'So is a list of them.');
         self::assertSame([], self::getContainer()->get(ContentRepository::class)->query('post')->get(), 'Queries leave out what visitors may not see.');
 
         $this->client->loginUser($this->user('member', ['member']));

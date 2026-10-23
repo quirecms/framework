@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\Tests\Functional;
 
 use Doctrine\DBAL\Connection;
+use Quire\Content\Command\CreateContent;
+use Quire\Content\ContentWriter;
 use Quire\Install\Console\InstallCommand;
 use Quire\Settings\Settings;
+use Quire\User\CreateUser;
 use Quire\User\User;
 use Quire\User\UserRepository;
 use Quire\User\UserWriter;
@@ -77,6 +80,27 @@ final class UserCommandsTest extends KernelTestCase
         [$status, $output] = $this->console('quire:user:activate', ['user' => 'nobody']);
         self::assertSame(1, $status);
         self::assertStringContainsString('No user with the ID, email or username "nobody".', $output);
+    }
+
+    public function testDeletesUsersWithTheirContentReassignedOrKept(): void
+    {
+        $writer = self::getContainer()->get(UserWriter::class);
+        $ada = $writer->create(new CreateUser('Ada', 'ada@example.com'));
+        $grace = $writer->create(new CreateUser('Grace', 'grace@example.com'));
+        self::getContainer()->get(ContentWriter::class)->create(new CreateContent('post', 'Notes', authorId: $ada->id));
+
+        [$status, $output] = $this->console('quire:user:delete', ['user' => 'ada']);
+        self::assertSame(1, $status);
+        self::assertStringContainsString('Ada is the author of 1 content item(s).', $output);
+
+        [$status, $output] = $this->console('quire:user:delete', ['user' => 'ada', '--reassign' => 'grace']);
+        self::assertSame(0, $status, $output);
+        self::assertStringContainsString('Grace is now the author of their 1 content item(s).', $output);
+
+        [$status, $output] = $this->console('quire:user:delete', ['user' => 'grace', '--keep-content' => true]);
+        self::assertSame(0, $status, $output);
+        self::assertStringContainsString('Their 1 content item(s) have no author now.', $output);
+        self::assertNull(self::getContainer()->get(UserRepository::class)->find($grace->id));
     }
 
     public function testRefusesPasswordsThatAreTooShort(): void

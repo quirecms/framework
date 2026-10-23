@@ -952,6 +952,15 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     routing?: array{
  *         prefix?: scalar|Param|null, // Path that the homepage and all content URLs are under, e.g. "/cms" when Quire is added to an existing application. Empty for the root of the site. // Default: ""
  *     },
+ *     users?: array{
+ *         login?: bool|Param|null, // Whether Quire's sign-in page and sign-out URL exist. Defaults to true, or to false with "host" users, who sign in through the application. // Default: null
+ *         host?: bool|array{ // Use the users of the application Quire is installed in: whoever its firewall signs in gets a linked Quire user, with roles mapped from theirs on every request. See docs/users.md.
+ *             enabled?: bool|Param, // Default: false
+ *             roles?: array<string, list<scalar|Param|null>>,
+ *             display_name?: scalar|Param|null, // Property path of the name to show for the application's users, e.g. "fullName"; their user identifier by default. // Default: null
+ *             email?: scalar|Param|null, // Property path of the email of the application's users, e.g. "email"; none by default. // Default: null
+ *         },
+ *     },
  *     extensions?: array{
  *         pinned?: bool|Param, // Fix the enabled extensions in configuration instead of the database. Use it for immutable production images; enabling or disabling at runtime is then refused. // Default: false
  *         enabled?: list<scalar|Param|null>,
