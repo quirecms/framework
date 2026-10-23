@@ -1,0 +1,20 @@
+<table class="table">
+    <thead>
+        <tr>
+            <th scope="col">{{ 'Type'|trans({}, 'quire-admin') }}</th>
+            <th scope="col" class="num">{{ 'Published'|trans({}, 'quire-admin') }}</th>
+            <th scope="col" class="num">{{ 'Scheduled'|trans({}, 'quire-admin') }}</th>
+            <th scope="col" class="num">{{ 'Drafts'|trans({}, 'quire-admin') }}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in rows %}
+            <tr>
+                <th scope="row">{{ row.type.pluralLabel }}</th>
+                <td class="num">{{ row.published }}</td>
+                <td class="num">{{ row.scheduled }}</td>
+                <td class="num">{{ row.drafts }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>

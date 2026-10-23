@@ -212,6 +212,8 @@ Adds pages and endpoints.
 
 A controller is an invokable class (`Reviews\ListReviews::class`) or a `[class, method]` pair. Controllers are registered as services automatically, so constructor dependencies are injected.
 
+Routes belong to a group: `site` (the default) for the public pages, or `admin` for the admin interface, `new Extend\Routes(group: 'admin')`. Admin routes are under the admin's path, `/admin` by default, and only users with the ability `quire.admin.access` can open them (see [admin pages](#admin-pages)).
+
 A route with the same name as an existing one replaces it. Extensions can override core routes, and the site's own `extend.php` can override extension routes.
 
 #### `Extend\Assets`
@@ -642,6 +644,52 @@ new Extend\Jobs()
 A job is a message implementing `Quire\Jobs\Job`; dispatch it on the message bus, and a worker handles it. Handlers that `Extend\Services` loads need no `handler()` call when they're marked `#[AsMessageHandler]`.
 
 A schedule's frequency is a cron expression (`30 3 * * *`, `@hourly`) or an interval (`every 15 minutes`, `every 2 hours`, `every 1 day`). Intervals count from midnight UTC, so they fall at the same times on every server; cron times are in the given time zone, or PHP's (usually UTC). The message is created without arguments. Start task names with your extension's ID. Each occurrence runs once, however many workers there are. See [background jobs](jobs.md#scheduled-tasks).
+
+#### Admin pages
+
+Pages of the admin interface are routes in the group `admin`. Their paths are relative to the admin's (`/reviews` is `/admin/reviews`), and Quire lets only users with the ability `quire.admin.access` open them, asking guests to sign in. Extend the admin's layout, so the page has its menu and look:
+
+```php
+new Extend\Routes(group: 'admin')
+    ->get('/reviews', 'acme_reviews_admin', ReviewsAdminController::class),
+```
+
+```twig
+{% extends '@quire_admin/layout.html.twig' %}
+
+{% block title %}Reviews{% endblock %}
+
+{% block content %}
+    …
+{% endblock %}
+```
+
+The admin's own extender, `Quire\Admin\Extend\Admin`, adds the page to its menu, and widgets to its dashboard:
+
+```php
+use Quire\Admin\Extend\Admin;
+
+new Admin()
+    ->menu('acme-reviews', 'Reviews', 'acme_reviews_admin', ability: 'acme-reviews.moderate')
+    ->widget(PendingReviewsWidget::class, ability: 'acme-reviews.moderate'),
+```
+
+| Method | Purpose |
+|--------|---------|
+| `menu($id, $label, $route, $parameters, $ability, $section, $order)` | A menu entry, shown to users with `$ability` (if given). `$section` is `content`, `site`, `users` or `extensions` (the default). The label is translated in your extension's domain. |
+| `widget($class, $ability, $order)` | A dashboard widget: a service implementing `Quire\Admin\Dashboard\WidgetInterface`, with a `title()` and the HTML it `render()`s. An empty string hides it. |
+
+When the admin isn't enabled, `Admin` does nothing, so you don't need to require it. If it may not be installed at all, wrap it in `Extend\Conditional`. Stylesheets and scripts for admin pages go in the group `admin` of [`Extend\Assets`](#extendassets). Scripts can register [Stimulus](https://stimulus.hotwired.dev) controllers on `window.QuireAdmin`, whether they load before or after the admin's: give a function that receives Stimulus's `Controller` class and returns your controller.
+
+```js
+(window.QuireAdmin ??= { controllers: [] }).controllers.push(
+    ['acme-chart', (Controller) => class extends Controller {
+        connect() { this.element.textContent = 'Chart'; }
+    }],
+);
+```
+
+Then `<div data-controller="acme-chart">` on an admin page uses it.
 
 #### `Extend\Migrations`
 

@@ -1,0 +1,335 @@
+/*
+ * The admin's look: design tokens (custom properties) first, then the layout and components that use them.
+ * Light and dark follow the system setting. Override tokens in a stylesheet of the group "admin" to adjust it.
+ */
+
+:root {
+    --admin-font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --admin-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --admin-font-size: 0.9375rem;
+    --admin-line-height: 1.5;
+
+    --admin-space-1: 0.25rem;
+    --admin-space-2: 0.5rem;
+    --admin-space-3: 0.75rem;
+    --admin-space-4: 1rem;
+    --admin-space-6: 1.5rem;
+    --admin-space-8: 2rem;
+
+    --admin-radius: 0.375rem;
+    --admin-nav-width: 15rem;
+
+    /* Light: every text colour meets WCAG AA (4.5:1) on the backgrounds it's used on. */
+    --admin-bg: #f6f7f9;
+    --admin-surface: #ffffff;
+    --admin-text: #1b1f24;
+    --admin-muted: #57606a;
+    --admin-border: #d0d7de;
+    --admin-accent: #0a58ca;
+    --admin-accent-text: #ffffff;
+    --admin-bar-bg: #1b1f24;
+    --admin-bar-text: #f6f7f9;
+    --admin-current-bg: #e7efff;
+    --admin-focus: #0a58ca;
+    --admin-success: #1a7f37;
+    --admin-success-bg: #dafbe1;
+    --admin-warning: #7d4e00;
+    --admin-warning-bg: #fff8c5;
+    --admin-danger: #b42318;
+    --admin-danger-bg: #ffebe9;
+
+    color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --admin-bg: #0d1117;
+        --admin-surface: #161b22;
+        --admin-text: #e6edf3;
+        --admin-muted: #9198a1;
+        --admin-border: #30363d;
+        --admin-accent: #4493f8;
+        --admin-accent-text: #0d1117;
+        --admin-bar-bg: #010409;
+        --admin-bar-text: #e6edf3;
+        --admin-current-bg: #13233a;
+        --admin-focus: #4493f8;
+        --admin-success: #3fb950;
+        --admin-success-bg: #12261e;
+        --admin-warning: #d29922;
+        --admin-warning-bg: #2b2111;
+        --admin-danger: #f85149;
+        --admin-danger-bg: #2d1214;
+    }
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+body.admin {
+    margin: 0;
+    background: var(--admin-bg);
+    color: var(--admin-text);
+    font: var(--admin-font-size)/var(--admin-line-height) var(--admin-font);
+}
+
+a {
+    color: var(--admin-accent);
+}
+
+:focus-visible {
+    outline: 2px solid var(--admin-focus);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        transition: none !important;
+        animation: none !important;
+    }
+}
+
+/* Turbo's progress bar */
+.turbo-progress-bar {
+    background: var(--admin-accent);
+}
+
+.skip-link {
+    position: absolute;
+    left: var(--admin-space-2);
+    top: -3rem;
+    z-index: 10;
+    padding: var(--admin-space-2) var(--admin-space-3);
+    background: var(--admin-surface);
+    border-radius: var(--admin-radius);
+}
+
+.skip-link:focus {
+    top: var(--admin-space-2);
+}
+
+/* The bar at the top */
+.admin-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--admin-space-3);
+    padding: var(--admin-space-2) var(--admin-space-4);
+    background: var(--admin-bar-bg);
+    color: var(--admin-bar-text);
+}
+
+.admin-bar a {
+    color: inherit;
+}
+
+.admin-bar__site {
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.admin-bar__label {
+    opacity: 0.75;
+}
+
+.admin-bar__user {
+    display: flex;
+    gap: var(--admin-space-3);
+    margin-left: auto;
+}
+
+/* Menu and page */
+.admin-shell {
+    display: grid;
+    grid-template-columns: var(--admin-nav-width) minmax(0, 1fr);
+    min-height: calc(100vh - 2.5rem);
+}
+
+.admin-nav {
+    padding: var(--admin-space-4) var(--admin-space-2);
+    background: var(--admin-surface);
+    border-right: 1px solid var(--admin-border);
+}
+
+.admin-nav ul {
+    margin: 0 0 var(--admin-space-4);
+    padding: 0;
+    list-style: none;
+}
+
+.admin-nav a {
+    display: block;
+    padding: var(--admin-space-1) var(--admin-space-3);
+    border-radius: var(--admin-radius);
+    color: var(--admin-text);
+    text-decoration: none;
+}
+
+.admin-nav a:hover {
+    background: var(--admin-bg);
+}
+
+.admin-nav a[aria-current="page"] {
+    background: var(--admin-current-bg);
+    color: var(--admin-accent);
+    font-weight: 600;
+}
+
+.admin-nav__heading {
+    margin: 0 0 var(--admin-space-1);
+    padding: 0 var(--admin-space-3);
+    color: var(--admin-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.admin-main {
+    padding: var(--admin-space-6) var(--admin-space-8);
+}
+
+.admin-main:focus {
+    outline: none;
+}
+
+.page-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--admin-space-4);
+    margin-bottom: var(--admin-space-6);
+}
+
+.page-header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    line-height: 1.25;
+}
+
+@media (max-width: 48rem) {
+    .admin-shell {
+        grid-template-columns: 1fr;
+        align-content: start;
+    }
+
+    .admin-nav {
+        border-right: none;
+        border-bottom: 1px solid var(--admin-border);
+    }
+
+    .admin-nav__section ul {
+        margin-bottom: 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--admin-space-1);
+    }
+
+    .admin-main {
+        padding: var(--admin-space-4);
+    }
+}
+
+/* Components */
+.widgets {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
+    gap: var(--admin-space-4);
+}
+
+.card {
+    padding: var(--admin-space-4);
+    background: var(--admin-surface);
+    border: 1px solid var(--admin-border);
+    border-radius: var(--admin-radius);
+}
+
+.card__title {
+    margin: 0 0 var(--admin-space-3);
+    font-size: 1rem;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table th,
+.table td {
+    padding: var(--admin-space-2);
+    border-bottom: 1px solid var(--admin-border);
+    text-align: left;
+}
+
+.table thead th {
+    color: var(--admin-muted);
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+.table tbody th {
+    font-weight: normal;
+}
+
+.table .num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.item-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.item-list li {
+    display: flex;
+    flex-direction: column;
+    padding: var(--admin-space-2) 0;
+    border-bottom: 1px solid var(--admin-border);
+}
+
+.item-list li:last-child {
+    border-bottom: none;
+}
+
+.meta,
+.empty {
+    color: var(--admin-muted);
+    font-size: 0.8125rem;
+}
+
+.status {
+    font-weight: 600;
+}
+
+.status--published {
+    color: var(--admin-success);
+}
+
+.status--scheduled {
+    color: var(--admin-accent);
+}
+
+.notice {
+    margin: 0 0 var(--admin-space-4);
+    padding: var(--admin-space-3) var(--admin-space-4);
+    border-radius: var(--admin-radius);
+    border: 1px solid currentColor;
+}
+
+.notice--success {
+    color: var(--admin-success);
+    background: var(--admin-success-bg);
+}
+
+.notice--warning {
+    color: var(--admin-warning);
+    background: var(--admin-warning-bg);
+}
+
+.notice--error {
+    color: var(--admin-danger);
+    background: var(--admin-danger-bg);
+}

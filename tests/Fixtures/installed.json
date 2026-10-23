@@ -1,6 +1,19 @@
 {
     "packages": [
         {
+            "name": "quire/admin",
+            "version": "0.1.0.0",
+            "pretty_version": "0.1.0",
+            "type": "quire-extension",
+            "install-path": "../../packages/admin",
+            "description": "Quire's administration panel",
+            "extra": {
+                "quire": {
+                    "title": "Admin"
+                }
+            }
+        },
+        {
             "name": "quire/fixture-hello",
             "version": "1.0.0.0",
             "pretty_version": "1.0.0",

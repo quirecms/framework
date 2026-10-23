@@ -294,7 +294,7 @@ quire:
         prefix: /cms
 ```
 
-The homepage is then `/cms` and posts are at `/cms/blog/…`. Wherever Quire is mounted, its URLs only answer when no other route does, so the application's routes and extensions' routes always win.
+The homepage is then `/cms` and posts are at `/cms/blog/…`. Wherever Quire is mounted, its URLs only answer when no other route does, so the application's routes and extensions' routes always win. The admin interface has a path of its own, `/admin` by default; change it with `admin_prefix` (see [admin](admin.md#its-address)).
 
 ## Querying content
 

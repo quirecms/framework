@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use League\CommonMark\Extension\Footnote\FootnoteExtension;
+use Quire\Admin\Extend\Admin;
 use Quire\Extend;
 use Quire\Fixtures\Hello;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
@@ -30,7 +31,16 @@ return [
 
     new Extend\Assets()
         ->stylesheet('quire-fixture-hello/hello.css')
-        ->script('quire-fixture-hello/hello.js'),
+        ->script('quire-fixture-hello/hello.js')
+        ->stylesheet('quire-fixture-hello/admin.css', group: 'admin'),
+
+    new Extend\Routes(group: 'admin')
+        ->get('/greetings', 'fixture_hello_admin', Hello\Admin\GreetingsController::class),
+
+    // The admin's own extender: a menu entry for the page above, and a dashboard widget.
+    new Admin()
+        ->menu('quire-fixture-hello.greetings', 'Greetings', 'fixture_hello_admin', ability: 'quire-fixture-hello.moderate')
+        ->widget(Hello\Admin\GreetingsWidget::class, ability: 'quire-fixture-hello.moderate', order: 5),
 
     new Extend\Events()
         ->listen(ResponseEvent::class, Hello\FixtureHeaderListener::class),

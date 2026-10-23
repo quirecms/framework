@@ -1,0 +1,61 @@
+{#
+    The admin's page layout. Pages extend it and fill "title" and "content"; "actions" holds buttons next
+    to the page heading.
+#}
+<!doctype html>
+<html lang="{{ site.locale }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="color-scheme" content="light dark">
+    <title>{% block title %}{% endblock %} · {{ 'Admin'|trans({}, 'quire-admin') }} · {{ site.title }}</title>
+    {{ quire_slot('admin.head') }}
+</head>
+<body class="admin">
+    <a class="skip-link" href="#main">{{ 'Skip to content'|trans({}, 'quire-admin') }}</a>
+
+    <header class="admin-bar">
+        <a class="admin-bar__site" href="{{ path('quire_home') }}">{{ site.title }}</a>
+        <span class="admin-bar__label">{{ 'Admin'|trans({}, 'quire-admin') }}</span>
+        {% if app.user %}
+            <nav class="admin-bar__user" aria-label="{{ 'Account'|trans({}, 'quire-admin') }}">
+                <span>{{ app.user.displayName ?? app.user.userIdentifier }}</span>
+                <a href="{{ logout_path() }}" data-turbo="false">{{ 'Sign out'|trans({}, 'quire-admin') }}</a>
+            </nav>
+        {% endif %}
+    </header>
+
+    <div class="admin-shell">
+        <nav class="admin-nav" id="admin-nav" aria-label="{{ 'Admin menu'|trans({}, 'quire-admin') }}">
+            {% for section, items in quire_admin_menu() %}
+                <div class="admin-nav__section">
+                    {% if section != 'general' %}
+                        <h2 class="admin-nav__heading">{{ ('section.' ~ section)|trans({}, 'quire-admin') }}</h2>
+                    {% endif %}
+                    <ul>
+                        {% for item in items %}
+                            <li><a href="{{ item.url }}"{% if item.current %} aria-current="page"{% endif %}>{{ item.label }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endfor %}
+        </nav>
+
+        <main class="admin-main" id="main" tabindex="-1">
+            {% for type, messages in app.flashes %}
+                {% for message in messages %}
+                    <p class="notice notice--{{ type }}" role="{{ type == 'error' ? 'alert' : 'status' }}">{{ message }}</p>
+                {% endfor %}
+            {% endfor %}
+
+            <div class="page-header">
+                <h1>{{ block('title') }}</h1>
+                {% block actions %}{% endblock %}
+            </div>
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</body>
+</html>

@@ -1,0 +1,39 @@
+{
+    "name": "quire/admin",
+    "type": "quire-extension",
+    "description": "Quire's administration panel: manage content, settings, extensions, themes and users in the browser.",
+    "keywords": ["quire", "cms", "admin"],
+    "homepage": "https://quirecms.com",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "YorvoLabs",
+            "homepage": "https://quirecms.com"
+        }
+    ],
+    "require": {
+        "php": ">=8.5",
+        "quire/core": "0.1.x-dev"
+    },
+    "require-dev": {
+        "quire/testing": "0.1.x-dev"
+    },
+    "autoload": {
+        "psr-4": {
+            "Quire\\Admin\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Quire\\Admin\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "quire": {
+            "title": "Admin",
+            "description": "Manage content, settings, extensions, themes and users in the browser."
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

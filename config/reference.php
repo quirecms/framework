@@ -951,6 +951,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  * @psalm-type QuireConfig = array{
  *     routing?: array{
  *         prefix?: scalar|Param|null, // Path that the homepage and all content URLs are under, e.g. "/cms" when Quire is added to an existing application. Empty for the root of the site. // Default: ""
+ *         admin_prefix?: scalar|Param|null, // Path of the admin interface: the routes extensions register in the "admin" group, e.g. "/cms-admin" when the application uses "/admin" itself. // Default: "/admin"
  *     },
  *     users?: array{
  *         login?: bool|Param|null, // Whether Quire's sign-in page and sign-out URL exist. Defaults to true, or to false with "host" users, who sign in through the application. // Default: null
