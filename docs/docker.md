@@ -97,7 +97,7 @@ For the same set of extensions everywhere, set by your deployment instead of at 
 | `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` | `app` / `app` / `!ChangeMe!` | Database credentials. **Always change the password in production.** |
 | `POSTGRES_VERSION` | `18` | PostgreSQL major version |
 | `MAILER_DSN` | `null://null` (Mailpit in development) | Where emails go, e.g. `smtp://user:pass@smtp.example.com:587`. Needed for registration and password reset. |
-| `DEFAULT_URI` | `https://$SERVER_NAME` | The site's address, used for links in emails and from the command line |
+| `DEFAULT_URI` | `https://$SERVER_NAME:$HTTPS_PORT` | The site's address, used for links in emails and from the command line |
 | `XDEBUG_MODE` | `off` | Xdebug mode (development only) |
 | `QUIRE_FRANKENPHP_ADMIN_URL` | `http://localhost:2019` | Where Quire reaches FrankenPHP's admin API to restart PHP workers after extensions change |
 

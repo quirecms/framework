@@ -6,6 +6,8 @@ namespace App\Tests\Functional;
 
 use Doctrine\DBAL\Connection;
 use Quire\Content\ContentRepository;
+use Quire\User\CreateUser;
+use Quire\User\UserWriter;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -16,6 +18,7 @@ final class ContentCommandsTest extends KernelTestCase
     {
         self::getContainer()->get(Connection::class)->executeStatement('DELETE FROM quire.content WHERE parent_id IS NOT NULL');
         self::getContainer()->get(Connection::class)->executeStatement('DELETE FROM quire.content');
+        self::getContainer()->get(Connection::class)->executeStatement('DELETE FROM quire.app_user');
         parent::tearDown();
     }
 
@@ -55,6 +58,29 @@ final class ContentCommandsTest extends KernelTestCase
         self::assertSame(0, $this->command('quire:content:restore')->execute(['id' => $id]));
         self::assertSame(0, $delete->execute(['id' => $id, '--purge' => true, '--force' => true]));
         self::assertNull(self::getContainer()->get(ContentRepository::class)->find($id));
+    }
+
+    public function testAuthorsAreGivenByIDEmailOrUsername(): void
+    {
+        $writer = self::getContainer()->get(UserWriter::class);
+        $grace = $writer->create(new CreateUser('Grace Hopper', 'grace@example.com'));
+        $ada = $writer->create(new CreateUser('Ada', 'ada@example.com'));
+        $repository = self::getContainer()->get(ContentRepository::class);
+
+        $create = $this->command('quire:content:create');
+        self::assertSame(0, $create->execute(['type' => 'post', 'title' => 'Notes', '--author' => 'grace@example.com']));
+        $id = $this->idFrom($create);
+        self::assertSame($grace->id, $repository->get($id)->authorId);
+
+        $update = $this->command('quire:content:update');
+
+        foreach ([$ada->id => $ada->id, 'grace' => $grace->id, '' => null] as $author => $expected) {
+            self::assertSame(0, $update->execute(['id' => $id, '--author' => $author]), $update->getDisplay());
+            self::assertSame($expected, $repository->get($id)->authorId);
+        }
+
+        self::assertSame(1, $create->execute(['type' => 'post', 'title' => 'Ghost', '--author' => 'nobody']));
+        self::assertStringContainsString('--author: no user is "nobody".', $this->flat($create));
     }
 
     public function testErrorsNameTheProperty(): void

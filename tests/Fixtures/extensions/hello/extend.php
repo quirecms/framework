@@ -47,7 +47,7 @@ return [
         ->rule(Hello\Permission\LockedContentRule::class),
 
     new Extend\Auth()
-        ->authenticator(Hello\Security\HeaderAuthenticator::class),
+        ->authenticator(Hello\Security\SsoAuthenticator::class),
 
     new Extend\Settings()
         ->define('quire-fixture-hello.greeting', 'string', 'Hello', label: 'Greeting', exposed: true)

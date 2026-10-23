@@ -90,7 +90,7 @@ Rendered HTML is cached until the item changes; shortcodes run each time. The ca
 
 ```bash
 bin/console quire:content:create post "Hello world" --body "My *first* post." --publish
-bin/console quire:content:create page "Team" --parent <page-id> --body-file team.md
+bin/console quire:content:create page "Team" --parent <page-id> --body-file team.md --author grace
 bin/console quire:content:list --type post
 bin/console quire:content:show <id>
 bin/console quire:content:update <id> --title "Hello again" --message "Better title"
@@ -99,7 +99,7 @@ bin/console quire:content:delete <id>
 bin/console quire:content:restore <id>
 ```
 
-`--body-file=-` reads the body from standard input. Each command's `--help` lists its options.
+`--body-file=-` reads the body from standard input. `--author` takes a user's ID, email or username; on `quire:content:update`, `--author ""` leaves the item without an author. Each command's `--help` lists its options.
 
 ### Slugs
 
