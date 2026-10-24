@@ -1,0 +1,6 @@
+name: Quire CodeQL config
+
+# Third-party builds shipped as-is (see each folder's README). They are not
+# our code to fix, and their findings would recur on every update.
+paths-ignore:
+  - packages/*/assets/vendor
