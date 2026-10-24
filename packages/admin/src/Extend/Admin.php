@@ -4,19 +4,26 @@ declare(strict_types=1);
 
 namespace Quire\Admin\Extend;
 
+use Quire\Admin\Content\ContentActionInterface;
+use Quire\Admin\Content\ContentColumnInterface;
+use Quire\Admin\Content\ContentFilterInterface;
 use Quire\Admin\Dashboard\WidgetInterface;
 use Quire\Extend\ExtenderContext;
 use Quire\Extend\ExtenderInterface;
 
 /**
- * Adds to the admin interface: entries in its menu, and widgets on its dashboard.
+ * Adds to the admin interface: entries in its menu, widgets on its dashboard, and columns, filters and
+ * actions to its content lists.
  *
  *     new Extend\Routes(group: 'admin')
  *         ->get('/reviews', 'acme_reviews_admin', ReviewsAdminController::class),
  *
  *     new Admin()
  *         ->menu('acme-reviews', 'Reviews', 'acme_reviews_admin', ability: 'acme-reviews.moderate')
- *         ->widget(PendingReviewsWidget::class),
+ *         ->widget(PendingReviewsWidget::class)
+ *         ->contentColumn('acme-reviews.rating', RatingColumn::class, types: ['product'])
+ *         ->contentFilter('acme-reviews.rated', RatedFilter::class, types: ['product'])
+ *         ->contentAction('acme-reviews.feature', FeatureAction::class),
  *
  * Admin pages are routes in the group "admin" (see {@see \Quire\Extend\Routes}). Labels are translated
  * in the extension's translation domain, its ID. When the admin extension isn't enabled, this does nothing,
@@ -39,6 +46,21 @@ final class Admin implements ExtenderInterface
     /** @internal Tag of dashboard widgets */
     public const string WIDGET_TAG = 'quire_admin.widget';
 
+    /** @internal Parameter: list<{id, kind, class, types, order, owner}> of content list columns, filters and actions */
+    public const string CONTENT_LIST_PARAMETER = 'quire_admin.content_list';
+
+    /** @internal Tag of content list columns, filters and actions */
+    public const string CONTENT_LIST_TAG = 'quire_admin.content_list';
+
+    /** @internal What content lists can be extended with, and the interface each must implement */
+    public const array CONTENT_LIST_KINDS = [
+        'column' => ContentColumnInterface::class,
+        'filter' => ContentFilterInterface::class,
+        'action' => ContentActionInterface::class,
+    ];
+
+    private const string ID_PATTERN = '/^[a-z0-9]+(?:[-.][a-z0-9]+)*$/';
+
     /** Where menu entries go, in this order */
     public const array SECTIONS = ['general', 'content', 'site', 'users', 'extensions'];
 
@@ -47,6 +69,9 @@ final class Admin implements ExtenderInterface
 
     /** @var list<array{class: string, ability: ?string, order: int}> */
     private array $widgets = [];
+
+    /** @var list<array{id: string, kind: string, class: string, types: ?list<string>, order: int}> */
+    private array $contentList = [];
 
     /**
      * @param string                   $id         Unique in the menu; start it with your extension's ID
@@ -72,6 +97,49 @@ final class Admin implements ExtenderInterface
     public function widget(string $class, ?string $ability = null, int $order = 100): self
     {
         $this->widgets[] = ['class' => $class, 'ability' => $ability, 'order' => $order];
+
+        return $this;
+    }
+
+    /**
+     * A column of the content lists, after the built-in ones.
+     *
+     * @param string                               $id    Unique among columns; start it with your extension's ID
+     * @param class-string<ContentColumnInterface> $class A service
+     * @param list<string>|null                    $types The content types whose lists get it; null for all
+     * @param int                                  $order Position among the added columns, lowest first
+     */
+    public function contentColumn(string $id, string $class, ?array $types = null, int $order = 100): self
+    {
+        $this->contentList[] = ['id' => $id, 'kind' => 'column', 'class' => $class, 'types' => $types, 'order' => $order];
+
+        return $this;
+    }
+
+    /**
+     * A filter of the content lists, next to the search box.
+     *
+     * @param string                               $id    Unique among filters; it's the filter's name in the list's URL
+     * @param class-string<ContentFilterInterface> $class A service
+     * @param list<string>|null                    $types The content types whose lists get it; null for all
+     */
+    public function contentFilter(string $id, string $class, ?array $types = null, int $order = 100): self
+    {
+        $this->contentList[] = ['id' => $id, 'kind' => 'filter', 'class' => $class, 'types' => $types, 'order' => $order];
+
+        return $this;
+    }
+
+    /**
+     * An action of the content lists, for single items and for the selected ones.
+     *
+     * @param string                               $id    Unique among actions; start it with your extension's ID
+     * @param class-string<ContentActionInterface> $class A service
+     * @param list<string>|null                    $types The content types whose lists get it; null for all
+     */
+    public function contentAction(string $id, string $class, ?array $types = null, int $order = 100): self
+    {
+        $this->contentList[] = ['id' => $id, 'kind' => 'action', 'class' => $class, 'types' => $types, 'order' => $order];
 
         return $this;
     }
@@ -110,6 +178,41 @@ final class Admin implements ExtenderInterface
 
             $context->service($widget['class'])->addTag(self::WIDGET_TAG);
             $context->appendToParameter(self::WIDGETS_PARAMETER, [...$widget, 'owner' => $context->id]);
+        }
+
+        /** @var list<array{id: string, kind: string, owner: string}> $added */
+        $added = $context->container()->getParameterBag()->all()[self::CONTENT_LIST_PARAMETER] ?? [];
+        // The admin's own extend.php runs this too, so the lists find the parameter even when nothing is added.
+        $context->container()->setParameter(self::CONTENT_LIST_PARAMETER, $added);
+        $owners = [];
+
+        foreach ($added as $entry) {
+            $owners[$entry['kind']][$entry['id']] = $entry['owner'];
+        }
+
+        foreach ($this->contentList as $entry) {
+            $where = \sprintf('Admin::content%s("%s")', ucfirst($entry['kind']), $entry['id']);
+            $interface = self::CONTENT_LIST_KINDS[$entry['kind']];
+
+            if (1 !== preg_match(self::ID_PATTERN, $entry['id'])) {
+                throw $context->error($where, 'IDs are lowercase letters and digits, with single hyphens or dots between them, e.g. "acme-reviews.rating".');
+            }
+
+            if (isset($owners[$entry['kind']][$entry['id']])) {
+                throw $context->error($where, \sprintf('A %s with this ID is already added by "%s".', $entry['kind'], $owners[$entry['kind']][$entry['id']]));
+            }
+
+            if (!class_exists($entry['class']) || !is_a($entry['class'], $interface, true)) {
+                throw $context->error($where, \sprintf('Content list %ss are classes implementing %s.', $entry['kind'], $interface));
+            }
+
+            if ([] === $entry['types']) {
+                throw $context->error($where, 'Give the content types as a list of IDs, e.g. ["post"], or null for all types.');
+            }
+
+            $owners[$entry['kind']][$entry['id']] = $context->id;
+            $context->service($entry['class'])->addTag(self::CONTENT_LIST_TAG);
+            $context->appendToParameter(self::CONTENT_LIST_PARAMETER, [...$entry, 'owner' => $context->id]);
         }
     }
 }

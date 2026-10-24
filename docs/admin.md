@@ -6,7 +6,7 @@ The admin interface, the extension `quire-admin` (package `quire/admin`), manage
 bin/console quire:extension:enable quire-admin
 ```
 
-> **Status:** the admin is being built. It has its layout, menu and dashboard; managing content, settings, extensions, themes and users follow.
+> **Status:** the admin is being built. It has its layout, menu, dashboard and content lists; editing content, settings, extensions, themes and users follow.
 
 ## Who can use it
 
@@ -17,6 +17,17 @@ bin/console quire:permissions:grant moderator quire.admin.access
 ```
 
 What each user can do in the admin follows their other abilities: someone who may only edit posts sees only posts.
+
+## Content
+
+Every content type has a list, under "Content" in the menu, for those who may edit its items: those with `content.<type>.edit_any` see all of them, those with only `edit_own` their own.
+
+- **Views** by status (drafts, published, archived, and statuses that extensions add), and the trash, each with how many items it has.
+- **Search** as you type a word: titles count most, then excerpts and bodies, in each item's language.
+- **Sorting** by title, by the dates, and by fields declared `sortable`; choosing a column's heading again reverses it. The latest change comes first otherwise.
+- **Actions** for an item, or for the selected ones at once: publish, unpublish and archive (with `content.<type>.publish`), move to the trash, restore and delete permanently (with `content.<type>.delete`), and those of the content type's workflow and of extensions. What isn't possible for an item, or not allowed, isn't offered; when an action fails for some of the selected items, the list says which and why.
+
+The list's address keeps its view, search, filters, sort and page (e.g. `/admin/content/post?view=draft&q=markdown`), so it can be bookmarked and shared. Everything works without JavaScript; with it, a checkbox selects every row.
 
 ## Its address
 
@@ -40,4 +51,4 @@ The admin is translated with the site's language (`site.locale`), in the domain 
 
 ## Adding to it
 
-Extensions add pages, menu entries and dashboard widgets: see [admin pages](extensions.md#admin-pages).
+Extensions add pages, menu entries, dashboard widgets, and columns, filters and actions of content lists: see [admin pages](extensions.md#admin-pages).

@@ -7,6 +7,7 @@ namespace Quire\Admin\Tests;
 use PHPUnit\Framework\TestCase;
 use Quire\Admin\Dashboard\Widget\ContentWidget;
 use Quire\Admin\Extend\Admin;
+use Quire\Admin\Tests\Fixtures\TitleLengthColumn;
 use Quire\Extend\ExtenderContext;
 use Quire\Extend\ExtenderException;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -32,6 +33,28 @@ final class AdminExtenderTest extends TestCase
         ]], $this->container->getParameterBag()->all()[Admin::MENU_PARAMETER] ?? null);
         self::assertSame([['class' => ContentWidget::class, 'ability' => 'acme-reviews.moderate', 'order' => 5, 'owner' => 'acme-reviews']], $this->container->getParameterBag()->all()[Admin::WIDGETS_PARAMETER] ?? null);
         self::assertTrue($this->container->getDefinition(ContentWidget::class)->hasTag(Admin::WIDGET_TAG));
+    }
+
+    public function testAddsToContentLists(): void
+    {
+        $this->apply(new Admin()->contentColumn('acme-reviews.length', TitleLengthColumn::class, types: ['post'], order: 5));
+
+        self::assertSame([[
+            'id' => 'acme-reviews.length', 'kind' => 'column', 'class' => TitleLengthColumn::class, 'types' => ['post'], 'order' => 5, 'owner' => 'acme-reviews',
+        ]], $this->container->getParameterBag()->all()[Admin::CONTENT_LIST_PARAMETER] ?? null);
+        self::assertTrue($this->container->getDefinition(TitleLengthColumn::class)->hasTag(Admin::CONTENT_LIST_TAG));
+
+        $this->assertFails(new Admin()->contentColumn('acme-reviews.length', TitleLengthColumn::class), 'A column with this ID is already added by "acme-reviews".');
+        $this->assertFails(new Admin()->contentFilter('acme-reviews.length', TitleLengthColumn::class), 'Content list filters are classes implementing Quire\Admin\Content\ContentFilterInterface.'); // @phpstan-ignore argument.type (testing the runtime check)
+        $this->assertFails(new Admin()->contentAction('Acme Reviews', TitleLengthColumn::class), 'IDs are lowercase letters and digits'); // @phpstan-ignore argument.type (testing the runtime check)
+        $this->assertFails(new Admin()->contentColumn('acme-reviews.other', TitleLengthColumn::class, types: []), 'Give the content types as a list of IDs');
+    }
+
+    public function testContentListsHaveTheirParameterWithoutAdditions(): void
+    {
+        $this->apply(new Admin());
+
+        self::assertSame([], $this->container->getParameterBag()->all()[Admin::CONTENT_LIST_PARAMETER] ?? null);
     }
 
     public function testDoesNothingWithoutTheAdmin(): void

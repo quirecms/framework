@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Quire\Admin\Navigation;
 
+use Quire\Admin\Content\ContentLists;
 use Quire\Admin\Extend\Admin;
+use Quire\Content\Type\ContentTypeDefinition;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -12,7 +14,8 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
- * The admin menu, as the current user may see it: the entries of {@see Admin::menu()}, by section.
+ * The admin menu, as the current user may see it: a list per content type they may edit, and the entries
+ * of {@see Admin::menu()}, by section.
  *
  * @api
  */
@@ -28,6 +31,7 @@ final readonly class AdminMenu
         private UrlGeneratorInterface $urls,
         private RequestStack $requests,
         private TranslatorInterface $translator,
+        private ContentLists $contentLists,
     ) {
     }
 
@@ -38,7 +42,17 @@ final readonly class AdminMenu
     {
         $request = $this->requests->getMainRequest();
         $currentPath = $request?->getPathInfo() ?? '';
-        $entries = $this->entries;
+        // A list per content type the user may edit, before the entries extensions add to the section.
+        $entries = [...array_map(static fn (ContentTypeDefinition $type, int $position): array => [
+            'id' => 'quire-admin.content.'.$type->id,
+            'label' => $type->pluralLabel,
+            'route' => 'quire_admin_content',
+            'parameters' => ['type' => $type->id],
+            'ability' => null,
+            'section' => 'content',
+            'order' => $position - 1000,
+            'owner' => $type->owner,
+        ], $this->contentLists->listableTypes(), array_keys($this->contentLists->listableTypes())), ...$this->entries];
         usort($entries, static fn (array $a, array $b): int => [$a['order'], $a['id']] <=> [$b['order'], $b['id']]);
         $sections = array_fill_keys(Admin::SECTIONS, []);
         $best = null;
