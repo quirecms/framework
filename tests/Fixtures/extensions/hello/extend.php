@@ -40,7 +40,10 @@ return [
     // The admin's own extender: a menu entry for the page above, and a dashboard widget.
     new Admin()
         ->menu('quire-fixture-hello.greetings', 'Greetings', 'fixture_hello_admin', ability: 'quire-fixture-hello.moderate')
-        ->widget(Hello\Admin\GreetingsWidget::class, ability: 'quire-fixture-hello.moderate', order: 5),
+        ->widget(Hello\Admin\GreetingsWidget::class, ability: 'quire-fixture-hello.moderate', order: 5)
+        ->contentColumn('quire-fixture-hello.likes', Hello\Admin\LikesColumn::class, types: ['post'])
+        ->contentFilter('quire-fixture-hello.featured', Hello\Admin\FeaturedFilter::class, types: ['post'])
+        ->contentAction('quire-fixture-hello.feature', Hello\Admin\FeatureAction::class, types: ['post']),
 
     new Extend\Events()
         ->listen(ResponseEvent::class, Hello\FixtureHeaderListener::class),

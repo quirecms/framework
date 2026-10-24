@@ -705,6 +705,32 @@ new Admin()
 |--------|---------|
 | `menu($id, $label, $route, $parameters, $ability, $section, $order)` | A menu entry, shown to users with `$ability` (if given). `$section` is `content`, `site`, `users` or `extensions` (the default). The label is translated in your extension's domain. |
 | `widget($class, $ability, $order)` | A dashboard widget: a service implementing `Quire\Admin\Dashboard\WidgetInterface`, with a `title()` and the HTML it `render()`s. An empty string hides it. |
+| `contentColumn($id, $class, $types, $order)` | A column of the [content lists](admin.md#content), after the built-in ones: a service implementing `Quire\Admin\Content\ContentColumnInterface`. `$types` limits it to content types, e.g. `['product']`. |
+| `contentFilter($id, $class, $types, $order)` | A filter of the content lists: a service implementing `ContentFilterInterface`, with a label, the `choices()` and how a choice narrows the query. |
+| `contentAction($id, $class, $types, $order)` | An action of the content lists, for an item or the selected ones: a service implementing `ContentActionInterface`. |
+
+Content types, fields and abilities are all the lists need: an extension that only declares a content type gets a list of it in the admin, with no admin code. Columns, filters and actions are for more:
+
+```php
+final readonly class RatingColumn implements ContentColumnInterface
+{
+    public function label(): string { return 'Rating'; }
+
+    // Prepare the list's query once for all its rows, e.g. with select() or with().
+    public function query(ContentQuery $query): ContentQuery
+    {
+        return $query->select('review_count', 'SELECT count(*) FROM acme_review r WHERE r.content_id = c.id');
+    }
+
+    // A string is escaped; return a \Twig\Markup for HTML.
+    public function value(Content $item): string { return (string) $item->attribute('review_count'); }
+
+    // What choosing the column's heading sorts by; null when it can't sort.
+    public function sortBy(): ?string { return 'review_count'; }
+}
+```
+
+An action decides who may take it, in `isAvailable($item)` (e.g. with `Security::isGranted()`): the list offers it only there. When `apply($item)` throws a `ContentActionException`, its message is shown for that item; other exceptions are logged, and the editor sees that something went wrong.
 
 When the admin isn't enabled, `Admin` does nothing, so you don't need to require it. If it may not be installed at all, wrap it in `Extend\Conditional`. Stylesheets and scripts for admin pages go in the group `admin` of [`Extend\Assets`](#extendassets). Scripts can register [Stimulus](https://stimulus.hotwired.dev) controllers on `window.QuireAdmin`, whether they load before or after the admin's: give a function that receives Stimulus's `Controller` class and returns your controller.
 

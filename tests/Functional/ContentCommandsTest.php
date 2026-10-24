@@ -59,6 +59,10 @@ final class ContentCommandsTest extends KernelTestCase
         $list = $this->command('quire:content:list');
         $list->execute(['--trashed' => true]);
         self::assertStringContainsString('Hello again', $list->getDisplay());
+        $list->execute(['--trashed' => true, '--search' => 'hello']);
+        self::assertStringContainsString('Hello again', $list->getDisplay());
+        $list->execute(['--trashed' => true, '--search' => 'goodbye']);
+        self::assertStringNotContainsString('Hello again', $list->getDisplay());
 
         self::assertSame(0, $this->command('quire:content:restore')->execute(['id' => $id]));
         self::assertSame(0, $delete->execute(['id' => $id, '--purge' => true, '--force' => true]));

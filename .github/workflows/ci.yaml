@@ -74,7 +74,7 @@ jobs:
           printf 'correct-horse-42\ncorrect-horse-42\n' | docker compose exec -T php bin/console quire:user:create editor@example.com --role=editor
           playwright=$(jq -r '.dependencies.playwright' tests/Accessibility/package.json)
           docker run --rm --network quire_default -e QUIRE_CHECK_SERVER=php -e QUIRE_CHECK_LOGIN=editor:correct-horse-42 -v "$PWD/tests/Accessibility:/work" -w /work "mcr.microsoft.com/playwright:v${playwright}-noble" \
-            sh -c 'npm ci --no-audit --no-fund && node check.mjs https://quire.localhost /admin'
+            sh -c 'npm ci --no-audit --no-fund && node check.mjs https://quire.localhost /admin /admin/content/post /admin/content/page "/admin/content/post?q=hello"'
       - name: Show logs on failure
         if: failure()
         run: docker compose logs
