@@ -117,15 +117,15 @@
                                     {% if loop.first %}
                                         <th scope="row">
                                             <a class="content-list__title" href="{{ path('quire_admin_content_edit', {type: type.id, id: item.id}) }}">{{ cell }}</a>
-                                            {% if item.isPublic %}
-                                                <a class="meta" href="{{ quire_url(item) }}">{{ 'View'|trans({}, 'quire-admin') }}<span class="visually-hidden"> “{{ item.title }}”</span></a>
-                                            {% endif %}
                                         </th>
                                     {% else %}
                                         <td>{{ cell }}</td>
                                     {% endif %}
                                 {% endfor %}
                                 <td class="content-list__actions">
+                                    {% if item.isPublic %}
+                                        <a class="link-button" href="{{ quire_url(item) }}">{{ 'View'|trans({}, 'quire-admin') }}<span class="visually-hidden"> “{{ item.title }}”</span></a>
+                                    {% endif %}
                                     {% for action, label in row.actions %}
                                         <button type="submit" class="link-button{% if action in ['trash', 'purge'] %} link-button--danger{% endif %}" name="row" value="{{ action }}|{{ item.id }}"{% if action == 'purge' %} data-turbo-confirm="{{ '“{title}” will be deleted permanently and can\'t be restored. Continue?'|trans({title: item.title}, 'quire-admin') }}"{% endif %}>
                                             {{ label }}<span class="visually-hidden"> “{{ item.title }}”</span>

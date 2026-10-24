@@ -467,9 +467,17 @@ select {
     width: 2.5rem;
 }
 
+/* Targets are at least 24px high (WCAG 2.2, 2.5.8). */
 .content-list__title {
-    display: block;
+    display: inline-block;
+    min-height: 1.5rem;
+    padding-block: 0.125rem;
     font-weight: 600;
+}
+
+.content-list__actions .link-button {
+    display: inline-block;
+    min-height: 1.5rem;
 }
 
 .content-list__actions,
@@ -477,7 +485,7 @@ select {
     white-space: nowrap;
 }
 
-.content-list__actions .link-button + .link-button {
+.content-list__actions > * + * {
     margin-left: var(--admin-space-3);
 }
 
