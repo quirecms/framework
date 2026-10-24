@@ -6,7 +6,7 @@ The admin interface, the extension `quire-admin` (package `quire/admin`), manage
 bin/console quire:extension:enable quire-admin
 ```
 
-> **Status:** the admin is being built. It has its layout, menu, dashboard, content lists, editor with content checks, changes to published content with review and history, and the site's settings, theme and extensions; users and permissions follow.
+> **Status:** the admin is being built. It has its layout, menu, dashboard, content lists, editor with content checks, changes to published content with review and history, the site's settings, theme and extensions, and users and roles; the audit log follows.
 
 ## Who can use it
 
@@ -65,6 +65,15 @@ Under "Site" in the menu, for admins: each page takes its own ability, `quire.se
 - **Extensions** lists the installed ones (install them with Composer) and enables and disables them, as `quire:extension:enable` and `disable` do (see [extensions](extensions.md#managing-extensions)). Before anything changes, a page lists what else changes with it: the extensions an extension requires are enabled too, and those that require it are disabled too. "Delete its data" also deletes the data of the extensions it disables, their tables and settings, for good: type the extension's ID to confirm. Disabling `quire-admin` turns off the admin itself; enable it again with `bin/console quire:extension:enable quire-admin`.
 
 When the theme and extensions are pinned in configuration, as for immutable production images, the pages say so and change nothing: change the configuration and redeploy instead.
+
+## Users and roles
+
+Under "Users" in the menu, for admins: "Users" takes the ability `quire.users.manage`, "Roles" and "Check access" take `quire.permissions.manage`. No other role has them by default.
+
+- **Users** can be searched by name, username or email, filtered by role and status, and sorted. A new user is invited by email to choose their password by default (see [users](users.md#managing-users)); you can also set it, or leave them without one when they sign in another way, e.g. with single sign-on. A user's page changes their name, email, username and roles, suspends or activates them, and invites them again. Deleting a user asks who gets their content. You can't suspend or delete yourself, and the site's last active admin keeps the role.
+- **Roles** lists the roles with their users and how far each differs from its defaults. A role's page shows what it may do with content as a grid of content types and actions, then the other abilities by the extension that declares them, with a filter. A mark shows each choice that differs from the default, and "Back to the defaults" undoes them. Saving shows first what the role gains and loses, how many users that affects, and what deserves a second look: abilities given to everyone, including visitors, abilities that run the site, and abilities used in the admin by a role that can't open it. Admins have every ability except strict ones, so their page offers only those.
+- **Your own roles** can be added, starting from another role's abilities, renamed and deleted (see [permissions](permissions.md#roles)).
+- **Check access** tells whether a user may do something, and why (see [permissions](permissions.md#why-someone-may-or-may-not)), and which roles may.
 
 ## Its address
 

@@ -11,7 +11,15 @@ What users may do is decided by **abilities**: named things a role may do, such 
 | `editor` | Writing and publishing content |
 | `admin` | Running the site: has every ability, except those marked strict |
 
-Users have one or more roles (see [users](users.md#roles)). Extensions can add roles, e.g. `moderator`.
+Users have one or more roles (see [users](users.md#roles)). Extensions can add roles, e.g. `moderator`, and so can the site:
+
+```bash
+bin/console quire:permissions:create-role translator "Translator" --from=editor   # starts with an editor's abilities
+bin/console quire:permissions:create-role translator "Übersetzer"                 # renames it
+bin/console quire:permissions:delete-role translator                              # takes it from its users too
+```
+
+The site's own roles are kept in the setting `quire.permissions.roles`. Roles that Quire and extensions declare can't be deleted.
 
 ## Using the admin
 
@@ -59,7 +67,17 @@ bin/console quire:permissions:reset content.page.delete  # back to its default r
 bin/console quire:permissions:reset                      # undo every change
 ```
 
+In the [admin interface](admin.md#users-and-roles), "Roles" has a page per role, and shows what saving changes before it does.
+
 Changes are kept as differences from the defaults, in the setting `quire.permissions.grants`. So an extension enabled later brings its own defaults, and changes made earlier stay. They're part of [backups](backups.md) like every setting.
+
+## Why someone may or may not
+
+```bash
+bin/console quire:permissions:explain grace content.post.publish
+```
+
+It says whether the user has the ability and why: which of their roles have it, by default or because the site granted it, whether they have it as an admin, what the [rules](#rules) of extensions decide, and whether they're suspended. It decides as `is_granted()` does, without a particular item; for `edit_own`, and when rules decide case by case, the answer can differ per item. "Check access" in the admin does the same, and lists the roles that have an ability. In code, use `Quire\Permission\AccessExplainer`.
 
 ## Checking abilities
 

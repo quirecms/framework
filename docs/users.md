@@ -20,8 +20,12 @@ Once the site has an admin, the installer changes nothing.
 
 ## Managing users
 
+Admins manage users in the [admin interface](admin.md#users-and-roles), or on the command line:
+
 ```bash
 bin/console quire:user:create grace@example.com --name="Grace Hopper" --role=editor
+bin/console quire:user:create grace@example.com --role=editor --invite   # she chooses her password
+bin/console quire:user:invite grace
 bin/console quire:user:list
 bin/console quire:user:list --role=admin
 bin/console quire:user:password grace
@@ -37,7 +41,9 @@ Commands that take a user accept their ID, email or username.
 
 - **Passwords** are asked for twice, without being shown, and must have at least 8 characters. Without a terminal, a strong password is generated and shown once. Passwords are never options, so they don't end up in the shell history or the list of running processes. `--no-password` (when creating) and `--remove` (on `quire:user:password`) leave a user without a password, for users who sign in another way.
 - **Usernames** are derived from the email unless you choose one: `grace.hopper@example.com` becomes `grace-hopper`, or `grace-hopper-2` when that's taken. Emails are unique regardless of case.
+- **Invitations** email the user a link to choose their password, so nobody else ever knows it. The link works once, for seven days; inviting again replaces it. It works whether or not [password reset](#registration-and-password-reset) is on, but not when signing in with a password is off.
 - **Suspended users** can't sign in, and are signed out on their next request. Changing a password signs the user out everywhere, too.
+- **The site keeps an active admin:** the last one can't lose the role, be suspended or be deleted, so nobody is locked out of the admin by mistake. Make another user an admin first. (Not when Quire runs in an application whose own users can be admins: those are [mapped in](#users-of-the-application-quire-is-installed-in) on every request.)
 
 ## Signing in
 

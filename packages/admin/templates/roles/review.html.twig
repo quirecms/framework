@@ -1,0 +1,46 @@
+{#
+    What saving a role's abilities changes, to confirm. Variables: role, label, added, removed (entries:
+    name, label, strict, admin), target (the abilities it's to have), version (of what it has now), users
+    (null for Everyone), problems.
+#}
+{% extends '@quire_admin/layout.html.twig' %}
+
+{% block title %}{{ 'Change what “{role}” may do?'|trans({role: label}, 'quire-admin') }}{% endblock %}
+
+{% block content %}
+    <p>
+        {% if users is null %}
+            <strong>{{ 'This applies to everyone, including visitors who aren\'t signed in.'|trans({}, 'quire-admin') }}</strong>
+        {% else %}
+            {{ '{count, plural, =0 {No user has this role yet.} one {This applies to the # user with this role.} other {This applies to the # users with this role.}}'|trans({count: users}, 'quire-admin') }}
+        {% endif %}
+    </p>
+
+    {% for list in [{entries: added, heading: 'They\'ll be able to', kind: 'added'}, {entries: removed, heading: 'They\'ll no longer be able to', kind: 'removed'}] %}
+        {% if list.entries is not empty %}
+            <h2>{{ list.heading|trans({}, 'quire-admin') }}</h2>
+            <ul class="review-list">
+                {% for entry in list.entries %}
+                    <li class="review-list__{{ list.kind }}">
+                        {{ entry.label }} <code class="meta">{{ entry.name }}</code>
+                        {% if list.kind == 'added' and (entry.admin or entry.strict or role == 'guest') %}
+                            <span class="tag tag--warning">{{ (entry.strict ? 'strict: destroys data or is for few people' : (role == 'guest' ? 'for everyone' : 'runs the site'))|trans({}, 'quire-admin') }}</span>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endfor %}
+
+    {% for problem in problems %}<p class="notice notice--warning">{{ problem }}</p>{% endfor %}
+
+    <form method="post" action="{{ path('quire_admin_role_save', {role: role}) }}">
+        <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_roles') }}">
+        <input type="hidden" name="version" value="{{ version }}">
+        {% for name in target %}<input type="hidden" name="abilities[]" value="{{ name }}">{% endfor %}
+        <div class="editor__buttons">
+            <button type="submit" class="button">{{ 'Save'|trans({}, 'quire-admin') }}</button>
+            <a href="{{ path('quire_admin_role', {role: role}) }}">{{ 'Cancel'|trans({}, 'quire-admin') }}</a>
+        </div>
+    </form>
+{% endblock %}

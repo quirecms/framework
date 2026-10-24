@@ -9,7 +9,10 @@ use Quire\Settings\Settings;
 use Quire\User\AccountSettings;
 use Quire\User\CreateUser;
 use Quire\User\Event\UserRegistered;
+use Quire\User\Exception\InvalidUserException;
+use Quire\User\Invitations;
 use Quire\User\Security\FormThrottle;
+use Quire\User\Security\SignInListener;
 use Quire\User\UpdateUser;
 use Quire\User\User;
 use Quire\User\UserRepository;
@@ -200,6 +203,62 @@ final class AccountsTest extends WebTestCase
         self::assertNotSame($grace->passwordHash, $this->user('grace@example.com')->passwordHash);
     }
 
+    public function testInvitedUsersChooseTheirPassword(): void
+    {
+        $writer = self::getContainer()->get(UserWriter::class);
+        $admin = $writer->create(new CreateUser('Ada Lovelace', 'ada@example.com', roles: ['admin']));
+        $grace = $writer->create(new CreateUser('Grace Hopper', 'grace@example.com'));
+        $invitations = self::getContainer()->get(Invitations::class);
+
+        $invitations->invite($grace, $admin);
+        $email = $this->email();
+        self::assertSame('You\'re invited to '.self::getContainer()->get(Settings::class)->getString('site.title'), $email->getSubject());
+        self::assertStringContainsString('Ada Lovelace added you to', (string) $email->getTextBody());
+        self::assertStringContainsString('as grace.', (string) $email->getTextBody());
+        $link = $this->link($email);
+        self::assertStringStartsWith($this->siteUri().'/accept-invitation/', $link);
+
+        // It works while password reset is off, the default.
+        $this->client->request('GET', $link);
+        self::assertResponseRedirects('/accept-invitation');
+        $this->client->followRedirect();
+        self::assertSelectorTextSame('h1', 'Choose your password');
+        self::assertSelectorTextContains('main', 'sign in with as grace');
+
+        $this->client->submitForm('Save password', ['password' => 'a new horse']);
+        self::assertResponseRedirects('/login');
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('.notice', 'Welcome! Sign in with your new password.');
+        $this->signIn('grace', 'a new horse');
+        self::assertSame('grace', $this->whoami());
+        self::assertTrue($this->user('grace@example.com')->hasVerifiedEmail());
+
+        // Used up; and an expired invitation can only be sent again.
+        $this->client->request('GET', $link);
+        $this->client->followRedirect();
+        self::assertResponseStatusCodeSame(410);
+        self::assertSelectorTextContains('main', 'Ask the person who invited you');
+        self::assertSelectorNotExists('main a[href="/forgot-password"]');
+    }
+
+    public function testInvitationsNeedAnEmailAndPasswordSignIn(): void
+    {
+        $writer = self::getContainer()->get(UserWriter::class);
+        $invitations = self::getContainer()->get(Invitations::class);
+
+        try {
+            $invitations->invite($writer->create(new CreateUser('No Mail')));
+            self::fail('Invited a user without email.');
+        } catch (InvalidUserException $e) {
+            self::assertSame(['email' => 'The user has no email to send the invitation to.'], $e->violations);
+        }
+
+        $this->settings([SignInListener::PASSWORD_LOGIN_SETTING => false]);
+        self::assertNotNull($invitations->unavailableReason());
+        $this->client->request('GET', '/accept-invitation');
+        self::assertResponseStatusCodeSame(404);
+    }
+
     public function testLinksSentToAnEarlierEmailStopWorking(): void
     {
         $this->settings([AccountSettings::PASSWORD_RESET => true]);
@@ -297,7 +356,7 @@ final class AccountsTest extends WebTestCase
 
     private function link(Email $email): string
     {
-        self::assertSame(1, preg_match('#https?://\S+/(?:verify-email|reset-password)/\S+#', (string) $email->getTextBody(), $match), (string) $email->getTextBody());
+        self::assertSame(1, preg_match('#https?://\S+/(?:verify-email|reset-password|accept-invitation)/\S+#', (string) $email->getTextBody(), $match), (string) $email->getTextBody());
 
         return $match[0];
     }
