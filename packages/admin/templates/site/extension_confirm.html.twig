@@ -1,0 +1,45 @@
+{#
+    Confirming that an extension is enabled, disabled, or disabled with its data deleted. Variables:
+    extension, action (enable|disable|purge), plan (titles by ID of every extension it changes), others
+    (those besides this one), problem (why it can't be done), error (what to correct in the form).
+#}
+{% extends '@quire_admin/layout.html.twig' %}
+
+{% block title %}{{ ('extensions.confirm.' ~ action)|trans({title: extension.title}, 'quire-admin') }}{% endblock %}
+
+{% block content %}
+    {% if problem %}
+        <p class="notice notice--error" role="alert">{{ problem }}</p>
+    {% else %}
+        {% if others is not empty %}
+            <p>{{ ('extensions.others.' ~ action)|trans({}, 'quire-admin') }}</p>
+            <ul>{% for id, title in others %}<li>{{ title }} <code class="meta">{{ id }}</code></li>{% endfor %}</ul>
+        {% endif %}
+
+        {% if action != 'enable' and 'quire-admin' in plan|keys %}
+            <p class="notice notice--warning">{{ 'This turns off the admin interface, this page included. Enable it again with "bin/console quire:extension:enable quire-admin".'|trans({}, 'quire-admin') }}</p>
+        {% endif %}
+
+        {% if action == 'purge' %}
+            <div class="notice notice--warning">
+                <p>{{ 'This deletes for good the data of the extensions listed here: their database tables, and their settings. Back up the site first if you might need it (bin/console quire:backup).'|trans({}, 'quire-admin') }}</p>
+            </div>
+        {% endif %}
+
+        <form method="post" action="{{ path('quire_admin_extension_act', {id: extension.id, action: action}) }}" class="settings-form">
+            <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_site') }}">
+            {% if action == 'purge' %}
+                <div class="form-field">
+                    <label for="confirm">{{ 'Type {id} to confirm'|trans({id: extension.id}, 'quire-admin') }}</label>
+                    {% if error %}<p class="field-error" id="confirm-error">{{ error }}</p>{% endif %}
+                    <input type="text" id="confirm" name="confirm" autocomplete="off" spellcheck="false" required{% if error %} aria-invalid="true" aria-describedby="confirm-error"{% endif %}>
+                </div>
+            {% endif %}
+            <p class="field-help">{{ 'The site is rebuilt, which takes a few seconds.'|trans({}, 'quire-admin') }}</p>
+            <div class="editor__buttons">
+                <button type="submit" class="button{% if action == 'purge' %} button--danger{% endif %}">{{ ('extensions.action.' ~ action)|trans({}, 'quire-admin') }}</button>
+                <a href="{{ path('quire_admin_extensions') }}">{{ 'Cancel'|trans({}, 'quire-admin') }}</a>
+            </div>
+        </form>
+    {% endif %}
+{% endblock %}

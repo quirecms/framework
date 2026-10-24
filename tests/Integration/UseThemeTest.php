@@ -14,6 +14,7 @@ use Quire\Settings\SettingsSchema;
 use Quire\Theme\Console\UseThemeCommand;
 use Quire\Theme\Internal\ActiveThemeValidator;
 use Quire\Theme\Themes;
+use Quire\Theme\ThemeSwitcher;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
@@ -98,7 +99,7 @@ final class UseThemeTest extends KernelTestCase
         $container = self::getContainer();
         $themes = new Themes($container->get(InstalledExtensions::class), $container->get(ExtensionManager::class), $this->settings, configured: null, chain: [], problem: null, pinned: false);
         $output = new BufferedOutput();
-        $status = new UseThemeCommand($themes, $this->rebuilder)(new SymfonyStyle(new ArrayInput([]), $output), $id, none: null === $id);
+        $status = new UseThemeCommand(new ThemeSwitcher($themes, $this->rebuilder))(new SymfonyStyle(new ArrayInput([]), $output), $id, none: null === $id);
 
         return [$status, (string) preg_replace('/\s+/', ' ', $output->fetch())];
     }

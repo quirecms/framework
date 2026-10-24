@@ -37,6 +37,8 @@ Add `--format=json` for output that scripts can read.
 bin/console quire:extension:enable acme-reviews
 ```
 
+Admins can also enable and disable extensions in the admin interface, under "Site" → "Extensions" (see [admin](admin.md#managing-the-site)).
+
 If the extension requires other extensions that aren't enabled yet, Quire lists them and asks before enabling them too. Pass `--no-interaction` to skip the question, or `--dry-run` to see what would change without changing anything.
 
 You can enable several extensions at once: `bin/console quire:extension:enable acme-reviews acme-seo`.
@@ -311,7 +313,7 @@ new Extend\Settings()
 | `key` | Must start with your extension's ID and a dot, e.g. `acme-reviews.per_page`, so it can't clash with other extensions. Lowercase words separated by dots. |
 | `type` | `string`, `bool`, `int`, `float`, `enum`, `list` (of strings) or `json` |
 | `default` | Used until someone changes the setting. Must fit the type. |
-| `label`, `help`, `group`, `widget` | How admin interfaces present the setting. `widget` is a hint such as `textarea` or `color`. |
+| `label`, `help`, `group`, `widget` | How admin interfaces present the setting: the admin shows settings by `group` (your extension's ID when not given), with `label` and `help` translated in your extension's translation domain. `widget` is the admin's control for it, e.g. `textarea`. |
 | `choices` | The allowed values, for `enum` settings |
 | `nullable` | Whether the setting may be empty (`null`) |
 | `sensitive` | Hides the value in listings, e.g. for API keys |

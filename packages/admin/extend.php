@@ -6,6 +6,9 @@ use Quire\Admin\Controller\ContentChangesController;
 use Quire\Admin\Controller\ContentEditController;
 use Quire\Admin\Controller\ContentListController;
 use Quire\Admin\Controller\DashboardController;
+use Quire\Admin\Controller\ExtensionsController;
+use Quire\Admin\Controller\SettingsController;
+use Quire\Admin\Controller\ThemesController;
 use Quire\Admin\Dashboard\Widget\ChangesWidget;
 use Quire\Admin\Dashboard\Widget\ContentWidget;
 use Quire\Admin\Dashboard\Widget\RecentlyEditedWidget;
@@ -37,7 +40,14 @@ return [
         ->get('/content/{type}/{id}/history', 'quire_admin_content_history', [ContentChangesController::class, 'history'], requirements: ['id' => Requirement::UUID])
         ->post('/content/{type}/{id}/restore', 'quire_admin_content_restore', [ContentChangesController::class, 'restore'], requirements: ['id' => Requirement::UUID])
         ->post('/content/{type}/{id}/place', 'quire_admin_content_place', [ContentChangesController::class, 'place'], requirements: ['id' => Requirement::UUID])
-        ->get('/content-search', 'quire_admin_content_search', [ContentEditController::class, 'search']),
+        ->get('/content-search', 'quire_admin_content_search', [ContentEditController::class, 'search'])
+        ->get('/settings/{group}', 'quire_admin_settings', SettingsController::class, requirements: ['group' => '[a-z0-9_.-]+'], defaults: ['group' => null])
+        ->post('/settings/{group}', 'quire_admin_settings_save', [SettingsController::class, 'save'], requirements: ['group' => '[a-z0-9_.-]+'])
+        ->get('/themes', 'quire_admin_themes', ThemesController::class)
+        ->post('/themes', 'quire_admin_themes_use', [ThemesController::class, 'use'])
+        ->get('/extensions', 'quire_admin_extensions', ExtensionsController::class)
+        ->get('/extensions/{id}/{action}', 'quire_admin_extension_confirm', [ExtensionsController::class, 'confirm'], requirements: ['id' => '[a-z0-9]+(?:-[a-z0-9]+)*', 'action' => 'enable|disable|purge'])
+        ->post('/extensions/{id}/{action}', 'quire_admin_extension_act', [ExtensionsController::class, 'act'], requirements: ['id' => '[a-z0-9]+(?:-[a-z0-9]+)*', 'action' => 'enable|disable|purge']),
 
     new Extend\Views()
         ->namespace('quire_admin', __DIR__.'/templates'),
@@ -48,6 +58,9 @@ return [
 
     new Admin()
         ->menu('quire-admin.dashboard', 'Dashboard', 'quire_admin_dashboard', section: 'general', order: 0)
+        ->menu('quire-admin.settings', 'Settings', 'quire_admin_settings', ability: SettingsController::ABILITY, section: 'site', order: 10)
+        ->menu('quire-admin.themes', 'Themes', 'quire_admin_themes', ability: ThemesController::ABILITY, section: 'site', order: 20)
+        ->menu('quire-admin.extensions', 'Extensions', 'quire_admin_extensions', ability: ExtensionsController::ABILITY, section: 'site', order: 30)
         ->widget(ContentWidget::class, order: 10)
         ->widget(ChangesWidget::class, order: 15)
         ->widget(RecentlyEditedWidget::class, order: 20),
