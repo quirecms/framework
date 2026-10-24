@@ -13,10 +13,10 @@
     ],
     "require": {
         "php": ">=8.5",
-        "quire/core": "0.1.x-dev"
+        "quire/core": "^0.1"
     },
     "require-dev": {
-        "quire/testing": "0.1.x-dev"
+        "quire/testing": "^0.1"
     },
     "autoload-dev": {
         "psr-4": {
@@ -27,6 +27,9 @@
         "quire": {
             "title": "Default",
             "description": "Accessible, responsive, light and dark. Use it as it is, or as the parent of your own theme."
+        },
+        "branch-alias": {
+            "dev-main": "0.1.x-dev"
         }
     },
     "minimum-stability": "dev",

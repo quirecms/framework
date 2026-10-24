@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "eb07dc907fdbe8b5ae6a3937f33dbdd0",
+    "content-hash": "133ee89c18f660f57849d282f49ec463",
     "packages": [
         {
             "name": "composer/semver",
@@ -2153,20 +2153,23 @@
             "dist": {
                 "type": "path",
                 "url": "packages/admin",
-                "reference": "5be3424db9051e1ab07af1ed69e0824cc0234d83"
+                "reference": "d4c7dc7f2d9b1211698812b73ac9298d671b5a66"
             },
             "require": {
                 "php": ">=8.5",
-                "quire/core": "0.1.x-dev"
+                "quire/core": "^0.1"
             },
             "require-dev": {
-                "quire/testing": "0.1.x-dev"
+                "quire/testing": "^0.1"
             },
             "type": "quire-extension",
             "extra": {
                 "quire": {
                     "title": "Admin",
                     "description": "Manage content, settings, extensions, themes and users in the browser."
+                },
+                "branch-alias": {
+                    "dev-main": "0.1.x-dev"
                 }
             },
             "autoload": {
@@ -2205,7 +2208,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/core",
-                "reference": "e641f43efeee56aee6bc1bb9a4925f947d2285cf"
+                "reference": "f1b33660e4ea18bcd6bf1e1633d3e35ab3ec51d4"
             },
             "require": {
                 "doctrine/dbal": "^4.2",
@@ -2248,6 +2251,11 @@
                 "league/flysystem-async-aws-s3": "Storage disks on S3-compatible services (AWS S3, Cloudflare R2, Backblaze B2, SeaweedFS, Garage)"
             },
             "type": "symfony-bundle",
+            "extra": {
+                "branch-alias": {
+                    "dev-main": "0.1.x-dev"
+                }
+            },
             "autoload": {
                 "psr-4": {
                     "Quire\\": "src/"
@@ -2285,20 +2293,23 @@
             "dist": {
                 "type": "path",
                 "url": "packages/theme-default",
-                "reference": "b576230936c20bf06d74c73522e78af55c7cdcff"
+                "reference": "3d6284ba30fa5ae78e22f77170fb4eb116a9ed64"
             },
             "require": {
                 "php": ">=8.5",
-                "quire/core": "0.1.x-dev"
+                "quire/core": "^0.1"
             },
             "require-dev": {
-                "quire/testing": "0.1.x-dev"
+                "quire/testing": "^0.1"
             },
             "type": "quire-theme",
             "extra": {
                 "quire": {
                     "title": "Default",
                     "description": "Accessible, responsive, light and dark. Use it as it is, or as the parent of your own theme."
+                },
+                "branch-alias": {
+                    "dev-main": "0.1.x-dev"
                 }
             },
             "autoload-dev": {
@@ -9049,13 +9060,13 @@
             "dist": {
                 "type": "path",
                 "url": "packages/testing",
-                "reference": "ad6613f9440d8698523c9f98ff9958b87e49c7e5"
+                "reference": "d2b8a111748f760a26c7db5f427a19e3a901d81d"
             },
             "require": {
                 "doctrine/doctrine-bundle": "^3.0",
                 "php": ">=8.5",
                 "phpunit/phpunit": "^13.4",
-                "quire/core": "0.1.x-dev",
+                "quire/core": "^0.1",
                 "symfony/browser-kit": "^8.1",
                 "symfony/css-selector": "^8.1",
                 "symfony/filesystem": "^8.1",
@@ -9064,6 +9075,11 @@
                 "symfony/twig-bundle": "^8.1"
             },
             "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-main": "0.1.x-dev"
+                }
+            },
             "autoload": {
                 "psr-4": {
                     "Quire\\Testing\\": "src/"
@@ -11020,13 +11036,8 @@
         }
     ],
     "aliases": [],
-    "minimum-stability": "stable",
-    "stability-flags": {
-        "quire/admin": 20,
-        "quire/core": 20,
-        "quire/testing": 20,
-        "quire/theme-default": 20
-    },
+    "minimum-stability": "dev",
+    "stability-flags": {},
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {

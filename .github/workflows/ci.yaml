@@ -62,16 +62,18 @@ jobs:
             docker compose exec -T php bin/console quire:settings:set "$setting" true
           done
           # The image's browsers must match the playwright package, so its version comes from package.json
-          # (and Dependabot's updates of the package update the image too).
+          # (and Dependabot's updates of the package update the image too). The browser runs on the
+          # Compose network, not the host's: there, containers that restart (e.g. the worker, after
+          # extensions change) add and remove interfaces, which aborts its page loads.
           playwright=$(jq -r '.dependencies.playwright' tests/Accessibility/package.json)
-          docker run --rm --network host -v "$PWD/tests/Accessibility:/work" -w /work "mcr.microsoft.com/playwright:v${playwright}-noble" \
+          docker run --rm --network quire_default -e QUIRE_CHECK_SERVER=php -v "$PWD/tests/Accessibility:/work" -w /work "mcr.microsoft.com/playwright:v${playwright}-noble" \
             sh -c 'npm ci --no-audit --no-fund && node check.mjs https://quire.localhost / /blog/hello-world /about /login /register /forgot-password /verify-email'
       - name: Check the admin's accessibility (WCAG 2.2 AA, with axe-core)
         run: |
           docker compose exec -T php bin/console quire:extension:enable quire-admin --no-interaction
           printf 'correct-horse-42\ncorrect-horse-42\n' | docker compose exec -T php bin/console quire:user:create editor@example.com --role=editor
           playwright=$(jq -r '.dependencies.playwright' tests/Accessibility/package.json)
-          docker run --rm --network host -e QUIRE_CHECK_LOGIN=editor:correct-horse-42 -v "$PWD/tests/Accessibility:/work" -w /work "mcr.microsoft.com/playwright:v${playwright}-noble" \
+          docker run --rm --network quire_default -e QUIRE_CHECK_SERVER=php -e QUIRE_CHECK_LOGIN=editor:correct-horse-42 -v "$PWD/tests/Accessibility:/work" -w /work "mcr.microsoft.com/playwright:v${playwright}-noble" \
             sh -c 'npm ci --no-audit --no-fund && node check.mjs https://quire.localhost /admin'
       - name: Show logs on failure
         if: failure()
@@ -93,10 +95,10 @@ jobs:
             create-project --no-install --repository='{"type": "path", "url": "/repo/skeleton", "options": {"symlink": false, "versions": {"quire/skeleton": "0.1.x-dev"}}}' \
             quire/skeleton site 0.1.x-dev
           # Instead of Packagist, the site installs the packages from a copy of packages/ inside it, which
-          # its container sees.
+          # its container sees. They're development versions of the next release.
           cp -r packages "$RUNNER_TEMP/site/quire-packages"
           versions=$(jq -n '[inputs.name] | map({(.): "0.1.x-dev"}) | add' packages/*/composer.json)
-          jq --indent 4 --argjson versions "$versions" '.repositories = [{"type": "path", "url": "quire-packages/*", "options": {"versions": $versions}}]' \
+          jq --indent 4 --argjson versions "$versions" '.repositories = [{"type": "path", "url": "quire-packages/*", "options": {"versions": $versions}}] | ."minimum-stability" = "dev"' \
             "$RUNNER_TEMP/site/composer.json" > composer.json.site && mv composer.json.site "$RUNNER_TEMP/site/composer.json"
       - name: Check the site has its own secret
         run: grep -Eq '^APP_SECRET=[0-9a-f]{32}$' "$RUNNER_TEMP/site/.env.dev"

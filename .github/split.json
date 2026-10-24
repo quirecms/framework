@@ -1,0 +1,7 @@
+[
+    {"path": "packages/admin", "repository": "quirecms/admin"},
+    {"path": "packages/core", "repository": "quirecms/core"},
+    {"path": "packages/testing", "repository": "quirecms/testing"},
+    {"path": "packages/theme-default", "repository": "quirecms/theme-default"},
+    {"path": "skeleton", "repository": "quirecms/skeleton"}
+]

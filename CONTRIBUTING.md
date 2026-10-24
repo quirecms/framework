@@ -31,7 +31,7 @@ docker compose exec -u "$(id -u):$(id -g)" -e HOME=/tmp php composer test
 
 ## Repository layout
 
-This is a monorepo. Develop everything here, even code that's published as separate packages.
+This is a monorepo. Develop everything here, even code that's published as separate packages: each directory of `packages/`, and `skeleton/`, is copied to a read-only repository of its own (e.g. [quirecms/core](https://github.com/quirecms/core)), which Composer installs it from. Pull requests opened there are closed with a pointer to this repository.
 
 | Path | Contents |
 |------|----------|
@@ -91,6 +91,12 @@ A good pull request:
 - passes CI.
 
 A maintainer will review it. We may ask for changes. Please push new commits instead of force-pushing, so the review is easier to follow; we squash them when merging.
+
+## Releases
+
+All packages are released together, with the same version, from a tag of this repository: tagging a commit of `main` with `v0.1.0` gives that version to every package. The workflow "Split" copies `main` and each tag to the packages' repositories (`.github/split.json` lists them; `.github/split.sh main` shows what it would push, without pushing).
+
+Between releases, the packages develop the next version, `0.1.x-dev`: their `main` branches are aliased to it, and they require each other in it (`^0.1`). To start the next minor version, change both in every `composer.json`, and the versions of the path repository in the root one; a test checks that they agree. A new package goes into `.github/split.json`, with its repository, and gets the `LICENSE`, `.gitattributes` and `.github/workflows/close-pull-request.yaml` the others have.
 
 ## License
 

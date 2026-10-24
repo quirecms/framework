@@ -6,6 +6,10 @@
  *
  * With QUIRE_CHECK_LOGIN="username:password", it signs in first, e.g. to check the admin's pages.
  *
+ * With QUIRE_CHECK_SERVER="php", it reaches the site at that host, e.g. a Compose service, while the
+ * URLs keep the site's name. The browser can then run on the Compose network instead of the host's,
+ * where interfaces that come and go, e.g. when a container restarts, abort its page loads.
+ *
  * Run it in the Playwright image, which has the browsers (see .github/workflows/ci.yaml).
  */
 import { chromium } from 'playwright';
@@ -13,7 +17,8 @@ import AxeBuilder from '@axe-core/playwright';
 
 const [base = 'https://quire.localhost', ...paths] = process.argv.slice(2);
 const pages = paths.length > 0 ? paths : ['/'];
-const browser = await chromium.launch();
+const server = process.env.QUIRE_CHECK_SERVER;
+const browser = await chromium.launch({ args: server ? [`--host-resolver-rules=MAP ${new URL(base).hostname} ${server}`] : [] });
 let violations = 0;
 
 for (const colorScheme of ['light', 'dark']) {

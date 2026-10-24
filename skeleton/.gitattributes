@@ -15,3 +15,6 @@ composer.lock text eol=lf merge=ours
 
 *.ico binary
 *.png binary
+
+# Left out of archives, e.g. those that Composer installs
+/.github export-ignore
