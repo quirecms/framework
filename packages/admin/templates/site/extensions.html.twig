@@ -1,0 +1,56 @@
+{#
+    The installed extensions. Variables: extensions (manifest, status: enabled|disabled|broken, problem),
+    missing (IDs enabled but no longer installed), read_only (why they can't change here).
+#}
+{% extends '@quire_admin/layout.html.twig' %}
+
+{% block title %}{{ 'Extensions'|trans({}, 'quire-admin') }}{% endblock %}
+
+{% block content %}
+    {% if read_only %}<p class="notice notice--warning">{{ read_only }}</p>{% endif %}
+    {% for id in missing %}
+        <p class="notice notice--error">{{ '“{id}” is enabled but no longer installed. Install it again with Composer, or disable it with "bin/console quire:extension:disable {id}".'|trans({id: id}, 'quire-admin') }}</p>
+    {% endfor %}
+    <p class="field-help">{{ 'Install extensions with Composer; here you enable them. Enabling or disabling one rebuilds the site, which takes a few seconds.'|trans({}, 'quire-admin') }}</p>
+
+    <div class="table-scroll">
+        <table class="table">
+            <caption class="visually-hidden">{{ 'Installed extensions'|trans({}, 'quire-admin') }}</caption>
+            <thead>
+                <tr>
+                    <th scope="col">{{ 'Extension'|trans({}, 'quire-admin') }}</th>
+                    <th scope="col">{{ 'Status'|trans({}, 'quire-admin') }}</th>
+                    <th scope="col">{{ 'Requires'|trans({}, 'quire-admin') }}</th>
+                    <th scope="col"><span class="visually-hidden">{{ 'Actions'|trans({}, 'quire-admin') }}</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in extensions %}
+                    {% set manifest = entry.manifest %}
+                    <tr>
+                        <th scope="row">
+                            <span class="content-list__title">{{ manifest.title }}</span>
+                            {% if manifest.description %}<span class="meta">{{ manifest.description }}</span>{% endif %}
+                            <span class="meta"><code>{{ manifest.id }}</code> · {{ manifest.packageName }} {{ manifest.version }}</span>
+                        </th>
+                        <td>
+                            <span class="status status--{{ entry.status == 'enabled' ? 'published' : entry.status }}">{{ ('extensions.status.' ~ entry.status)|trans({}, 'quire-admin') }}</span>
+                            {% if entry.problem %}<span class="field-error">{{ entry.problem }}</span>{% endif %}
+                        </td>
+                        <td>{{ manifest.requires|join(', ') ?: '—' }}</td>
+                        <td class="content-list__actions">
+                            {% if not read_only %}
+                                {% if entry.status == 'disabled' %}
+                                    <a class="link-button" href="{{ path('quire_admin_extension_confirm', {id: manifest.id, action: 'enable'}) }}">{{ 'Enable'|trans({}, 'quire-admin') }}<span class="visually-hidden"> {{ manifest.title }}</span></a>
+                                {% else %}
+                                    <a class="link-button" href="{{ path('quire_admin_extension_confirm', {id: manifest.id, action: 'disable'}) }}">{{ 'Disable'|trans({}, 'quire-admin') }}<span class="visually-hidden"> {{ manifest.title }}</span></a>
+                                    <a class="link-button link-button--danger" href="{{ path('quire_admin_extension_confirm', {id: manifest.id, action: 'purge'}) }}">{{ 'Delete its data'|trans({}, 'quire-admin') }}<span class="visually-hidden"> ({{ manifest.title }})</span></a>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

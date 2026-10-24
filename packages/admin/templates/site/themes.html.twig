@@ -1,0 +1,45 @@
+{#
+    The installed themes, the site's first. Variables: themes (manifest, parent, active, problem), builtin
+    (no theme is used), problem (why the theme that's set can't be used), read_only (why it can't change).
+#}
+{% extends '@quire_admin/layout.html.twig' %}
+
+{% block title %}{{ 'Themes'|trans({}, 'quire-admin') }}{% endblock %}
+
+{% block content %}
+    {% if problem %}<p class="notice notice--error">{{ problem }}</p>{% endif %}
+    {% if read_only %}<p class="notice notice--warning">{{ read_only }}</p>{% endif %}
+    <p class="field-help">{{ 'Changing the theme rebuilds the site, which takes a few seconds.'|trans({}, 'quire-admin') }}</p>
+
+    <ul class="cards">
+        {% for theme in themes %}
+            <li class="card">
+                <h2 class="card__title">{{ theme.manifest.title }}{% if theme.active %} <span class="status status--published">({{ 'in use'|trans({}, 'quire-admin') }})</span>{% endif %}</h2>
+                {% if theme.manifest.description %}<p>{{ theme.manifest.description }}</p>{% endif %}
+                <p class="meta">
+                    {{ theme.manifest.packageName }} {{ theme.manifest.version }}
+                    {% if theme.parent %} · {{ 'based on {theme}'|trans({theme: theme.parent}, 'quire-admin') }}{% endif %}
+                </p>
+                {% if theme.problem %}<p class="field-error">{{ theme.problem }}</p>{% endif %}
+                {% if not theme.active and not read_only and not theme.problem %}
+                    <form method="post" action="{{ path('quire_admin_themes_use') }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_site') }}">
+                        <input type="hidden" name="theme" value="{{ theme.manifest.id }}">
+                        <button type="submit" class="button button--secondary">{{ 'Use this theme'|trans({}, 'quire-admin') }}<span class="visually-hidden"> ({{ theme.manifest.title }})</span></button>
+                    </form>
+                {% endif %}
+            </li>
+        {% endfor %}
+        <li class="card">
+            <h2 class="card__title">{{ 'Quire\'s built-in templates'|trans({}, 'quire-admin') }}{% if builtin %} <span class="status status--published">({{ 'in use'|trans({}, 'quire-admin') }})</span>{% endif %}</h2>
+            <p>{{ 'Plain pages without a theme, e.g. while you write your own.'|trans({}, 'quire-admin') }}</p>
+            {% if not builtin and not read_only %}
+                <form method="post" action="{{ path('quire_admin_themes_use') }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_site') }}">
+                    <input type="hidden" name="theme" value="">
+                    <button type="submit" class="button button--secondary">{{ 'Use the built-in templates'|trans({}, 'quire-admin') }}</button>
+                </form>
+            {% endif %}
+        </li>
+    </ul>
+{% endblock %}

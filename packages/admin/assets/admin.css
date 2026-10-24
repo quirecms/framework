@@ -958,3 +958,55 @@ textarea {
     display: inline-block;
     min-height: 1.5rem;
 }
+
+/* Site management */
+.button--danger {
+    background: var(--admin-danger);
+    border-color: var(--admin-danger);
+    color: var(--admin-surface);
+}
+
+.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+    gap: var(--admin-space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.settings-form {
+    display: grid;
+    gap: var(--admin-space-6);
+    max-width: 45rem;
+}
+
+.settings-form fieldset {
+    margin: 0;
+    padding: 0;
+    border: none;
+    min-width: 0;
+}
+
+.settings-form legend {
+    padding: 0;
+    font-weight: 600;
+}
+
+.settings-form input[type="checkbox"] {
+    justify-self: start;
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+}
+
+.setting-source {
+    margin: 0;
+}
+
+.check-levels th {
+    font-weight: normal;
+}
+
+.table th .meta {
+    display: block;
+}

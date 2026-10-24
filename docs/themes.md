@@ -33,6 +33,8 @@ bin/console quire:theme:use acme-dark
 bin/console quire:theme:use --none    # Quire's minimal built-in templates
 ```
 
+Admins can also choose the theme in the admin interface, under "Site" → "Themes" (see [admin](admin.md#managing-the-site)).
+
 `quire:theme:use` checks that the theme, the themes it inherits from and the extensions they require are installed, stores the choice in the `theme.active` setting, and rebuilds the application. When Quire runs on several servers, the others notice the change within a few seconds and rebuild by themselves, as they do when an extension is enabled.
 
 If the active theme can't be used later, e.g. because the theme it inherits from was uninstalled, the site keeps working with Quire's built-in templates and `quire:theme:list` reports the problem.

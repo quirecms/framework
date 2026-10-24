@@ -6,7 +6,7 @@ The admin interface, the extension `quire-admin` (package `quire/admin`), manage
 bin/console quire:extension:enable quire-admin
 ```
 
-> **Status:** the admin is being built. It has its layout, menu, dashboard, content lists, editor with content checks, and changes to published content with review and history; settings, extensions, themes and users follow.
+> **Status:** the admin is being built. It has its layout, menu, dashboard, content lists, editor with content checks, changes to published content with review and history, and the site's settings, theme and extensions; users and permissions follow.
 
 ## Who can use it
 
@@ -55,6 +55,16 @@ Visitors never see half-written changes. Editing a published item writes **your 
 An item's **address and place** (slug, author, parent) aren't part of the changes: saving them changes the published item right away, which takes the ability to publish.
 
 **History** lists an item's saved versions, newest first, with what each changed. Restoring one brings it back: right away for a draft, and as your changes, to look at and publish, for a published item.
+
+## Managing the site
+
+Under "Site" in the menu, for admins: each page takes its own ability, `quire.settings.manage`, `quire.themes.manage` and `quire.extensions.manage`, which no other role has by default. Grant one to a role to share that part, e.g. `bin/console quire:permissions:grant manager quire.settings.manage`.
+
+- **Settings** are grouped as they're declared (an extension's under its own name), each with its label, help and the control its type asks for. Settings that an environment variable sets are shown with the variable's name, but can't be changed here. Sensitive settings, e.g. API keys, are never shown: entering a value replaces them, and leaving the field empty keeps them. "Back to the default" appears for settings the site changed. The levels of the [content checks](content.md#checks-before-publishing) are chosen per check.
+- **Themes** lists the installed themes, the one in use first. "Use this theme" makes another the site's theme, as `quire:theme:use` does (see [themes](themes.md)): it's checked, and the site is rebuilt, which takes a few seconds.
+- **Extensions** lists the installed ones (install them with Composer) and enables and disables them, as `quire:extension:enable` and `disable` do (see [extensions](extensions.md#managing-extensions)). Before anything changes, a page lists what else changes with it: the extensions an extension requires are enabled too, and those that require it are disabled too. "Delete its data" also deletes the data of the extensions it disables, their tables and settings, for good: type the extension's ID to confirm. Disabling `quire-admin` turns off the admin itself; enable it again with `bin/console quire:extension:enable quire-admin`.
+
+When the theme and extensions are pinned in configuration, as for immutable production images, the pages say so and change nothing: change the configuration and redeploy instead.
 
 ## Its address
 

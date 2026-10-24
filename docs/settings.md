@@ -35,6 +35,8 @@ bin/console quire:settings:get site.title
 
 ## Changing settings
 
+Admins change settings in the admin interface, under "Site" → "Settings" (see [admin](admin.md#managing-the-site)), or on the command line:
+
 ```bash
 bin/console quire:settings:set site.title "My site"
 bin/console quire:settings:set acme-reviews.require_approval false

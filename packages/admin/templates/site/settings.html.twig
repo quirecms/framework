@@ -1,0 +1,53 @@
+{#
+    The site's settings, a group at a time. Variables: groups (labels by group), group, entries (definition,
+    label, help, html, source, environment, sensitive, error, fieldset), errors, ids (control IDs by key).
+#}
+{% extends '@quire_admin/layout.html.twig' %}
+
+{% block title %}{{ 'Settings'|trans({}, 'quire-admin') }}{% endblock %}
+
+{% block content %}
+    <nav class="views" aria-label="{{ 'Groups of settings'|trans({}, 'quire-admin') }}">
+        <ul>
+            {% for id, label in groups %}
+                <li><a href="{{ path('quire_admin_settings', {group: id}) }}"{% if id == group %} aria-current="page"{% endif %}>{{ label }}</a></li>
+            {% endfor %}
+        </ul>
+    </nav>
+
+    {% if errors is not empty %}
+        <div class="error-summary" role="alert" tabindex="-1" data-controller="focus">
+            <h2>{{ 'There\'s a problem'|trans({}, 'quire-admin') }}</h2>
+            <ul>
+                {% for key, message in errors %}<li><a href="#{{ ids[key] }}">{{ message }}</a></li>{% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <form method="post" action="{{ path('quire_admin_settings_save', {group: group}) }}" class="settings-form" novalidate>
+        <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_site') }}">
+        {% for entry in entries %}
+            {% set id = 'setting-' ~ entry.definition.key|replace({'.': '-'}) %}
+            {% if entry.fieldset %}<fieldset class="form-field" aria-describedby="{{ id }}-help">{% else %}<div class="form-field form-field--{{ entry.definition.type.value }}">{% endif %}
+                {% if entry.fieldset %}<legend>{{ entry.label }}</legend>{% else %}<label for="{{ id }}">{{ entry.label }}</label>{% endif %}
+                {% if entry.help %}<p class="field-help" id="{{ id }}-help">{{ entry.help }}</p>{% endif %}
+                {% if entry.error %}<p class="field-error" id="{{ id }}-error">{{ entry.error }}</p>{% endif %}
+                {% if entry.environment %}
+                    <p class="notice notice--warning">{{ 'Set by the environment variable {name}, so it can\'t be changed here.'|trans({name: entry.environment}, 'quire-admin') }}</p>
+                {% else %}
+                    {{ entry.html }}
+                    <p class="meta setting-source">
+                        <code>{{ entry.definition.key }}</code>
+                        {% if entry.sensitive %} · {{ 'Hidden; enter a new value to replace it.'|trans({}, 'quire-admin') }}{% endif %}
+                        {% if entry.source == 'database' %}
+                            · <button type="submit" class="link-button" name="default" value="{{ entry.definition.key }}" formnovalidate>{{ 'Back to the default'|trans({}, 'quire-admin') }}<span class="visually-hidden"> ({{ entry.label }})</span></button>
+                        {% endif %}
+                    </p>
+                {% endif %}
+            {% if entry.fieldset %}</fieldset>{% else %}</div>{% endif %}
+        {% endfor %}
+        <div class="editor__buttons">
+            <button type="submit" class="button">{{ 'Save settings'|trans({}, 'quire-admin') }}</button>
+        </div>
+    </form>
+{% endblock %}
