@@ -23,6 +23,7 @@
 **/Thumbs.db
 .github/
 docs/
+assets/vendor/
 public/bundles/
 tests/
 storage/

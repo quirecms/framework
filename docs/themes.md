@@ -286,6 +286,8 @@ They're added to the [`head` slot](#slots), so the layout only has to render it.
 
 A stylesheet can refer to its neighbours with relative URLs (`url('fonts/inter.woff2')`), and a script can import its neighbours with relative paths (`import './menu-toggle.js'`); AssetMapper versions those too. `quire_asset()` raises an error for a file that doesn't exist, rather than linking to nothing.
 
+A theme's scripts import npm packages by name when it lists them in `extra.quire.importmap` of its `composer.json`, e.g. `{"@hotwired/stimulus": "3.2.2"}`: sites download them, so don't copy libraries into `assets/`. See [JavaScript packages](extensions.md#javascript-packages).
+
 The site has its own `assets/` directory and `importmap.php`, loaded on every page after the theme's: put site-specific styles in `assets/styles/app.css`, and add JavaScript packages with `bin/console importmap:require <package>`.
 
 Themes that want Sass, Tailwind or a bundler can use Symfony's `symfonycasts/tailwind-bundle`, `symfonycasts/sass-bundle` or `pentatrion/vite-bundle` and ship the built files in `assets/`; Quire neither requires nor prevents them.
