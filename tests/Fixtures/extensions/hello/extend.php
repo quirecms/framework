@@ -43,7 +43,8 @@ return [
         ->widget(Hello\Admin\GreetingsWidget::class, ability: 'quire-fixture-hello.moderate', order: 5)
         ->contentColumn('quire-fixture-hello.likes', Hello\Admin\LikesColumn::class, types: ['post'])
         ->contentFilter('quire-fixture-hello.featured', Hello\Admin\FeaturedFilter::class, types: ['post'])
-        ->contentAction('quire-fixture-hello.feature', Hello\Admin\FeatureAction::class, types: ['post']),
+        ->contentAction('quire-fixture-hello.feature', Hello\Admin\FeatureAction::class, types: ['post'])
+        ->fieldWidget('color', Hello\Admin\ColorWidget::class),
 
     new Extend\Events()
         ->listen(ResponseEvent::class, Hello\FixtureHeaderListener::class),

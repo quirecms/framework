@@ -2,12 +2,14 @@
 
 declare(strict_types=1);
 
+use Quire\Admin\Controller\ContentEditController;
 use Quire\Admin\Controller\ContentListController;
 use Quire\Admin\Controller\DashboardController;
 use Quire\Admin\Dashboard\Widget\ContentWidget;
 use Quire\Admin\Dashboard\Widget\RecentlyEditedWidget;
 use Quire\Admin\Extend\Admin;
 use Quire\Extend;
+use Symfony\Component\Routing\Requirement\Requirement;
 
 /*
  * Quire's admin interface, at /admin (see "quire.routing.admin_prefix"), for users with the ability
@@ -21,7 +23,13 @@ return [
     new Extend\Routes(group: 'admin')
         ->get('/', 'quire_admin_dashboard', DashboardController::class)
         ->get('/content/{type}', 'quire_admin_content', ContentListController::class)
-        ->post('/content/{type}', 'quire_admin_content_action', [ContentListController::class, 'act']),
+        ->post('/content/{type}', 'quire_admin_content_action', [ContentListController::class, 'act'])
+        ->get('/content/{type}/new', 'quire_admin_content_new', [ContentEditController::class, 'new'])
+        ->post('/content/{type}/new', 'quire_admin_content_create', [ContentEditController::class, 'create'])
+        ->post('/content/{type}/preview', 'quire_admin_content_preview', [ContentEditController::class, 'previewFragment'])
+        ->get('/content/{type}/{id}', 'quire_admin_content_edit', [ContentEditController::class, 'edit'], requirements: ['id' => Requirement::UUID])
+        ->post('/content/{type}/{id}', 'quire_admin_content_save', [ContentEditController::class, 'save'], requirements: ['id' => Requirement::UUID])
+        ->get('/content-search', 'quire_admin_content_search', [ContentEditController::class, 'search']),
 
     new Extend\Views()
         ->namespace('quire_admin', __DIR__.'/templates'),

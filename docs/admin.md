@@ -6,7 +6,7 @@ The admin interface, the extension `quire-admin` (package `quire/admin`), manage
 bin/console quire:extension:enable quire-admin
 ```
 
-> **Status:** the admin is being built. It has its layout, menu, dashboard and content lists; editing content, settings, extensions, themes and users follow.
+> **Status:** the admin is being built. It has its layout, menu, dashboard, content lists and editor; changes to published content as pending revisions, settings, extensions, themes and users follow.
 
 ## Who can use it
 
@@ -28,6 +28,19 @@ Every content type has a list, under "Content" in the menu, for those who may ed
 - **Actions** for an item, or for the selected ones at once: publish, unpublish and archive (with `content.<type>.publish`), move to the trash, restore and delete permanently (with `content.<type>.delete`), and those of the content type's workflow and of extensions. What isn't possible for an item, or not allowed, isn't offered; when an action fails for some of the selected items, the list says which and why.
 
 The list's address keeps its view, search, filters, sort and page (e.g. `/admin/content/post?view=draft&q=markdown`), so it can be bookmarked and shared. Everything works without JavaScript; with it, a checkbox selects every row.
+
+## Editing
+
+Choosing an item in a list opens it in the editor; "New" in a list starts one. The form comes from the content type: the title, the text, the excerpt, the item's address and author, its parent for pages, and the type's fields, grouped and ordered as the type declares them (`group`, `order`), with their labels and help.
+
+- **The text is Markdown,** in an editor with a toolbar, shortcuts (Ctrl+B, Ctrl+I, Ctrl+K) and lists that continue as you type. Its preview is rendered by Quire, as the site shows it, shortcodes included, while you write.
+- **Each field has the control its type asks for:** a number, a checkbox, a choice, a date, tags, JSON, or a list of items to link to, which you can search. Extensions that add field types add their controls too.
+- **Dates and times are in the site's time zone,** the setting `site.timezone` (UTC unless set), e.g. `bin/console quire:settings:set site.timezone Europe/Berlin`.
+- **Save, or save and publish, schedule, or take another step of the workflow.** What you may do is offered, nothing else. Mistakes are listed above the form and shown at their fields; nothing is saved until they're fixed.
+- **No changes are lost:** when someone else saved the item after you opened it, saving shows you the form again with what you entered, unsaved, and tells you. Saving once more replaces their changes, knowingly.
+- **For now, saving a published item changes it on the site right away,** so it takes the ability to publish. Changes to published items as drafts, to review and publish later, come next.
+
+Everything works without JavaScript: the text is then a plain text box, and "Preview" shows the preview without saving.
 
 ## Its address
 

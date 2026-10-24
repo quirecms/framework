@@ -708,6 +708,7 @@ new Admin()
 | `contentColumn($id, $class, $types, $order)` | A column of the [content lists](admin.md#content), after the built-in ones: a service implementing `Quire\Admin\Content\ContentColumnInterface`. `$types` limits it to content types, e.g. `['product']`. |
 | `contentFilter($id, $class, $types, $order)` | A filter of the content lists: a service implementing `ContentFilterInterface`, with a label, the `choices()` and how a choice narrows the query. |
 | `contentAction($id, $class, $types, $order)` | An action of the content lists, for an item or the selected ones: a service implementing `ContentActionInterface`. |
+| `fieldWidget($name, $class)` | How the editor shows fields whose widget has this name, e.g. those of a [field type](#extendfieldtypes) you add: a service implementing `Quire\Admin\Content\Form\FieldWidgetInterface`. |
 
 Content types, fields and abilities are all the lists need: an extension that only declares a content type gets a list of it in the admin, with no admin code. Columns, filters and actions are for more:
 
@@ -729,6 +730,27 @@ final readonly class RatingColumn implements ContentColumnInterface
     public function sortBy(): ?string { return 'review_count'; }
 }
 ```
+
+A field type names its widget in `widget()`, e.g. `"acme-maps.location"`; core's widgets are `text`, `textarea`, `markdown`, `number`, `checkbox`, `select`, `tags`, `date`, `datetime`, `json` and `relation`. A widget renders the control and reads what was entered:
+
+```php
+final readonly class LocationWidget implements FieldWidgetInterface
+{
+    // Give the control $control->attributes(): its name, id, required and the ARIA attributes the editor's labels, help and errors need.
+    public function render(FieldDefinition $field, mixed $value, FieldControl $control): string|\Stringable
+    {
+        return new Markup(sprintf('<input type="text" %s value="%s" inputmode="decimal">', $control->attributes(), htmlspecialchars(is_string($value) ? $value : '')), 'UTF-8');
+    }
+
+    // Throw InvalidInputException for what can't be read; the field type checks the value when it's saved.
+    public function value(FieldDefinition $field, mixed $submitted): mixed
+    {
+        return is_string($submitted) && '' !== $submitted ? $submitted : null;
+    }
+}
+```
+
+Fields can also name one of core's widgets, e.g. `field('summary', 'text', widget: 'markdown')` for a Markdown editor. A widget nothing provides falls back to a text box.
 
 An action decides who may take it, in `isAvailable($item)` (e.g. with `Security::isGranted()`): the list offers it only there. When `apply($item)` throws a `ContentActionException`, its message is shown for that item; other exceptions are logged, and the editor sees that something went wrong.
 

@@ -1,0 +1,80 @@
+{#
+    The controls of core's field widgets, one block each. Variables: field (its definition), control
+    (name, id, attributes()), value (as the control shows it); relations also get choices (id, label),
+    multiple and types.
+#}
+
+{% block text %}
+    <input type="text" {{ control.attributes }} value="{{ value ?? '' }}"{% if field.maxLength %} maxlength="{{ field.maxLength }}"{% endif %}>
+{% endblock %}
+
+{% block textarea %}
+    <textarea {{ control.attributes }} rows="4"{% if field.maxLength %} maxlength="{{ field.maxLength }}"{% endif %}>{{ value ?? '' }}</textarea>
+{% endblock %}
+
+{% macro toolbar_labels() -%}
+    {{ {
+        toolbar: 'Formatting'|trans({}, 'quire-admin'),
+        bold: 'Bold (Ctrl+B)'|trans({}, 'quire-admin'),
+        italic: 'Italic (Ctrl+I)'|trans({}, 'quire-admin'),
+        heading: 'Heading'|trans({}, 'quire-admin'),
+        link: 'Link (Ctrl+K)'|trans({}, 'quire-admin'),
+        list: 'List'|trans({}, 'quire-admin'),
+        quote: 'Quote'|trans({}, 'quire-admin'),
+        code: 'Code'|trans({}, 'quire-admin'),
+    }|json_encode }}
+{%- endmacro %}
+
+{% block markdown %}
+    <div class="markdown-field" data-controller="markdown-editor" data-markdown-editor-labels-value="{{ _self.toolbar_labels() }}">
+        <textarea {{ control.attributes }} rows="10" class="markdown-field__source" data-markdown-editor-target="source">{{ value ?? '' }}</textarea>
+    </div>
+{% endblock %}
+
+{% block number %}
+    <input type="number" {{ control.attributes }} value="{{ value ?? '' }}" step="{{ field.type == 'int' ? 1 : 'any' }}"{% if field.min is not null %} min="{{ field.min }}"{% endif %}{% if field.max is not null %} max="{{ field.max }}"{% endif %}>
+{% endblock %}
+
+{% block checkbox %}
+    {# Unticked boxes send nothing: the hidden input says "no". #}
+    <input type="hidden" name="{{ control.name }}" value="0">
+    <input type="checkbox" {{ control.attributes }} value="1"{% if value %} checked{% endif %}>
+{% endblock %}
+
+{% block select %}
+    <select {{ control.attributes }}>
+        {% if not field.required or value is null %}<option value="">—</option>{% endif %}
+        {% for choice in field.choices %}
+            <option value="{{ choice }}"{% if value is not null and value ~ '' == choice ~ '' %} selected{% endif %}>{{ choice }}</option>
+        {% endfor %}
+    </select>
+{% endblock %}
+
+{% block tags %}
+    <input type="text" {{ control.attributes }} value="{{ value ?? '' }}" autocomplete="off">
+{% endblock %}
+
+{% block date %}
+    <input type="date" {{ control.attributes }} value="{{ value ?? '' }}">
+{% endblock %}
+
+{% block datetime %}
+    <input type="datetime-local" {{ control.attributes }} value="{{ value ?? '' }}">
+{% endblock %}
+
+{% block json %}
+    <textarea {{ control.attributes }} rows="6" class="code" spellcheck="false">{{ value ?? '' }}</textarea>
+{% endblock %}
+
+{% block relation %}
+    <div class="relation-field" data-controller="relation-picker" data-relation-picker-url-value="{{ path('quire_admin_content_search', {types: types|join(',')}) }}"
+         data-relation-picker-labels-value="{{ {search: 'Search'|trans({}, 'quire-admin'), found: '{count} found'|trans({}, 'quire-admin')}|json_encode }}">
+        {% if not multiple %}<input type="hidden" name="{{ control.name }}" value="">{% endif %}
+        <select {{ control.attributes(multiple ? '[]' : '') }}{% if multiple %} multiple size="{{ min(8, max(3, choices|length)) }}"{% endif %} data-relation-picker-target="select">
+            {% if not multiple %}<option value="">—</option>{% endif %}
+            {% for choice in choices %}
+                <option value="{{ choice.id }}"{% if choice.id in value %} selected{% endif %}>{{ choice.label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+{% endblock %}

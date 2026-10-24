@@ -8,6 +8,7 @@ use Quire\Admin\Content\ContentLists;
 use Quire\Content\Type\ContentTypeDefinition;
 use Quire\Content\Type\ContentTypeRegistry;
 use Quire\Content\Workflow\ContentWorkflow;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -44,6 +45,7 @@ final readonly class ContentListController
         private CsrfTokenManagerInterface $csrf,
         private TranslatorInterface $translator,
         private Environment $twig,
+        private Security $security,
     ) {
     }
 
@@ -75,6 +77,7 @@ final readonly class ContentListController
 
         $response = new Response($this->twig->render('@quire_admin/content/list.html.twig', [
             'type' => $definition,
+            'can_create' => $this->security->isGranted(ContentLists::ability($definition, 'create')),
             'views' => $views,
             'state' => $state,
             'filters' => $this->lists->filters($definition),
