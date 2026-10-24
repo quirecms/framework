@@ -75,7 +75,9 @@ final class AdminGroupTest extends WebTestCase
         self::assertStringContainsString("import 'quire-admin/admin.js'", $crawler->filter('head')->html());
         // The importmap maps every module the site knows; only the admin's are loaded.
         self::assertSame(["import 'quire-admin/admin.js';"], $crawler->filter('head script[type=module]')->each(static fn ($script): string => $script->text()));
-        self::assertSame([], array_filter($crawler->filter('head link[rel=modulepreload]')->each(static fn ($link): string => (string) $link->attr('href')), static fn (string $href): bool => !str_starts_with($href, '/assets/quire-admin/')), 'Not the site\'s modules.');
+        $preloads = $crawler->filter('head link[rel=modulepreload]')->each(static fn ($link): string => (string) $link->attr('href'));
+        self::assertSame([], array_values(array_filter($preloads, static fn (string $href): bool => !str_starts_with($href, '/assets/quire-admin/') && !str_starts_with($href, '/assets/vendor/@hotwired/'))), 'Not the site\'s modules.');
+        self::assertCount(2, array_filter($preloads, static fn (string $href): bool => str_starts_with($href, '/assets/vendor/@hotwired/')), 'The packages the admin imports, Turbo and Stimulus.');
 
         $crawler = $this->client->request('GET', '/');
         self::assertSame([], array_filter($crawler->filter('head link[rel=stylesheet], head link[rel=modulepreload]')->each(static fn ($link): string => (string) $link->attr('href')), static fn (string $href): bool => str_contains($href, 'admin')), 'The site loads none of the admin\'s files.');
