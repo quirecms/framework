@@ -1,4 +1,4 @@
-# Files of local storage disks (see docs/storage.md)
+# Files of local storage disks (https://github.com/quirecms/framework/blob/main/docs/storage.md)
 /storage/
 
 ###> symfony/framework-bundle ###

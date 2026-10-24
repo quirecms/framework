@@ -24,6 +24,8 @@ Quire runs on [FrankenPHP](https://frankenphp.dev) (a PHP application server bui
 | `frankenphp/conf.d/` | PHP settings: shared, dev-only and prod-only |
 | `frankenphp/docker-entrypoint.sh` | Installs dependencies if needed, waits for the database, runs migrations (unless `QUIRE_SKIP_MIGRATIONS=1`) |
 
+A site's containers, volumes and images are named after its directory, e.g. `mysite-php-1` and `mysite_storage_data`, so several sites can run on one machine. Those of this repository are always named `quire`.
+
 ## Development
 
 ```bash

@@ -77,6 +77,49 @@ jobs:
         if: failure()
         run: docker compose logs
 
+  skeleton:
+    name: Starter project
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Validate composer.json
+        run: docker run --rm -v "$PWD/skeleton:/app" -w /app composer:2 validate --strict --no-check-publish
+      - name: Create a site from the skeleton, as its README says, with the packages of this commit
+        run: |
+          docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/repo:ro" -v "$RUNNER_TEMP:/work" -w /work composer:2 \
+            create-project --no-install --repository='{"type": "path", "url": "/repo/skeleton", "options": {"symlink": false, "versions": {"quire/skeleton": "0.1.x-dev"}}}' \
+            quire/skeleton site 0.1.x-dev
+          # Instead of Packagist, the site installs the packages from a copy of packages/ inside it, which
+          # its container sees.
+          cp -r packages "$RUNNER_TEMP/site/quire-packages"
+          versions=$(jq -n '[inputs.name] | map({(.): "0.1.x-dev"}) | add' packages/*/composer.json)
+          jq --indent 4 --argjson versions "$versions" '.repositories = [{"type": "path", "url": "quire-packages/*", "options": {"versions": $versions}}]' \
+            "$RUNNER_TEMP/site/composer.json" > composer.json.site && mv composer.json.site "$RUNNER_TEMP/site/composer.json"
+      - name: Check the site has its own secret
+        run: grep -Eq '^APP_SECRET=[0-9a-f]{32}$' "$RUNNER_TEMP/site/.env.dev"
+      - name: Start the site
+        working-directory: ${{ runner.temp }}/site
+        run: |
+          docker compose build --pull
+          docker compose up --wait
+      - name: Install the site
+        working-directory: ${{ runner.temp }}/site
+        run: docker compose exec -T php bin/console quire:install --no-interaction --admin-email=ada@example.com --title="Ada's notes"
+      - name: Check the site, and that it has the admin
+        working-directory: ${{ runner.temp }}/site
+        run: |
+          curl -v --insecure --fail-with-body https://quire.localhost
+          curl -v --insecure --fail-with-body https://quire.localhost/_quire/health
+          docker compose exec -T php bin/console quire:extension:list | grep -E 'quire-admin +enabled'
+          test "$(curl --insecure -s -o /dev/null -w '%{redirect_url}' https://quire.localhost/admin)" = 'https://quire.localhost/login'
+      - name: Show logs on failure
+        if: failure()
+        working-directory: ${{ runner.temp }}/site
+        run: docker compose logs
+
   prod:
     name: Production image
     runs-on: ubuntu-latest

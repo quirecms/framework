@@ -1,6 +1,6 @@
 security:
-    # Quire registers a password hasher for its users and the user provider "quire_users"; see
-    # docs/users.md. Hashers for other user classes of the application can be added here.
+    # Quire registers a password hasher for its users and the user provider "quire_users" (see
+    # https://github.com/quirecms/framework/blob/main/docs/users.md). Hashers for other user classes of the application can be added here.
     password_hashers:
         Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
 

@@ -1,0 +1,7 @@
+# The tests of this repository run with a fixed set of extensions: the fixture extension in
+# tests/Fixtures, and the admin.
+quire:
+    extensions:
+        installed_json: '%kernel.project_dir%/tests/Fixtures/installed.json'
+        pinned: true
+        enabled: [quire-admin, quire-fixture-hello]

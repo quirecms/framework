@@ -12,8 +12,3 @@ when@test:
         storage:
             # Files that tests store stay out of the site's storage.
             root: '%kernel.project_dir%/var/test-storage'
-        extensions:
-            # Tests run with a fixed set of extensions: the fixture extension in tests/Fixtures, and the admin.
-            installed_json: '%kernel.project_dir%/tests/Fixtures/installed.json'
-            pinned: true
-            enabled: [quire-admin, quire-fixture-hello]

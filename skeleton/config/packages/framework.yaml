@@ -1,0 +1,20 @@
+# see https://symfony.com/doc/current/reference/configuration/framework.html
+framework:
+    secret: '%env(APP_SECRET)%'
+
+    # Sessions are started only when they're read or written, e.g. when someone signs in. They're kept
+    # in PostgreSQL, so they survive restarts and are shared by every server.
+    session:
+        handler_id: quire.session_handler
+
+    # Protects forms, e.g. the sign-in form, against cross-site request forgery.
+    csrf_protection: true
+
+    #esi: true
+    #fragments: true
+
+when@test:
+    framework:
+        test: true
+        session:
+            storage_factory_id: session.storage.factory.mock_file

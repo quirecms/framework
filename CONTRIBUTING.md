@@ -37,9 +37,12 @@ This is a monorepo. Develop everything here, even code that's published as separ
 |------|----------|
 | `packages/core/` | `quire/core`, the engine |
 | `packages/…` | First-party extensions, themes and tools (more to come) |
+| `skeleton/` | `quire/skeleton`, the starter project of new sites |
 | `config/`, `src/`, `templates/`, `public/`, `tests/` | The application used to run and test the packages |
 
 The application installs the packages from `packages/` through Composer path repositories, so your changes apply immediately.
+
+The application is the skeleton plus what Quire's own tests and tools need, so a change to one of its files, such as `config/packages/security.yaml` or the `Dockerfile`, goes into `skeleton/` too. A test (`tests/Skeleton/SkeletonTest.php`) fails when they drift apart, and lists the few files that differ on purpose. Configuration only the tests need goes into `config/packages/test/`. CI creates a site from the skeleton with the packages of your branch and checks that it runs.
 
 ## Making changes
 

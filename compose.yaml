@@ -15,7 +15,8 @@ services:
     volumes:
       - caddy_data:/data
       - caddy_config:/config
-      # Local storage disks: uploaded files, which must survive new containers (see docs/storage.md).
+      # Local storage disks: uploaded files, which must survive new containers.
+      # See https://github.com/quirecms/framework/blob/main/docs/storage.md
       - storage_data:/app/storage
     ports:
       - name: http
@@ -31,8 +32,9 @@ services:
         published: ${HTTP3_PORT:-443}
         protocol: udp
 
-  # Runs background jobs and scheduled tasks (see docs/jobs.md), with the php service's image. It starts
-  # once php is healthy, i.e. migrations ran, and restarts by itself, e.g. after extensions change.
+  # Runs background jobs and scheduled tasks, with the php service's image. It starts once php is
+  # healthy, i.e. migrations ran, and restarts by itself, e.g. after extensions change.
+  # See https://github.com/quirecms/framework/blob/main/docs/jobs.md
   worker:
     restart: unless-stopped
     depends_on:

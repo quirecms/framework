@@ -1,0 +1,6 @@
+services:
+    # Counts database queries, for assertions that listings don't make one query per item (N+1).
+    Quire\Testing\Database\QueryLog: ~
+    Quire\Testing\Database\QueryLogMiddleware:
+        autowire: true
+        autoconfigure: true
