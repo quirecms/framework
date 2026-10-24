@@ -26,6 +26,10 @@ services:
       # Ensure that host.docker.internal is correctly defined on Linux
       - host.docker.internal:host-gateway
     tty: true
+    healthcheck:
+      # The first start installs the dependencies, which can take minutes on a slow connection. The
+      # image's check still runs; failures only start to count after this.
+      start_period: 5m
 
   worker:
     image: ${IMAGES_PREFIX:-}${COMPOSE_PROJECT_NAME:-quire}-php-dev
