@@ -216,6 +216,8 @@ Every theme renders these standard slots, so extensions work with any theme. Qui
 | `sidebar` | The sidebar, when the theme has one | none |
 | `footer` | The site footer | none |
 
+The admin interface renders `admin.head` in its `<head>`: the stylesheets and scripts of the group `admin` (see [extensions](extensions.md#extendassets)). Themes don't render it.
+
 Themes can add slots of their own; name them after the theme, e.g. `acme-dark.hero`. To leave out a wrapper when nothing fills a slot, check with `quire_slot_filled()`:
 
 ```twig

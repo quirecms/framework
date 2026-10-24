@@ -9,7 +9,7 @@
 
 Quire has a small core, and everything else is an extension: the admin panel, single sign-on, comments, reviews. You write content in Markdown, and PostgreSQL is the source of truth for everything, with uploaded files on a volume or any S3-compatible service. Quire runs on its own or inside an existing Symfony application.
 
-> **Status:** early development, no stable release yet. Content, URLs, extensions, themes, backups, users and permissions work; the admin panel and single sign-on come next.
+> **Status:** early development, no stable release yet. Content, URLs, extensions, themes, backups, users, permissions and background jobs work; the admin panel is being built, and single sign-on comes next.
 
 ## Requirements
 
@@ -32,7 +32,7 @@ Then set up the site and its first admin; you're asked for the site's title, its
 docker compose exec php bin/console quire:install
 ```
 
-Open <https://quire.localhost> and accept the locally generated TLS certificate. You should see your new site in the default theme; it lists your posts once you [write some](#content).
+Open <https://quire.localhost> and accept the locally generated TLS certificate. You should see your new site in the default theme; it lists your posts once you [write some](#content). The admin interface is at <https://quire.localhost/admin> (see [docs/admin.md](docs/admin.md)).
 
 Names ending in `.localhost` always point to your own machine. Browsers and curl resolve them without any `/etc/hosts` entry. To use a different name, set `SERVER_NAME`, e.g. `SERVER_NAME=mysite.localhost docker compose up --wait`.
 

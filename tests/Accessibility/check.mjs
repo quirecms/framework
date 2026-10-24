@@ -4,6 +4,8 @@
  *
  *     node check.mjs https://quire.localhost / /blog/hello-world /about
  *
+ * With QUIRE_CHECK_LOGIN="username:password", it signs in first, e.g. to check the admin's pages.
+ *
  * Run it in the Playwright image, which has the browsers (see .github/workflows/ci.yaml).
  */
 import { chromium } from 'playwright';
@@ -18,6 +20,16 @@ for (const colorScheme of ['light', 'dark']) {
     for (const width of [1280, 390]) {
         const context = await browser.newContext({ ignoreHTTPSErrors: true, colorScheme, viewport: { width, height: 900 } });
         const page = await context.newPage();
+        const errors = [];
+        page.on('pageerror', (error) => errors.push(String(error)));
+
+        if (process.env.QUIRE_CHECK_LOGIN) {
+            const [username, ...password] = process.env.QUIRE_CHECK_LOGIN.split(':');
+            await page.goto(base + '/login');
+            await page.fill('#username', username);
+            await page.fill('#password', password.join(':'));
+            await Promise.all([page.waitForNavigation(), page.click('form button[type=submit]')]);
+        }
 
         for (const path of pages) {
             const response = await page.goto(base + path, { waitUntil: 'networkidle' });
@@ -39,6 +51,11 @@ for (const colorScheme of ['light', 'dark']) {
             if (results.violations.length === 0) {
                 console.log(`✓ ${path} (${colorScheme}, ${width}px): ${results.passes.length} rules passed`);
             }
+        }
+
+        for (const error of errors) {
+            violations++;
+            console.log(`✗ JavaScript error (${colorScheme}, ${width}px): ${error}`);
         }
 
         await page.goto(base + pages[0]);

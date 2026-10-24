@@ -13,6 +13,10 @@ What users may do is decided by **abilities**: named things a role may do, such 
 
 Users have one or more roles (see [users](users.md#roles)). Extensions can add roles, e.g. `moderator`.
 
+## Using the admin
+
+`quire.admin.access` lets users open the [admin interface](admin.md): every page in the route group `admin`, whichever extension adds it. Editors have it by default, and admins have every ability.
+
 ## Abilities of content
 
 Every content type has eight abilities, e.g. for posts:

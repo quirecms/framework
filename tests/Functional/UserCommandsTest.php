@@ -7,6 +7,10 @@ namespace App\Tests\Functional;
 use Doctrine\DBAL\Connection;
 use Quire\Content\Command\CreateContent;
 use Quire\Content\ContentWriter;
+use Quire\Extension\ExtensionManager;
+use Quire\Extension\InstalledExtensions;
+use Quire\Extension\State\ExtensionStateStoreInterface;
+use Quire\Extension\State\PinnedExtensionStateStore;
 use Quire\Install\Console\InstallCommand;
 use Quire\Settings\Settings;
 use Quire\User\CreateUser;
@@ -17,6 +21,7 @@ use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\PasswordHasher\Hasher\PasswordHasherFactoryInterface;
 
 final class UserCommandsTest extends KernelTestCase
@@ -123,7 +128,8 @@ final class UserCommandsTest extends KernelTestCase
         self::assertSame(0, $status, $installer->getDisplay());
         self::assertStringContainsString('quire:migrations:migrate', implode(' ', $migrations[0]), 'The database is prepared first.');
         self::assertStringContainsString('Your email is needed', $this->flat($installer->getDisplay()), 'An empty email is asked again.');
-        self::assertStringContainsString('Quire is installed. Ada Lovelace (ada@example.com) is the admin.', $this->flat($installer->getDisplay()));
+        self::assertStringContainsString('Quire is installed. Ada Lovelace (ada@example.com) is the admin. Manage the site at /admin.', $this->flat($installer->getDisplay()));
+        self::assertSame(['quire:extension:enable', 'quire-admin', '--no-interaction', '--env=test'], \array_slice($migrations[1], 2), 'The admin interface is enabled.');
         $settings = self::getContainer()->get(Settings::class);
         self::assertSame(['Ada\'s notes', 'de'], [$settings->get('site.title'), $settings->get('site.locale')]);
         $this->assertPassword('ada', 'correct horse');
@@ -162,18 +168,52 @@ final class UserCommandsTest extends KernelTestCase
         return [$status, $this->flat($tester->getDisplay())];
     }
 
+    public function testTheInstallerLeavesPinnedExtensionsAlone(): void
+    {
+        $runs = [];
+        $installer = $this->installer($runs, new PinnedExtensionStateStore([]));
+
+        self::assertSame(0, $installer->execute(['--admin-email' => 'ada@example.com'], ['interactive' => false]));
+        self::assertCount(1, $runs, 'Only the migrations.');
+        self::assertStringContainsString('The admin interface isn\'t enabled: Extensions are pinned in', $this->flat($installer->getDisplay()));
+        self::assertStringNotContainsString('Manage the site at', $this->flat($installer->getDisplay()));
+    }
+
     /**
      * @param list<list<string>> $runs
      */
-    private function installer(array &$runs): CommandTester
+    private function installer(array &$runs, ?ExtensionStateStoreInterface $state = null): CommandTester
     {
         $container = self::getContainer();
+        // A site where the admin is installed but not enabled yet.
+        $state ??= new class implements ExtensionStateStoreInterface {
+            public function enabledIds(): array
+            {
+                return [];
+            }
+
+            public function readOnlyReason(): ?string
+            {
+                return null;
+            }
+
+            public function enable(array $ids): void
+            {
+            }
+
+            public function disable(array $ids): void
+            {
+            }
+        };
         $command = new InstallCommand(
             $container->get(UserRepository::class),
+            new InstalledExtensions($container->getParameter('quire.composer.installed_json')),
+            new ExtensionManager(new InstalledExtensions($container->getParameter('quire.composer.installed_json')), $state, new EventDispatcher()),
             $container->get(UserWriter::class),
             $container->get(Settings::class),
             '/app',
             'test',
+            '/admin',
             static function (array $command) use (&$runs): int {
                 $runs[] = $command;
 

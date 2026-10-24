@@ -1,0 +1,20 @@
+{% if items is empty %}
+    <p class="empty">{{ 'Nothing has been written yet.'|trans({}, 'quire-admin') }}</p>
+{% else %}
+    <ul class="item-list">
+        {% for item in items %}
+            <li>
+                {% if item.isPublic %}
+                    <a href="{{ quire_url(item) }}">{{ item.title }}</a>
+                {% else %}
+                    <span>{{ item.title }}</span>
+                {% endif %}
+                <span class="meta">
+                    {{ types[item.type].label }} ·
+                    <span class="status status--{{ item.status }}">{{ ('status.' ~ item.status)|trans({}, 'quire-admin') }}</span> ·
+                    <time datetime="{{ item.updatedAt|date('c') }}">{{ item.updatedAt|date('Y-m-d H:i') }}</time>
+                </span>
+            </li>
+        {% endfor %}
+    </ul>
+{% endif %}

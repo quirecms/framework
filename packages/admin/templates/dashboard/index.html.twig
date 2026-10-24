@@ -1,0 +1,18 @@
+{% extends '@quire_admin/layout.html.twig' %}
+
+{% block title %}{{ 'Dashboard'|trans({}, 'quire-admin') }}{% endblock %}
+
+{% block content %}
+    {% if widgets is empty %}
+        <p class="empty">{{ 'Nothing to show yet.'|trans({}, 'quire-admin') }}</p>
+    {% else %}
+        <div class="widgets">
+            {% for widget in widgets %}
+                <section class="card" aria-labelledby="widget-{{ loop.index }}">
+                    <h2 class="card__title" id="widget-{{ loop.index }}">{{ widget.title }}</h2>
+                    {{ widget.html|raw }}
+                </section>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endblock %}

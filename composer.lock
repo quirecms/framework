@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "727cd25f9111bb075e036c50e33dbc47",
+    "content-hash": "eb07dc907fdbe8b5ae6a3937f33dbdd0",
     "packages": [
         {
             "name": "composer/semver",
@@ -2148,12 +2148,64 @@
             "time": "2024-09-11T13:17:53+00:00"
         },
         {
+            "name": "quire/admin",
+            "version": "0.1.x-dev",
+            "dist": {
+                "type": "path",
+                "url": "packages/admin",
+                "reference": "5be3424db9051e1ab07af1ed69e0824cc0234d83"
+            },
+            "require": {
+                "php": ">=8.5",
+                "quire/core": "0.1.x-dev"
+            },
+            "require-dev": {
+                "quire/testing": "0.1.x-dev"
+            },
+            "type": "quire-extension",
+            "extra": {
+                "quire": {
+                    "title": "Admin",
+                    "description": "Manage content, settings, extensions, themes and users in the browser."
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Quire\\Admin\\": "src/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Quire\\Admin\\Tests\\": "tests/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "YorvoLabs",
+                    "homepage": "https://quirecms.com"
+                }
+            ],
+            "description": "Quire's administration panel: manage content, settings, extensions, themes and users in the browser.",
+            "homepage": "https://quirecms.com",
+            "keywords": [
+                "admin",
+                "cms",
+                "quire"
+            ],
+            "transport-options": {
+                "relative": true
+            }
+        },
+        {
             "name": "quire/core",
             "version": "0.1.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/core",
-                "reference": "93efb84e9006abeed1645efa2a32c35842a60feb"
+                "reference": "e641f43efeee56aee6bc1bb9a4925f947d2285cf"
             },
             "require": {
                 "doctrine/dbal": "^4.2",
@@ -2233,7 +2285,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/theme-default",
-                "reference": "36123c42813f617884de278721fb6ffd7c409100"
+                "reference": "b576230936c20bf06d74c73522e78af55c7cdcff"
             },
             "require": {
                 "php": ">=8.5",
@@ -8997,7 +9049,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/testing",
-                "reference": "0c93c33cf00bc4affc53ba81fd96d0245feb89f2"
+                "reference": "ad6613f9440d8698523c9f98ff9958b87e49c7e5"
             },
             "require": {
                 "doctrine/doctrine-bundle": "^3.0",
@@ -10970,6 +11022,7 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
+        "quire/admin": 20,
         "quire/core": 20,
         "quire/testing": 20,
         "quire/theme-default": 20
