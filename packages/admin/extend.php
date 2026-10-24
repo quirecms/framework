@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
+use Quire\Admin\Controller\ContentChangesController;
 use Quire\Admin\Controller\ContentEditController;
 use Quire\Admin\Controller\ContentListController;
 use Quire\Admin\Controller\DashboardController;
+use Quire\Admin\Dashboard\Widget\ChangesWidget;
 use Quire\Admin\Dashboard\Widget\ContentWidget;
 use Quire\Admin\Dashboard\Widget\RecentlyEditedWidget;
 use Quire\Admin\Extend\Admin;
@@ -29,6 +31,11 @@ return [
         ->post('/content/{type}/preview', 'quire_admin_content_preview', [ContentEditController::class, 'previewFragment'])
         ->get('/content/{type}/{id}', 'quire_admin_content_edit', [ContentEditController::class, 'edit'], requirements: ['id' => Requirement::UUID])
         ->post('/content/{type}/{id}', 'quire_admin_content_save', [ContentEditController::class, 'save'], requirements: ['id' => Requirement::UUID])
+        ->get('/content/{type}/{id}/changes/{pending}', 'quire_admin_content_changes', [ContentChangesController::class, 'changes'], requirements: ['id' => Requirement::UUID, 'pending' => Requirement::UUID])
+        ->post('/content/{type}/{id}/changes/{pending}', 'quire_admin_content_changes_action', [ContentChangesController::class, 'act'], requirements: ['id' => Requirement::UUID, 'pending' => Requirement::UUID])
+        ->get('/content/{type}/{id}/history', 'quire_admin_content_history', [ContentChangesController::class, 'history'], requirements: ['id' => Requirement::UUID])
+        ->post('/content/{type}/{id}/restore', 'quire_admin_content_restore', [ContentChangesController::class, 'restore'], requirements: ['id' => Requirement::UUID])
+        ->post('/content/{type}/{id}/place', 'quire_admin_content_place', [ContentChangesController::class, 'place'], requirements: ['id' => Requirement::UUID])
         ->get('/content-search', 'quire_admin_content_search', [ContentEditController::class, 'search']),
 
     new Extend\Views()
@@ -41,5 +48,6 @@ return [
     new Admin()
         ->menu('quire-admin.dashboard', 'Dashboard', 'quire_admin_dashboard', section: 'general', order: 0)
         ->widget(ContentWidget::class, order: 10)
+        ->widget(ChangesWidget::class, order: 15)
         ->widget(RecentlyEditedWidget::class, order: 20),
 ];

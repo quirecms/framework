@@ -1,0 +1,58 @@
+{#
+    A diff: the changed properties (name, old, new), then the text's lines (operation "same", "added",
+    "removed", or "skip" for unchanged lines left out). Variables: diff, caption.
+#}
+{% if diff.properties is empty and diff.lines is empty %}
+    <p class="empty">{{ 'Nothing is changed.'|trans({}, 'quire-admin') }}</p>
+{% endif %}
+
+{% if diff.properties is not empty %}
+    <table class="table diff-properties">
+        <caption class="visually-hidden">{{ caption }}</caption>
+        <thead>
+            <tr>
+                <th scope="col"><span class="visually-hidden">{{ 'Changed'|trans({}, 'quire-admin') }}</span></th>
+                <th scope="col">{{ 'Before'|trans({}, 'quire-admin') }}</th>
+                <th scope="col">{{ 'After'|trans({}, 'quire-admin') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for property in diff.properties %}
+                <tr>
+                    <th scope="row">{{ property.name }}</th>
+                    <td class="diff-old"><del>{{ property.old }}</del></td>
+                    <td class="diff-new"><ins>{{ property.new }}</ins></td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
+
+{% if diff.lines is not empty %}
+    <div class="table-scroll">
+        <table class="diff-lines">
+            <caption class="visually-hidden">{{ 'Changes to the text'|trans({}, 'quire-admin') }}</caption>
+            <tbody>
+                {% for line in diff.lines %}
+                    {% if line.operation == 'skip' %}
+                        <tr class="diff-skip"><td colspan="3">{{ '{count, plural, one {# unchanged line} other {# unchanged lines}}'|trans({count: line.count}, 'quire-admin') }}</td></tr>
+                    {% else %}
+                        <tr class="diff-{{ line.operation }}">
+                            <td class="diff-number" aria-hidden="true">{{ line.old }}</td>
+                            <td class="diff-number" aria-hidden="true">{{ line.new }}</td>
+                            <td class="diff-text">
+                                {%- if line.operation == 'added' -%}
+                                    <span class="diff-sign" aria-hidden="true">+</span><ins><span class="visually-hidden">{{ 'Added:'|trans({}, 'quire-admin') }} </span>{{ line.text }}</ins>
+                                {%- elseif line.operation == 'removed' -%}
+                                    <span class="diff-sign" aria-hidden="true">−</span><del><span class="visually-hidden">{{ 'Removed:'|trans({}, 'quire-admin') }} </span>{{ line.text }}</del>
+                                {%- else -%}
+                                    <span class="diff-sign" aria-hidden="true"> </span>{{ line.text }}
+                                {%- endif -%}
+                            </td>
+                        </tr>
+                    {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endif %}

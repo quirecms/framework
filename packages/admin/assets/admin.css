@@ -789,3 +789,137 @@ textarea {
     display: grid;
     gap: var(--admin-space-1);
 }
+
+/* Changes, reviews and history */
+.section {
+    margin-top: var(--admin-space-6);
+}
+
+.section > h2 {
+    font-size: 1.125rem;
+}
+
+.facts--wide {
+    max-width: 40rem;
+    margin-bottom: var(--admin-space-4);
+}
+
+.card__subtitle {
+    margin: var(--admin-space-3) 0 var(--admin-space-1);
+    color: var(--admin-muted);
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+.editor__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--admin-space-3);
+    margin: 0;
+}
+
+/* Colours mark changes along with signs (+, −) and hidden words, never alone. */
+:root {
+    --admin-diff-added-bg: #dafbe1;
+    --admin-diff-removed-bg: #ffebe9;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --admin-diff-added-bg: #12261e;
+        --admin-diff-removed-bg: #2d1214;
+    }
+}
+
+.diff-properties td {
+    vertical-align: top;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.diff-properties del,
+.diff-properties ins {
+    text-decoration: none;
+}
+
+.diff-old {
+    background: var(--admin-diff-removed-bg);
+}
+
+.diff-new {
+    background: var(--admin-diff-added-bg);
+}
+
+.diff-lines {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--admin-font-mono);
+    font-size: 0.8125rem;
+}
+
+.diff-lines td {
+    padding: 0 var(--admin-space-2);
+    vertical-align: top;
+}
+
+.diff-number {
+    width: 1%;
+    color: var(--admin-muted);
+    text-align: right;
+    user-select: none;
+}
+
+.diff-text {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.diff-text del,
+.diff-text ins {
+    text-decoration: none;
+}
+
+.diff-sign {
+    display: inline-block;
+    width: 1.25em;
+    font-weight: 700;
+}
+
+.diff-added {
+    background: var(--admin-diff-added-bg);
+}
+
+.diff-removed {
+    background: var(--admin-diff-removed-bg);
+}
+
+.diff-skip td {
+    padding: var(--admin-space-1) var(--admin-space-2);
+    color: var(--admin-muted);
+    background: var(--admin-bg);
+    font-family: var(--admin-font);
+}
+
+.history {
+    display: grid;
+    gap: var(--admin-space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.history details {
+    margin: var(--admin-space-2) 0;
+}
+
+.history summary {
+    cursor: pointer;
+    min-height: 1.5rem;
+}
+
+.review-form {
+    display: grid;
+    gap: var(--admin-space-3);
+    max-width: 40rem;
+    margin-top: var(--admin-space-4);
+}

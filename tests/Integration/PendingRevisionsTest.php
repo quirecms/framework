@@ -15,6 +15,7 @@ use Quire\Content\ContentWriter;
 use Quire\Content\Event\ContentUpdated;
 use Quire\Content\Event\PendingRevisionDiscarded;
 use Quire\Content\Event\PendingRevisionPublished;
+use Quire\Content\Event\PendingRevisionPublishFailed;
 use Quire\Content\Event\PendingRevisionReviewed;
 use Quire\Content\Event\PendingRevisionSaved;
 use Quire\Content\Event\PendingRevisionSubmitted;
@@ -334,6 +335,87 @@ final class PendingRevisionsTest extends KernelTestCase
         self::assertSame([$first->id, $second->id], array_map(static fn (PendingRevision $p): string => $p->id, $this->repository->forContent($post->id)), 'Most recently saved first.');
         self::assertSame([$second->id], array_map(static fn (PendingRevision $p): string => $p->id, $this->repository->forContent($post->id, $grace->id)));
         self::assertSame([], $this->repository->forContent('not-an-id'));
+    }
+
+    public function testChangesArePublishedAtTheirTime(): void
+    {
+        $ada = $this->user('ada');
+        $post = $this->published();
+        $pending = $this->pending->create($post->id, $ada->id);
+        $pending = $this->pending->update(new UpdatePendingRevision($pending->id, $pending->version)->title('Opening times'));
+
+        $later = $this->pending->schedule($pending->id, $pending->version, new \DateTimeImmutable('+1 hour', new \DateTimeZone('Europe/Berlin')), $ada->id);
+        self::assertSame($ada->id, $later->scheduledBy);
+        self::assertEqualsWithDelta(time() + 3600, $later->publishAt?->getTimestamp(), 5, 'The same instant, whatever its time zone.');
+        self::assertSame([], $this->writer->publishDue(), 'Not yet.');
+        self::assertSame('Hours', $this->content($post)->title);
+
+        $due = $this->pending->schedule($later->id, $later->version, new \DateTimeImmutable('-1 minute'), $ada->id);
+        $published = $this->writer->publishDue();
+
+        self::assertSame(['Opening times'], array_map(static fn (Content $item): string => $item->title, $published));
+        self::assertSame('Opening times', $this->content($post)->title);
+        self::assertNull($this->repository->find($due->id));
+        self::assertSame($ada->id, $this->revisions($post)[0]->authorId, 'Credited to the changes\' author.');
+    }
+
+    public function testChangesThatCantBePublishedAtTheirTimeStayPendingWithTheReason(): void
+    {
+        $failures = [];
+        self::getContainer()->get(EventDispatcherInterface::class)->addListener(PendingRevisionPublishFailed::class, static function (PendingRevisionPublishFailed $event) use (&$failures): void {
+            $failures[] = $event;
+        });
+
+        $post = $this->published();
+        $pending = $this->pending->create($post->id);
+        $pending = $this->pending->update(new UpdatePendingRevision($pending->id, 1)->body(str_replace('9 to 5', '9 to 6', self::BODY)));
+        $pending = $this->pending->schedule($pending->id, $pending->version, new \DateTimeImmutable('-1 minute'));
+        // Someone changes the same line meanwhile.
+        $this->writer->update(new UpdateContent($post->id, $post->version)->body(str_replace('9 to 5', '10 to 5', self::BODY)));
+
+        self::assertSame([], $this->writer->publishDue());
+
+        $pending = $this->repository->get($pending->id);
+        self::assertNull($pending->publishAt, 'Not tried again every minute.');
+        self::assertSame('Changes published since conflict with these: body. Resolve them, then publish or schedule the changes again.', $pending->publishProblem);
+        self::assertCount(1, $failures);
+        self::assertSame($pending->publishProblem, $failures[0]->reason);
+
+        // Scheduling again forgets the problem.
+        $pending = $this->pending->schedule($pending->id, $pending->version, new \DateTimeImmutable('+1 day'));
+        self::assertNull($pending->publishProblem);
+    }
+
+    public function testScheduledChangesNeedTheirApprovalWhenTheSiteAsksForIt(): void
+    {
+        self::getContainer()->get(Settings::class)->set(ContentWriter::APPROVAL_SETTING, true);
+        $post = $this->published();
+        $pending = $this->pending->create($post->id);
+        $pending = $this->pending->update(new UpdatePendingRevision($pending->id, 1)->title('Unapproved'));
+        $pending = $this->pending->schedule($pending->id, $pending->version, new \DateTimeImmutable('-1 minute'));
+
+        $this->writer->publishDue();
+
+        self::assertSame('Hours', $this->content($post)->title);
+        self::assertSame('The changes need to be approved before they\'re published.', $this->repository->get($pending->id)->publishProblem);
+    }
+
+    public function testListsWhatWaitsForReviewAndAnAuthorsChanges(): void
+    {
+        [$ada, $grace] = [$this->user('ada'), $this->user('grace')];
+        $post = $this->published();
+        $waiting = $this->pending->create($post->id, $ada->id);
+        $waiting = $this->pending->submit($waiting->id, $waiting->version);
+        $writing = $this->pending->create($post->id, $grace->id);
+        $trashed = $this->published();
+        $hidden = $this->pending->create($trashed->id, $ada->id);
+        $this->pending->submit($hidden->id, $hidden->version);
+        $this->writer->trash($trashed->id, $this->content($trashed)->version);
+
+        self::assertSame([$waiting->id], array_map(static fn (PendingRevision $p): string => $p->id, $this->repository->awaitingReview()), 'Not those being written, nor of items in the trash.');
+        self::assertSame([$waiting->id], array_map(static fn (PendingRevision $p): string => $p->id, $this->repository->byAuthor($ada->id)));
+        self::assertSame([$writing->id], array_map(static fn (PendingRevision $p): string => $p->id, $this->repository->byAuthor($grace->id)));
+        self::assertSame([], $this->repository->byAuthor('not-an-id'));
     }
 
     /**
