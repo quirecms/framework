@@ -4,7 +4,7 @@
     "license": "MIT",
     "description": "Quire CMS development monorepo: the core, first-party extensions and the application they run in.",
     "homepage": "https://quirecms.com",
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
     "prefer-stable": true,
     "repositories": [
         {
@@ -26,9 +26,9 @@
         "ext-iconv": "*",
         "doctrine/doctrine-bundle": "^3.3",
         "doctrine/doctrine-migrations-bundle": "^4.0",
-        "quire/admin": "0.1.x-dev",
-        "quire/core": "0.1.x-dev",
-        "quire/theme-default": "0.1.x-dev",
+        "quire/admin": "^0.1",
+        "quire/core": "^0.1",
+        "quire/theme-default": "^0.1",
         "symfony/asset": "8.1.*",
         "symfony/asset-mapper": "8.1.*",
         "symfony/console": "8.1.*",
@@ -134,7 +134,7 @@
         "phpstan/phpstan-strict-rules": "^2.1",
         "phpstan/phpstan-symfony": "^2.1",
         "phpunit/phpunit": "^13.4",
-        "quire/testing": "0.1.x-dev",
+        "quire/testing": "^0.1",
         "rector/rector": "^2.7",
         "symfony/browser-kit": "8.1.*",
         "symfony/css-selector": "8.1.*"

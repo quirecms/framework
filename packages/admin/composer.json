@@ -13,10 +13,10 @@
     ],
     "require": {
         "php": ">=8.5",
-        "quire/core": "0.1.x-dev"
+        "quire/core": "^0.1"
     },
     "require-dev": {
-        "quire/testing": "0.1.x-dev"
+        "quire/testing": "^0.1"
     },
     "autoload": {
         "psr-4": {
@@ -32,6 +32,9 @@
         "quire": {
             "title": "Admin",
             "description": "Manage content, settings, extensions, themes and users in the browser."
+        },
+        "branch-alias": {
+            "dev-main": "0.1.x-dev"
         }
     },
     "minimum-stability": "dev",

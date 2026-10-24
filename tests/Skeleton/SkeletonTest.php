@@ -15,7 +15,7 @@ use Symfony\Component\Finder\Finder;
 final class SkeletonTest extends TestCase
 {
     /** Files only the skeleton has */
-    private const array SKELETON_ONLY = ['composer.json', 'README.md', 'symfony.lock'];
+    private const array SKELETON_ONLY = ['.github/workflows/close-pull-request.yaml', 'composer.json', 'README.md', 'symfony.lock'];
 
     /** Files that differ on purpose, with what the application has in addition */
     private const array DIFFERENT = [

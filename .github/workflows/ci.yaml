@@ -93,10 +93,10 @@ jobs:
             create-project --no-install --repository='{"type": "path", "url": "/repo/skeleton", "options": {"symlink": false, "versions": {"quire/skeleton": "0.1.x-dev"}}}' \
             quire/skeleton site 0.1.x-dev
           # Instead of Packagist, the site installs the packages from a copy of packages/ inside it, which
-          # its container sees.
+          # its container sees. They're development versions of the next release.
           cp -r packages "$RUNNER_TEMP/site/quire-packages"
           versions=$(jq -n '[inputs.name] | map({(.): "0.1.x-dev"}) | add' packages/*/composer.json)
-          jq --indent 4 --argjson versions "$versions" '.repositories = [{"type": "path", "url": "quire-packages/*", "options": {"versions": $versions}}]' \
+          jq --indent 4 --argjson versions "$versions" '.repositories = [{"type": "path", "url": "quire-packages/*", "options": {"versions": $versions}}] | ."minimum-stability" = "dev"' \
             "$RUNNER_TEMP/site/composer.json" > composer.json.site && mv composer.json.site "$RUNNER_TEMP/site/composer.json"
       - name: Check the site has its own secret
         run: grep -Eq '^APP_SECRET=[0-9a-f]{32}$' "$RUNNER_TEMP/site/.env.dev"
