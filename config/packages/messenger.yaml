@@ -1,5 +1,6 @@
 # Quire adds the transport "quire", its jobs (everything implementing Quire\Jobs\Job) and their
-# retries (see docs/jobs.md). Run a worker with: bin/console messenger:consume quire
+# retries. Run a worker with: bin/console messenger:consume quire
+# See https://github.com/quirecms/framework/blob/main/docs/jobs.md
 framework:
     messenger:
         transports:

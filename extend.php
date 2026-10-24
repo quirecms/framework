@@ -6,7 +6,7 @@ declare(strict_types=1);
  * Customise this site with the same extenders that extensions use, without writing an extension.
  *
  * This file runs after every enabled extension, so it can also replace what they register, for example
- * a route with the same name. See docs/extensions.md for the available extenders.
+ * a route with the same name. The available extenders: https://github.com/quirecms/framework/blob/main/docs/extensions.md
  *
  *     return [
  *         new Quire\Extend\Routes()->get('/about', 'site_about', App\Controller\AboutController::class),

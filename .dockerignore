@@ -26,6 +26,7 @@ docs/
 public/bundles/
 tests/
 packages/*/tests/
+skeleton/
 storage/
 var/
 vendor/

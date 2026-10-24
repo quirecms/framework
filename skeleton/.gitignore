@@ -1,0 +1,17 @@
+# Files of local storage disks (https://github.com/quirecms/framework/blob/main/docs/storage.md)
+/storage/
+
+###> symfony/framework-bundle ###
+/.env.local
+/.env.local.php
+/.env.*.local
+/config/secrets/prod/prod.decrypt.private.php
+/public/bundles/
+/var/
+/vendor/
+###< symfony/framework-bundle ###
+
+###> symfony/asset-mapper ###
+/public/assets/
+/assets/vendor/
+###< symfony/asset-mapper ###

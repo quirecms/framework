@@ -19,12 +19,23 @@ To run without Docker you need PHP 8.5 (with the `intl`, `opcache`, `apcu`, `zip
 
 ## Quick start
 
+A new site starts from the starter project [`quire/skeleton`](skeleton/), which has the core, the default theme and the admin interface:
+
 ```bash
-git clone https://github.com/quirecms/framework.git quire
-cd quire
-docker compose build --pull --no-cache
+docker run --rm -it -v "$PWD:/app" -w /app -u "$(id -u):$(id -g)" composer:2 create-project --no-install quire/skeleton mysite
+cd mysite
+docker compose build --pull
 docker compose up --wait
 ```
+
+> The packages aren't on Packagist yet. Until they are, run Quire from this repository instead:
+>
+> ```bash
+> git clone https://github.com/quirecms/framework.git quire
+> cd quire
+> docker compose build --pull --no-cache
+> docker compose up --wait
+> ```
 
 Then set up the site and its first admin; you're asked for the site's title, its language, and your email and password:
 
@@ -183,8 +194,10 @@ See [docs/jobs.md](docs/jobs.md).
 |------|----------|
 | `packages/core/` | `quire/core`, the engine |
 | `packages/theme-default/` | `quire/theme-default`, the default theme |
+| `packages/admin/` | `quire/admin`, the admin interface |
 | `packages/testing/` | `quire/testing`, for testing extensions and themes |
-| `config/`, `src/`, `templates/`, `public/` | The application that runs Quire. Site-specific overrides go here. |
+| `skeleton/` | `quire/skeleton`, the starter project of new sites |
+| `config/`, `src/`, `templates/`, `public/` | The application that develops and tests Quire: the skeleton, plus what the tests need |
 | `frankenphp/`, `Dockerfile`, `compose*.yaml` | The Docker setup. See [docs/docker.md](docs/docker.md). |
 
 ## Contributing
