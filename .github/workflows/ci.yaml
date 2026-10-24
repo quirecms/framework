@@ -62,16 +62,18 @@ jobs:
             docker compose exec -T php bin/console quire:settings:set "$setting" true
           done
           # The image's browsers must match the playwright package, so its version comes from package.json
-          # (and Dependabot's updates of the package update the image too).
+          # (and Dependabot's updates of the package update the image too). The browser runs on the
+          # Compose network, not the host's: there, containers that restart (e.g. the worker, after
+          # extensions change) add and remove interfaces, which aborts its page loads.
           playwright=$(jq -r '.dependencies.playwright' tests/Accessibility/package.json)
-          docker run --rm --network host -v "$PWD/tests/Accessibility:/work" -w /work "mcr.microsoft.com/playwright:v${playwright}-noble" \
+          docker run --rm --network quire_default -e QUIRE_CHECK_SERVER=php -v "$PWD/tests/Accessibility:/work" -w /work "mcr.microsoft.com/playwright:v${playwright}-noble" \
             sh -c 'npm ci --no-audit --no-fund && node check.mjs https://quire.localhost / /blog/hello-world /about /login /register /forgot-password /verify-email'
       - name: Check the admin's accessibility (WCAG 2.2 AA, with axe-core)
         run: |
           docker compose exec -T php bin/console quire:extension:enable quire-admin --no-interaction
           printf 'correct-horse-42\ncorrect-horse-42\n' | docker compose exec -T php bin/console quire:user:create editor@example.com --role=editor
           playwright=$(jq -r '.dependencies.playwright' tests/Accessibility/package.json)
-          docker run --rm --network host -e QUIRE_CHECK_LOGIN=editor:correct-horse-42 -v "$PWD/tests/Accessibility:/work" -w /work "mcr.microsoft.com/playwright:v${playwright}-noble" \
+          docker run --rm --network quire_default -e QUIRE_CHECK_SERVER=php -e QUIRE_CHECK_LOGIN=editor:correct-horse-42 -v "$PWD/tests/Accessibility:/work" -w /work "mcr.microsoft.com/playwright:v${playwright}-noble" \
             sh -c 'npm ci --no-audit --no-fund && node check.mjs https://quire.localhost /admin'
       - name: Show logs on failure
         if: failure()
