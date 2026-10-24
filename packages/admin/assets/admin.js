@@ -1,7 +1,8 @@
 // The admin's JavaScript. Pages work without it; Turbo makes moving between them fast, and Stimulus
 // controllers add behaviour to elements (data-controller="…").
-import './vendor/turbo.js';
-import { Application, Controller } from './vendor/stimulus.js';
+// Both are npm packages, which the site downloads (see "extra.quire.importmap" in composer.json).
+import '@hotwired/turbo';
+import { Application, Controller } from '@hotwired/stimulus';
 
 const application = Application.start();
 

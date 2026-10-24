@@ -32,7 +32,7 @@ Pages that extensions add to the admin move with it.
 
 ## What it's built with
 
-Every page is plain HTML rendered on the server, and works without JavaScript. [Turbo](https://turbo.hotwired.dev) makes moving between pages fast, and [Stimulus](https://stimulus.hotwired.dev) adds behaviour where a page needs it. Both ship with the extension, so it needs no Node.js and nothing to download. Light and dark follow the system's setting, and the pages are checked against WCAG 2.2 AA in CI.
+Every page is plain HTML rendered on the server, and works without JavaScript. [Turbo](https://turbo.hotwired.dev) makes moving between pages fast, and [Stimulus](https://stimulus.hotwired.dev) adds behaviour where a page needs it. The site downloads both when the admin is installed, like the packages of its own importmap, so it needs no Node.js. Light and dark follow the system's setting, and the pages are checked against WCAG 2.2 AA in CI.
 
 The admin looks the same whatever the site's theme. To adjust it, add a stylesheet to the group `admin` (see [extensions](extensions.md#extendassets)) and override the design tokens it uses, e.g. `:root { --admin-accent: #8250df; }`.
 

@@ -152,6 +152,7 @@ Every key is optional.
 | `icon` | none | Icon name for admin interfaces, e.g. `star` |
 | `requires` | `[]` | IDs of extensions that must be enabled for this one to run. They're enabled automatically, after confirmation. |
 | `optional` | `[]` | IDs of extensions that, when enabled, load before this one. Use it when your extension integrates with another but works without it. |
+| `importmap` | `{}` | npm packages that your scripts import, with exact versions, e.g. `{"@hotwired/turbo": "8.0.23"}`. See [JavaScript packages](#javascript-packages). |
 
 `requires` and `optional` list extension **IDs** (`acme-comments`), not package names (`acme/comments`). Also add required extensions to your Composer `require` section, so Composer installs them.
 
@@ -233,6 +234,32 @@ new Extend\Assets()
 | `entrypoint($name, $group = 'site')` | An entrypoint of the site's `importmap.php`; mostly for the site's own `extend.php` |
 
 `$group` is `site` for the public pages and `admin` for the admin interface. Quire adds the files to the `head` slot, in the order extensions boot, then themes, then the site, so the site's styles can override everyone's. Templates link other files with `quire_asset()`, e.g. `<img src="{{ quire_asset('acme-reviews/star.svg') }}">`. No Node.js is needed. See [themes](themes.md#assets).
+
+##### JavaScript packages
+
+Don't copy libraries into `assets/`. List the npm packages your scripts import in the manifest instead, with exact versions, and import them by name:
+
+```json
+"extra": {
+    "quire": {
+        "importmap": {
+            "chart.js": "4.5.0",
+            "@kurkle/color": "0.3.4"
+        }
+    }
+}
+```
+
+```js
+// assets/reviews.js
+import { Chart } from 'chart.js';
+```
+
+Sites download the packages of every installed extension and theme when Composer installs them, and again when an extension is enabled, into `assets/vendor/`, like the packages of their own `importmap.php` (Symfony's [AssetMapper](https://symfony.com/doc/current/frontend/asset_mapper.html) does it, from the jsDelivr CDN). Production images download them when they're built, so they need no network access when they run. `bin/console importmap:audit` reports known vulnerabilities in them, and `importmap:outdated` newer versions.
+
+- **List what the packages import too.** Packages that import other packages need those in the list as well, e.g. `chart.js` imports `@kurkle/color`. To find them, run `bin/console importmap:require chart.js` in a site and look at what it adds to `importmap.php`. A missing one is reported when the page is built, in development.
+- **One version per site.** When two extensions list a package in different versions, the site can't be built, and the error names them. The site settles it by listing the package in its own `importmap.php` (`bin/console importmap:require chart.js@4.5.0`): its own version always wins.
+- **CSS packages** are listed with the file, e.g. `"bootstrap/dist/css/bootstrap.min.css": "5.3.8"`, and imported from a script (`import 'bootstrap/dist/css/bootstrap.min.css';`).
 
 #### `Extend\Views`
 

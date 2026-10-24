@@ -53,6 +53,23 @@ final class DashboardTest extends ExtensionTestCase
         self::assertSelectorExists('.admin-bar__user a[href^="/logout"]');
     }
 
+    public function testThePagesLoadTurboAndStimulusFromTheSitesDownloads(): void
+    {
+        $this->signIn('editor');
+        $crawler = $this->client->request('GET', '/admin');
+
+        $importmap = json_decode($crawler->filter('script[type=importmap]')->text(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsArray($importmap);
+        self::assertIsArray($importmap['imports'] ?? null);
+
+        foreach (['@hotwired/turbo', '@hotwired/stimulus'] as $package) {
+            self::assertIsString($importmap['imports'][$package] ?? null);
+            self::assertStringStartsWith('/assets/vendor/'.$package.'/', $importmap['imports'][$package], 'Downloaded into the site, not copied into the extension.');
+        }
+
+        self::assertSelectorExists('link[rel=modulepreload][href^="/assets/vendor/@hotwired/turbo/"]');
+    }
+
     public function testTheAdminSpeaksTheSitesLanguage(): void
     {
         $this->signIn('editor');
