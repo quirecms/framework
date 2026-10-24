@@ -157,12 +157,11 @@ final class EditorTest extends ExtensionTestCase
         $this->client->submit($crawler->filter('button[name=intent][value="save"]')->form(['title' => 'Renamed']));
         self::assertSame(['Renamed', $member->id], [$this->service(ContentRepository::class)->get($theirs->id)->title, $this->service(ContentRepository::class)->get($theirs->id)->authorId], 'They stay the author.');
 
-        // Once published, changes go live, which they may not make.
+        // Once published, they write changes, which someone who may publish publishes.
         $published = $this->service(ContentWriter::class)->transition($theirs->id, $this->service(ContentRepository::class)->get($theirs->id)->version, Status::PUBLISH);
         $crawler = $this->client->request('GET', '/admin/content/post/'.$published->id);
-        self::assertSelectorTextContains('.notice--warning', 'changes to it go live');
-        self::assertCount(0, $crawler->filter('.editor button[name=intent]'));
-        self::assertSelectorExists('fieldset.editor__main[disabled]');
+        self::assertSame(['save', 'preview', 'submit'], $crawler->filter('.editor button[name=intent]')->each(static fn (Crawler $b): string => (string) $b->attr('value')));
+        self::assertSelectorNotExists('fieldset.editor__main[disabled]');
     }
 
     public function testPagesChooseTheirParentButNotThemselvesOrTheirChildren(): void

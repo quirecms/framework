@@ -7,9 +7,11 @@ namespace Quire\Admin\Content\Form;
 use Quire\Admin\Extend\Admin;
 use Quire\Content\Command\CreateContent;
 use Quire\Content\Command\UpdateContent;
+use Quire\Content\Command\UpdatePendingRevision;
 use Quire\Content\Content;
 use Quire\Content\Field\FieldDefinition;
 use Quire\Content\Field\FieldStorage;
+use Quire\Content\Revision\PendingRevision;
 use Quire\Content\Type\ContentTypeDefinition;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\DependencyInjection\Attribute\AutowireLocator;
@@ -77,6 +79,57 @@ final readonly class ContentForm
             'author_id' => $item?->authorId,
             'fields' => $item->fields ?? [],
         ];
+    }
+
+    /**
+     * The item as a pending revision would change it: its text and fields, with its own address and place.
+     *
+     * @return Values
+     */
+    public function pendingValues(Content $item, PendingRevision $pending): array
+    {
+        return [
+            ...$this->values($item),
+            'title' => $pending->proposed->title,
+            'body' => $pending->proposed->body,
+            'excerpt' => $pending->proposed->excerpt,
+            'fields' => $pending->proposed->fields,
+        ];
+    }
+
+    /**
+     * The changes the form makes to a pending revision; unchanged values are left out. Its address and
+     * place aren't part of it: they change the item itself.
+     *
+     * @param int    $expectedVersion The pending revision's version the editor opened
+     * @param Values $values
+     */
+    public function pendingUpdate(ContentTypeDefinition $type, PendingRevision $pending, int $expectedVersion, array $values): UpdatePendingRevision
+    {
+        $command = new UpdatePendingRevision($pending->id, $expectedVersion);
+        $proposed = $pending->proposed;
+
+        if ($values['title'] !== $proposed->title) {
+            $command = $command->title($values['title']);
+        }
+
+        if ($values['body'] !== $proposed->body) {
+            $command = $command->body($values['body']);
+        }
+
+        if ($type->has('excerpt') && $values['excerpt'] !== $proposed->excerpt) {
+            $command = $command->excerpt($values['excerpt']);
+        }
+
+        foreach ($values['fields'] as $name => $value) {
+            $stored = isset($type->fields[$name]) && null !== $value ? $type->fields[$name]->normalize($value) : $value;
+
+            if ($stored !== ($proposed->fields[$name] ?? null)) {
+                $command = $command->field($name, $value);
+            }
+        }
+
+        return $command;
     }
 
     public function control(FieldDefinition $field, ?string $error, string $widget): FieldControl

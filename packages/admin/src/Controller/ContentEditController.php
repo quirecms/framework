@@ -6,13 +6,20 @@ namespace Quire\Admin\Controller;
 
 use Quire\Admin\Content\ContentLists;
 use Quire\Admin\Content\Form\ContentForm;
+use Quire\Admin\Content\PendingChanges;
+use Quire\Content\Command\UpdatePendingRevision;
 use Quire\Content\Content;
 use Quire\Content\ContentRepository;
 use Quire\Content\ContentWriter;
 use Quire\Content\Exception\ContentConflictException;
 use Quire\Content\Exception\ContentOperationCancelledException;
 use Quire\Content\Exception\InvalidContentException;
+use Quire\Content\Exception\MergeConflictException;
+use Quire\Content\Exception\PendingRevisionConflictException;
 use Quire\Content\Exception\TransitionNotAllowedException;
+use Quire\Content\Revision\PendingRevision;
+use Quire\Content\Revision\PendingRevisionRepository;
+use Quire\Content\Revision\PendingRevisionWriter;
 use Quire\Content\Status;
 use Quire\Content\Type\ContentTypeDefinition;
 use Quire\Content\Type\ContentTypeRegistry;
@@ -42,8 +49,10 @@ use Twig\Environment;
  * live preview, and relations a search. Saving an item that someone else saved since it was opened
  * shows the form again, with what was entered, and saves nothing (CNT-024).
  *
- * Until changes to published items become pending revisions, saving a published or scheduled item
- * changes what visitors see, so it takes the ability to publish.
+ * Changes to a published item are the editor's own pending revision (see {@see PendingChanges}): saved
+ * as they type, and live once they're published, by hand or at a set time, after a review if the site
+ * asks for one. Saving a scheduled item changes what's published at its time, so it takes the ability to
+ * publish.
  *
  * @internal
  */
@@ -69,6 +78,9 @@ final readonly class ContentEditController
         private CsrfTokenManagerInterface $csrf,
         private TranslatorInterface $translator,
         private Environment $twig,
+        private PendingChanges $changes,
+        private PendingRevisionWriter $pendingWriter,
+        private PendingRevisionRepository $pendingRepository,
     ) {
     }
 
@@ -111,8 +123,9 @@ final readonly class ContentEditController
     {
         $definition = $this->type($type);
         $item = $this->item($definition, $id);
+        $own = $this->changes->applies($item) ? $this->changes->own($item) : null;
 
-        return $this->page($definition, $item, $this->form->values($item), []);
+        return $this->page($definition, $item, $own instanceof PendingRevision ? $this->form->pendingValues($item, $own) : $this->form->values($item), [], pending: $own);
     }
 
     public function save(Request $request, string $type, string $id): Response
@@ -124,6 +137,10 @@ final readonly class ContentEditController
         $intent = $request->request->getString('intent', 'save');
         // The version the editor opened: changes saved since are someone else's.
         $opened = $request->request->getInt('version', $item->version);
+
+        if ($this->changes->applies($item)) {
+            return $this->saveChanges($request, $definition, $item, $values, $errors, $intent);
+        }
 
         if ('preview' === $intent) {
             return $this->page($definition, $item, $values, $errors, preview: $this->preview($values['body'], $item), version: $opened);
@@ -190,6 +207,147 @@ final readonly class ContentEditController
         return new JsonResponse(array_map(static fn (array $result): array => ['id' => $result['id'], 'label' => $result['label']], \array_slice($results, 0, self::SEARCH_RESULTS)));
     }
 
+    /**
+     * Saves the form to the user's pending revision of a published item, then does what the button says:
+     * publish, submit for review, schedule, or keep their version where it conflicts.
+     *
+     * @param array<string, mixed>  $values
+     * @param array<string, string> $errors
+     */
+    private function saveChanges(Request $request, ContentTypeDefinition $type, Content $item, array $values, array $errors, string $intent): Response
+    {
+        $own = $this->changes->own($item);
+        // Empty until the user has changes.
+        $sent = $request->request->getString('pending_version');
+        $opened = ctype_digit($sent) ? (int) $sent : ($own->version ?? 0);
+        $session = $request->getSession();
+        \assert($session instanceof FlashBagAwareSessionInterface);
+
+        if ('preview' === $intent) {
+            return $this->page($type, $item, $values, $errors, preview: $this->preview(\is_string($values['body'] ?? null) ? $values['body'] : '', $item), pending: $own, pendingVersion: $opened);
+        }
+
+        if ('discard' === $intent) {
+            if ($own instanceof PendingRevision) {
+                $this->pendingWriter->discard($own->id, $this->users->get()?->id);
+                $session->getFlashBag()->add('success', $this->translator->trans('Your changes are discarded.', [], 'quire-admin'));
+            }
+
+            return $this->toEditor($type, $item);
+        }
+
+        if ([] !== $errors) {
+            return $this->page($type, $item, $values, $errors, status: Response::HTTP_UNPROCESSABLE_ENTITY, pending: $own, pendingVersion: $opened);
+        }
+
+        try {
+            $pending = $own ?? $this->pendingWriter->create($item->id, $this->users->get()?->id);
+            /** @var array{title: string, slug: string, body: string, excerpt: ?string, parent_id: ?string, position: ?int, author_id?: ?string, fields: array<string, mixed>} $values */
+            $command = $this->form->pendingUpdate($type, $pending, $own instanceof PendingRevision ? $opened : $pending->version, $values);
+            $pending = $command->isEmpty() ? $pending : $this->pendingWriter->update($command);
+        } catch (PendingRevisionConflictException) {
+            // Saved elsewhere, e.g. in another tab: saving again replaces that, knowingly.
+            return $this->page($type, $item, $values, [], status: Response::HTTP_CONFLICT, conflict: true, pending: $own);
+        } catch (InvalidContentException $e) {
+            return $this->page($type, $item, $values, $e->violations, status: Response::HTTP_UNPROCESSABLE_ENTITY, pending: $own, pendingVersion: $opened);
+        }
+
+        if ('autosave' === $intent) {
+            return new JsonResponse(['pending_version' => $pending->version, 'saved_at' => $pending->updatedAt->setTimezone($this->timezone())->format('H:i')]);
+        }
+
+        $actor = $this->users->get()?->id;
+
+        try {
+            $message = match ($intent) {
+                'publish_changes' => $this->publishChanges($type, $pending, $actor),
+                'submit' => $this->submitChanges($pending, $actor),
+                'schedule_changes' => $this->scheduleChanges($type, $pending, $this->publishAt($request), $actor),
+                'unschedule_changes' => $this->scheduleChanges($type, $pending, null, $actor),
+                'keep_mine' => $this->keepMine($item, $pending),
+                default => $this->translator->trans('Your changes are saved. Visitors see them once they\'re published.', [], 'quire-admin'),
+            };
+        } catch (MergeConflictException $e) {
+            $session->getFlashBag()->add('success', $this->translator->trans('Your changes are saved.', [], 'quire-admin'));
+
+            return $this->page($type, $item, $this->form->pendingValues($item, $pending), [], status: Response::HTTP_CONFLICT, pending: $pending, mergeConflicts: $e->conflicts);
+        } catch (InvalidContentException $e) {
+            return $this->page($type, $item, $this->form->pendingValues($item, $pending), $e->violations, status: Response::HTTP_UNPROCESSABLE_ENTITY, pending: $pending);
+        } catch (AccessDeniedHttpException $e) {
+            $session->getFlashBag()->add('success', $this->translator->trans('Your changes are saved.', [], 'quire-admin'));
+            $session->getFlashBag()->add('error', $e->getMessage());
+
+            return $this->toEditor($type, $item);
+        }
+
+        $session->getFlashBag()->add('success', $message);
+
+        return $this->toEditor($type, $item);
+    }
+
+    /**
+     * @throws MergeConflictException
+     * @throws InvalidContentException
+     */
+    private function publishChanges(ContentTypeDefinition $type, PendingRevision $pending, ?string $actor): string
+    {
+        $can = $this->changes->canPublish($type, $pending);
+
+        if (true !== $can) {
+            throw new AccessDeniedHttpException($can);
+        }
+
+        $this->writer->publishPendingRevision($pending->id, $pending->version, $actor);
+
+        return $this->translator->trans('Your changes are published.', [], 'quire-admin');
+    }
+
+    private function submitChanges(PendingRevision $pending, ?string $actor): string
+    {
+        $this->pendingWriter->submit($pending->id, $pending->version, $actor);
+
+        return $this->translator->trans('Your changes are waiting for a review.', [], 'quire-admin');
+    }
+
+    private function scheduleChanges(ContentTypeDefinition $type, PendingRevision $pending, ?\DateTimeImmutable $at, ?string $actor): string
+    {
+        if (!$this->changes->mayPublish($type)) {
+            throw new AccessDeniedHttpException($this->translator->trans('Publishing takes the right to publish; ask someone who has it.', [], 'quire-admin'));
+        }
+
+        $pending = $this->pendingWriter->schedule($pending->id, $pending->version, $at, $actor);
+
+        return $pending->publishAt instanceof \DateTimeImmutable
+            ? $this->translator->trans('Your changes will be published on {date}.', ['date' => $pending->publishAt->setTimezone($this->timezone())->format('Y-m-d H:i')], 'quire-admin')
+            : $this->translator->trans('Your changes are no longer scheduled.', [], 'quire-admin');
+    }
+
+    /**
+     * Resolves conflicts with changes published since the pending revision started: the merge keeps
+     * those changes, and the user's where they conflict.
+     */
+    private function keepMine(Content $item, PendingRevision $pending): string
+    {
+        $merged = $this->pendingRepository->merge($pending)->result;
+        $this->pendingWriter->update(new UpdatePendingRevision($pending->id, $pending->version)
+            ->title($merged->title)
+            ->body($merged->body, $merged->bodyFormat)
+            ->excerpt($merged->excerpt)
+            ->fields($merged->fields)
+            ->rebase($item->version));
+
+        return $this->translator->trans('Your version replaces the conflicting changes. Publish your changes again.', [], 'quire-admin');
+    }
+
+    private function timezone(): \DateTimeZone
+    {
+        try {
+            return new \DateTimeZone($this->settings->getString('site.timezone'));
+        } catch (\Exception) {
+            return new \DateTimeZone('UTC');
+        }
+    }
+
     private function afterSave(Request $request, ContentTypeDefinition $type, Content $item, string $intent, string $message): RedirectResponse
     {
         $session = $request->getSession();
@@ -246,10 +404,11 @@ final readonly class ContentEditController
     }
 
     /**
-     * @param array<string, mixed>  $values
-     * @param array<string, string> $errors
+     * @param array<string, mixed>       $values
+     * @param array<string, string>      $errors
+     * @param array<string, string>|null $mergeConflicts Why publishing the changes conflicted, by property
      */
-    private function page(ContentTypeDefinition $type, ?Content $item, array $values, array $errors, int $status = Response::HTTP_OK, ?string $preview = null, bool $conflict = false, ?int $version = null): Response
+    private function page(ContentTypeDefinition $type, ?Content $item, array $values, array $errors, int $status = Response::HTTP_OK, ?string $preview = null, bool $conflict = false, ?int $version = null, ?PendingRevision $pending = null, ?int $pendingVersion = null, ?array $mergeConflicts = null): Response
     {
         $fields = [];
 
@@ -267,6 +426,8 @@ final readonly class ContentEditController
         }
 
         $editAny = $this->security->isGranted(ContentLists::ability($type, 'edit_any'));
+        $changes = $item instanceof Content && $this->changes->applies($item);
+        $others = $changes ? $this->changes->others($item) : [];
 
         return new Response($this->twig->render('@quire_admin/content/edit.html.twig', [
             'type' => $type,
@@ -276,12 +437,24 @@ final readonly class ContentEditController
             'errors' => $errors,
             'fields' => $fields,
             'transitions' => $item instanceof Content ? $this->transitions($type, $item) : $this->newTransitions($type),
-            'can_save' => !$item instanceof Content || $this->maySave($type, $item),
+            // Changes to a published item only need the right to edit it: they're published separately.
+            'can_save' => !$item instanceof Content || $changes || $this->maySave($type, $item),
             'authors' => $type->has('author') && $editAny ? $this->authors(\is_string($values['author_id'] ?? null) ? $values['author_id'] : null) : [],
             'parents' => $type->has('hierarchical') ? $this->parents($type, $item) : [],
             'preview' => $preview,
             'conflict' => $conflict,
             'timezone' => $this->settings->getString('site.timezone'),
+            'changes' => $changes ? [
+                'pending' => $pending,
+                'version' => $pendingVersion ?? $pending?->version,
+                'state' => $pending instanceof PendingRevision ? $this->changes->stateLabel($pending->state) : null,
+                'can_publish' => $pending instanceof PendingRevision ? $this->changes->canPublish($type, $pending) : $this->changes->mayPublish($type),
+                'may_publish' => $this->changes->mayPublish($type),
+                'approval' => $this->changes->approvalRequired(),
+                'merge_conflicts' => $mergeConflicts,
+                'others' => $others,
+                'names' => $this->changes->names([$pending?->scheduledBy, ...array_map(static fn (PendingRevision $other): ?string => $other->authorId, $others)]),
+            ] : null,
         ]), $status);
     }
 

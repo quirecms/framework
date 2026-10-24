@@ -207,6 +207,9 @@ final readonly class ContentLists
             $query = $query->select('author_name', 'SELECT u.display_name FROM quire.app_user u WHERE u.id = c.author_id');
         }
 
+        // Changes to published items that aren't published yet.
+        $query = $query->select('pending_changes', 'SELECT count(*) FROM quire.content_pending_revision p WHERE p.content_id = c.id');
+
         foreach ($this->extensions($type, 'column') as $column) {
             \assert($column instanceof ContentColumnInterface);
             $query = $column->query($query);
@@ -424,7 +427,14 @@ final readonly class ContentLists
     {
         $label = $item->deletedAt instanceof \DateTimeImmutable ? $this->translator->trans('In the trash', [], 'quire-admin') : $this->statusLabel($item->status);
 
-        return new Markup(\sprintf('<span class="status status--%s">%s</span>', htmlspecialchars($item->status), htmlspecialchars($label)), 'UTF-8');
+        $html = \sprintf('<span class="status status--%s">%s</span>', htmlspecialchars($item->status), htmlspecialchars($label));
+        $pending = $item->attributes['pending_changes'] ?? 0;
+
+        if (is_numeric($pending) && (int) $pending > 0) {
+            $html .= \sprintf(' <span class="meta">%s</span>', htmlspecialchars($this->translator->trans('{count, plural, one {# change waiting} other {# changes waiting}}', ['count' => (int) $pending], 'quire-admin')));
+        }
+
+        return new Markup($html, 'UTF-8');
     }
 
     private function dateCell(Content $item): Markup

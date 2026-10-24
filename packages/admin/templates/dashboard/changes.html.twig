@@ -1,0 +1,28 @@
+{#
+    Changes to published items: those waiting for the user's review, and the user's own.
+    Variables: to_review, own (lists of pending, item, state), names, timezone.
+#}
+{% if to_review is not empty %}
+    <h3 class="card__subtitle">{{ 'Waiting for your review'|trans({}, 'quire-admin') }}</h3>
+    <ul class="item-list">
+        {% for entry in to_review %}
+            <li>
+                <a href="{{ path('quire_admin_content_changes', {type: entry.item.type, id: entry.item.id, pending: entry.pending.id}) }}">{{ entry.item.title }}</a>
+                <span class="meta">{{ entry.pending.authorId ? names[entry.pending.authorId] : 'Someone'|trans({}, 'quire-admin') }} · <time datetime="{{ entry.pending.updatedAt|date('c') }}">{{ entry.pending.updatedAt|date('Y-m-d H:i', timezone) }}</time></span>
+            </li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+{% if own is not empty %}
+    <h3 class="card__subtitle">{{ 'Your changes'|trans({}, 'quire-admin') }}</h3>
+    <ul class="item-list">
+        {% for entry in own %}
+            <li>
+                <a href="{{ path('quire_admin_content_edit', {type: entry.item.type, id: entry.item.id}) }}">{{ entry.item.title }}</a>
+                <span class="meta">{{ entry.state }}{% if entry.pending.publishAt %} · {{ 'publish on {date}'|trans({date: entry.pending.publishAt|date('Y-m-d H:i', timezone)}, 'quire-admin') }}{% endif %}</span>
+                {% if entry.pending.publishProblem %}<span class="field-error">{{ 'Couldn\'t be published at its time: {problem}'|trans({problem: entry.pending.publishProblem}, 'quire-admin') }}</span>{% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+{% endif %}

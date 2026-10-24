@@ -151,7 +151,10 @@ bin/console quire:content:pending <id>                         # the item's pend
 bin/console quire:content:pending <id> --show <pending-id>     # what it changes, as a diff, and whether it merges
 bin/console quire:content:pending <id> --publish <pending-id>
 bin/console quire:content:pending <id> --discard <pending-id>
+bin/console quire:content:pending <id> --schedule <pending-id> --at "2026-12-24 09:00 Europe/Berlin"
 ```
+
+**Scheduled changes** are published at their time by the background worker (the task `quire.publish-due`), with the same merging, conflicts and approval as publishing them by hand. When that fails, they stay pending without a time, their `publishProblem` says why, and Quire dispatches `PendingRevisionPublishFailed`, e.g. for an extension that emails their author. `--at none` clears the time.
 
 ### Editing conflicts
 

@@ -2,7 +2,9 @@
     The editor of a content item: the text in the main column, publishing and the item's place in the
     side column. One form; its buttons say what to do (intent): save, preview, or save and take a
     transition. Variables: type, item (null when new), version, values, errors, fields (by group: field,
-    label, control, html, error), transitions, can_save, authors, parents, preview, conflict, timezone.
+    label, control, html, error), transitions, can_save, authors, parents, preview, conflict, timezone, and
+    for published items, changes: the user's pending revision (pending, version, state, can_publish,
+    may_publish, approval, merge_conflicts) and others' (others, names).
 #}
 {% extends '@quire_admin/layout.html.twig' %}
 {% import '@quire_admin/content/widgets.html.twig' as widgets %}
@@ -29,6 +31,22 @@
         </div>
     {% endif %}
 
+    {% if changes and changes.merge_conflicts %}
+        <div class="notice notice--warning" role="alert">
+            <p>{{ 'Changes published since you started conflict with yours, so yours aren\'t published yet. They differ in:'|trans({}, 'quire-admin') }}</p>
+            <ul>
+                {% for property, reason in changes.merge_conflicts %}
+                    <li>{{ property starts with 'fields.' ? property[7:] : (property|capitalize) }}</li>
+                {% endfor %}
+            </ul>
+            <p>{{ 'Keep your version of these parts, then publish again; the other changes are kept. Or look at both first.'|trans({}, 'quire-admin') }}</p>
+            <p>
+                <button type="submit" form="editor-form" class="button" name="intent" value="keep_mine">{{ 'Keep my version'|trans({}, 'quire-admin') }}</button>
+                <a href="{{ path('quire_admin_content_changes', {type: type.id, id: item.id, pending: changes.pending.id}) }}">{{ 'Compare the changes'|trans({}, 'quire-admin') }}</a>
+            </p>
+        </div>
+    {% endif %}
+
     {% if item and item.deletedAt %}
         <p class="notice notice--warning" role="status">{{ 'This item is in the trash. Restore it from the list to change it.'|trans({}, 'quire-admin') }}</p>
     {% elseif not can_save %}
@@ -49,14 +67,18 @@
 
     {% set readonly = not can_save or (item and item.deletedAt) %}
 
-    <form method="post" class="editor" novalidate
+    <form method="post" class="editor" novalidate id="editor-form"
           action="{{ item ? path('quire_admin_content_save', {type: type.id, id: item.id}) : path('quire_admin_content_create', {type: type.id}) }}"
           data-controller="content-editor"
-          data-content-editor-preview-url-value="{{ path('quire_admin_content_preview', {type: type.id}) }}">
+          data-content-editor-preview-url-value="{{ path('quire_admin_content_preview', {type: type.id}) }}"
+          {% if changes %}data-content-editor-autosave-value="true" data-content-editor-saved-value="{{ 'Saved at {time}'|trans({}, 'quire-admin') }}" data-content-editor-unsaved-value="{{ 'Not saved: {problem}'|trans({}, 'quire-admin') }}" data-content-editor-conflict-value="{{ 'Not saved: your changes were saved elsewhere meanwhile, e.g. in another tab. Save to see them.'|trans({}, 'quire-admin') }}"{% endif %}>
         <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_content_editor') }}">
         {% if item %}
             <input type="hidden" name="version" value="{{ version }}">
             <input type="hidden" name="id" value="{{ item.id }}" data-content-editor-target="id">
+        {% endif %}
+        {% if changes %}
+            <input type="hidden" name="pending_version" value="{{ changes.version }}" data-content-editor-target="pendingVersion">
         {% endif %}
 
         <fieldset class="editor__main"{% if readonly %} disabled{% endif %}>
@@ -107,6 +129,9 @@
         </fieldset>
 
         <div class="editor__side">
+            {% if changes %}
+                {{ include('@quire_admin/content/_changes_panel.html.twig') }}
+            {% else %}
             <section class="panel" aria-labelledby="publishing-heading">
                 <h2 id="publishing-heading">{{ 'Publishing'|trans({}, 'quire-admin') }}</h2>
                 <dl class="facts">
@@ -136,19 +161,26 @@
                     {% endfor %}
                 {% endif %}
             </section>
+            {% endif %}
 
-            <fieldset class="panel"{% if readonly %} disabled{% endif %}>
+            {% if item %}
+                <p class="editor__links"><a href="{{ path('quire_admin_content_history', {type: type.id, id: item.id}) }}">{{ 'History'|trans({}, 'quire-admin') }}</a></p>
+            {% endif %}
+
+            {% set place = changes ? ' form="place-form"' : '' %}
+            <fieldset class="panel"{% if readonly or (changes and not changes.may_publish) %} disabled{% endif %}>
                 <legend>{{ 'Address and place'|trans({}, 'quire-admin') }}</legend>
+                {% if changes %}<p class="field-help">{{ 'These change the published item right away.'|trans({}, 'quire-admin') }}</p>{% endif %}
                 <div class="form-field">
                     {{ _self.field('slug', 'Slug'|trans({}, 'quire-admin'), errors.slug ?? null) }}
                     <p class="field-help" id="slug-help">{{ 'The last part of its address. Left empty, it\'s made from the title.'|trans({}, 'quire-admin') }}</p>
-                    <input type="text" id="slug" name="slug" value="{{ values.slug }}" aria-describedby="slug-help{{ errors.slug is defined ? ' slug-error' }}"{% if errors.slug is defined %} aria-invalid="true"{% endif %}>
+                    <input type="text" id="slug" name="slug"{{ place|raw }} value="{{ values.slug }}" aria-describedby="slug-help{{ errors.slug is defined ? ' slug-error' }}"{% if errors.slug is defined %} aria-invalid="true"{% endif %}>
                 </div>
 
                 {% if authors is not empty %}
                     <div class="form-field">
                         {{ _self.field('author_id', 'Author'|trans({}, 'quire-admin'), errors.author_id ?? null) }}
-                        <select id="author_id" name="author_id"{{ _self.described('author_id', errors.author_id ?? null) }}>
+                        <select id="author_id" name="author_id"{{ place|raw }}{{ _self.described('author_id', errors.author_id ?? null) }}>
                             <option value="">—</option>
                             {% for author in authors %}
                                 <option value="{{ author.id }}"{% if author.id == values.author_id %} selected{% endif %}>{{ author.label }}</option>
@@ -160,7 +192,7 @@
                 {% if type.has('hierarchical') %}
                     <div class="form-field">
                         {{ _self.field('parent_id', 'Parent'|trans({}, 'quire-admin'), errors.parent_id ?? null) }}
-                        <select id="parent_id" name="parent_id"{{ _self.described('parent_id', errors.parent_id ?? null) }}>
+                        <select id="parent_id" name="parent_id"{{ place|raw }}{{ _self.described('parent_id', errors.parent_id ?? null) }}>
                             <option value="">{{ '(top level)'|trans({}, 'quire-admin') }}</option>
                             {% for parent in parents %}
                                 <option value="{{ parent.id }}"{% if parent.id == values.parent_id %} selected{% endif %}>{{ parent.label }}</option>
@@ -169,12 +201,23 @@
                     </div>
                     <div class="form-field">
                         {{ _self.field('position', 'Position'|trans({}, 'quire-admin'), errors.position ?? null) }}
-                        <input type="number" id="position" name="position" min="0" step="1" value="{{ values.position }}"{{ _self.described('position', errors.position ?? null) }}>
+                        <input type="number" id="position" name="position"{{ place|raw }} min="0" step="1" value="{{ values.position }}"{{ _self.described('position', errors.position ?? null) }}>
                     </div>
+                {% endif %}
+                {% if changes and changes.may_publish %}
+                    <button type="submit" form="place-form" class="button button--secondary">{{ 'Save address and place'|trans({}, 'quire-admin') }}</button>
                 {% endif %}
             </fieldset>
         </div>
     </form>
+
+    {% if changes %}
+        {# Its controls are in the side column of the editor, with form="place-form". #}
+        <form method="post" id="place-form" action="{{ path('quire_admin_content_place', {type: type.id, id: item.id}) }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_content_editor') }}">
+            <input type="hidden" name="version" value="{{ item.version }}">
+        </form>
+    {% endif %}
 {% endblock %}
 
 {% macro field(id, label, error, required = false) %}

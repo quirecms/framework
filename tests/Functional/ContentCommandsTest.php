@@ -143,6 +143,18 @@ final class ContentCommandsTest extends KernelTestCase
         self::assertSame(0, $command->execute(['id' => $post->id, '--discard' => $pending->id]));
         $other = $pendingWriter->create($post->id);
         $pendingWriter->update(new UpdatePendingRevision($other->id, 1)->title('Opening hours'));
+
+        self::assertSame(1, $command->execute(['id' => $post->id, '--schedule' => $other->id]));
+        self::assertStringContainsString('Pass --at with the time to publish the changes, or "none".', $this->flat($command));
+        self::assertSame(1, $command->execute(['id' => $post->id, '--schedule' => $other->id, '--at' => '2030-01-01 09:00']));
+        self::assertStringContainsString('Give the time with a time zone or offset', $this->flat($command), 'The server\'s time zone isn\'t the site\'s.');
+        self::assertSame(0, $command->execute(['id' => $post->id, '--schedule' => $other->id, '--at' => '2030-01-01 09:00 Europe/Berlin']));
+        self::assertStringContainsString('The changes will be published at 2030-01-01 08:00', $this->flat($command));
+        $command->execute(['id' => $post->id]);
+        self::assertStringContainsString('2030-01-01 08:00', $command->getDisplay());
+        self::assertSame(0, $command->execute(['id' => $post->id, '--schedule' => $other->id, '--at' => 'none']));
+        self::assertStringContainsString('The changes have no time to be published any more.', $this->flat($command));
+
         self::assertSame(0, $command->execute(['id' => $post->id, '--publish' => $other->id]));
         self::assertStringContainsString('Published the changes. "Opening hours" is now at version 4.', $this->flat($command));
         self::assertSame(1, $command->execute(['id' => $post->id, '--show' => $other->id]));

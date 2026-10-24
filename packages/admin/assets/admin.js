@@ -104,13 +104,22 @@ application.register('markdown-editor', class extends Controller {
 
 // The editor's live preview: the text as the site shows it, rendered by Quire as you type.
 application.register('content-editor', class extends Controller {
-    static targets = ['body', 'preview', 'previewBody', 'previewButton', 'id'];
+    static targets = ['body', 'preview', 'previewBody', 'previewButton', 'id', 'pendingVersion', 'status', 'savedAt'];
 
-    static values = { previewUrl: String };
+    // autosave: changes to a published item are saved as the editor types (as a pending revision).
+    static values = { previewUrl: String, autosave: Boolean, saved: String, unsaved: String, conflict: String };
 
     connect() {
         this.update = this.debounce(() => this.render(), 500);
         this.bodyTarget.addEventListener('input', this.update);
+
+        if (this.autosaveValue) {
+            this.scheduleSave = this.debounce(() => this.save(), 2000);
+            this.element.addEventListener('input', this.scheduleSave);
+            this.element.addEventListener('change', this.scheduleSave);
+            // A button saves anyway: no autosave races it.
+            this.element.addEventListener('submit', this.stopSaving);
+        }
 
         if (this.hasPreviewButtonTarget) {
             this.previewButtonTarget.addEventListener('click', this.toggle);
@@ -122,6 +131,42 @@ application.register('content-editor', class extends Controller {
     disconnect() {
         this.bodyTarget.removeEventListener('input', this.update);
         this.previewButtonTarget?.removeEventListener('click', this.toggle);
+
+        if (this.scheduleSave) {
+            this.element.removeEventListener('input', this.scheduleSave);
+            this.element.removeEventListener('change', this.scheduleSave);
+            this.element.removeEventListener('submit', this.stopSaving);
+        }
+    }
+
+    stopSaving = () => {
+        this.stopped = true;
+    };
+
+    async save() {
+        if (this.stopped || this.saving) {
+            return;
+        }
+
+        this.saving = true;
+        const form = new FormData(this.element);
+        form.set('intent', 'autosave');
+
+        try {
+            const response = await fetch(this.element.action, { method: 'POST', body: form, headers: { Accept: 'application/json' } });
+
+            if (response.ok && response.headers.get('Content-Type')?.includes('json')) {
+                const saved = await response.json();
+                this.pendingVersionTarget.value = saved.pending_version;
+                this.statusTarget.textContent = this.savedValue.replace('{time}', saved.saved_at);
+            } else {
+                this.statusTarget.textContent = response.status === 409 ? this.conflictValue : this.unsavedValue.replace('{problem}', `HTTP ${response.status}`);
+            }
+        } catch (error) {
+            this.statusTarget.textContent = this.unsavedValue.replace('{problem}', error.message);
+        } finally {
+            this.saving = false;
+        }
     }
 
     toggle = (event) => {

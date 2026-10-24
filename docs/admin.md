@@ -6,7 +6,7 @@ The admin interface, the extension `quire-admin` (package `quire/admin`), manage
 bin/console quire:extension:enable quire-admin
 ```
 
-> **Status:** the admin is being built. It has its layout, menu, dashboard, content lists and editor; changes to published content as pending revisions, settings, extensions, themes and users follow.
+> **Status:** the admin is being built. It has its layout, menu, dashboard, content lists, editor, and changes to published content with review and history; content checks, settings, extensions, themes and users follow.
 
 ## Who can use it
 
@@ -38,9 +38,22 @@ Choosing an item in a list opens it in the editor; "New" in a list starts one. T
 - **Dates and times are in the site's time zone,** the setting `site.timezone` (UTC unless set), e.g. `bin/console quire:settings:set site.timezone Europe/Berlin`.
 - **Save, or save and publish, schedule, or take another step of the workflow.** What you may do is offered, nothing else. Mistakes are listed above the form and shown at their fields; nothing is saved until they're fixed.
 - **No changes are lost:** when someone else saved the item after you opened it, saving shows you the form again with what you entered, unsaved, and tells you. Saving once more replaces their changes, knowingly.
-- **For now, saving a published item changes it on the site right away,** so it takes the ability to publish. Changes to published items as drafts, to review and publish later, come next.
 
 Everything works without JavaScript: the text is then a plain text box, and "Preview" shows the preview without saving.
+
+## Changing published content
+
+Visitors never see half-written changes. Editing a published item writes **your changes**, saved as you type, and the site keeps showing the published version until they're published:
+
+- **Publish changes** when they're ready, or **schedule** them for a date and time; at that time the background worker publishes them. Both take the ability to publish (`content.<type>.publish`).
+- **Ask for a review:** reviewers (`content.<type>.review`, editors by default) find the changes on their dashboard, see what changes line by line, and approve them, ask for changes or comment. When the site asks for approval (the setting `quire.content.changes_need_approval`), changes are published only once someone other than their author approved them.
+- **Several people can change an item at once,** each with their own changes. When changes are published, they're merged with what was published since, line by line: they only **conflict** where both changed the same lines or fields. The editor then lists those parts, and "Keep my version" uses yours there and keeps the others' changes everywhere else.
+- **Discard** your changes to start again from the published version.
+- When scheduled changes can't be published at their time, e.g. because of a conflict or a missing approval, they stay unpublished, and their author sees why in the editor and on the dashboard.
+
+An item's **address and place** (slug, author, parent) aren't part of the changes: saving them changes the published item right away, which takes the ability to publish.
+
+**History** lists an item's saved versions, newest first, with what each changed. Restoring one brings it back: right away for a draft, and as your changes, to look at and publish, for a published item.
 
 ## Its address
 
