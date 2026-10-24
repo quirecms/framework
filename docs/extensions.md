@@ -414,6 +414,36 @@ foreach ($registry->withCapability('commentable') as $id => $type) {
 }
 ```
 
+#### `Extend\ContentChecks`
+
+Checks content before it's published (see [checks](content.md#checks-before-publishing)): a check is a service implementing `Quire\Content\Check\ContentCheckInterface`, which yields a `Finding` for each problem, with the property it's about.
+
+```php
+new Extend\ContentChecks()
+    ->check('acme-shop.price', PriceCheck::class, 'Products have a price', level: Level::Error, types: ['product']),
+```
+
+```php
+final readonly class PriceCheck implements ContentCheckInterface
+{
+    public function check(Content $item): iterable
+    {
+        if (null === $item->field('price')) {
+            yield new Finding('Products need a price before they\'re sold.', 'fields.price');
+        }
+    }
+}
+```
+
+| Argument | Purpose |
+|----------|---------|
+| `$id` | Starts with your extension's ID, e.g. `acme-shop.price`; sites set its level with it |
+| `$label` | What it checks, as lists of checks show it |
+| `$level` | `Level::Warning` (the default) or `Level::Error`, which blocks publishing; sites can change it |
+| `$types` | The content types it checks; null for all |
+
+The item a check gets may not be saved: it's what would be published, e.g. while it's being written. Checks run while editing, so keep them quick, and they must not change anything.
+
 #### `Extend\FieldTypes`
 
 Adds kinds of values fields can hold, next to core's. A type decides how values are checked and stored, how queries compare them, whether they can be indexed, and which admin widget edits them:

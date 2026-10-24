@@ -7,6 +7,8 @@ namespace Quire\Admin\Controller;
 use Quire\Admin\Content\ContentLists;
 use Quire\Admin\Content\Form\ContentForm;
 use Quire\Admin\Content\PendingChanges;
+use Quire\Content\Check\CheckReport;
+use Quire\Content\Check\ContentChecker;
 use Quire\Content\Command\UpdatePendingRevision;
 use Quire\Content\Content;
 use Quire\Content\ContentRepository;
@@ -81,6 +83,7 @@ final readonly class ContentEditController
         private PendingChanges $changes,
         private PendingRevisionWriter $pendingWriter,
         private PendingRevisionRepository $pendingRepository,
+        private ContentChecker $checker,
     ) {
     }
 
@@ -181,6 +184,32 @@ final readonly class ContentEditController
         $item = '' === $id ? null : $this->item($definition, $id);
 
         return new Response($this->preview(str_replace("\r\n", "\n", $request->request->getString('body')), $item));
+    }
+
+    /**
+     * What the content checks find in the form's values, as the editor's panel shows it, for updating it
+     * as the editor types.
+     */
+    public function checksFragment(Request $request, string $type): Response
+    {
+        $definition = $this->type($type);
+        $this->assertToken($request);
+        $id = $request->request->getString('id');
+        $item = '' === $id ? null : $this->item($definition, $id);
+        ['values' => $values] = $this->form->read($definition, $request);
+
+        return new Response($this->twig->render('@quire_admin/content/_checks.html.twig', ['checks' => $this->checks($definition, $item, $values)]));
+    }
+
+    /**
+     * @param array<string, mixed> $values
+     */
+    private function checks(ContentTypeDefinition $type, ?Content $item, array $values): CheckReport
+    {
+        /** @var array{title: string, slug: string, body: string, excerpt: ?string, parent_id: ?string, position: ?int, author_id?: ?string, fields: array<string, mixed>} $form */
+        $form = $values;
+
+        return $this->checker->check($this->form->preview($type, $item, $form, $this->users->get()?->id));
     }
 
     /**
@@ -443,6 +472,7 @@ final readonly class ContentEditController
             'parents' => $type->has('hierarchical') ? $this->parents($type, $item) : [],
             'preview' => $preview,
             'conflict' => $conflict,
+            'checks' => $this->checks($type, $item, $values),
             'timezone' => $this->settings->getString('site.timezone'),
             'changes' => $changes ? [
                 'pending' => $pending,

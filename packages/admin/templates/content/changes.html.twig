@@ -1,7 +1,7 @@
 {#
     Changes to a published item that aren't published yet (a pending revision): what they change, whether
     they merge with what's published, their reviews, and what the user may do with them.
-    Variables: type, item, pending, state, diff, conflicts, reviews, names, own, may_review, may_approve,
+    Variables: type, item, pending, state, diff, conflicts, checks, reviews, names, own, may_review, may_approve,
     can_publish, may_discard, timezone.
 #}
 {% extends '@quire_admin/layout.html.twig' %}
@@ -51,6 +51,11 @@
     <section aria-labelledby="diff-heading" class="section">
         <h2 id="diff-heading">{{ 'What changes'|trans({}, 'quire-admin') }}</h2>
         {{ include('@quire_admin/content/_diff.html.twig', {diff: diff, caption: 'What changes'|trans({}, 'quire-admin')}) }}
+    </section>
+
+    <section aria-labelledby="checks-heading" class="section">
+        <h2 id="checks-heading">{{ 'Checks'|trans({}, 'quire-admin') }}</h2>
+        {{ include('@quire_admin/content/_checks.html.twig') }}
     </section>
 
     <section aria-labelledby="reviews-heading" class="section">

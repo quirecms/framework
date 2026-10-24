@@ -132,6 +132,50 @@ final readonly class ContentForm
         return $command;
     }
 
+    /**
+     * The item as the form would make it, without saving it: for content checks while editing.
+     *
+     * @param Values      $values
+     * @param string|null $authorId For a new item: its author
+     */
+    public function preview(ContentTypeDefinition $type, ?Content $item, array $values, ?string $authorId = null): Content
+    {
+        $fields = $item->fields ?? [];
+
+        foreach ($values['fields'] as $name => $value) {
+            if (null === $value) {
+                unset($fields[$name]);
+            } else {
+                $fields[$name] = isset($type->fields[$name]) ? $type->fields[$name]->normalize($value) : $value;
+            }
+        }
+
+        $now = new \DateTimeImmutable();
+
+        return new Content(
+            id: $item->id ?? '00000000-0000-0000-0000-000000000000',
+            type: $type->id,
+            status: $item->status ?? 'draft',
+            locale: $item->locale ?? 'en',
+            translationGroupId: $item?->translationGroupId,
+            title: $values['title'],
+            slug: '' === $values['slug'] ? ($item->slug ?? '') : $values['slug'],
+            path: $item->path ?? '',
+            parentId: $values['parent_id'],
+            position: $values['position'] ?? $item->position ?? 0,
+            excerpt: $values['excerpt'],
+            body: $values['body'],
+            bodyFormat: $item->bodyFormat ?? 'markdown',
+            fields: $fields,
+            authorId: \array_key_exists('author_id', $values) ? $values['author_id'] : ($item->authorId ?? $authorId),
+            version: $item->version ?? 1,
+            publishedAt: $item?->publishedAt,
+            createdAt: $item->createdAt ?? $now,
+            updatedAt: $now,
+            deletedAt: $item?->deletedAt,
+        );
+    }
+
     public function control(FieldDefinition $field, ?string $error, string $widget): FieldControl
     {
         $id = 'field-'.$field->name;

@@ -46,6 +46,9 @@ return [
         ->contentAction('quire-fixture-hello.feature', Hello\Admin\FeatureAction::class, types: ['post'])
         ->fieldWidget('color', Hello\Admin\ColorWidget::class),
 
+    new Extend\ContentChecks()
+        ->check('quire-fixture-hello.shouting', Hello\Check\ShoutingCheck::class, 'Titles aren\'t shouted', types: ['post']),
+
     new Extend\Events()
         ->listen(ResponseEvent::class, Hello\FixtureHeaderListener::class),
 

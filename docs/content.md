@@ -156,6 +156,21 @@ bin/console quire:content:pending <id> --schedule <pending-id> --at "2026-12-24 
 
 **Scheduled changes** are published at their time by the background worker (the task `quire.publish-due`), with the same merging, conflicts and approval as publishing them by hand. When that fails, they stay pending without a time, their `publishProblem` says why, and Quire dispatches `PendingRevisionPublishFailed`, e.g. for an extension that emails their author. `--at none` clears the time.
 
+### Checks before publishing
+
+Content is checked before it's published: images need a description (alt text), links to pages of the site must lead somewhere visitors can go, items of types with excerpts need one, and titles should fit in search results. Extensions add their own checks. The admin shows what they find as you write.
+
+Each check has a level: an **error** blocks publishing (and scheduling, publishing changes, and saving a published item), a **warning** doesn't. Core's checks are warnings; a site makes them errors, or turns them off, with the setting `quire.content.check_levels`:
+
+```bash
+bin/console quire:settings:set quire.content.check_levels '{"core.alt-text": "error", "core.excerpt": "off"}'
+bin/console quire:content:check --list          # the checks and their levels
+bin/console quire:content:check                 # check published content, e.g. in CI or every night
+bin/console quire:content:check --strict        # warnings fail it too
+```
+
+`quire:content:check` exits with 1 when it finds an error, so a scheduled job or a CI step notices, for example when a page that others link to was unpublished. Drafts may have errors: they're work in progress.
+
 ### Editing conflicts
 
 Each save increases the item's **version**. Editing tools send the version they started from, and if someone else saved the item in the meantime, the save fails instead of overwriting the other person's work. On the command line, pass `--expect-version` to get the same protection.

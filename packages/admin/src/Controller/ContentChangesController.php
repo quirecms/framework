@@ -6,6 +6,7 @@ namespace Quire\Admin\Controller;
 
 use Quire\Admin\Content\ContentLists;
 use Quire\Admin\Content\PendingChanges;
+use Quire\Content\Check\ContentChecker;
 use Quire\Content\Command\UpdateContent;
 use Quire\Content\Content;
 use Quire\Content\ContentWriter;
@@ -70,6 +71,7 @@ final readonly class ContentChangesController
         private CsrfTokenManagerInterface $csrf,
         private TranslatorInterface $translator,
         private Environment $twig,
+        private ContentChecker $checker,
     ) {
     }
 
@@ -272,6 +274,7 @@ final readonly class ContentChangesController
             'state' => $this->changes->stateLabel($revision->state),
             'diff' => $this->diffView($type, $revision->diff()),
             'conflicts' => $conflicts ?? ($merge->isClean() ? [] : $merge->conflicts),
+            'checks' => $this->checker->check($this->pending->preview($revision)),
             'reviews' => $reviews,
             'names' => $this->changes->names([$revision->authorId, $revision->scheduledBy, ...array_map(static fn (\Quire\Content\Revision\Review $review): ?string => $review->reviewerId, $reviews)]),
             'own' => $this->changes->isOwn($revision),
