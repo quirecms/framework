@@ -1,0 +1,79 @@
+{#
+    The site's users. Variables: users, total, state (q, role, status, sort), roles (labels by name),
+    columns (id, sorted, sort_url), page, pages, previous_url, next_url, timezone.
+#}
+{% extends '@quire_admin/layout.html.twig' %}
+
+{% block title %}{{ 'Users'|trans({}, 'quire-admin') }}{% endblock %}
+
+{% block actions %}
+    <a class="button" href="{{ path('quire_admin_user_new') }}">{{ 'Add a user'|trans({}, 'quire-admin') }}</a>
+{% endblock %}
+
+{% block content %}
+    <form class="list-tools" role="search" method="get" action="{{ path('quire_admin_users') }}">
+        {% if state.sort != 'name' %}<input type="hidden" name="sort" value="{{ state.sort }}">{% endif %}
+        <label class="list-tools__search">
+            <span>{{ 'Search'|trans({}, 'quire-admin') }}</span>
+            <input type="search" name="q" value="{{ state.q }}" autocomplete="off">
+        </label>
+        <label>
+            <span>{{ 'Role'|trans({}, 'quire-admin') }}</span>
+            <select name="role">
+                <option value="">{{ 'Any'|trans({}, 'quire-admin') }}</option>
+                {% for name, label in roles %}<option value="{{ name }}"{% if state.role == name %} selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select>
+        </label>
+        <label>
+            <span>{{ 'Status'|trans({}, 'quire-admin') }}</span>
+            <select name="status">
+                <option value="">{{ 'Any'|trans({}, 'quire-admin') }}</option>
+                <option value="active"{% if state.status == 'active' %} selected{% endif %}>{{ 'users.status.active'|trans({}, 'quire-admin') }}</option>
+                <option value="suspended"{% if state.status == 'suspended' %} selected{% endif %}>{{ 'users.status.suspended'|trans({}, 'quire-admin') }}</option>
+            </select>
+        </label>
+        <button type="submit" class="button">{{ 'Show'|trans({}, 'quire-admin') }}</button>
+    </form>
+
+    {% if users is empty %}
+        <p class="empty">{{ (state.q or state.role or state.status) ? 'Nothing matches.'|trans({}, 'quire-admin') : 'Nothing here yet.'|trans({}, 'quire-admin') }}</p>
+    {% else %}
+        <div class="table-scroll">
+            <table class="table">
+                <caption class="visually-hidden">{{ 'Users'|trans({}, 'quire-admin') }}, {{ 'page {page} of {pages}'|trans({page: page, pages: pages}, 'quire-admin') }}</caption>
+                <thead>
+                    <tr>
+                        {% for column in columns %}
+                            <th scope="col"{% if column.sorted %} aria-sort="{{ column.sorted == 'asc' ? 'ascending' : 'descending' }}"{% endif %}><a href="{{ column.sort_url }}">{{ ('users.column.' ~ column.id)|trans({}, 'quire-admin') }}</a></th>
+                            {% if column.id == 'username' %}<th scope="col">{{ 'Roles'|trans({}, 'quire-admin') }}</th>{% endif %}
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                        <tr>
+                            <th scope="row">
+                                <a class="content-list__title" href="{{ path('quire_admin_user', {id: user.id}) }}">{{ user.displayName }}</a>
+                                {% if user.email %}<span class="meta">{{ user.email }}</span>{% endif %}
+                                {% if not user.active %}<span class="status status--archived">{{ 'users.status.suspended'|trans({}, 'quire-admin') }}</span>{% endif %}
+                            </th>
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.roles|map(role => roles[role] ?? role)|join(', ') ?: '—' }}</td>
+                            <td><time datetime="{{ user.createdAt|date('c') }}">{{ user.createdAt|date('Y-m-d', timezone) }}</time></td>
+                            <td>{% if user.lastLoginAt %}<time datetime="{{ user.lastLoginAt|date('c') }}">{{ user.lastLoginAt|date('Y-m-d H:i', timezone) }}</time>{% else %}{{ 'never'|trans({}, 'quire-admin') }}{% endif %}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <p class="meta">{{ '{count, plural, one {# user} other {# users}}'|trans({count: total}, 'quire-admin') }}</p>
+    {% endif %}
+
+    {% if pages > 1 %}
+        <nav class="pagination" aria-label="{{ 'Pages'|trans({}, 'quire-admin') }}">
+            {% if previous_url %}<a href="{{ previous_url }}" rel="prev">{{ 'Previous'|trans({}, 'quire-admin') }}</a>{% endif %}
+            <span>{{ 'Page {page} of {pages}'|trans({page: page, pages: pages}, 'quire-admin') }}</span>
+            {% if next_url %}<a href="{{ next_url }}" rel="next">{{ 'Next'|trans({}, 'quire-admin') }}</a>{% endif %}
+        </nav>
+    {% endif %}
+{% endblock %}

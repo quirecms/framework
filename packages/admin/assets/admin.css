@@ -354,6 +354,10 @@ a {
 /* Forms */
 input[type="search"],
 input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="url"],
+input[type="tel"],
 input[type="number"],
 input[type="date"],
 input[type="datetime-local"],
@@ -1009,4 +1013,153 @@ textarea {
 
 .table th .meta {
     display: block;
+}
+
+/* Users and roles */
+/* Layout rules mustn't show what's hidden, e.g. abilities filtered out. */
+[hidden] {
+    display: none !important;
+}
+
+.choices {
+    display: grid;
+    gap: var(--admin-space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.choices li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--admin-space-2);
+}
+
+.choices input {
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+    margin: 0;
+}
+
+.choices label {
+    font-weight: normal;
+}
+
+.inline-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: var(--admin-space-4);
+}
+
+.role-form {
+    display: grid;
+    gap: var(--admin-space-6);
+}
+
+/* Lets the content grid scroll inside its box instead of widening the page on phones. */
+.role-form > * {
+    min-width: 0;
+}
+
+.choices code {
+    overflow-wrap: anywhere;
+}
+
+.ability-section h2 {
+    font-size: 1.125rem;
+}
+
+.ability-section h3 {
+    font-size: 1rem;
+    color: var(--admin-muted);
+}
+
+.ability-grid th,
+.ability-grid td {
+    text-align: center;
+}
+
+.ability-grid tbody th {
+    text-align: start;
+}
+
+.ability-grid input {
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+    margin: 0;
+}
+
+.ability__state {
+    font-size: 0.8125rem;
+    color: var(--admin-warning);
+}
+
+.ability__state:empty {
+    display: none;
+}
+
+.ability-grid .ability__state--changed {
+    display: block;
+    font-size: 0;
+}
+
+.ability-grid .ability__state--changed::before {
+    content: "●";
+    font-size: 0.625rem;
+}
+
+.tag {
+    display: inline-block;
+    padding: 0 var(--admin-space-2);
+    border: 1px solid var(--admin-border);
+    border-radius: var(--admin-radius);
+    font-size: 0.8125rem;
+}
+
+.tag--warning {
+    border-color: var(--admin-warning);
+    color: var(--admin-warning);
+    background: var(--admin-warning-bg);
+}
+
+.review-list {
+    display: grid;
+    gap: var(--admin-space-2);
+    padding-inline-start: var(--admin-space-6);
+}
+
+.review-list__added::marker {
+    content: "+ ";
+    color: var(--admin-success);
+}
+
+.review-list__removed::marker {
+    content: "− ";
+    color: var(--admin-danger);
+}
+
+.access-result ul {
+    margin: 0;
+}
+
+.ability__everyone {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--admin-muted);
+}
+
+.choices .ability__everyone {
+    display: inline;
+}
+
+.card__actions {
+    display: grid;
+    justify-items: start;
+    gap: var(--admin-space-2);
+}
+
+.card__actions .link-button {
+    min-block-size: 1.5rem;
 }

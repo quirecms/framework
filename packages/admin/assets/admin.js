@@ -297,3 +297,25 @@ application.register('focus', class extends Controller {
         this.element.focus();
     }
 });
+
+// Narrows a role's abilities to those matching what's typed, by label or name. Without JavaScript, all show.
+application.register('ability-filter', class extends Controller {
+    static targets = ['tools', 'input', 'item', 'section'];
+
+    connect() {
+        this.toolsTarget.hidden = false;
+    }
+
+    filter() {
+        const words = this.inputTarget.value.toLowerCase().split(/\s+/).filter(Boolean);
+
+        for (const item of this.itemTargets) {
+            item.hidden = !words.every((word) => (item.dataset.text ?? '').includes(word));
+        }
+
+        for (const section of this.sectionTargets) {
+            const items = section.querySelectorAll('[data-ability-filter-target~="item"]');
+            section.hidden = items.length > 0 && [...items].every((item) => item.hidden);
+        }
+    }
+});

@@ -1,0 +1,135 @@
+{#
+    Adding a user (user is null) or changing one. Variables: user, values (display_name, email, username,
+    roles, password_mode), errors (by field: displayName, email, username, roles, password), roles (labels
+    by name), host_roles (roles mapped from the host application), identities, content_count,
+    invitation_problem (why users can't be invited), self (whether it's the signed-in user), timezone.
+#}
+{% extends '@quire_admin/layout.html.twig' %}
+
+{% set ids = {displayName: 'display_name', email: 'email', username: 'username', password: 'password', roles: 'role-' ~ (roles|keys|first)} %}
+
+{% block title %}{{ user ? user.displayName : 'Add a user'|trans({}, 'quire-admin') }}{% endblock %}
+
+{% block content %}
+    {% if errors is not empty %}
+        <div class="error-summary" role="alert" tabindex="-1" data-controller="focus">
+            <h2>{{ 'There\'s a problem'|trans({}, 'quire-admin') }}</h2>
+            <ul>{% for field, message in errors %}<li><a href="#{{ ids[field] ?? 'display_name' }}">{{ message }}</a></li>{% endfor %}</ul>
+        </div>
+    {% endif %}
+
+    <div class="editor">
+        <form method="post" action="{{ user ? path('quire_admin_user', {id: user.id}) : path('quire_admin_user_new') }}" class="settings-form" novalidate>
+            <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_users') }}">
+
+            {% for field, label in {display_name: 'Name', email: 'Email', username: 'Username'} %}
+                {% set key = field == 'display_name' ? 'displayName' : field %}
+                <div class="form-field">
+                    <label for="{{ field }}">{{ label|trans({}, 'quire-admin') }}</label>
+                    {% if field == 'username' and not user %}<p class="field-help" id="username-help">{{ 'Made from the email or name when left empty.'|trans({}, 'quire-admin') }}</p>{% endif %}
+                    {% if errors[key] is defined %}<p class="field-error" id="{{ field }}-error">{{ errors[key] }}</p>{% endif %}
+                    <input type="{{ field == 'email' ? 'email' : 'text' }}" id="{{ field }}" name="{{ field }}" value="{{ values[field] }}"
+                        autocomplete="{{ field == 'display_name' ? 'name' : (field == 'email' ? 'email' : 'username') }}" spellcheck="false"
+                        {% if field == 'display_name' %}required{% endif %}
+                        {% if errors[key] is defined %} aria-invalid="true" aria-describedby="{{ field }}-error"{% elseif field == 'username' and not user %} aria-describedby="username-help"{% endif %}>
+                </div>
+            {% endfor %}
+
+            <fieldset class="form-field">
+                <legend>{{ 'Roles'|trans({}, 'quire-admin') }}</legend>
+                {% if errors.roles is defined %}<p class="field-error" id="roles-error">{{ errors.roles }}</p>{% endif %}
+                <ul class="choices">
+                    {% for name, label in roles %}
+                        <li>
+                            <input type="checkbox" id="role-{{ name }}" name="roles[]" value="{{ name }}"{% if name in values.roles %} checked{% endif %}>
+                            <label for="role-{{ name }}">{{ label }}</label>
+                            <a class="meta" href="{{ path('quire_admin_role', {role: name}) }}">{{ 'what they may do'|trans({}, 'quire-admin') }}<span class="visually-hidden"> ({{ label }})</span></a>
+                        </li>
+                    {% endfor %}
+                </ul>
+                {% if host_roles is not empty %}
+                    <p class="field-help">{{ 'From the application, on every request: {roles}.'|trans({roles: host_roles|map(role => roles[role] ?? role)|join(', ')}, 'quire-admin') }}</p>
+                {% endif %}
+            </fieldset>
+
+            {% if user %}
+                <div class="form-field">
+                    <label for="password">{{ 'New password'|trans({}, 'quire-admin') }}</label>
+                    <p class="field-help" id="password-help">{{ 'Leave empty to keep it. Better: invite them to choose one themselves.'|trans({}, 'quire-admin') }}</p>
+                    {% if errors.password is defined %}<p class="field-error" id="password-error">{{ errors.password }}</p>{% endif %}
+                    <input type="password" id="password" name="password" autocomplete="new-password" aria-describedby="password-help{% if errors.password is defined %} password-error{% endif %}"{% if errors.password is defined %} aria-invalid="true"{% endif %}>
+                </div>
+            {% else %}
+                <fieldset class="form-field">
+                    <legend>{{ 'Password'|trans({}, 'quire-admin') }}</legend>
+                    {% if errors.password is defined %}<p class="field-error" id="password-error">{{ errors.password }}</p>{% endif %}
+                    <ul class="choices">
+                        <li>
+                            <input type="radio" id="password-invite" name="password_mode" value="invite"{% if values.password_mode == 'invite' %} checked{% endif %}{% if invitation_problem %} disabled{% endif %}>
+                            <label for="password-invite">{{ 'Email them a link to choose it (recommended)'|trans({}, 'quire-admin') }}</label>
+                        </li>
+                        <li>
+                            <input type="radio" id="password-set" name="password_mode" value="set"{% if values.password_mode == 'set' %} checked{% endif %}>
+                            <label for="password-set">{{ 'Set it now'|trans({}, 'quire-admin') }}</label>
+                        </li>
+                        <li>
+                            <input type="radio" id="password-none" name="password_mode" value="none"{% if values.password_mode == 'none' %} checked{% endif %}>
+                            <label for="password-none">{{ 'None: they sign in another way, e.g. with single sign-on'|trans({}, 'quire-admin') }}</label>
+                        </li>
+                    </ul>
+                    {% if invitation_problem %}<p class="field-help">{{ invitation_problem }}</p>{% endif %}
+                    <label for="password">{{ 'Password, if you set it now'|trans({}, 'quire-admin') }}</label>
+                    <input type="password" id="password" name="password" autocomplete="new-password"{% if errors.password is defined %} aria-invalid="true" aria-describedby="password-error"{% endif %}>
+                </fieldset>
+            {% endif %}
+
+            <div class="editor__buttons">
+                <button type="submit" class="button">{{ user ? 'Save'|trans({}, 'quire-admin') : 'Add the user'|trans({}, 'quire-admin') }}</button>
+                <a href="{{ path('quire_admin_users') }}">{{ 'Cancel'|trans({}, 'quire-admin') }}</a>
+            </div>
+        </form>
+
+        {% if user %}
+            <aside class="editor__side">
+                <section class="card">
+                    <h2 class="card__title">{{ 'Account'|trans({}, 'quire-admin') }}</h2>
+                    <p>
+                        <span class="status status--{{ user.active ? 'published' : 'archived' }}">{{ ('users.status.' ~ user.status)|trans({}, 'quire-admin') }}</span>
+                        {% if user.email and not user.emailVerifiedAt %} · {{ 'email not confirmed'|trans({}, 'quire-admin') }}{% endif %}
+                    </p>
+                    <p class="meta">
+                        {{ 'Added {date}'|trans({date: user.createdAt|date('Y-m-d', timezone)}, 'quire-admin') }} ·
+                        {{ user.lastLoginAt ? 'last signed in {date}'|trans({date: user.lastLoginAt|date('Y-m-d H:i', timezone)}, 'quire-admin') : 'never signed in'|trans({}, 'quire-admin') }}
+                    </p>
+                    <p class="meta">{{ '{count, plural, =0 {No content} one {Author of # item} other {Author of # items}}'|trans({count: content_count}, 'quire-admin') }}</p>
+                    <div class="card__actions">
+                    <a class="link-button" href="{{ path('quire_admin_access', {user: user.username}) }}">{{ 'Check what they may do'|trans({}, 'quire-admin') }}</a>
+                    {% if user.email and not invitation_problem %}
+                        <form method="post" action="{{ path('quire_admin_user_act', {id: user.id, action: 'invite'}) }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_users') }}">
+                            <button type="submit" class="link-button">{{ user.passwordHash ? 'Email a link to choose a new password'|trans({}, 'quire-admin') : 'Invite again'|trans({}, 'quire-admin') }}</button>
+                        </form>
+                    {% endif %}
+                    {% if not self %}
+                        <form method="post" action="{{ path('quire_admin_user_act', {id: user.id, action: user.active ? 'suspend' : 'activate'}) }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_users') }}">
+                            <button type="submit" class="link-button{% if user.active %} link-button--danger{% endif %}">{{ user.active ? 'Suspend'|trans({}, 'quire-admin') : 'Activate'|trans({}, 'quire-admin') }}</button>
+                        </form>
+                        <a class="link-button link-button--danger" href="{{ path('quire_admin_user_delete', {id: user.id}) }}">{{ 'Delete'|trans({}, 'quire-admin') }}</a>
+                    {% endif %}
+                    </div>
+                </section>
+                {% if identities is not empty %}
+                    <section class="card">
+                        <h2 class="card__title">{{ 'Signs in with'|trans({}, 'quire-admin') }}</h2>
+                        <ul class="item-list">
+                            {% for identity in identities %}
+                                <li><span>{{ identity.provider == 'host' ? 'The application'|trans({}, 'quire-admin') : identity.provider }}</span> <span class="meta">{{ identity.subject }}{% if identity.last_used_at %} · {{ identity.last_used_at|date('Y-m-d', timezone) }}{% endif %}</span></li>
+                            {% endfor %}
+                        </ul>
+                    </section>
+                {% endif %}
+            </aside>
+        {% endif %}
+    </div>
+{% endblock %}

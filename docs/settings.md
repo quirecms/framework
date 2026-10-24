@@ -92,6 +92,7 @@ Values use the same format as `quire:settings:set`. A setting fixed by an enviro
 | `quire.auth.password_reset` | bool | `false` | Whether users who forgot their password can choose a new one through an emailed link |
 | `quire.mail.from` | string | (empty) | Who emails come from, e.g. `News <news@example.com>`; empty for the site title and `noreply@` the site's domain |
 | `quire.permissions.grants` | json | `[]` | Abilities granted to or revoked from roles, on top of the defaults. Change them with `quire:permissions:grant` and `revoke` (see [permissions](permissions.md)). |
+| `quire.permissions.roles` | json | `[]` | Roles the site added, by name, with their labels. Change them with `quire:permissions:create-role` and `delete-role` (see [permissions](permissions.md#roles)). |
 | `theme.active` | string | `quire-theme-default` | The site's theme. Change it with `quire:theme:use` (see [themes](themes.md)). |
 | `quire.content.revisions_keep` | int | `50` | How many revisions to keep per content item. Older ones are deleted when a new one is saved. `0` keeps all. |
 | `quire.storage.gc_grace_days` | int | `1` | For how many days the daily clean-up keeps stored files nothing uses (see [storage](storage.md#cleaning-up)) |

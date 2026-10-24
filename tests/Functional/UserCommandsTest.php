@@ -71,6 +71,8 @@ final class UserCommandsTest extends KernelTestCase
 
         [, $output] = $this->console('quire:user:role', ['user' => 'grace@example.com', '--add' => ['editor', 'admin']]);
         self::assertStringContainsString('Grace: admin, editor', $output);
+        // Another admin, so Grace isn't the last.
+        $this->console('quire:user:create', ['email' => 'ada@example.com', '--no-password' => true, '--admin' => true]);
         [, $output] = $this->console('quire:user:role', ['user' => 'grace', '--remove' => ['admin']]);
         self::assertStringContainsString('Grace: editor', $output);
         [$status, $output] = $this->console('quire:user:role', ['user' => 'grace', '--add' => ['wizard']]);
@@ -85,6 +87,61 @@ final class UserCommandsTest extends KernelTestCase
         [$status, $output] = $this->console('quire:user:activate', ['user' => 'nobody']);
         self::assertSame(1, $status);
         self::assertStringContainsString('No user with the ID, email or username "nobody".', $output);
+    }
+
+    public function testInvitesUsersToChooseTheirPassword(): void
+    {
+        [$status, $output] = $this->console('quire:user:create', ['email' => 'grace@example.com', '--invite' => true]);
+        self::assertSame(0, $status, $output);
+        self::assertStringContainsString('Invited grace@example.com by email to choose a password.', $output);
+        self::assertEmailCount(1);
+        self::assertNull(self::getContainer()->get(UserRepository::class)->findByLogin('grace')?->passwordHash);
+
+        [, $output] = $this->console('quire:user:invite', ['user' => 'grace']);
+        self::assertStringContainsString('Invited Grace (grace@example.com) to choose a password.', $output);
+
+        $this->console('quire:user:create', ['email' => 'ada@example.com', '--no-password' => true]);
+        $this->connection->executeStatement("UPDATE quire.app_user SET email = NULL WHERE username = 'ada'");
+        [$status, $output] = $this->console('quire:user:invite', ['user' => 'ada']);
+        self::assertSame(1, $status);
+        self::assertStringContainsString('The user has no email to send the invitation to.', $output);
+    }
+
+    public function testManagesSiteRolesAndExplainsAccess(): void
+    {
+        [$status, $output] = $this->console('quire:permissions:create-role', ['name' => 'translator', 'label' => 'Translator', '--from' => 'editor']);
+        self::assertSame(0, $status, $output);
+        self::assertStringContainsString('Created the role translator ("Translator"), with the abilities of editor.', $output);
+        [, $output] = $this->console('quire:permissions:create-role', ['name' => 'translator', 'label' => 'Übersetzer']);
+        self::assertStringContainsString('Renamed the role translator to "Übersetzer".', $output);
+
+        $this->console('quire:user:create', ['email' => 'ana@example.com', '--no-password' => true, '--role' => ['translator']]);
+        [, $output] = $this->console('quire:permissions:explain', ['user' => 'ana', 'ability' => 'content.post.publish']);
+        self::assertStringContainsString('Ana may content.post.publish. * Their role "translator" has it, because the site granted it.', $output);
+        [, $output] = $this->console('quire:permissions:explain', ['user' => 'ana', 'ability' => 'quire.settings.manage']);
+        self::assertStringContainsString('Ana may not quire.settings.manage. * None of their roles (translator) has it.', $output);
+
+        [$status, $output] = $this->console('quire:permissions:delete-role', ['name' => 'editor']);
+        self::assertSame(1, $status);
+        self::assertStringContainsString('"editor" is declared by Quire', $output);
+        [$status] = $this->console('quire:permissions:delete-role', ['name' => 'translator']);
+        self::assertSame(1, $status, 'A user has it: not without asking.');
+        [, $output] = $this->console('quire:permissions:delete-role', ['name' => 'translator', '--force' => true]);
+        self::assertStringContainsString('Deleted the role translator.', $output);
+        self::assertSame([], self::getContainer()->get(UserRepository::class)->findByLogin('ana')?->roles);
+    }
+
+    public function testKeepsAnActiveAdmin(): void
+    {
+        $this->connection->executeStatement("UPDATE quire.app_user SET status = 'suspended' WHERE 'admin' = ANY(roles)");
+        $this->console('quire:user:create', ['email' => 'ada@example.com', '--no-password' => true, '--admin' => true]);
+
+        [$status, $output] = $this->console('quire:user:suspend', ['user' => 'ada']);
+        self::assertSame(1, $status);
+        self::assertStringContainsString('You can\'t suspend the last active admin', $output);
+        [$status, $output] = $this->console('quire:user:role', ['user' => 'ada', '--remove' => ['admin']]);
+        self::assertSame(1, $status);
+        self::assertStringContainsString('You can\'t take the admin role from the last active admin', $output);
     }
 
     public function testDeletesUsersWithTheirContentReassignedOrKept(): void

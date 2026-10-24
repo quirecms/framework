@@ -1,0 +1,10 @@
+{# One ability's box. Variables: name, label, has, defaults, everyone (Everyone's abilities), hide_label. #}
+{% set id = 'ability-' ~ name|replace({'.': '-'}) %}
+{% set default = name in defaults %}
+{% set on = name in has %}
+<input type="checkbox" id="{{ id }}" name="abilities[]" value="{{ name }}"{% if on %} checked{% endif %} aria-describedby="{{ id }}-state">
+<label for="{{ id }}"{% if hide_label ?? false %} class="visually-hidden"{% endif %}>{{ label }}</label>
+<span class="ability__state{% if on != default %} ability__state--changed{% endif %}" id="{{ id }}-state">
+    {%- if on != default -%}{{ (default ? 'changed: by default it has this' : 'changed: by default it hasn\'t this')|trans({}, 'quire-admin') }}{%- endif -%}
+</span>
+{% if not on and name in everyone %}<span class="ability__everyone">{{ 'everyone may'|trans({}, 'quire-admin') }}</span>{% endif %}

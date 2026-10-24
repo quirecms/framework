@@ -1,0 +1,114 @@
+{#
+    What a role may do. Variables: role, label, owner, site_role, users (null for Everyone), grid (content
+    types × actions; null for admins), sections (other abilities, by extension and group), has, defaults
+    (what it has by default), everyone (Everyone's abilities, which its users have too), changed (whether
+    it differs from the defaults), problems.
+#}
+{% extends '@quire_admin/layout.html.twig' %}
+
+{% block title %}{{ label }}{% endblock %}
+
+{% block actions %}
+    <a class="button button--secondary" href="{{ path('quire_admin_roles') }}">{{ 'All roles'|trans({}, 'quire-admin') }}</a>
+{% endblock %}
+
+{% block content %}
+    <p class="meta">
+        <code>{{ role }}</code> ·
+        {% if users is null %}
+            {{ 'Everyone, including visitors who aren\'t signed in.'|trans({}, 'quire-admin') }}
+        {% else %}
+            <a href="{{ path('quire_admin_users', {role: role}) }}">{{ '{count, plural, =0 {No users} one {# user} other {# users}}'|trans({count: users}, 'quire-admin') }}</a>
+        {% endif %}
+        · {{ owner is null ? 'added on this site'|trans({}, 'quire-admin') : (owner == 'core' ? 'from Quire'|trans({}, 'quire-admin') : 'from {extension}'|trans({extension: owner}, 'quire-admin')) }}
+    </p>
+
+    {% if role == 'admin' %}
+        <p class="notice notice--warning">{{ 'Admins may do everything, except strict abilities: those that destroy data or are for a few people only. Only those can be given to admins here.'|trans({}, 'quire-admin') }}</p>
+    {% endif %}
+    {% for problem in problems %}<p class="notice notice--warning">{{ problem }}</p>{% endfor %}
+
+    {# The review is a page of its own, the answer to this POST: Turbo only follows redirects. #}
+    <form method="post" action="{{ path('quire_admin_role_review', {role: role}) }}" class="role-form" data-controller="ability-filter" data-turbo="false">
+        <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_roles') }}">
+
+        <div class="list-tools" hidden data-ability-filter-target="tools">
+            <label class="list-tools__search">
+                <span>{{ 'Find an ability'|trans({}, 'quire-admin') }}</span>
+                <input type="search" autocomplete="off" data-action="ability-filter#filter" data-ability-filter-target="input">
+            </label>
+        </div>
+
+        {% if grid and grid.types is not empty %}
+            <section class="ability-section" data-ability-filter-target="section">
+                <h2>{{ 'Content'|trans({}, 'quire-admin') }}</h2>
+                <div class="table-scroll">
+                    <table class="table ability-grid">
+                        <caption class="visually-hidden">{{ 'What {role} may do with content'|trans({role: label}, 'quire-admin') }}</caption>
+                        <thead>
+                            <tr>
+                                <td></td>
+                                {% for action, action_label in grid.actions %}<th scope="col">{{ action_label }}</th>{% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for type in grid.types %}
+                                <tr data-ability-filter-target="item" data-text="{{ type.label|lower }} {{ type.id }}">
+                                    <th scope="row">{{ type.label }}</th>
+                                    {% for action, action_label in grid.actions %}
+                                        <td>
+                                            {% if type.abilities[action] is defined %}
+                                                {% include '@quire_admin/roles/_checkbox.html.twig' with {name: type.abilities[action], label: action_label ~ ': ' ~ type.label, hide_label: true} %}
+                                            {% endif %}
+                                        </td>
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <p class="field-help">{{ '“Edit their own” is for items they wrote. Viewing drafts lets them preview unpublished items on the site.'|trans({}, 'quire-admin') }}</p>
+            </section>
+        {% endif %}
+
+        {% for section in sections %}
+            <section class="ability-section" data-ability-filter-target="section">
+                <h2>{{ section.label }}</h2>
+                {% for group in section.groups %}
+                    {% if group.label %}<h3>{{ group.label }}</h3>{% endif %}
+                    <ul class="choices">
+                        {% for entry in group.abilities %}
+                            <li data-ability-filter-target="item" data-text="{{ entry.label|lower }} {{ entry.name }}">
+                                {% include '@quire_admin/roles/_checkbox.html.twig' with {name: entry.name, label: entry.label} %}
+                                <code class="meta">{{ entry.name }}</code>
+                                {% if entry.strict %}<span class="tag">{{ 'strict'|trans({}, 'quire-admin') }}</span>{% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endfor %}
+            </section>
+        {% else %}
+            {% if role == 'admin' %}<p>{{ 'No ability is strict: admins may do everything.'|trans({}, 'quire-admin') }}</p>{% endif %}
+        {% endfor %}
+
+        <div class="editor__buttons role-form__buttons">
+            <button type="submit" class="button">{{ 'Review the changes'|trans({}, 'quire-admin') }}</button>
+            {% if changed %}<button type="submit" class="button button--secondary" name="defaults" value="1">{{ 'Back to the defaults'|trans({}, 'quire-admin') }}</button>{% endif %}
+        </div>
+    </form>
+
+    {% if site_role %}
+        <section class="card">
+            <h2 class="card__title">{{ 'This role'|trans({}, 'quire-admin') }}</h2>
+            <form method="post" action="{{ path('quire_admin_role_rename', {role: role}) }}" class="inline-form">
+                <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_roles') }}">
+                <div class="form-field">
+                    <label for="role-label">{{ 'Name'|trans({}, 'quire-admin') }}</label>
+                    <input type="text" id="role-label" name="label" value="{{ label }}" required maxlength="50">
+                </div>
+                <div class="editor__buttons"><button type="submit" class="button button--secondary">{{ 'Rename'|trans({}, 'quire-admin') }}</button></div>
+            </form>
+            <a class="link-button link-button--danger" href="{{ path('quire_admin_role_delete', {role: role}) }}">{{ 'Delete this role'|trans({}, 'quire-admin') }}</a>
+        </section>
+    {% endif %}
+{% endblock %}

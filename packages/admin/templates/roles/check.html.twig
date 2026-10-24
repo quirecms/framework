@@ -1,0 +1,59 @@
+{#
+    Checking access: whether a user may do something and why, and which roles may. Variables: reference
+    (what was entered for the user), user, not_found, ability, ability_label, abilities (choices by group),
+    explanation (granted, reasons, perItem), holders (name, label, users).
+#}
+{% extends '@quire_admin/layout.html.twig' %}
+
+{% block title %}{{ 'Check access'|trans({}, 'quire-admin') }}{% endblock %}
+
+{% block content %}
+    <p class="field-help">{{ 'Find out whether someone may do something, and why; or, without a user, which roles may.'|trans({}, 'quire-admin') }}</p>
+
+    <form method="get" action="{{ path('quire_admin_access') }}" class="list-tools" role="search">
+        <label>
+            <span>{{ 'User'|trans({}, 'quire-admin') }}</span>
+            <input type="text" name="user" value="{{ reference }}" autocomplete="off" spellcheck="false" placeholder="{{ 'username or email'|trans({}, 'quire-admin') }}">
+        </label>
+        <label>
+            <span>{{ 'Ability'|trans({}, 'quire-admin') }}</span>
+            <select name="ability">
+                <option value="">{{ 'Choose'|trans({}, 'quire-admin') }}</option>
+                {% for group, choices in abilities %}
+                    <optgroup label="{{ group }}">
+                        {% for name, label in choices %}<option value="{{ name }}"{% if name == ability %} selected{% endif %}>{{ label }}</option>{% endfor %}
+                    </optgroup>
+                {% endfor %}
+            </select>
+        </label>
+        <button type="submit" class="button">{{ 'Check'|trans({}, 'quire-admin') }}</button>
+    </form>
+
+    {% if not_found %}<p class="notice notice--error" role="alert">{{ 'No user with the username or email “{user}”.'|trans({user: reference}, 'quire-admin') }}</p>{% endif %}
+
+    {% if explanation %}
+        <section class="card access-result" aria-live="polite">
+            <h2 class="card__title">
+                <span class="status status--{{ explanation.granted ? 'published' : 'archived' }}">{{ explanation.granted ? 'Yes'|trans({}, 'quire-admin') : 'No'|trans({}, 'quire-admin') }}</span>
+                {{ (explanation.granted ? '{name} may: {ability}' : '{name} may not: {ability}')|trans({name: user.displayName, ability: ability_label}, 'quire-admin') }}
+            </h2>
+            <ul>{% for reason in explanation.reasons %}<li>{{ reason }}</li>{% endfor %}</ul>
+            <p class="meta"><a href="{{ path('quire_admin_user', {id: user.id}) }}">{{ 'Change their roles'|trans({}, 'quire-admin') }}</a></p>
+        </section>
+    {% endif %}
+
+    {% if ability %}
+        <section class="card">
+            <h2 class="card__title">{{ 'Who may: {ability}'|trans({ability: ability_label}, 'quire-admin') }}</h2>
+            {% if holders is empty %}
+                <p>{{ 'No role has it.'|trans({}, 'quire-admin') }}</p>
+            {% else %}
+                <ul class="item-list">
+                    {% for holder in holders %}
+                        <li><a href="{{ path('quire_admin_role', {role: holder.name}) }}">{{ holder.label }}</a> <span class="meta">{{ holder.users is null ? 'everyone'|trans({}, 'quire-admin') : '{count, plural, =0 {no users} one {# user} other {# users}}'|trans({count: holder.users}, 'quire-admin') }}</span></li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </section>
+    {% endif %}
+{% endblock %}

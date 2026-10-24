@@ -1,0 +1,72 @@
+{#
+    The roles, and adding one. Variables: roles (name, label, owner: "core", an extension's ID or null for
+    the site's own, users, abilities, changed), ability_count.
+#}
+{% extends '@quire_admin/layout.html.twig' %}
+
+{% block title %}{{ 'Roles'|trans({}, 'quire-admin') }}{% endblock %}
+
+{% block actions %}
+    <a class="button button--secondary" href="{{ path('quire_admin_access') }}">{{ 'Check access'|trans({}, 'quire-admin') }}</a>
+{% endblock %}
+
+{% block content %}
+    <p class="field-help">{{ 'A role is what a group of users may do. Users can have several roles; each adds to what they may do.'|trans({}, 'quire-admin') }}</p>
+
+    <div class="table-scroll">
+        <table class="table">
+            <caption class="visually-hidden">{{ 'Roles'|trans({}, 'quire-admin') }}</caption>
+            <thead>
+                <tr>
+                    <th scope="col">{{ 'Role'|trans({}, 'quire-admin') }}</th>
+                    <th scope="col">{{ 'Users'|trans({}, 'quire-admin') }}</th>
+                    <th scope="col">{{ 'May do'|trans({}, 'quire-admin') }}</th>
+                    <th scope="col">{{ 'From'|trans({}, 'quire-admin') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for role in roles %}
+                    <tr>
+                        <th scope="row">
+                            <a class="content-list__title" href="{{ path('quire_admin_role', {role: role.name}) }}">{{ role.label }}</a>
+                            <span class="meta"><code>{{ role.name }}</code>{% if role.changed %} · {{ '{count, plural, one {# change from the defaults} other {# changes from the defaults}}'|trans({count: role.changed}, 'quire-admin') }}{% endif %}</span>
+                        </th>
+                        <td>
+                            {% if role.users is null %}
+                                {{ 'everyone'|trans({}, 'quire-admin') }}
+                            {% else %}
+                                <a href="{{ path('quire_admin_users', {role: role.name}) }}">{{ '{count, plural, =0 {No users} one {# user} other {# users}}'|trans({count: role.users}, 'quire-admin') }}</a>
+                            {% endif %}
+                        </td>
+                        <td>{{ role.name == 'admin' ? 'everything but strict abilities'|trans({}, 'quire-admin') : '{count} of {total}'|trans({count: role.abilities, total: ability_count}, 'quire-admin') }}</td>
+                        <td>{{ role.owner is null ? 'this site'|trans({}, 'quire-admin') : (role.owner == 'core' ? 'Quire' : role.owner) }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <section class="card">
+        <h2 class="card__title">{{ 'Add a role'|trans({}, 'quire-admin') }}</h2>
+        <form method="post" action="{{ path('quire_admin_roles_create') }}" class="inline-form">
+            <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_roles') }}">
+            <div class="form-field">
+                <label for="role-label">{{ 'Name'|trans({}, 'quire-admin') }}</label>
+                <input type="text" id="role-label" name="label" required maxlength="50" placeholder="{{ 'e.g. Translator'|trans({}, 'quire-admin') }}">
+            </div>
+            <div class="form-field">
+                <label for="role-name">{{ 'ID'|trans({}, 'quire-admin') }}</label>
+                <input type="text" id="role-name" name="name" required maxlength="32" pattern="[a-z][a-z0-9]*([\-_][a-z0-9]+)*" spellcheck="false" aria-describedby="role-name-help" placeholder="translator">
+                <p class="field-help" id="role-name-help">{{ 'Lowercase letters, digits, "-" and "_"; for the command line.'|trans({}, 'quire-admin') }}</p>
+            </div>
+            <div class="form-field">
+                <label for="role-from">{{ 'Start with what this role may do'|trans({}, 'quire-admin') }}</label>
+                <select id="role-from" name="from">
+                    <option value="">{{ 'Nothing'|trans({}, 'quire-admin') }}</option>
+                    {% for role in roles|filter(role => role.name not in ['guest', 'admin']) %}<option value="{{ role.name }}">{{ role.label }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="editor__buttons"><button type="submit" class="button">{{ 'Add the role'|trans({}, 'quire-admin') }}</button></div>
+        </form>
+    </section>
+{% endblock %}
