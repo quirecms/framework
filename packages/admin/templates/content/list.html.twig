@@ -1,7 +1,7 @@
 {#
     The list of a content type's items: views by status, search and filters (a GET form), then one form
     for the actions, with a checkbox per row for the selected items and a button per row action.
-    Variables: type, views, state, filters, columns, rows, page, trash, bulk_actions, previous_url, next_url,
+    Variables: type, can_create, views, state, filters, columns, rows, page, trash, bulk_actions, previous_url, next_url,
     action_url,
     state_query.
 #}
@@ -10,6 +10,12 @@
 {% set plural = type.pluralLabel|trans({}, type.owner) %}
 
 {% block title %}{{ plural }}{% endblock %}
+
+{% block actions %}
+    {% if can_create %}
+        <a class="button" href="{{ path('quire_admin_content_new', {type: type.id}) }}">{{ 'New'|trans({}, 'quire-admin') }}<span class="visually-hidden"> ({{ type.label|trans({}, type.owner) }})</span></a>
+    {% endif %}
+{% endblock %}
 
 {% block content %}
     <nav class="views" aria-label="{{ 'Views'|trans({}, 'quire-admin') }}">
@@ -110,7 +116,7 @@
                                 {% for cell in row.cells %}
                                     {% if loop.first %}
                                         <th scope="row">
-                                            <span class="content-list__title">{{ cell }}</span>
+                                            <a class="content-list__title" href="{{ path('quire_admin_content_edit', {type: type.id, id: item.id}) }}">{{ cell }}</a>
                                             {% if item.isPublic %}
                                                 <a class="meta" href="{{ quire_url(item) }}">{{ 'View'|trans({}, 'quire-admin') }}<span class="visually-hidden"> “{{ item.title }}”</span></a>
                                             {% endif %}

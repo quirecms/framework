@@ -78,6 +78,19 @@ final class PackagesTest extends TestCase
         }
     }
 
+    public function testTheTestsInstallTheAdminWithItsOwnManifest(): void
+    {
+        $fixture = $this->json('tests/Fixtures/installed.json')['packages'] ?? null;
+        self::assertIsArray($fixture);
+        $admin = array_find($fixture, static fn (mixed $package): bool => \is_array($package) && 'quire/admin' === ($package['name'] ?? null));
+        self::assertIsArray($admin);
+
+        $extra = $this->json('packages/admin/composer.json')['extra'] ?? null;
+        self::assertIsArray($extra);
+        self::assertIsArray($admin['extra'] ?? null);
+        self::assertEquals($extra['quire'] ?? null, $admin['extra']['quire'] ?? null, 'tests/Fixtures/installed.json lists quire/admin with the manifest of its composer.json, e.g. the same npm packages.');
+    }
+
     /**
      * @return string The version that the packages are developing, as the path repository of the
      *                application gives it to them, e.g. "0.1.x-dev"

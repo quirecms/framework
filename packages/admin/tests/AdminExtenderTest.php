@@ -7,6 +7,7 @@ namespace Quire\Admin\Tests;
 use PHPUnit\Framework\TestCase;
 use Quire\Admin\Dashboard\Widget\ContentWidget;
 use Quire\Admin\Extend\Admin;
+use Quire\Admin\Tests\Fixtures\StarsWidget;
 use Quire\Admin\Tests\Fixtures\TitleLengthColumn;
 use Quire\Extend\ExtenderContext;
 use Quire\Extend\ExtenderException;
@@ -48,6 +49,18 @@ final class AdminExtenderTest extends TestCase
         $this->assertFails(new Admin()->contentFilter('acme-reviews.length', TitleLengthColumn::class), 'Content list filters are classes implementing Quire\Admin\Content\ContentFilterInterface.'); // @phpstan-ignore argument.type (testing the runtime check)
         $this->assertFails(new Admin()->contentAction('Acme Reviews', TitleLengthColumn::class), 'IDs are lowercase letters and digits'); // @phpstan-ignore argument.type (testing the runtime check)
         $this->assertFails(new Admin()->contentColumn('acme-reviews.other', TitleLengthColumn::class, types: []), 'Give the content types as a list of IDs');
+    }
+
+    public function testAddsFieldWidgets(): void
+    {
+        $this->apply(new Admin()->fieldWidget('acme-reviews.stars', StarsWidget::class));
+
+        self::assertSame(['acme-reviews.stars' => ['class' => StarsWidget::class, 'owner' => 'acme-reviews']], $this->container->getParameterBag()->all()[Admin::FIELD_WIDGETS_PARAMETER] ?? null);
+        self::assertTrue($this->container->getDefinition(StarsWidget::class)->hasTag(Admin::FIELD_WIDGET_TAG));
+
+        $this->assertFails(new Admin()->fieldWidget('acme-reviews.stars', StarsWidget::class), 'The widget is already added by "acme-reviews".');
+        $this->assertFails(new Admin()->fieldWidget('number', StarsWidget::class), 'This is one of the admin\'s own widgets.');
+        $this->assertFails(new Admin()->fieldWidget('acme-reviews.other', TitleLengthColumn::class), 'Field widgets are classes implementing Quire\Admin\Content\Form\FieldWidgetInterface.'); // @phpstan-ignore argument.type (testing the runtime check)
     }
 
     public function testContentListsHaveTheirParameterWithoutAdditions(): void

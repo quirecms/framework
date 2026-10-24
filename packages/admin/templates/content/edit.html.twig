@@ -1,0 +1,185 @@
+{#
+    The editor of a content item: the text in the main column, publishing and the item's place in the
+    side column. One form; its buttons say what to do (intent): save, preview, or save and take a
+    transition. Variables: type, item (null when new), version, values, errors, fields (by group: field,
+    label, control, html, error), transitions, can_save, authors, parents, preview, conflict, timezone.
+#}
+{% extends '@quire_admin/layout.html.twig' %}
+{% import '@quire_admin/content/widgets.html.twig' as widgets %}
+
+{% set plural = type.pluralLabel|trans({}, type.owner) %}
+{% set ids = {title: 'title', slug: 'slug', body: 'body', excerpt: 'excerpt', parent_id: 'parent_id', position: 'position', author_id: 'author_id', published_at: 'publish_at'} %}
+
+{% block title %}{{ item ? item.title : 'New item'|trans({}, 'quire-admin') }}{% endblock %}
+
+{% block actions %}
+    <p class="page-header__links">
+        <a href="{{ path('quire_admin_content', {type: type.id}) }}">{{ 'All {type}'|trans({type: plural}, 'quire-admin') }}</a>
+        {% if item and item.isPublic %}
+            <a href="{{ quire_url(item) }}">{{ 'View on the site'|trans({}, 'quire-admin') }}</a>
+        {% endif %}
+    </p>
+{% endblock %}
+
+{% block content %}
+    {% if conflict %}
+        <div class="notice notice--warning" role="alert">
+            <p>{{ 'Someone saved this item after you opened it. What you entered is below and isn\'t saved. Save again to replace their changes with yours, or open the item in a new tab to see theirs first.'|trans({}, 'quire-admin') }}</p>
+            <p><a href="{{ path('quire_admin_content_edit', {type: type.id, id: item.id}) }}" target="_blank">{{ 'Open the saved item in a new tab'|trans({}, 'quire-admin') }}</a></p>
+        </div>
+    {% endif %}
+
+    {% if item and item.deletedAt %}
+        <p class="notice notice--warning" role="status">{{ 'This item is in the trash. Restore it from the list to change it.'|trans({}, 'quire-admin') }}</p>
+    {% elseif not can_save %}
+        <p class="notice notice--warning" role="status">{{ 'This item is published, and changes to it go live, which you may not do.'|trans({}, 'quire-admin') }}</p>
+    {% endif %}
+
+    {% if errors is not empty %}
+        <div class="error-summary" role="alert" tabindex="-1" data-controller="focus">
+            <h2>{{ 'There\'s a problem'|trans({}, 'quire-admin') }}</h2>
+            <ul>
+                {% for property, message in errors %}
+                    {% set target = property starts with 'fields.' ? 'field-' ~ property[7:] : (ids[property] ?? null) %}
+                    <li>{% if target %}<a href="#{{ target }}">{{ message }}</a>{% else %}{{ message }}{% endif %}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    {% set readonly = not can_save or (item and item.deletedAt) %}
+
+    <form method="post" class="editor" novalidate
+          action="{{ item ? path('quire_admin_content_save', {type: type.id, id: item.id}) : path('quire_admin_content_create', {type: type.id}) }}"
+          data-controller="content-editor"
+          data-content-editor-preview-url-value="{{ path('quire_admin_content_preview', {type: type.id}) }}">
+        <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_content_editor') }}">
+        {% if item %}
+            <input type="hidden" name="version" value="{{ version }}">
+            <input type="hidden" name="id" value="{{ item.id }}" data-content-editor-target="id">
+        {% endif %}
+
+        <fieldset class="editor__main"{% if readonly %} disabled{% endif %}>
+            <legend class="visually-hidden">{{ 'Text'|trans({}, 'quire-admin') }}</legend>
+
+            <div class="form-field">
+                {{ _self.field('title', 'Title'|trans({}, 'quire-admin'), errors.title ?? null, true) }}
+                <input type="text" id="title" name="title" class="editor__title" value="{{ values.title }}" required{{ _self.described('title', errors.title ?? null) }}>
+            </div>
+
+            <div class="form-field">
+                <div class="editor__body-heading">
+                    <label for="body">{{ 'Text'|trans({}, 'quire-admin') }}</label>
+                    <span class="meta">{{ 'Markdown'|trans({}, 'quire-admin') }}</span>
+                </div>
+                {% if errors.body is defined %}<p class="field-error" id="body-error">{{ errors.body }}</p>{% endif %}
+                <div class="markdown-field" data-controller="markdown-editor" data-markdown-editor-label-value="{{ 'Text'|trans({}, 'quire-admin') }}" data-markdown-editor-labels-value="{{ widgets.toolbar_labels() }}">
+                    <textarea id="body" name="body" rows="18" class="markdown-field__source" data-markdown-editor-target="source" data-content-editor-target="body"{{ _self.described('body', errors.body ?? null) }}>{{ values.body }}</textarea>
+                </div>
+            </div>
+
+            <section class="preview" aria-labelledby="preview-heading" data-content-editor-target="preview"{% if preview is null %} hidden{% endif %}>
+                <h2 id="preview-heading">{{ 'Preview'|trans({}, 'quire-admin') }}</h2>
+                <div class="preview__body prose" data-content-editor-target="previewBody">{{ preview|raw }}</div>
+            </section>
+
+            {% if type.has('excerpt') %}
+                <div class="form-field">
+                    {{ _self.field('excerpt', 'Excerpt'|trans({}, 'quire-admin'), errors.excerpt ?? null) }}
+                    <p class="field-help" id="excerpt-help">{{ 'A short summary for lists and search engines.'|trans({}, 'quire-admin') }}</p>
+                    <textarea id="excerpt" name="excerpt" rows="3" aria-describedby="excerpt-help{{ errors.excerpt is defined ? ' excerpt-error' }}"{% if errors.excerpt is defined %} aria-invalid="true"{% endif %}>{{ values.excerpt }}</textarea>
+                </div>
+            {% endif %}
+
+            {% for group, list in fields %}
+                <fieldset class="field-group">
+                    <legend>{{ group ?: 'Fields'|trans({}, 'quire-admin') }}</legend>
+                    {% for entry in list %}
+                        <div class="form-field form-field--{{ entry.field.widget }}">
+                            <label for="{{ entry.control.id }}">{{ entry.label }}{% if entry.field.required %} <span class="meta">({{ 'required'|trans({}, 'quire-admin') }})</span>{% endif %}</label>
+                            {% if entry.field.help %}<p class="field-help" id="{{ entry.control.id }}-help">{{ entry.field.help }}</p>{% endif %}
+                            {% if entry.error %}<p class="field-error" id="{{ entry.control.id }}-error">{{ entry.error }}</p>{% endif %}
+                            {{ entry.html }}
+                        </div>
+                    {% endfor %}
+                </fieldset>
+            {% endfor %}
+        </fieldset>
+
+        <div class="editor__side">
+            <section class="panel" aria-labelledby="publishing-heading">
+                <h2 id="publishing-heading">{{ 'Publishing'|trans({}, 'quire-admin') }}</h2>
+                <dl class="facts">
+                    <dt>{{ 'Status'|trans({}, 'quire-admin') }}</dt>
+                    <dd>{% if item %}<span class="status status--{{ item.status }}">{{ ('status.' ~ item.status)|trans({}, 'quire-admin') }}</span>{% else %}{{ 'Not saved yet'|trans({}, 'quire-admin') }}{% endif %}</dd>
+                    {% if item and item.publishedAt %}
+                        <dt>{{ 'Published'|trans({}, 'quire-admin') }}</dt>
+                        <dd><time datetime="{{ item.publishedAt|date('c') }}">{{ item.publishedAt|date('Y-m-d H:i', timezone) }}</time></dd>
+                    {% endif %}
+                </dl>
+
+                {% if not readonly %}
+                    <div class="editor__buttons">
+                        <button type="submit" class="button" name="intent" value="save">{{ 'Save'|trans({}, 'quire-admin') }}</button>
+                        <button type="submit" class="button button--secondary" name="intent" value="preview" formnovalidate data-content-editor-target="previewButton">{{ 'Preview'|trans({}, 'quire-admin') }}</button>
+                    </div>
+
+                    {% for intent, label in transitions %}
+                        {% if intent == 'transition:schedule' %}
+                            <div class="form-field">
+                                <label for="publish_at">{{ 'Publish on'|trans({}, 'quire-admin') }} <span class="meta">({{ timezone }})</span></label>
+                                {% if errors.published_at is defined %}<p class="field-error" id="publish_at-error">{{ errors.published_at }}</p>{% endif %}
+                                <input type="datetime-local" id="publish_at" name="publish_at"{{ _self.described('publish_at', errors.published_at ?? null) }}>
+                            </div>
+                        {% endif %}
+                        <button type="submit" class="button button--secondary" name="intent" value="{{ intent }}">{{ 'Save and {action}'|trans({action: label|lower}, 'quire-admin') }}</button>
+                    {% endfor %}
+                {% endif %}
+            </section>
+
+            <fieldset class="panel"{% if readonly %} disabled{% endif %}>
+                <legend>{{ 'Address and place'|trans({}, 'quire-admin') }}</legend>
+                <div class="form-field">
+                    {{ _self.field('slug', 'Slug'|trans({}, 'quire-admin'), errors.slug ?? null) }}
+                    <p class="field-help" id="slug-help">{{ 'The last part of its address. Left empty, it\'s made from the title.'|trans({}, 'quire-admin') }}</p>
+                    <input type="text" id="slug" name="slug" value="{{ values.slug }}" aria-describedby="slug-help{{ errors.slug is defined ? ' slug-error' }}"{% if errors.slug is defined %} aria-invalid="true"{% endif %}>
+                </div>
+
+                {% if authors is not empty %}
+                    <div class="form-field">
+                        {{ _self.field('author_id', 'Author'|trans({}, 'quire-admin'), errors.author_id ?? null) }}
+                        <select id="author_id" name="author_id"{{ _self.described('author_id', errors.author_id ?? null) }}>
+                            <option value="">—</option>
+                            {% for author in authors %}
+                                <option value="{{ author.id }}"{% if author.id == values.author_id %} selected{% endif %}>{{ author.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                {% endif %}
+
+                {% if type.has('hierarchical') %}
+                    <div class="form-field">
+                        {{ _self.field('parent_id', 'Parent'|trans({}, 'quire-admin'), errors.parent_id ?? null) }}
+                        <select id="parent_id" name="parent_id"{{ _self.described('parent_id', errors.parent_id ?? null) }}>
+                            <option value="">{{ '(top level)'|trans({}, 'quire-admin') }}</option>
+                            {% for parent in parents %}
+                                <option value="{{ parent.id }}"{% if parent.id == values.parent_id %} selected{% endif %}>{{ parent.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        {{ _self.field('position', 'Position'|trans({}, 'quire-admin'), errors.position ?? null) }}
+                        <input type="number" id="position" name="position" min="0" step="1" value="{{ values.position }}"{{ _self.described('position', errors.position ?? null) }}>
+                    </div>
+                {% endif %}
+            </fieldset>
+        </div>
+    </form>
+{% endblock %}
+
+{% macro field(id, label, error, required = false) %}
+    <label for="{{ id }}">{{ label }}{% if required %} <span class="meta">({{ 'required'|trans({}, 'quire-admin') }})</span>{% endif %}</label>
+    {% if error %}<p class="field-error" id="{{ id }}-error">{{ error }}</p>{% endif %}
+{% endmacro %}
+
+{% macro described(id, error) %}{% if error %} aria-describedby="{{ id }}-error" aria-invalid="true"{% endif %}{% endmacro %}

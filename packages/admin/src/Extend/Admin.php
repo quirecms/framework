@@ -7,13 +7,15 @@ namespace Quire\Admin\Extend;
 use Quire\Admin\Content\ContentActionInterface;
 use Quire\Admin\Content\ContentColumnInterface;
 use Quire\Admin\Content\ContentFilterInterface;
+use Quire\Admin\Content\Form\CoreWidgets;
+use Quire\Admin\Content\Form\FieldWidgetInterface;
 use Quire\Admin\Dashboard\WidgetInterface;
 use Quire\Extend\ExtenderContext;
 use Quire\Extend\ExtenderInterface;
 
 /**
- * Adds to the admin interface: entries in its menu, widgets on its dashboard, and columns, filters and
- * actions to its content lists.
+ * Adds to the admin interface: entries in its menu, widgets on its dashboard, columns, filters and
+ * actions to its content lists, and widgets for fields to its editor.
  *
  *     new Extend\Routes(group: 'admin')
  *         ->get('/reviews', 'acme_reviews_admin', ReviewsAdminController::class),
@@ -59,6 +61,12 @@ final class Admin implements ExtenderInterface
         'action' => ContentActionInterface::class,
     ];
 
+    /** @internal Parameter: array<name, {class, owner}> of the widgets extensions add to the editor */
+    public const string FIELD_WIDGETS_PARAMETER = 'quire_admin.field_widgets';
+
+    /** @internal Tag of field widgets */
+    public const string FIELD_WIDGET_TAG = 'quire_admin.field_widget';
+
     private const string ID_PATTERN = '/^[a-z0-9]+(?:[-.][a-z0-9]+)*$/';
 
     /** Where menu entries go, in this order */
@@ -72,6 +80,9 @@ final class Admin implements ExtenderInterface
 
     /** @var list<array{id: string, kind: string, class: string, types: ?list<string>, order: int}> */
     private array $contentList = [];
+
+    /** @var array<string, string> Classes by widget name */
+    private array $fieldWidgets = [];
 
     /**
      * @param string                   $id         Unique in the menu; start it with your extension's ID
@@ -140,6 +151,20 @@ final class Admin implements ExtenderInterface
     public function contentAction(string $id, string $class, ?array $types = null, int $order = 100): self
     {
         $this->contentList[] = ['id' => $id, 'kind' => 'action', 'class' => $class, 'types' => $types, 'order' => $order];
+
+        return $this;
+    }
+
+    /**
+     * How the editor shows fields whose widget has this name, e.g. those of a field type that an
+     * extension adds (see {@see \Quire\Content\Field\FieldTypeInterface::widget()}).
+     *
+     * @param string                             $name  E.g. "color"; core's widgets (text, number, …) can't be replaced
+     * @param class-string<FieldWidgetInterface> $class A service
+     */
+    public function fieldWidget(string $name, string $class): self
+    {
+        $this->fieldWidgets[$name] = $class;
 
         return $this;
     }
@@ -214,5 +239,33 @@ final class Admin implements ExtenderInterface
             $context->service($entry['class'])->addTag(self::CONTENT_LIST_TAG);
             $context->appendToParameter(self::CONTENT_LIST_PARAMETER, [...$entry, 'owner' => $context->id]);
         }
+
+        /** @var array<string, array{class: string, owner: string}> $widgets */
+        $widgets = $context->container()->getParameterBag()->all()[self::FIELD_WIDGETS_PARAMETER] ?? [];
+
+        foreach ($this->fieldWidgets as $name => $class) {
+            $where = \sprintf('Admin::fieldWidget("%s")', $name);
+
+            if (1 !== preg_match(self::ID_PATTERN, $name)) {
+                throw $context->error($where, 'Widget names are lowercase letters and digits, with single hyphens or dots between them, e.g. "acme-maps.location".');
+            }
+
+            if (\in_array($name, CoreWidgets::NAMES, true)) {
+                throw $context->error($where, 'This is one of the admin\'s own widgets. Give yours its own name, and name it in the field type\'s widget().');
+            }
+
+            if (isset($widgets[$name])) {
+                throw $context->error($where, \sprintf('The widget is already added by "%s".', $widgets[$name]['owner']));
+            }
+
+            if (!class_exists($class) || !is_a($class, FieldWidgetInterface::class, true)) {
+                throw $context->error($where, \sprintf('Field widgets are classes implementing %s.', FieldWidgetInterface::class));
+            }
+
+            $context->service($class)->addTag(self::FIELD_WIDGET_TAG);
+            $widgets[$name] = ['class' => $class, 'owner' => $context->id];
+        }
+
+        $context->container()->setParameter(self::FIELD_WIDGETS_PARAMETER, $widgets);
     }
 }
