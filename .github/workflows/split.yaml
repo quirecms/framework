@@ -23,6 +23,8 @@ jobs:
   split:
     name: Split packages
     if: github.repository == 'quirecms/framework'
+    # Holds the GitHub App's credentials, which only main and version tags can use.
+    environment: split
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
