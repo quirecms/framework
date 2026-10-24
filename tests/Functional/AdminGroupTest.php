@@ -89,7 +89,7 @@ final class AdminGroupTest extends WebTestCase
         $this->signIn('editor');
         $this->client->request('GET', '/admin');
         self::assertSelectorTextSame('.admin-nav a[aria-current=page]', 'Dashboard');
-        self::assertSelectorTextSame('.admin-nav__heading', 'Extensions');
+        self::assertSame(['Content', 'Extensions'], $this->client->getCrawler()->filter('.admin-nav__heading')->each(static fn ($heading): string => $heading->text()), 'The content lists come first.');
         self::assertSelectorExists('.admin-nav a[href="/admin/greetings"]');
         self::assertSelectorTextSame('.widgets .card:first-child h2', 'Greetings', 'Ordered: the widget asked for position 5.');
 

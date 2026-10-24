@@ -25,3 +25,30 @@ window.QuireAdmin = {
 };
 
 window.QuireAdmin.controllers.push(...pending);
+
+// Content lists: a checkbox that selects every row, shown only with JavaScript, where it works.
+application.register('content-list', class extends Controller {
+    static targets = ['all', 'item'];
+
+    connect() {
+        if (this.hasAllTarget) {
+            this.allTarget.hidden = false;
+            this.update();
+        }
+    }
+
+    toggleAll() {
+        this.itemTargets.forEach((checkbox) => { checkbox.checked = this.allTarget.checked; });
+        this.update();
+    }
+
+    update() {
+        if (!this.hasAllTarget) {
+            return;
+        }
+
+        const checked = this.itemTargets.filter((checkbox) => checkbox.checked).length;
+        this.allTarget.checked = checked > 0 && checked === this.itemTargets.length;
+        this.allTarget.indeterminate = checked > 0 && checked < this.itemTargets.length;
+    }
+});

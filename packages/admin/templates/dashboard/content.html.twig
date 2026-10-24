@@ -10,7 +10,7 @@
     <tbody>
         {% for row in rows %}
             <tr>
-                <th scope="row">{{ row.type.pluralLabel }}</th>
+                <th scope="row"><a href="{{ path('quire_admin_content', {type: row.type.id}) }}">{{ row.type.pluralLabel }}</a></th>
                 <td class="num">{{ row.published }}</td>
                 <td class="num">{{ row.scheduled }}</td>
                 <td class="num">{{ row.drafts }}</td>

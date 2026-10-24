@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Quire\Admin\Controller\ContentListController;
 use Quire\Admin\Controller\DashboardController;
 use Quire\Admin\Dashboard\Widget\ContentWidget;
 use Quire\Admin\Dashboard\Widget\RecentlyEditedWidget;
@@ -18,7 +19,9 @@ return [
         ->autoload('Quire\\Admin\\', __DIR__.'/src', exclude: [__DIR__.'/src/Extend', __DIR__.'/src/Navigation/MenuItem.php']),
 
     new Extend\Routes(group: 'admin')
-        ->get('/', 'quire_admin_dashboard', DashboardController::class),
+        ->get('/', 'quire_admin_dashboard', DashboardController::class)
+        ->get('/content/{type}', 'quire_admin_content', ContentListController::class)
+        ->post('/content/{type}', 'quire_admin_content_action', [ContentListController::class, 'act']),
 
     new Extend\Views()
         ->namespace('quire_admin', __DIR__.'/templates'),

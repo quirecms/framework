@@ -346,6 +346,27 @@ Queries can sort by `published_at`, `created_at`, `updated_at`, `title` and `pos
 
 Without `orderBy()`, a query uses its type's default order (newest first for posts, by position for pages). Items without a value for the sort field come last. Items that sort the same are ordered by ID, so pages never repeat or skip an item.
 
+### Search
+
+`search($terms)` finds the items whose title, excerpt or body contain the words, best matches first:
+
+```twig
+{% set results = quire_content('post', 'page').search(app.request.query.get('q', ''), snippets: true).paginate(app.request.query.getInt('page', 1), 10) %}
+{% for item in results %}
+  <h2><a href="{{ quire_url(item) }}">{{ item.title }}</a></h2>
+  <p>{{ item.search_snippet }}</p>
+{% endfor %}
+```
+
+- **Words are matched in the item's language,** so `running` finds `run` in English items, and common words such as `the` are left out. Items in languages PostgreSQL has no rules for match the words as they are.
+- **The syntax is the one people know from search engines:** all words must match, `"site search"` is a phrase, `-plugin` leaves out items with the word, and `or` between words matches either.
+- **`prefix: true`** matches words that start with the last one, for search as you type: `search('mark', prefix: true)` finds "Markdown". Then the terms are words only.
+- **Ranking:** a word in the title counts most, then in the excerpt, then in the body. Each item has `search_rank`, from 0 to 1. `orderBy()` replaces the ranking, e.g. `search('php').latest()`, and `orderBy('search_rank')` uses it.
+- **`snippets: true`** gives each item `search_snippet`: one or two passages of the excerpt and body with the words in `<mark>`, as safe HTML without Markdown's markup. Snippets take one more query, for the items returned only.
+- **Visibility applies as everywhere,** so search never shows a visitor a draft or a members-only item. Blank terms don't filter.
+
+On the command line: `bin/console quire:content:list --search "markdown -draft"`.
+
 ### Pagination
 
 `paginate($page, $perPage)` returns one page, with the total number of matching items:
