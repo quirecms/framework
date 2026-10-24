@@ -29,6 +29,7 @@ return [
         ->get('/content/{type}/new', 'quire_admin_content_new', [ContentEditController::class, 'new'])
         ->post('/content/{type}/new', 'quire_admin_content_create', [ContentEditController::class, 'create'])
         ->post('/content/{type}/preview', 'quire_admin_content_preview', [ContentEditController::class, 'previewFragment'])
+        ->post('/content/{type}/check', 'quire_admin_content_check', [ContentEditController::class, 'checksFragment'])
         ->get('/content/{type}/{id}', 'quire_admin_content_edit', [ContentEditController::class, 'edit'], requirements: ['id' => Requirement::UUID])
         ->post('/content/{type}/{id}', 'quire_admin_content_save', [ContentEditController::class, 'save'], requirements: ['id' => Requirement::UUID])
         ->get('/content/{type}/{id}/changes/{pending}', 'quire_admin_content_changes', [ContentChangesController::class, 'changes'], requirements: ['id' => Requirement::UUID, 'pending' => Requirement::UUID])

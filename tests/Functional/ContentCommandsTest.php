@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Tests\Functional;
 
 use Doctrine\DBAL\Connection;
+use Quire\Content\Check\ContentChecker;
 use Quire\Content\Command\CreateContent;
 use Quire\Content\Command\UpdateContent;
 use Quire\Content\Command\UpdatePendingRevision;
 use Quire\Content\ContentRepository;
 use Quire\Content\ContentWriter;
 use Quire\Content\Revision\PendingRevisionWriter;
+use Quire\Settings\Settings;
 use Quire\User\CreateUser;
 use Quire\User\UserWriter;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
@@ -24,6 +26,8 @@ final class ContentCommandsTest extends KernelTestCase
         self::getContainer()->get(Connection::class)->executeStatement('DELETE FROM quire.content WHERE parent_id IS NOT NULL');
         self::getContainer()->get(Connection::class)->executeStatement('DELETE FROM quire.content');
         self::getContainer()->get(Connection::class)->executeStatement('DELETE FROM quire.app_user');
+        self::getContainer()->get(Connection::class)->executeStatement('DELETE FROM quire.setting WHERE name = ?', [ContentChecker::LEVELS_SETTING]);
+        self::getContainer()->get(Settings::class)->reset();
         parent::tearDown();
     }
 
@@ -159,6 +163,33 @@ final class ContentCommandsTest extends KernelTestCase
         self::assertStringContainsString('Published the changes. "Opening hours" is now at version 4.', $this->flat($command));
         self::assertSame(1, $command->execute(['id' => $post->id, '--show' => $other->id]));
         self::assertStringContainsString('No pending revision with ID', $this->flat($command));
+    }
+
+    public function testContentChecksFromTheCommandLine(): void
+    {
+        $container = self::getContainer();
+        $writer = $container->get(ContentWriter::class);
+        $post = $writer->create(new CreateContent('post', 'Pictures', body: "Intro.\n\n![](/chart.png)\n", excerpt: 'In short.'));
+        $writer->transition($post->id, $post->version, 'publish');
+        $writer->create(new CreateContent('post', 'A draft', body: '![](/draft.png)', excerpt: 'Short.'));
+
+        $command = $this->command('quire:content:check');
+        self::assertSame(0, $command->execute(['--type' => 'post']), 'Warnings don\'t fail it.');
+        self::assertMatchesRegularExpression('/Pictures\s+\S+\s+warning\s+body, line 3\s+The image “chart.png” has no description/', $command->getDisplay());
+        self::assertStringNotContainsString('draft.png', $command->getDisplay(), 'Published and scheduled items by default.');
+        self::assertStringContainsString('Checked 1 item: 0 errors, 1 warning.', $this->flat($command));
+
+        self::assertSame(1, $command->execute(['--type' => 'post', '--strict' => true]));
+        self::assertSame(0, $command->execute(['--type' => 'post', '--status' => 'draft']));
+        self::assertStringContainsString('draft.png', $command->getDisplay());
+
+        self::getContainer()->get(Settings::class)->set(ContentChecker::LEVELS_SETTING, ['core.alt-text' => 'error']);
+        self::assertSame(1, $command->execute(['--id' => $post->id]));
+        self::assertStringContainsString('Checked 1 item: 1 error, 0 warnings.', $this->flat($command));
+
+        $command->execute(['--list' => true]);
+        self::assertMatchesRegularExpression('/core\.alt-text\s+Images have a description\s+error\s+all\s+core/', $command->getDisplay());
+        self::assertMatchesRegularExpression('/quire-fixture-hello\.shouting\s+Titles aren\'t shouted\s+warning\s+post\s+quire-fixture-hello/', $command->getDisplay());
     }
 
     private function command(string $name): CommandTester

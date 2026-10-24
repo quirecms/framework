@@ -6,7 +6,7 @@ The admin interface, the extension `quire-admin` (package `quire/admin`), manage
 bin/console quire:extension:enable quire-admin
 ```
 
-> **Status:** the admin is being built. It has its layout, menu, dashboard, content lists, editor, and changes to published content with review and history; content checks, settings, extensions, themes and users follow.
+> **Status:** the admin is being built. It has its layout, menu, dashboard, content lists, editor with content checks, and changes to published content with review and history; settings, extensions, themes and users follow.
 
 ## Who can use it
 
@@ -36,6 +36,7 @@ Choosing an item in a list opens it in the editor; "New" in a list starts one. T
 - **The text is Markdown,** in an editor with a toolbar, shortcuts (Ctrl+B, Ctrl+I, Ctrl+K) and lists that continue as you type. Its preview is rendered by Quire, as the site shows it, shortcodes included, while you write.
 - **Each field has the control its type asks for:** a number, a checkbox, a choice, a date, tags, JSON, or a list of items to link to, which you can search. Extensions that add field types add their controls too.
 - **Dates and times are in the site's time zone,** the setting `site.timezone` (UTC unless set), e.g. `bin/console quire:settings:set site.timezone Europe/Berlin`.
+- **Checks** of the content, e.g. images without a description or links to pages visitors can't see, are listed as you write, with links to where they are. Errors block publishing; warnings don't (see [checks](content.md#checks-before-publishing)).
 - **Save, or save and publish, schedule, or take another step of the workflow.** What you may do is offered, nothing else. Mistakes are listed above the form and shown at their fields; nothing is saved until they're fixed.
 - **No changes are lost:** when someone else saved the item after you opened it, saving shows you the form again with what you entered, unsaved, and tells you. Saving once more replaces their changes, knowingly.
 

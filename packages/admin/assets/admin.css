@@ -923,3 +923,38 @@ textarea {
     max-width: 40rem;
     margin-top: var(--admin-space-4);
 }
+
+/* Content checks */
+.checks__summary {
+    margin: 0 0 var(--admin-space-2);
+}
+
+.checks {
+    display: grid;
+    gap: var(--admin-space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.checks__item {
+    padding: var(--admin-space-2) var(--admin-space-3);
+    border-left: 4px solid currentColor;
+    border-radius: var(--admin-radius);
+    font-size: 0.875rem;
+}
+
+.checks__item--error {
+    color: var(--admin-danger);
+    background: var(--admin-danger-bg);
+}
+
+.checks__item--warning {
+    color: var(--admin-warning);
+    background: var(--admin-warning-bg);
+}
+
+.checks__item a {
+    display: inline-block;
+    min-height: 1.5rem;
+}

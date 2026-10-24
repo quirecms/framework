@@ -71,6 +71,7 @@
           action="{{ item ? path('quire_admin_content_save', {type: type.id, id: item.id}) : path('quire_admin_content_create', {type: type.id}) }}"
           data-controller="content-editor"
           data-content-editor-preview-url-value="{{ path('quire_admin_content_preview', {type: type.id}) }}"
+          data-content-editor-check-url-value="{{ path('quire_admin_content_check', {type: type.id}) }}"
           {% if changes %}data-content-editor-autosave-value="true" data-content-editor-saved-value="{{ 'Saved at {time}'|trans({}, 'quire-admin') }}" data-content-editor-unsaved-value="{{ 'Not saved: {problem}'|trans({}, 'quire-admin') }}" data-content-editor-conflict-value="{{ 'Not saved: your changes were saved elsewhere meanwhile, e.g. in another tab. Save to see them.'|trans({}, 'quire-admin') }}"{% endif %}>
         <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_content_editor') }}">
         {% if item %}
@@ -162,6 +163,11 @@
                 {% endif %}
             </section>
             {% endif %}
+
+            <section class="panel" aria-labelledby="checks-heading">
+                <h2 id="checks-heading">{{ 'Checks'|trans({}, 'quire-admin') }}</h2>
+                <div data-content-editor-target="checks">{{ include('@quire_admin/content/_checks.html.twig') }}</div>
+            </section>
 
             {% if item %}
                 <p class="editor__links"><a href="{{ path('quire_admin_content_history', {type: type.id, id: item.id}) }}">{{ 'History'|trans({}, 'quire-admin') }}</a></p>

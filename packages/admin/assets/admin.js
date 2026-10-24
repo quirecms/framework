@@ -104,14 +104,21 @@ application.register('markdown-editor', class extends Controller {
 
 // The editor's live preview: the text as the site shows it, rendered by Quire as you type.
 application.register('content-editor', class extends Controller {
-    static targets = ['body', 'preview', 'previewBody', 'previewButton', 'id', 'pendingVersion', 'status', 'savedAt'];
+    static targets = ['body', 'preview', 'previewBody', 'previewButton', 'id', 'pendingVersion', 'status', 'savedAt', 'checks'];
 
     // autosave: changes to a published item are saved as the editor types (as a pending revision).
-    static values = { previewUrl: String, autosave: Boolean, saved: String, unsaved: String, conflict: String };
+    static values = { previewUrl: String, checkUrl: String, autosave: Boolean, saved: String, unsaved: String, conflict: String };
 
     connect() {
         this.update = this.debounce(() => this.render(), 500);
         this.bodyTarget.addEventListener('input', this.update);
+
+        // The content checks, run on what's in the form.
+        if (this.hasChecksTarget && this.checkUrlValue) {
+            this.recheck = this.debounce(() => this.check(), 1000);
+            this.element.addEventListener('input', this.recheck);
+            this.element.addEventListener('change', this.recheck);
+        }
 
         if (this.autosaveValue) {
             this.scheduleSave = this.debounce(() => this.save(), 2000);
@@ -130,12 +137,28 @@ application.register('content-editor', class extends Controller {
 
     disconnect() {
         this.bodyTarget.removeEventListener('input', this.update);
+
+        if (this.recheck) {
+            this.element.removeEventListener('input', this.recheck);
+            this.element.removeEventListener('change', this.recheck);
+        }
+
         this.previewButtonTarget?.removeEventListener('click', this.toggle);
 
         if (this.scheduleSave) {
             this.element.removeEventListener('input', this.scheduleSave);
             this.element.removeEventListener('change', this.scheduleSave);
             this.element.removeEventListener('submit', this.stopSaving);
+        }
+    }
+
+    async check() {
+        const form = new FormData(this.element);
+        form.delete('intent');
+        const response = await fetch(this.checkUrlValue, { method: 'POST', body: form, headers: { Accept: 'text/html' } });
+
+        if (response.ok) {
+            this.checksTarget.innerHTML = await response.text();
         }
     }
 
