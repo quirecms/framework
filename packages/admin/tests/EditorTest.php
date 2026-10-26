@@ -23,7 +23,7 @@ final class EditorTest extends AdminTestCase
         $crawler = $this->client->request('GET', '/admin/content/post');
         $crawler = $this->client->click($crawler->filter('a.q-btn')->link());
 
-        self::assertSelectorTextSame('h1', 'New item');
+        self::assertSelectorTextSame('h1', 'New post');
         $this->client->submit($crawler->filter('button[name=intent][value="save"]')->form(['title' => 'From the form', 'body' => 'Some *Markdown*.', 'excerpt' => 'In short.']));
 
         $item = $this->latest();
@@ -33,7 +33,7 @@ final class EditorTest extends AdminTestCase
 
         $this->client->followRedirect();
         self::assertSelectorTextSame('.q-notice--success', 'Created.');
-        self::assertSelectorTextSame('h1', 'From the form');
+        self::assertSelectorTextSame('h1', 'Editing “From the form”');
         self::assertInputValueSame('slug', 'from-the-form');
     }
 
@@ -81,7 +81,7 @@ final class EditorTest extends AdminTestCase
         $item = $this->post('Draft');
         $crawler = $this->client->request('GET', '/admin/content/post/'.$item->id);
 
-        self::assertSame(['save', 'preview', 'transition:publish', 'transition:schedule'], $crawler->filter('.editor button[name=intent]')->each(static fn (Crawler $b): string => (string) $b->attr('value')));
+        self::assertSame(['preview', 'save', 'transition:publish', 'transition:schedule'], $crawler->filter('.editor-page button[name=intent]')->each(static fn (Crawler $b): string => (string) $b->attr('value')));
         $this->client->submit($crawler->filter('button[name=intent][value="transition:publish"]')->form(['title' => 'Published now']));
         $this->client->followRedirect();
 
@@ -146,7 +146,7 @@ final class EditorTest extends AdminTestCase
 
         $crawler = $this->client->request('GET', '/admin/content/post/'.$theirs->id);
         self::assertResponseIsSuccessful();
-        self::assertSame(['save', 'preview'], $crawler->filter('.editor button[name=intent]')->each(static fn (Crawler $b): string => (string) $b->attr('value')), 'Publishing takes "publish".');
+        self::assertSame(['preview', 'save'], $crawler->filter('.editor-page button[name=intent]')->each(static fn (Crawler $b): string => (string) $b->attr('value')), 'Publishing takes "publish".');
         self::assertCount(0, $crawler->filter('#author_id'), 'Only those who may edit anyone\'s choose the author.');
 
         $this->client->submit($crawler->filter('button[name=intent][value="save"]')->form(['title' => 'Renamed']));
@@ -155,7 +155,7 @@ final class EditorTest extends AdminTestCase
         // Once published, they write changes, which someone who may publish publishes.
         $published = $this->service(ContentWriter::class)->transition($theirs->id, $this->service(ContentRepository::class)->get($theirs->id)->version, Status::PUBLISH);
         $crawler = $this->client->request('GET', '/admin/content/post/'.$published->id);
-        self::assertSame(['save', 'preview', 'submit'], $crawler->filter('.editor button[name=intent]')->each(static fn (Crawler $b): string => (string) $b->attr('value')));
+        self::assertSame(['preview', 'save', 'submit'], $crawler->filter('.editor-page button[name=intent]')->each(static fn (Crawler $b): string => (string) $b->attr('value')));
         self::assertSelectorNotExists('fieldset.editor__main[disabled]');
     }
 

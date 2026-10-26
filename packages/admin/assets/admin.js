@@ -220,13 +220,16 @@ application.register('infinite-scroll', class extends Controller {
     }
 });
 
-// The Markdown editor: CodeMirror, loaded when a page has one, with a toolbar. Without JavaScript, or
-// until it loads, the textarea is the editor.
+// The Markdown editor: CodeMirror, loaded when a page has one, written as a manuscript: the text set
+// as it reads, with changes to what's live shown in it, and "/" for headings, images and links. A
+// toolbar shows while it's being written. Without JavaScript, or until it loads, the textarea is the
+// editor.
 application.register('markdown-editor', class extends Controller {
     static targets = ['source'];
 
-    // The toolbar's labels come translated from the page: { toolbar, bold, italic, … }.
-    static values = { label: String, labels: Object };
+    // The toolbar's labels come translated from the page: { toolbar, bold, italic, … }. original: the
+    // live text, which changes are shown against; placeholder: what an empty manuscript says.
+    static values = { label: String, labels: Object, placeholder: String, original: String };
 
     static buttons = [['bold', 'B'], ['italic', 'I'], ['heading', 'H'], ['link', '🔗'], ['list', '•'], ['quote', '❝'], ['code', '<>']];
 
@@ -237,7 +240,12 @@ application.register('markdown-editor', class extends Controller {
             return;
         }
 
-        this.view = createEditor(this.sourceTarget, this.labelValue || this.sourceTarget.labels?.[0]?.textContent?.trim() || '');
+        this.view = createEditor(this.sourceTarget, this.labelValue || this.sourceTarget.labels?.[0]?.textContent?.trim() || '', {
+            placeholder: this.placeholderValue,
+            original: this.hasOriginalValue ? this.originalValue : null,
+            labels: this.labelsValue,
+            onUpdate: (update) => this.dispatch('update', { detail: { view: this.view, update } }),
+        });
         this.toolbar = document.createElement('div');
         this.toolbar.className = 'markdown-toolbar';
         this.toolbar.setAttribute('role', 'toolbar');
@@ -255,6 +263,7 @@ application.register('markdown-editor', class extends Controller {
         }
 
         this.element.prepend(this.toolbar);
+        this.dispatch('ready', { detail: { view: this.view } });
     }
 
     disconnect() {
@@ -269,30 +278,136 @@ application.register('markdown-editor', class extends Controller {
     }
 });
 
-// The editor's live preview: the text as the site shows it, rendered by Quire as you type.
+// The manuscript's margin: notes (what the checks found, comments) beside their lines, and commenting
+// on selected text. Without JavaScript, the notes are a list under the text.
+application.register('manuscript', class extends Controller {
+    static targets = ['notes', 'commenter', 'commentText', 'quote', 'line'];
+
+    connect() {
+        this.element.addEventListener('markdown-editor:ready', this.ready);
+        this.element.addEventListener('markdown-editor:update', this.updated);
+        window.addEventListener('resize', this.place);
+    }
+
+    disconnect() {
+        this.element.removeEventListener('markdown-editor:ready', this.ready);
+        this.element.removeEventListener('markdown-editor:update', this.updated);
+        window.removeEventListener('resize', this.place);
+    }
+
+    ready = (event) => {
+        this.view = event.detail.view;
+        this.element.classList.toggle('has-margin', this.hasNotesTarget);
+        this.element.querySelectorAll('[data-action="manuscript#go"]').forEach((button) => { button.hidden = false; });
+        this.place();
+    };
+
+    updated = (event) => {
+        const { update } = event.detail;
+
+        if (update.geometryChanged || update.docChanged || update.viewportChanged) {
+            this.place();
+        }
+
+        if (update.selectionSet || update.focusChanged) {
+            this.offerComment();
+        }
+    };
+
+    // Each note at the top of its line, below the one before it when they'd overlap.
+    place = () => {
+        if (!this.view || !this.hasNotesTarget) {
+            return;
+        }
+
+        // On narrow screens the notes are a list under the text: nothing to place.
+        if (getComputedStyle(this.notesTarget.firstElementChild ?? this.notesTarget).position !== 'absolute') {
+            this.notesTarget.style.minHeight = '';
+            [...this.notesTarget.children].forEach((note) => { note.style.top = ''; });
+
+            return;
+        }
+
+        const offset = this.view.dom.getBoundingClientRect().top - this.element.getBoundingClientRect().top;
+        let next = 0;
+
+        for (const note of this.notesTarget.children) {
+            const line = Number(note.dataset.line || 0);
+            const top = line > 0 && line <= this.view.state.doc.lines ? offset + this.view.lineBlockAt(this.view.state.doc.line(line).from).top : next;
+            const at = Math.max(top, next);
+            note.style.top = `${at}px`;
+            next = at + note.offsetHeight + 8;
+        }
+
+        this.notesTarget.style.minHeight = `${next}px`;
+    };
+
+    go(event) {
+        const line = Number(event.currentTarget.dataset.line);
+
+        if (this.view && line > 0 && line <= this.view.state.doc.lines) {
+            const { from } = this.view.state.doc.line(line);
+            this.view.dispatch({ selection: { anchor: from }, scrollIntoView: true });
+            this.view.focus();
+        }
+    }
+
+    // Text selected on one line can be commented on, at the selection.
+    offerComment() {
+        if (!this.hasCommenterTarget || !this.view) {
+            return;
+        }
+
+        const range = this.view.state.selection.main;
+        const doc = this.view.state.doc;
+        const quote = doc.sliceString(range.from, range.to).trim();
+        const line = doc.lineAt(range.from);
+
+        if (quote === '' || range.to > line.to || quote.length > 500) {
+            if (!this.commenterTarget.contains(document.activeElement)) {
+                this.commenterTarget.hidden = true;
+            }
+
+            return;
+        }
+
+        this.quoteTarget.value = quote;
+        this.lineTarget.value = String(line.number);
+        this.commentTextTarget.placeholder = this.commentTextTarget.placeholder.replace(/“.*”/, `“${quote.length > 40 ? `${quote.slice(0, 40)}…` : quote}”`);
+        const coords = this.view.coordsAtPos(range.to);
+        const box = this.element.getBoundingClientRect();
+        this.commenterTarget.hidden = false;
+        this.commenterTarget.style.top = coords ? `${coords.bottom - box.top + 6}px` : '0px';
+    }
+});
+
+// The editor: checks, where the item will appear and the preview, as it's written; autosave of changes
+// to published items; focus mode.
 application.register('content-editor', class extends Controller {
-    static targets = ['body', 'preview', 'previewBody', 'previewButton', 'id', 'pendingVersion', 'status', 'savedAt', 'checks'];
+    static targets = ['form', 'body', 'preview', 'previewBody', 'previewButton', 'id', 'pendingVersion', 'status', 'checks', 'badge', 'placement', 'focusButton'];
 
     // autosave: changes to a published item are saved as the editor types (as a pending revision).
-    static values = { previewUrl: String, checkUrl: String, autosave: Boolean, saved: String, unsaved: String, conflict: String };
+    static values = { previewUrl: String, checkUrl: String, placementUrl: String, autosave: Boolean, saved: String, unsaved: String, conflict: String, toCheck: String };
+
+    get form() {
+        return this.hasFormTarget ? this.formTarget : this.element;
+    }
 
     connect() {
         this.update = this.debounce(() => this.render(), 500);
         this.bodyTarget.addEventListener('input', this.update);
 
-        // The content checks, run on what's in the form.
-        if (this.hasChecksTarget && this.checkUrlValue) {
-            this.recheck = this.debounce(() => this.check(), 1000);
-            this.element.addEventListener('input', this.recheck);
-            this.element.addEventListener('change', this.recheck);
-        }
+        // The content checks and where it will appear, for what's in the form.
+        this.refresh = this.debounce(() => this.check(), 1000);
+        this.form.addEventListener('input', this.refresh);
+        this.form.addEventListener('change', this.refresh);
 
         if (this.autosaveValue) {
             this.scheduleSave = this.debounce(() => this.save(), 2000);
-            this.element.addEventListener('input', this.scheduleSave);
-            this.element.addEventListener('change', this.scheduleSave);
+            this.form.addEventListener('input', this.scheduleSave);
+            this.form.addEventListener('change', this.scheduleSave);
             // A button saves anyway: no autosave races it.
-            this.element.addEventListener('submit', this.stopSaving);
+            this.form.addEventListener('submit', this.stopSaving);
         }
 
         if (this.hasPreviewButtonTarget) {
@@ -300,32 +415,73 @@ application.register('content-editor', class extends Controller {
             this.previewButtonTarget.setAttribute('aria-expanded', String(!this.previewTarget.hidden));
             this.previewButtonTarget.setAttribute('aria-controls', this.previewTarget.id || (this.previewTarget.id = 'editor-preview'));
         }
+
+        if (this.hasFocusButtonTarget) {
+            this.focusButtonTarget.hidden = false;
+            this.setFocus(this.stored('quire-admin-focus') === '1');
+        }
     }
 
     disconnect() {
         this.bodyTarget.removeEventListener('input', this.update);
-
-        if (this.recheck) {
-            this.element.removeEventListener('input', this.recheck);
-            this.element.removeEventListener('change', this.recheck);
-        }
-
+        this.form.removeEventListener('input', this.refresh);
+        this.form.removeEventListener('change', this.refresh);
         this.previewButtonTarget?.removeEventListener('click', this.toggle);
 
         if (this.scheduleSave) {
-            this.element.removeEventListener('input', this.scheduleSave);
-            this.element.removeEventListener('change', this.scheduleSave);
-            this.element.removeEventListener('submit', this.stopSaving);
+            this.form.removeEventListener('input', this.scheduleSave);
+            this.form.removeEventListener('change', this.scheduleSave);
+            this.form.removeEventListener('submit', this.stopSaving);
+        }
+    }
+
+    // Focus mode: the manuscript alone, without versions, notes on the side and details.
+    focus() {
+        const on = this.focusButtonTarget.getAttribute('aria-pressed') !== 'true';
+        this.setFocus(on);
+
+        try {
+            localStorage.setItem('quire-admin-focus', on ? '1' : '0');
+        } catch {
+            // A preference of this browser only; without storage, it's forgotten.
+        }
+    }
+
+    setFocus(on) {
+        this.element.classList.toggle('is-focused', on);
+        this.focusButtonTarget.setAttribute('aria-pressed', String(on));
+    }
+
+    stored(key) {
+        try {
+            return localStorage.getItem(key);
+        } catch {
+            return null;
         }
     }
 
     async check() {
-        const form = new FormData(this.element);
+        const form = new FormData(this.form);
         form.delete('intent');
-        const response = await fetch(this.checkUrlValue, { method: 'POST', body: form, headers: { Accept: 'text/html' } });
+        const [checks, placement] = await Promise.all([
+            this.hasChecksTarget ? fetch(this.checkUrlValue, { method: 'POST', body: form, headers: { Accept: 'text/html' } }) : null,
+            this.hasPlacementTarget && this.placementUrlValue ? fetch(this.placementUrlValue, { method: 'POST', body: form, headers: { Accept: 'text/html' } }) : null,
+        ]);
 
-        if (response.ok) {
-            this.checksTarget.innerHTML = await response.text();
+        if (checks?.ok) {
+            this.checksTarget.innerHTML = await checks.text();
+            const summary = this.checksTarget.querySelector('[data-findings]');
+            const count = Number(summary?.dataset.findings ?? 0);
+
+            if (this.hasBadgeTarget) {
+                this.badgeTarget.hidden = count === 0;
+                this.badgeTarget.className = `q-tag q-tag--${summary?.dataset.level ?? 'warn'} editor-bar__badge`;
+                this.badgeTarget.textContent = (this.toCheckValue || '{count} to check').replace('{count}', String(count));
+            }
+        }
+
+        if (placement?.ok) {
+            this.placementTarget.innerHTML = await placement.text();
         }
     }
 
@@ -339,21 +495,26 @@ application.register('content-editor', class extends Controller {
         }
 
         this.saving = true;
-        const form = new FormData(this.element);
+        const form = new FormData(this.form);
         form.set('intent', 'autosave');
 
         try {
-            const response = await fetch(this.element.action, { method: 'POST', body: form, headers: { Accept: 'application/json' } });
+            const response = await fetch(this.form.action, { method: 'POST', body: form, headers: { Accept: 'application/json' } });
 
             if (response.ok && response.headers.get('Content-Type')?.includes('json')) {
                 const saved = await response.json();
                 this.pendingVersionTarget.value = saved.pending_version;
-                this.statusTarget.textContent = this.savedValue.replace('{time}', saved.saved_at);
-            } else {
+
+                if (this.hasStatusTarget) {
+                    this.statusTarget.textContent = this.savedValue.replace('{time}', saved.saved_at);
+                }
+            } else if (this.hasStatusTarget) {
                 this.statusTarget.textContent = response.status === 409 ? this.conflictValue : this.unsavedValue.replace('{problem}', `HTTP ${response.status}`);
             }
         } catch (error) {
-            this.statusTarget.textContent = this.unsavedValue.replace('{problem}', error.message);
+            if (this.hasStatusTarget) {
+                this.statusTarget.textContent = this.unsavedValue.replace('{problem}', error.message);
+            }
         } finally {
             this.saving = false;
         }
@@ -366,6 +527,7 @@ application.register('content-editor', class extends Controller {
 
         if (!this.previewTarget.hidden) {
             this.render();
+            this.previewTarget.scrollIntoView({ block: 'nearest' });
         }
     };
 
@@ -375,7 +537,7 @@ application.register('content-editor', class extends Controller {
         }
 
         const form = new FormData();
-        form.append('_token', this.element.querySelector('input[name="_token"]').value);
+        form.append('_token', this.form.querySelector('input[name="_token"]').value);
         form.append('body', this.bodyTarget.value);
 
         if (this.hasIdTarget) {

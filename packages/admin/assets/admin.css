@@ -146,14 +146,130 @@
     }
 
     /* --- The editor ---------------------------------------------------------------- */
-    .editor { display: grid; grid-template-columns: minmax(0, 1fr) 20rem; gap: var(--q-space-5); align-items: start; }
-    .editor__main, .editor__side { display: grid; gap: var(--q-space-4); }
+    .editor { display: grid; grid-template-columns: minmax(0, 1fr) minmax(17rem, 21rem); gap: var(--q-space-5); align-items: start; }
+    .editor__main, .editor__side { display: grid; gap: var(--q-space-4); min-width: 0; }
     .editor__title { font: 700 1.5rem var(--q-font-display); }
     .editor__body-heading { display: flex; justify-content: space-between; align-items: baseline; }
     .editor__buttons, .editor__links { display: flex; flex-wrap: wrap; gap: var(--q-space-2) var(--q-space-3); margin: 0; }
 
     @media (max-width: 64rem) {
         .editor { grid-template-columns: minmax(0, 1fr); }
+    }
+
+    /* The bar: where the item is, what to do next */
+    .editor-page { display: grid; gap: var(--q-space-4); }
+    .editor-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--q-space-3) var(--q-space-4); padding: var(--q-space-3) var(--q-space-5); }
+    .editor-bar__back { color: var(--q-muted); text-decoration: none; white-space: nowrap; }
+    .editor-bar__back:hover { color: var(--q-ink); }
+    .editor-bar__state { flex: 1 1 18rem; min-width: 0; }
+    .editor-bar__headline { margin: 0; font-weight: 700; }
+    .editor-bar__detail { margin: 0; }
+    .editor-bar__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--q-space-2); }
+    .editor-bar__publish { gap: var(--q-space-2); }
+    .editor-bar__badge { font-size: 0.75rem; }
+    .editor-bar__focus[aria-pressed="true"] { background: var(--q-ink); color: var(--q-paper); }
+
+    /* What the publish button opens: the checks, then publishing, scheduling, discarding */
+    .editor-popover { position: fixed; inset: auto; margin: 0; width: min(26rem, calc(100vw - 2rem)); max-height: 80vh; overflow: auto; padding: var(--q-space-4); border: 1px solid var(--q-line); box-shadow: var(--shadow-4, 0 12px 32px rgb(0 0 0 / 0.18)); }
+    .editor-popover:popover-open { position-area: bottom span-left; margin-top: var(--q-space-2); display: grid; gap: var(--q-space-3); }
+    .editor-popover__title { margin: 0; font-size: 1rem; }
+
+    /* The versions, along a line: the live one, and the user's changes */
+    .editor-versions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--q-space-3) var(--q-space-4); padding: var(--q-space-3) var(--q-space-5); }
+    .editor-versions__count { color: var(--q-muted); white-space: nowrap; }
+    .editor-versions__line { position: relative; display: flex; flex: 1 1 16rem; align-items: center; justify-content: space-between; gap: var(--q-space-1); margin: 0; padding: var(--q-space-4) 0 0; list-style: none; }
+    .editor-versions__line::before { content: ""; position: absolute; inset: auto 0 0.7rem; height: 2px; background: var(--q-line); }
+    .editor-versions__dot { position: relative; display: grid; place-items: center; width: var(--q-target); height: var(--q-target); }
+    .editor-versions__dot::after { content: ""; width: 0.85rem; height: 0.85rem; border: 2px solid var(--q-muted); border-radius: 50%; background: var(--q-surface); }
+    .editor-versions__dot:hover::after, .editor-versions__dot:focus-visible::after { border-color: var(--q-accent); }
+    .editor-versions__dot--live::after { width: 1.3rem; height: 1.3rem; border: 3px solid var(--q-ink); }
+    .editor-versions__dot--yours::after { border-color: var(--q-review); background: var(--q-review); }
+    .editor-versions__live { position: absolute; bottom: calc(100% - 0.25rem); padding: 0.1rem var(--q-space-2); border-radius: var(--q-radius-sm); background: var(--q-ink); color: var(--q-paper); font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
+    .editor-versions__link { white-space: nowrap; }
+
+    /* The manuscript */
+    .editor-sheet { padding: var(--q-space-6) clamp(var(--q-space-4), 3.5vw, 3.5rem); border: 1px solid var(--q-line); }
+    .editor-sheet__head { display: grid; gap: var(--q-space-1); margin-bottom: var(--q-space-5); }
+    .editor-sheet__title { width: 100%; padding: 0; border: 0; background: none; color: var(--q-ink); font: 700 clamp(1.75rem, 3vw, 2.6rem) / 1.15 var(--q-font-display); letter-spacing: -0.01em; }
+    .editor-sheet__title:focus-visible { outline: 3px solid var(--q-focus); outline-offset: 4px; border-radius: var(--q-radius-sm); }
+    .editor-sheet__address { margin: 0; color: var(--q-muted); font: 0.875rem var(--q-font-mono); overflow-wrap: anywhere; }
+    .editor-sheet__body { position: relative; }
+    .editor-sheet .markdown-field .cm-editor { min-height: 22rem; border: 0; background: none; }
+    .editor-sheet .markdown-field .cm-editor.cm-focused { outline: none; }
+    .editor-sheet .markdown-field .cm-content { padding: 0; font: 1.125rem / 1.85 var(--q-font-serif, "Iowan Old Style", "Palatino Linotype", Georgia, serif); }
+    /* CodeMirror's own styles aren't in a cascade layer, so they win over these unless !important. */
+    .editor-sheet .markdown-field .cm-editor .cm-placeholder { color: var(--q-muted) !important; font-style: italic; }
+    .editor-sheet .markdown-field { position: relative; }
+    /* Above the text, while it's written: it takes no room from the manuscript. */
+    .editor-sheet .markdown-toolbar { position: absolute; bottom: 100%; right: 0; z-index: 2; margin-bottom: var(--q-space-1); border-bottom: 1px solid var(--q-line); border-radius: var(--q-radius-sm); opacity: 0; transition: opacity 0.15s; }
+    .editor-sheet .markdown-field:focus-within .markdown-toolbar, .editor-sheet .markdown-toolbar:hover { opacity: 1; }
+    .cm-md-mark { color: var(--q-muted); }
+    .cm-md-image { display: inline-block; width: 100%; padding: var(--q-space-6) var(--q-space-4); border: 2px solid var(--q-line); border-radius: var(--q-radius); background: linear-gradient(120deg, var(--q-accent-soft), var(--q-review-soft)); color: var(--q-muted); font: 0.875rem var(--q-font); text-align: center; }
+    .cm-md-image--missing { border: 2px dashed var(--q-scheduled); }
+    /* Changes to the live text (@codemirror/merge): added text, and what was taken out */
+    /* (Over the package's own theme, which is more specific.) */
+    .editor-sheet .cm-editor .cm-changedLine, .editor-sheet .cm-editor .cm-inlineChangedLine { background: none !important; }
+    .editor-sheet .cm-editor .cm-changedText { background: var(--q-accent-soft) !important; border-radius: 0.2em; }
+    .editor-sheet .cm-editor .cm-deletedChunk { padding: 0; background: none !important; }
+    .editor-sheet .cm-editor .cm-deletedChunk del, .editor-sheet .cm-editor .cm-deletedText { background: var(--q-danger-soft) !important; color: var(--q-danger); text-decoration: line-through; border-radius: 0.2em; }
+    .editor-sheet .cm-changeGutter { width: 4px; padding: 0; }
+    .editor-sheet .cm-editor .cm-changedLineGutter, .editor-sheet .cm-editor .cm-inlineChangedLineGutter { background: var(--q-accent) !important; }
+    .editor-sheet .cm-editor .cm-deletedLineGutter { background: var(--q-danger) !important; }
+    .editor-sheet .cm-gutters { border: 0; background: none; }
+
+    /* Notes in the margin: under the text, or beside it at their lines */
+    .editor-notes { display: grid; gap: var(--q-space-3); margin: var(--q-space-5) 0 0; padding: 0; list-style: none; }
+    .editor-note { padding: var(--q-space-3) var(--q-space-4); border: 1px solid var(--q-line); border-left: 4px solid var(--q-warn); border-radius: var(--q-radius); background: var(--q-raised); box-shadow: var(--shadow-2, 0 2px 8px rgb(0 0 0 / 0.06)); font-size: 0.9375rem; }
+    .editor-note p { margin: 0 0 var(--q-space-2); }
+    .editor-note--error { border-left-color: var(--q-danger); }
+    .editor-note--comment { border-left-color: var(--q-review); }
+    .editor-note--resolved { opacity: 0.7; }
+    .editor-note__title { font-weight: 700; }
+    .editor-note__quote { color: var(--q-muted); font-style: italic; }
+    .editor-note__comment + .editor-note__comment { padding-top: var(--q-space-2); border-top: 1px solid var(--q-line); }
+    .editor-note__actions, .editor-note__reply { display: flex; flex-wrap: wrap; align-items: center; gap: var(--q-space-2); }
+    .editor-note__reply { display: inline-flex; }
+    .editor-note__reply[open] { display: grid; width: 100%; }
+    .editor-note__reply summary { list-style: none; }
+    .editor-note__reply textarea { width: 100%; }
+
+    @media (min-width: 90rem) {
+        .editor-sheet__body.has-margin { display: grid; grid-template-columns: minmax(0, 1fr) 17rem; gap: var(--q-space-5); }
+        .editor-sheet__body.has-margin .editor-notes { position: relative; margin: 0; display: block; }
+        .editor-sheet__body.has-margin .editor-note { position: absolute; inset-inline: 0; }
+    }
+
+    .editor-comment { position: absolute; z-index: 3; left: 0; display: grid; gap: var(--q-space-2); width: min(22rem, 100%); padding: var(--q-space-3); border: 1px solid var(--q-line); box-shadow: var(--shadow-3, 0 8px 24px rgb(0 0 0 / 0.12)); }
+
+    /* Beside it: where it will appear, and the details */
+    .editor-aside { position: sticky; top: var(--q-space-4); }
+    .editor-panel { display: grid; gap: var(--q-space-3); padding: var(--q-space-4); }
+    .editor-panel__title { margin: 0; font-size: 1.0625rem; }
+    .editor-panel__group { display: grid; gap: var(--q-space-3); margin: 0; padding: var(--q-space-3) 0 0; border: 0; border-top: 1px solid var(--q-line); }
+    .editor-panel__group legend:not(.q-sr) { float: left; width: 100%; margin-bottom: var(--q-space-2); padding: 0; font-weight: 600; }
+    .placement { display: grid; gap: var(--q-space-2); }
+    .placement__label { margin: var(--q-space-2) 0 0; color: var(--q-muted); font: 600 0.75rem / 1.4 var(--q-font); letter-spacing: 0.08em; text-transform: uppercase; }
+    .placement__card { width: 100%; height: 9rem; border: 1px solid var(--q-line); border-radius: var(--q-radius-sm); background: #fff; }
+    .placement__search { padding: var(--q-space-3); border: 1px solid var(--q-line); border-radius: var(--q-radius-sm); background: var(--q-raised); }
+    .placement__search p { margin: 0; }
+    .placement__breadcrumb { color: var(--q-muted); font-size: 0.8125rem; overflow-wrap: anywhere; }
+    .placement__search-title { color: light-dark(#1a0dab, #8ab4f8); font-size: 1.0625rem; line-height: 1.3; }
+    .placement__description { color: var(--q-muted); font-size: 0.875rem; }
+    .placement__share { overflow: hidden; border: 1px solid var(--q-line); border-radius: var(--q-radius-sm); background: var(--q-raised); }
+    .placement__share p { margin: 0; padding: 0 var(--q-space-3); }
+    .placement__image { display: block; width: 100%; aspect-ratio: 1200 / 630; object-fit: cover; }
+    .placement__image--none { display: grid; place-items: center; background: linear-gradient(120deg, var(--q-accent-soft), var(--q-review-soft)); color: var(--q-muted); font-size: 0.8125rem; }
+    .placement__domain { padding-top: var(--q-space-2) !important; color: var(--q-muted); font-size: 0.75rem; letter-spacing: 0.04em; }
+    .placement__share-title { padding-bottom: var(--q-space-3) !important; font-weight: 700; }
+
+    /* Focus: the manuscript alone */
+    .editor-page.is-focused .editor-versions, .editor-page.is-focused .editor-aside { display: none; }
+    .editor-page.is-focused .editor { grid-template-columns: minmax(0, 52rem); justify-content: center; }
+
+    @media (max-width: 40rem) {
+        .editor-bar, .editor-versions { padding: var(--q-space-3); }
+        .editor-sheet { padding: var(--q-space-4); }
+        .editor-aside { position: static; }
     }
 
     .markdown-toolbar {

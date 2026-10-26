@@ -4,7 +4,7 @@
 #}
 {% set errors = checks.errors|length %}
 {% set warnings = checks.warnings|length %}
-<p class="checks__summary">
+<p class="checks__summary" data-findings="{{ errors + warnings }}" data-level="{{ errors > 0 ? 'err' : 'warn' }}">
     {%- if errors == 0 and warnings == 0 -%}
         {{ 'The checks found nothing.'|trans({}, 'quire-admin') }}
     {%- else -%}

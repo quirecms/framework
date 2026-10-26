@@ -35,23 +35,29 @@ The list's address keeps its tab, filters, search, sort and page (e.g. `/admin/c
 
 ## Editing
 
-Choosing an item in a list opens it in the editor; "New" in a list starts one. The form comes from the content type: the title, the text, the excerpt, the item's address and author, its parent for pages, and the type's fields, grouped and ordered as the type declares them (`group`, `order`), with their labels and help.
+Choosing an item in a list opens it in the editor; "New" in a list starts one. The editor is a manuscript: the title and the text, as they read, with the item's details beside them. The details come from the content type: the summary (excerpt), the item's address and author, its parent for pages, and the type's fields, grouped and ordered as the type declares them (`group`, `order`), with their labels and help.
 
-- **The text is Markdown,** in an editor with a toolbar, shortcuts (Ctrl+B, Ctrl+I, Ctrl+K) and lists that continue as you type. Its preview is rendered by Quire, as the site shows it, shortcodes included, while you write.
+- **The bar at the top** says where the item is (a draft, scheduled, live, live with your changes waiting) and when it was saved, and has what to do next: save, ask for a review, and publish. Publishing opens what the checks found first, and the choice of publishing now or at a time.
+- **The text is Markdown, written as it reads:** emphasis and links show as they will (their marks appear on the line you're writing), headings and quotes keep their marks, and images show as a box with their description. Type `/` at the start of a line for a heading, an image, a link, a list, a quote or a separator; the toolbar, above the text while you write, and shortcuts (Ctrl+B, Ctrl+I, Ctrl+K) do the same. "Preview" renders it as the site shows it, shortcodes included.
+- **Notes in the margin,** beside their lines: what the checks found, and comments on your changes, which you can reply to and resolve.
+- **Where it will appear,** beside the text, updated as you write: the item in lists (the site theme's card, see [themes](themes.md)), in search results, and when shared.
+- **Its versions,** along a line above the text, the live one marked: each opens in History, to compare and restore.
+- **Focus** hides everything but the manuscript.
 - **Each field has the control its type asks for:** a number, a checkbox, a choice, a date, tags, JSON, or a list of items to link to, which you can search. Extensions that add field types add their controls too.
 - **Dates and times are in the site's time zone,** the setting `site.timezone` (UTC unless set), e.g. `bin/console quire:settings:set site.timezone Europe/Berlin`.
-- **Checks** of the content, e.g. images without a description or links to pages visitors can't see, are listed as you write, with links to where they are. Errors block publishing; warnings don't (see [checks](content.md#checks-before-publishing)).
+- **Checks** of the content, e.g. images without a description or links to pages visitors can't see, show as notes in the margin as you write, and on the publish button with how many there are. Errors block publishing; warnings don't (see [checks](content.md#checks-before-publishing)).
 - **Save, or save and publish, schedule, or take another step of the workflow.** What you may do is offered, nothing else. Mistakes are listed above the form and shown at their fields; nothing is saved until they're fixed.
 - **No changes are lost:** when someone else saved the item after you opened it, saving shows you the form again with what you entered, unsaved, and tells you. Saving once more replaces their changes, knowingly.
 
-Everything works without JavaScript: the text is then a plain text box, and "Preview" shows the preview without saving.
+Everything works without JavaScript: the text is then a plain text box, the notes a list under it, and "Preview" shows the preview without saving.
 
 ## Changing published content
 
 Visitors never see half-written changes. Editing a published item writes **your changes**, saved as you type, and the site keeps showing the published version until they're published:
 
 - **Publish changes** when they're ready, or **schedule** them for a date and time; at that time the background worker publishes them. Both take the ability to publish (`content.<type>.publish`).
-- **Ask for a review:** reviewers (`content.<type>.review`, editors by default) find the changes on their dashboard, see what changes line by line, and approve them, ask for changes or comment. When the site asks for approval (the setting `quire.content.changes_need_approval`), changes are published only once someone other than their author approved them.
+- **The text shows your changes** against the published version: what you added, and what you took out, struck through, with a bar beside the lines that changed.
+- **Ask for a review:** reviewers (`content.<type>.review`, editors by default) find the changes on their dashboard, see what changes line by line, and approve them, ask for changes or comment. **Comments** can point at text: select it in the manuscript and comment; the comment then sits beside it in the margin, moves with it as the text is edited, and shows the text it quoted once it's gone. Replies and "Resolve" settle them. When the site asks for approval (the setting `quire.content.changes_need_approval`), changes are published only once someone other than their author approved them.
 - **Several people can change an item at once,** each with their own changes. When changes are published, they're merged with what was published since, line by line: they only **conflict** where both changed the same lines or fields. The editor then lists those parts, and "Keep my version" uses yours there and keeps the others' changes everywhere else.
 - **Discard** your changes to start again from the published version.
 - When scheduled changes can't be published at their time, e.g. because of a conflict or a missing approval, they stay unpublished, and their author sees why in the editor and on the dashboard.

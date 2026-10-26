@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Quire\Admin\Controller;
 
+use Quire\Action\Actions;
+use Quire\Action\Exception\ActionDeniedException;
+use Quire\Action\Exception\InvalidArgumentsException;
 use Quire\Admin\Content\ContentLists;
 use Quire\Admin\Content\PendingChanges;
 use Quire\Content\Check\ContentChecker;
@@ -72,6 +75,7 @@ final readonly class ContentChangesController
         private TranslatorInterface $translator,
         private Environment $twig,
         private ContentChecker $checker,
+        private Actions $actions,
     ) {
     }
 
@@ -142,6 +146,47 @@ final readonly class ContentChangesController
         }
 
         return new RedirectResponse($this->urls->generate('quire_admin_content_changes', ['type' => $definition->id, 'id' => $item->id, 'pending' => $revision->id]), Response::HTTP_SEE_OTHER);
+    }
+
+    /**
+     * Comments on changes: a new thread (pointing at text when it quotes some), a reply, or a thread
+     * resolved or opened again; then back to the page it came from.
+     */
+    public function comment(Request $request, string $type, string $id, string $pending): RedirectResponse
+    {
+        $definition = $this->type($type);
+        $item = $this->item($definition, $id);
+        $revision = $this->pendingRevision($item, $pending);
+        $this->assertToken($request);
+        $changes = ['content' => $item->id, 'pending_revision' => $revision->id];
+        $comment = $request->request->getString('comment');
+        $line = $request->request->getInt('line');
+        $quote = trim($request->request->getString('quote'));
+        $session = $request->getSession();
+        \assert($session instanceof FlashBagAwareSessionInterface);
+
+        try {
+            match ($request->request->getString('intent')) {
+                'resolve', 'reopen' => $this->actions->run('content.resolve_comment', [...$changes, 'comment' => $comment, 'reopen' => 'reopen' === $request->request->getString('intent') ? true : null]),
+                default => $this->actions->run('content.comment_changes', [
+                    ...$changes,
+                    'message' => trim($request->request->getString('message')),
+                    'reply_to' => '' === $comment ? null : $comment,
+                    'quote' => '' === $quote ? null : $quote,
+                    'property' => '' === $quote ? null : ('' === $request->request->getString('property') ? 'body' : $request->request->getString('property')),
+                    'line' => '' === $quote || $line < 1 ? null : $line,
+                ]),
+            };
+        } catch (ActionDeniedException $e) {
+            throw new AccessDeniedHttpException($e->getMessage(), $e);
+        } catch (InvalidArgumentsException|InvalidContentException $e) {
+            $session->getFlashBag()->add('error', $this->translator->trans('The comment wasn\'t saved: {problem}', ['problem' => $e instanceof InvalidContentException ? implode(' ', $e->violations) : implode(' ', $e->errors)], 'quire-admin'));
+        }
+
+        $back = $request->request->getString('back');
+        $admin = rtrim($this->urls->generate('quire_admin_dashboard'), '/');
+
+        return new RedirectResponse(str_starts_with($back, $admin.'/') && !str_starts_with($back, '//') ? $back : $this->urls->generate('quire_admin_content_changes', ['type' => $definition->id, 'id' => $item->id, 'pending' => $revision->id]), Response::HTTP_SEE_OTHER);
     }
 
     public function history(string $type, string $id): Response
