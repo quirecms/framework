@@ -71,7 +71,7 @@ final class AuditLogTest extends KernelTestCase
         $entries = $this->entries(new AuditQuery(subjectId: $post->id));
 
         self::assertSame(['content.created', 'content.updated', 'content.transitioned', 'content.trashed', 'content.restored', 'content.trashed', 'content.purged'], array_column($entries, 'action'));
-        self::assertSame([null, null, 'bin/console quire:content:transition '.$post->id.' publish', 'bin/console quire:content:delete '.$post->id, 'bin/console quire:content:restore '.$post->id, 'bin/console quire:content:delete '.$post->id, 'bin/console quire:content:delete '.$post->id.' --purge --force'], array_column($entries, 'command'));
+        self::assertSame(['bin/console quire:content:create post Audited --slug=audited --locale=en', null, 'bin/console quire:content:transition '.$post->id.' publish', 'bin/console quire:content:delete '.$post->id, 'bin/console quire:content:restore '.$post->id, 'bin/console quire:content:delete '.$post->id, 'bin/console quire:content:delete '.$post->id.' --purge --force'], array_column($entries, 'command'));
         self::assertSame(2, $entries[1]['repeats'], 'Saving again soon after updates the entry.');
         self::assertSame(['title', 'body'], $entries[1]['details']['changed'], 'What changed in either save.');
         // PostgreSQL orders the keys of JSON objects its own way.
@@ -158,7 +158,7 @@ final class AuditLogTest extends KernelTestCase
             'bin/console quire:permissions:grant translator content.post.edit_any content.page.edit_any',
             'bin/console quire:permissions:revoke translator content.page.edit_any',
             'bin/console quire:permissions:revoke editor content.post.publish',
-            null,
+            "bin/console quire:permissions:create-role translator 'Übersetzer'",
             'bin/console quire:permissions:delete-role translator --force',
         ], array_column($entries, 'command'));
         self::assertSame(['granted' => [], 'revoked' => ['content.post.edit_any']], $entries[5]['details'], 'What it could do when it was deleted.');
@@ -198,7 +198,7 @@ final class AuditLogTest extends KernelTestCase
         $self = self::getContainer()->get(UserWriter::class)->create(new CreateUser('Kim', 'kim@example.com', username: 'kim'));
         self::getContainer()->get(UserWriter::class)->setRoles($self->id, ['editor']);
         self::getContainer()->get(Settings::class)->set('site.description', 'A site, "quoted"');
-        $commands = array_filter(array_column($this->entries(new AuditQuery(since: new \DateTimeImmutable('-1 minute'))), 'command'), static fn (?string $command): bool => null !== $command && !str_contains($command, 'quire:user:create'));
+        $commands = array_filter(array_column($this->entries(new AuditQuery(since: new \DateTimeImmutable('-1 minute'))), 'command'), static fn (?string $command): bool => null !== $command && !str_contains($command, 'quire:user:create') && !str_contains($command, 'quire:content:create'));
 
         // Back to how it was, then the commands do it again.
         $other = $writer->create(new CreateContent('post', 'Twice'));

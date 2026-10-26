@@ -446,6 +446,57 @@ final readonly class PriceCheck implements ContentCheckInterface
 
 The item a check gets may not be saved: it's what would be published, e.g. while it's being written. Checks run while editing, so keep them quick, and they must not change anything.
 
+#### `Extend\Actions`
+
+Adds **actions**: things people do with the site, e.g. approve a review or refund an order. Admin interfaces offer them, APIs run them and the audit log describes them, each with who may do it and the console command that does the same. Core's own are in the catalogue too: `content.transition`, `content.review_changes`, `user.invite`, `role.grant`, `setting.set` and more (list them with `Quire\Action\Actions::ids()`).
+
+```php
+new Extend\Actions()
+    ->action('acme-reviews.approve', ApproveReview::class),
+```
+
+An action is a service implementing `Quire\Action\ActionInterface`:
+
+```php
+final readonly class ApproveReview implements ActionInterface
+{
+    public function definition(): ActionDefinition
+    {
+        return new ActionDefinition('Approve a review', [
+            new Parameter('review', ParameterType::Text, 'Review'),
+            new Parameter('notify', ParameterType::Bool, 'Tell its author', required: false),
+        ], command: 'acme-reviews:approve');
+    }
+
+    // Who may: null, or why not, in a sentence for them.
+    public function denied(Arguments $arguments): ?string
+    {
+        return $this->security->isGranted('acme-reviews.moderate') ? null : 'Approving reviews takes the right to moderate them.';
+    }
+
+    public function run(Arguments $arguments): Review
+    {
+        return $this->reviews->approve($arguments->string('review'), notify: $arguments->bool('notify'));
+    }
+
+    public function commandLine(Arguments $arguments): string
+    {
+        return CommandLine::of('acme-reviews:approve', [$arguments->string('review')], ['notify' => $arguments->bool('notify') ? true : null]);
+    }
+}
+```
+
+Run actions through `Quire\Action\Actions`, which checks the arguments against the parameters, asks `denied()` as the signed-in user, and only then calls `run()`:
+
+```php
+$actions->denied('content.transition', ['content' => $id, 'transition' => 'publish']);  // null, or why not
+$actions->run('content.transition', ['content' => $id, 'transition' => 'publish']);     // or ActionDeniedException
+$actions->commandLine('content.transition', ['content' => $id, 'transition' => 'publish']);
+// bin/console quire:content:transition 0192… publish
+```
+
+Arguments are values JSON can hold, and references are IDs or names, so they can come from a form, an API or the audit log. Do the work through your services, so whatever records or reacts to it sees it however it was done; and record it in the [audit log](#recording-actions-in-the-audit-log) with `$actions->commandLine()` as its command. Mark parameters that are passwords or keys `secret: true`, and keep them out of the command line: the command asks for them. Mark actions that delete for good `destructive: true`, so interfaces confirm them first.
+
 #### `Extend\FieldTypes`
 
 Adds kinds of values fields can hold, next to core's. A type decides how values are checked and stored, how queries compare them, whether they can be indexed, and which admin widget edits them:

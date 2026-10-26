@@ -18,7 +18,7 @@ Each entry has:
 - **where**: in the admin, on the website, the console command (e.g. `quire:user:suspend`) or the job,
 - **what** it was about: the item, user, role or setting, with its name at the time,
 - **details**, e.g. which fields changed, a setting's old and new value, the roles added,
-- the **console command that does the same**, where there is one, e.g. `bin/console quire:content:transition 0192… publish`,
+- the **console command that does the same**, where there is one, e.g. `bin/console quire:content:transition 0192… publish`: what the [action](extensions.md#extendactions) that has the same effect writes, so it's the command the admin shows too. Text written in an editor, and changes of names and emails, have none,
 - a **group**: everything one request, command or job did, e.g. the items of one bulk action.
 
 Saving the same item again within 15 minutes updates its entry (with how many times, and the fields changed in any of them) instead of adding one per save, so autosaving doesn't fill the log.
