@@ -5,7 +5,8 @@
  *     docker run --rm --network quire_default -e QUIRE_CHECK_SERVER=php -v "$PWD/tests/Browser:/work" -w /work \
  *         mcr.microsoft.com/playwright:v1.55.1-noble sh -c 'npm ci && npx playwright test'
  *
- * Add --update-snapshots to approve new screenshots after a deliberate change of the design.
+ * Add --update-snapshots=all to approve new screenshots after a deliberate change of the design (without
+ * "=all", only those that differ by more than the tolerance are replaced).
  */
 import { defineConfig } from '@playwright/test';
 

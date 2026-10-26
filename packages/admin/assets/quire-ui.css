@@ -48,6 +48,10 @@
         --q-scheduled-ink: light-dark(#7a4a00, #f6c97f);
         --q-live: light-dark(#0e7c70, #3cc6b3);
 
+        /* Quire's brand, for its mark */
+        --q-brand-navy: light-dark(#1c194b, #ffffff);
+        --q-brand-orange: #f9991b;
+
         /* Type */
         --q-font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
         --q-font-display: "Bricolage Grotesque", var(--q-font);
@@ -261,17 +265,16 @@
     .q-rail__brand {
         display: grid;
         place-items: center;
-        width: 2.625rem;
-        height: 2.625rem;
+        width: 2.75rem;
+        height: 2.75rem;
         margin-bottom: var(--q-space-3);
-        border-radius: 0.8rem;
-        background: var(--q-ink);
-        color: var(--q-paper);
-        font: 700 1.3rem var(--q-font-display);
-        text-decoration: none;
+        border-radius: var(--q-radius-sm);
     }
 
-    .q-rail__nav { display: contents; }
+    .q-logo { width: 100%; height: 100%; }
+    .q-logo__q { fill: var(--q-brand-navy); }
+    .q-logo__fold { fill: var(--q-brand-orange); }
+
     .q-rail__nav, .q-rail__nav li { display: contents; }
     .q-rail__nav { margin: 0; padding: 0; list-style: none; }
 

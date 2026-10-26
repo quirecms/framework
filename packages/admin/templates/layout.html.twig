@@ -20,6 +20,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
     <meta name="color-scheme" content="light dark">
+    {#- Turbo drives the admin's pages only: the site's are full page loads, with their theme's stylesheets
+        and scripts, which Turbo would otherwise merge into the admin's <head> and keep there. #}
+    <meta name="turbo-root" content="{{ path('quire_admin_dashboard') }}">
     <title>{% block title %}{% endblock %} · {{ 'Admin'|trans({}, 'quire-admin') }} · {{ site.title }}</title>
     {{ quire_slot('admin.head') }}
 </head>
@@ -36,7 +39,7 @@
 
     <div class="q-shell">
         <nav class="q-rail" aria-label="{{ 'Admin menu'|trans({}, 'quire-admin') }}">
-            <a class="q-rail__brand" href="{{ path('quire_admin_dashboard') }}" title="{{ 'Admin'|trans({}, 'quire-admin') }}"><span aria-hidden="true">Q</span><span class="q-sr">{{ 'Admin'|trans({}, 'quire-admin') }}</span></a>
+            <a class="q-rail__brand" href="{{ path('quire_admin_dashboard') }}" title="{{ 'Admin'|trans({}, 'quire-admin') }}">{{ ui.logo() }}<span class="q-sr">{{ 'Admin'|trans({}, 'quire-admin') }}</span></a>
 
             {% set creatable = quire_admin_new() %}
             {% if creatable is not empty %}

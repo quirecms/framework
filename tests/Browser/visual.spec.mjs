@@ -3,6 +3,7 @@
  * with them (the latest activity) are masked: the demo site is dated relative to when it was made.
  */
 import { test, expect } from '@playwright/test';
+import { signIn } from './sign-in.mjs';
 
 const screens = {
     home: '/admin',
@@ -15,12 +16,7 @@ const screens = {
     components: '/admin/ui',
 };
 
-test.beforeEach(async ({ page }) => {
-    await page.goto('/login');
-    await page.fill('#username', 'ada');
-    await page.fill('#password', 'correct-horse-42');
-    await Promise.all([page.waitForURL(/\/(admin)?$/), page.click('form button[type=submit]')]);
-});
+test.beforeEach(async ({ page }) => signIn(page));
 
 for (const [name, path] of Object.entries(screens)) {
     test(name, async ({ page }) => {
