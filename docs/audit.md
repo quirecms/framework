@@ -47,6 +47,19 @@ bin/console quire:audit:list --origin job
 bin/console quire:audit:list --format jsonl --limit 0 > audit.jsonl   # everything, one JSON object per line
 ```
 
+## Undoing
+
+Much of what's recorded can be undone, through the action that does the opposite: publishing (through the transition back, e.g. "unpublish"), moving to the trash and restoring, suspending and letting in again, a user's roles, a role's abilities and name, settings and the theme. Only while nothing changed it since: the entry must be the latest about what it changed, and that must still be as it left it. Deletions, purges, emails, sign-ins and extensions can't be undone.
+
+```bash
+bin/console quire:audit:undo 0192b6a0-…            # the entry's ID, from quire:audit:list
+bin/console quire:audit:undo 0192b6a0-… --dry-run  # only says how
+```
+
+Undoing takes the ability of the action that undoes it, and it's recorded like that action. In code, `Quire\Audit\AuditUndo` says how an entry would be undone (`plan()`), whether the signed-in person may (`canUndo()`), and does it (`undo()`).
+
+`Quire\Audit\AuditLog` also counts entries per day (`countByDay()`, in a time zone) and per action (`countByAction()`), and `AuditQuery` finds them by text in the subject's label, the actor's name or the action.
+
 ## How long it's kept
 
 The setting `quire.audit.retention_days` (365 by default; 0 keeps entries forever). The scheduled job `quire.prune-audit-log` deletes older entries every night, so it needs a [worker](jobs.md).
