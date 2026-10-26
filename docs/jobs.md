@@ -32,6 +32,7 @@ Core and extensions declare tasks that run on a schedule:
 | `quire.publish-due` | Every minute | Publishes scheduled items whose date has passed, so what extensions do on publishing (feeds, notifications, …) happens. Visitors see the items at their date anyway. |
 | `quire.collect-garbage` | Daily at 03:30 | Deletes stored files that nothing has used for `quire.storage.gc_grace_days` days (default 1), like [`quire:storage:gc`](storage.md#cleaning-up) |
 | `quire.prune-audit-log` | Daily at 03:45 | Deletes [audit log](audit.md) entries older than `quire.audit.retention_days` days (default 365) |
+| `quire.recheck-content` | Daily at 04:15 | Runs the [content checks](content.md#checks-before-publishing) on every item again and stores what they find, e.g. for links to pages that went away |
 
 Workers dispatch them: every worker checks the schedule every 15 seconds, and each occurrence runs **once**, however many workers and servers there are. That needs no lock and no shared cache: each task has a row in `quire.job_schedule`, and the worker that moves it forward runs the occurrence, in the same transaction. When no worker ran at the time, e.g. during a deployment, the most recent missed occurrence runs when one starts again, and older ones are skipped. A task appearing for the first time, e.g. from a newly enabled extension, starts with its next occurrence.
 
