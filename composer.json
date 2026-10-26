@@ -62,6 +62,7 @@
             "App\\Tests\\": "tests/",
             "Quire\\Admin\\Tests\\": "packages/admin/tests/",
             "Quire\\Fixtures\\Hello\\": "tests/Fixtures/extensions/hello/src/",
+            "Quire\\Fixtures\\Recipes\\": "tests/Fixtures/extensions/recipes/src/",
             "Quire\\Tests\\": "packages/core/tests/",
             "Quire\\Testing\\Tests\\": "packages/testing/tests/",
             "Quire\\ThemeDefault\\Tests\\": "packages/theme-default/tests/"

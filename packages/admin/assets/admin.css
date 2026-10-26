@@ -1163,3 +1163,124 @@ textarea {
 .card__actions .link-button {
     min-block-size: 1.5rem;
 }
+
+/* The audit log, and what an action does as console commands */
+.command {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: start;
+    gap: var(--admin-space-2) var(--admin-space-3);
+    margin: 0 0 var(--admin-space-4);
+    padding: var(--admin-space-3) var(--admin-space-4);
+    border: 1px solid var(--admin-border);
+    border-radius: var(--admin-radius);
+    background: var(--admin-surface);
+}
+
+.command__label {
+    flex: 0 0 100%;
+    color: var(--admin-muted);
+    font-size: 0.875rem;
+}
+
+.command__text {
+    flex: 1 1 20rem;
+    min-width: 0;
+    font-family: var(--admin-font-mono);
+    font-size: 0.875rem;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.narrowed {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--admin-space-2) var(--admin-space-4);
+    margin: 0 0 var(--admin-space-4);
+    padding: 0;
+    list-style: none;
+}
+
+.narrowed li {
+    padding: var(--admin-space-1) var(--admin-space-3);
+    border: 1px solid var(--admin-border);
+    border-radius: var(--admin-radius);
+    background: var(--admin-surface);
+}
+
+.audit__when {
+    white-space: nowrap;
+}
+
+.audit__what {
+    min-width: 12rem;
+}
+
+@media (max-width: 40rem) {
+    .audit__when {
+        white-space: normal;
+    }
+}
+
+.audit__details {
+    display: grid;
+    gap: var(--admin-space-1);
+    margin: var(--admin-space-2) 0 0;
+    font-size: 0.875rem;
+}
+
+.audit__details div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--admin-space-2);
+}
+
+.audit__details dt {
+    color: var(--admin-muted);
+}
+
+.audit__details dt::after {
+    content: ":";
+}
+
+.audit__details dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.audit__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--admin-space-1) var(--admin-space-4);
+    margin: var(--admin-space-2) 0 0;
+}
+
+.audit__links a {
+    display: inline-block;
+    min-height: 1.5rem;
+}
+
+.audit__command {
+    margin-top: var(--admin-space-2);
+}
+
+.audit__command summary {
+    cursor: pointer;
+    min-height: 1.5rem;
+}
+
+.audit__command .command {
+    margin: var(--admin-space-2) 0 0;
+}
+
+.audit td > .meta {
+    display: block;
+}
+
+.audit td {
+    vertical-align: top;
+}
+
+.audit td > .meta {
+    overflow-wrap: anywhere;
+}

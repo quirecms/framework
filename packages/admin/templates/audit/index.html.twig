@@ -1,0 +1,111 @@
+{#
+    The audit log. Variables: entries (entry, summary, subject_url, actor, actor_url, via, details), total,
+    state (area, origin, since, until, actor, subject_type, subject, correlation), areas, origins,
+    narrowed (label, remove_url), page, pages, previous_url, next_url, timezone.
+#}
+{% extends '@quire_admin/layout.html.twig' %}
+
+{% block title %}{{ 'Audit log'|trans({}, 'quire-admin') }}{% endblock %}
+
+{% block content %}
+    <form class="list-tools" method="get" action="{{ path('quire_admin_audit') }}">
+        {% for name in ['actor', 'subject_type', 'subject', 'correlation'] %}
+            {% if state[name] %}<input type="hidden" name="{{ name }}" value="{{ state[name] }}">{% endif %}
+        {% endfor %}
+        <label>
+            <span>{{ 'What'|trans({}, 'quire-admin') }}</span>
+            <select name="area">
+                <option value="">{{ 'Everything'|trans({}, 'quire-admin') }}</option>
+                {% for area in areas %}<option value="{{ area }}"{% if state.area == area %} selected{% endif %}>{{ ('audit.area.' ~ area|trim('.', 'right'))|trans({}, 'quire-admin') }}</option>{% endfor %}
+            </select>
+        </label>
+        <label>
+            <span>{{ 'Where'|trans({}, 'quire-admin') }}</span>
+            <select name="origin">
+                <option value="">{{ 'Anywhere'|trans({}, 'quire-admin') }}</option>
+                {% for origin in origins %}<option value="{{ origin }}"{% if state.origin == origin %} selected{% endif %}>{{ ('audit.origin.' ~ origin)|trans({}, 'quire-admin') }}</option>{% endfor %}
+            </select>
+        </label>
+        <label>
+            <span>{{ 'From'|trans({}, 'quire-admin') }}</span>
+            <input type="date" name="since" value="{{ state.since }}">
+        </label>
+        <label>
+            <span>{{ 'To'|trans({}, 'quire-admin') }}</span>
+            <input type="date" name="until" value="{{ state.until }}">
+        </label>
+        <button type="submit" class="button">{{ 'Show'|trans({}, 'quire-admin') }}</button>
+    </form>
+
+    {% if narrowed %}
+        <ul class="narrowed" aria-label="{{ 'Showing only'|trans({}, 'quire-admin') }}">
+            {% for item in narrowed %}
+                <li>{{ item.label }} <a href="{{ item.remove_url }}">{{ 'Show all'|trans({}, 'quire-admin') }}<span class="visually-hidden"> ({{ item.label }})</span></a></li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    {% if entries is empty %}
+        <p class="empty">{{ total == 0 and not (state|filter(v => v)) ? 'Nothing recorded yet.'|trans({}, 'quire-admin') : 'Nothing matches.'|trans({}, 'quire-admin') }}</p>
+    {% else %}
+        <div class="table-scroll">
+            <table class="table audit">
+                <caption class="visually-hidden">{{ 'Audit log'|trans({}, 'quire-admin') }}, {{ 'page {page} of {pages}'|trans({page: page, pages: pages}, 'quire-admin') }}</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">{{ 'When'|trans({}, 'quire-admin') }}</th>
+                        <th scope="col">{{ 'Who'|trans({}, 'quire-admin') }}</th>
+                        <th scope="col">{{ 'What'|trans({}, 'quire-admin') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in entries %}
+                        {% set entry = item.entry %}
+                        <tr>
+                            <td class="audit__when">
+                                <time datetime="{{ entry.lastAt|date('c') }}">{{ entry.lastAt|date('Y-m-d H:i', timezone) }}</time>
+                                {% if entry.repeats > 1 %}
+                                    <span class="meta">{{ '{count, plural, other {# times since {time}}}'|trans({count: entry.repeats, time: entry.occurredAt|date('H:i', timezone)}, 'quire-admin') }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.actor_url %}<a href="{{ item.actor_url }}">{{ item.actor }}</a>{% else %}{{ item.actor }}{% endif %}
+                                {% if item.via %}<span class="meta">{{ item.via }}</span>{% endif %}
+                            </td>
+                            <td class="audit__what">
+                                {% if item.subject_url %}<a class="audit__summary" href="{{ item.subject_url }}">{{ item.summary }}</a>{% else %}<span class="audit__summary">{{ item.summary }}</span>{% endif %}
+                                {% if item.details %}
+                                    <dl class="audit__details">
+                                        {% for detail in item.details %}
+                                            <div><dt>{{ detail.label }}</dt><dd>{{ detail.value }}</dd></div>
+                                        {% endfor %}
+                                    </dl>
+                                {% endif %}
+                                <p class="audit__links meta">
+                                    {% if entry.actorId and state.actor != entry.actorId %}<a href="{{ path('quire_admin_audit', {actor: entry.actorId}) }}">{{ 'All by {name}'|trans({name: item.actor}, 'quire-admin') }}</a>{% endif %}
+                                    {% if entry.subjectId and state.subject != entry.subjectId %}<a href="{{ path('quire_admin_audit', {subject_type: entry.subjectType, subject: entry.subjectId}) }}">{{ 'All about it'|trans({}, 'quire-admin') }}<span class="visually-hidden"> ({{ entry.subjectLabel ?? entry.subjectId }})</span></a>{% endif %}
+                                    {% if state.correlation != entry.correlationId %}<a href="{{ path('quire_admin_audit', {correlation: entry.correlationId}) }}">{{ 'Done together'|trans({}, 'quire-admin') }}<span class="visually-hidden"> ({{ item.summary }})</span></a>{% endif %}
+                                </p>
+                                {% if entry.command %}
+                                    <details class="audit__command">
+                                        <summary>{{ 'As a command'|trans({}, 'quire-admin') }}<span class="visually-hidden"> ({{ item.summary }})</span></summary>
+                                        {% include '@quire_admin/_command.html.twig' with {commands: [entry.command], label: false} only %}
+                                    </details>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <p class="meta">{{ '{count, plural, one {# entry} other {# entries}}'|trans({count: total}, 'quire-admin') }}</p>
+    {% endif %}
+
+    {% if pages > 1 %}
+        <nav class="pagination" aria-label="{{ 'Pages'|trans({}, 'quire-admin') }}">
+            {% if previous_url %}<a href="{{ previous_url }}" rel="prev">{{ 'Newer'|trans({}, 'quire-admin') }}</a>{% endif %}
+            <span>{{ 'Page {page} of {pages}'|trans({page: page, pages: pages}, 'quire-admin') }}</span>
+            {% if next_url %}<a href="{{ next_url }}" rel="next">{{ 'Older'|trans({}, 'quire-admin') }}</a>{% endif %}
+        </nav>
+    {% endif %}
+{% endblock %}

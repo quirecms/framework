@@ -8,7 +8,10 @@
 {% block title %}{{ 'History of “{title}”'|trans({title: item.title}, 'quire-admin') }}{% endblock %}
 
 {% block actions %}
-    <p class="page-header__links"><a href="{{ path('quire_admin_content_edit', {type: type.id, id: item.id}) }}">{{ 'Back to the item'|trans({}, 'quire-admin') }}</a></p>
+    <p class="page-header__links">
+        <a href="{{ path('quire_admin_content_edit', {type: type.id, id: item.id}) }}">{{ 'Back to the item'|trans({}, 'quire-admin') }}</a>
+        {% if is_granted('quire.audit.view') %}<a href="{{ path('quire_admin_audit', {subject_type: 'content', subject: item.id}) }}">{{ 'Activity'|trans({}, 'quire-admin') }}</a>{% endif %}
+    </p>
 {% endblock %}
 
 {% block content %}

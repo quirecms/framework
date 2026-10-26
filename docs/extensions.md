@@ -899,7 +899,7 @@ Each change dispatches events from `Quire\Content\Event`:
 | `ContentDeleting` (to the trash) | `ContentDeleted`, `ContentRestored` |
 | `ContentPurging` (permanently) | `ContentPurged` |
 | | `PendingRevisionSaved`, `PendingRevisionSubmitted`, `PendingRevisionReviewed`, `PendingRevisionDiscarded` |
-| `ContentUpdating` (publishing a pending revision) | `ContentUpdated`, `PendingRevisionPublished` |
+| `ContentUpdating` (publishing a pending revision) | `ContentUpdated` (its `publishedPendingRevision` set), `PendingRevisionPublished` |
 
 `ContentViewing` is dispatched before an item's page is rendered. Its listeners can add template variables with `$event->set('related', $items)`, or call `$event->deny()` to respond with "404 Not Found".
 
@@ -917,6 +917,10 @@ final class RejectSpam
     }
 }
 ```
+
+### Recording actions in the audit log
+
+Core records its own actions in the [audit log](audit.md). Record your extension's with `Quire\Audit\AuditLog::record()`, with the console command that does the same when there is one, and describe them for the admin with a translation: see [recording an extension's actions](audit.md#recording-an-extensions-actions).
 
 ### Testing your extension
 

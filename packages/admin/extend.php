@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Quire\Admin\Controller\AuditController;
 use Quire\Admin\Controller\ContentChangesController;
 use Quire\Admin\Controller\ContentEditController;
 use Quire\Admin\Controller\ContentListController;
@@ -11,6 +12,7 @@ use Quire\Admin\Controller\RolesController;
 use Quire\Admin\Controller\SettingsController;
 use Quire\Admin\Controller\ThemesController;
 use Quire\Admin\Controller\UsersController;
+use Quire\Admin\Dashboard\Widget\ActivityWidget;
 use Quire\Admin\Dashboard\Widget\ChangesWidget;
 use Quire\Admin\Dashboard\Widget\ContentWidget;
 use Quire\Admin\Dashboard\Widget\RecentlyEditedWidget;
@@ -62,7 +64,8 @@ return [
         ->add('/roles/{role}/delete', 'quire_admin_role_delete', [RolesController::class, 'delete'], ['GET', 'HEAD', 'POST'], ['role' => '[a-z][a-z0-9_-]*'])
         ->get('/extensions', 'quire_admin_extensions', ExtensionsController::class)
         ->get('/extensions/{id}/{action}', 'quire_admin_extension_confirm', [ExtensionsController::class, 'confirm'], requirements: ['id' => '[a-z0-9]+(?:-[a-z0-9]+)*', 'action' => 'enable|disable|purge'])
-        ->post('/extensions/{id}/{action}', 'quire_admin_extension_act', [ExtensionsController::class, 'act'], requirements: ['id' => '[a-z0-9]+(?:-[a-z0-9]+)*', 'action' => 'enable|disable|purge']),
+        ->post('/extensions/{id}/{action}', 'quire_admin_extension_act', [ExtensionsController::class, 'act'], requirements: ['id' => '[a-z0-9]+(?:-[a-z0-9]+)*', 'action' => 'enable|disable|purge'])
+        ->get('/audit', 'quire_admin_audit', AuditController::class),
 
     new Extend\Views()
         ->namespace('quire_admin', __DIR__.'/templates'),
@@ -76,10 +79,12 @@ return [
         ->menu('quire-admin.settings', 'Settings', 'quire_admin_settings', ability: SettingsController::ABILITY, section: 'site', order: 10)
         ->menu('quire-admin.themes', 'Themes', 'quire_admin_themes', ability: ThemesController::ABILITY, section: 'site', order: 20)
         ->menu('quire-admin.extensions', 'Extensions', 'quire_admin_extensions', ability: ExtensionsController::ABILITY, section: 'site', order: 30)
+        ->menu('quire-admin.audit', 'Audit log', 'quire_admin_audit', ability: AuditController::ABILITY, section: 'site', order: 40)
         ->menu('quire-admin.users', 'Users', 'quire_admin_users', ability: UsersController::ABILITY, section: 'users', order: 10)
         ->menu('quire-admin.roles', 'Roles', 'quire_admin_roles', ability: RolesController::ABILITY, section: 'users', order: 20)
         ->menu('quire-admin.access', 'Check access', 'quire_admin_access', ability: RolesController::ABILITY, section: 'users', order: 30)
         ->widget(ContentWidget::class, order: 10)
         ->widget(ChangesWidget::class, order: 15)
-        ->widget(RecentlyEditedWidget::class, order: 20),
+        ->widget(RecentlyEditedWidget::class, order: 20)
+        ->widget(ActivityWidget::class, order: 30),
 ];

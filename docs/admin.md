@@ -6,8 +6,6 @@ The admin interface, the extension `quire-admin` (package `quire/admin`), manage
 bin/console quire:extension:enable quire-admin
 ```
 
-> **Status:** the admin is being built. It has its layout, menu, dashboard, content lists, editor with content checks, changes to published content with review and history, the site's settings, theme and extensions, and users and roles; the audit log follows.
-
 ## Who can use it
 
 Users with the ability `quire.admin.access` can open the admin: editors and admins by default. Guests are asked to sign in first, and other users get "403 Forbidden". Give the ability to other roles like any ability:
@@ -66,6 +64,12 @@ Under "Site" in the menu, for admins: each page takes its own ability, `quire.se
 
 When the theme and extensions are pinned in configuration, as for immutable production images, the pages say so and change nothing: change the configuration and redeploy instead.
 
+## Audit log and commands
+
+"Audit log", under "Site" in the menu, shows who did what and when, in the admin, on the command line and in background jobs, for users with the ability `quire.audit.view` (admins). See [audit log](audit.md).
+
+Everything the admin does, it does through the same services as the console commands. So after an action, those who may see the audit log get the command that does the same, e.g. `bin/console quire:user:suspend ada`, with a button to copy it: what you clicked once can go in a script.
+
 ## Users and roles
 
 Under "Users" in the menu, for admins: "Users" takes the ability `quire.users.manage`, "Roles" and "Check access" take `quire.permissions.manage`. No other role has them by default.
@@ -98,3 +102,5 @@ The admin is translated with the site's language (`site.locale`), in the domain 
 ## Adding to it
 
 Extensions add pages, menu entries, dashboard widgets, and columns, filters and actions of content lists: see [admin pages](extensions.md#admin-pages).
+
+Most extensions need none of that. The admin builds its screens from what extensions declare: a content type gets a menu entry, a list that sorts and filters by its fields, and a form with a control for each field; a field type picks the control that edits it (or adds one); settings get their page; abilities appear in the roles' pages; and the extension's actions, recorded in the [audit log](audit.md), are listed with everyone else's.

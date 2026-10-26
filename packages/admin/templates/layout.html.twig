@@ -44,9 +44,14 @@
 
         <main class="admin-main" id="main" tabindex="-1">
             {% for type, messages in app.flashes %}
-                {% for message in messages %}
-                    <p class="notice notice--{{ type }}" role="{{ type == 'error' ? 'alert' : 'status' }}">{{ message }}</p>
-                {% endfor %}
+                {% if type == 'command' %}
+                    {# What was just done, as console commands (see AsCommandListener). #}
+                    {% include '@quire_admin/_command.html.twig' with {commands: messages} only %}
+                {% else %}
+                    {% for message in messages %}
+                        <p class="notice notice--{{ type }}" role="{{ type == 'error' ? 'alert' : 'status' }}">{{ message }}</p>
+                    {% endfor %}
+                {% endif %}
             {% endfor %}
 
             <div class="page-header">
