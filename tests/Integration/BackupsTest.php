@@ -8,6 +8,7 @@ use App\Tests\Support\RecordingAppRebuilder;
 use App\Tests\Support\ScratchDatabases;
 use Doctrine\DBAL\Connection;
 use Quire\Backup\BackupContents;
+use Quire\Backup\BackupLog;
 use Quire\Backup\Backups;
 use Quire\Backup\Internal\RestoreChecks;
 use Quire\Content\Command\CreateContent;
@@ -52,6 +53,13 @@ final class BackupsTest extends WebTestCase
         self::assertSame(0o600, fileperms($file) & 0o777);
         self::assertSame([$file], glob($this->directory.'/*'));
         self::assertStringContainsString('already exists', $this->console('quire:backup', ['file' => $file], expectedStatus: 1));
+
+        // When the site was last backed up, e.g. for its health on the admin's Home.
+        $last = self::getContainer()->get(BackupLog::class)->last();
+        self::assertNotNull($last);
+        self::assertSame([true, filesize($file), $file, null], [$last->ok, $last->bytes, $last->target, $last->problem], 'A refused backup isn\'t one.');
+        self::assertEqualsWithDelta(time(), $last->finishedAt->getTimestamp(), 60);
+        self::assertEquals($last, self::getContainer()->get(BackupLog::class)->lastSuccessful());
     }
 
     public function testAFailedRestorePutsTheDataFromBeforeBack(): void

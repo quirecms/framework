@@ -95,6 +95,7 @@ Values use the same format as `quire:settings:set`. A setting fixed by an enviro
 |-----|------|---------|-------------|
 | `site.title` | string | `Quire` | Shown in the browser tab and the site header |
 | `site.description` | string | (empty) | A short description of the site, used by search engines and when the site is shared |
+| `site.share_image` | string | (none) | The image shared with pages that have none of their own: a URL, or a path on the site |
 | `site.locale` | string | `en` | The language of the site and of new content, as a language tag such as `en`, `de` or `pt-BR` |
 | `quire.auth.password_login` | bool | `true` | Whether users can sign in with a password (see [users](users.md#signing-in)) |
 | `quire.auth.registration` | bool | `false` | Whether visitors can create an account, as members (see [users](users.md#registration-and-password-reset)) |

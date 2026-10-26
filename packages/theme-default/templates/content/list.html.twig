@@ -13,14 +13,7 @@
     <h1{% if is_home %} class="visually-hidden"{% endif %}>{{ is_home ? site.title : type.pluralLabel }}</h1>
 
     {% for item in page %}
-        <article class="card">
-            <h2><a href="{{ quire_url(item) }}">{{ item.title }}</a></h2>
-            {% if item.publishedAt and type.has('scheduling') and theme.settings.show_dates %}
-                <p class="entry-meta"><time datetime="{{ item.publishedAt|date('c') }}">{{ item.publishedAt|quire_date }}</time></p>
-            {% endif %}
-            {% set excerpt = quire_excerpt(item) %}
-            {% if excerpt %}<p>{{ excerpt }}</p>{% endif %}
-        </article>
+        {{ include(['content/' ~ type.id ~ '/_card.html.twig', 'content/_card.html.twig'], {item: item, type: type}) }}
     {% else %}
         <p>{{ 'Nothing here yet.'|trans({}, 'quire-theme-default') }}</p>
     {% endfor %}

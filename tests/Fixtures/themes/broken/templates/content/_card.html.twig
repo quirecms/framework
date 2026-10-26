@@ -1,0 +1,2 @@
+{# Uses the request, which a card shown alone as a preview doesn't have. #}
+<article><a href="{{ quire_url(item) }}"{% if app.request.query.has('highlight') %} class="highlight"{% endif %}>{{ item.title }}</a></article>

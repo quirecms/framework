@@ -138,7 +138,10 @@
             "install-path": "../../packages/theme-default",
             "extra": {
                 "quire": {
-                    "title": "Default"
+                    "title": "Default",
+                    "theme": {
+                        "screenshot": "screenshot.png"
+                    }
                 }
             }
         },

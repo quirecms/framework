@@ -2321,7 +2321,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/theme-default",
-                "reference": "3d6284ba30fa5ae78e22f77170fb4eb116a9ed64"
+                "reference": "f8a198b9798377b709b8ae671a6e8fdbecf81c4c"
             },
             "require": {
                 "php": ">=8.5",
@@ -2334,7 +2334,10 @@
             "extra": {
                 "quire": {
                     "title": "Default",
-                    "description": "Accessible, responsive, light and dark. Use it as it is, or as the parent of your own theme."
+                    "description": "Accessible, responsive, light and dark. Use it as it is, or as the parent of your own theme.",
+                    "theme": {
+                        "screenshot": "screenshot.png"
+                    }
                 },
                 "branch-alias": {
                     "dev-main": "0.1.x-dev"
