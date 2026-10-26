@@ -8,15 +8,10 @@ use Quire\Content\Command\CreateContent;
 use Quire\Content\Command\UpdateContent;
 use Quire\Content\ContentWriter;
 use Quire\Content\Status;
-use Quire\Testing\ExtensionTestCase;
-use Quire\User\CreateUser;
-use Quire\User\UserWriter;
+use Quire\Testing\AdminTestCase;
 
-final class DashboardTest extends ExtensionTestCase
+final class DashboardTest extends AdminTestCase
 {
-    #[\Override]
-    protected static array $extensions = ['quire-admin'];
-
     public function testTheDashboardSummarisesContent(): void
     {
         $writer = $this->service(ContentWriter::class);
@@ -78,12 +73,5 @@ final class DashboardTest extends ExtensionTestCase
 
         self::assertSelectorTextSame('main h1', 'Übersicht');
         self::assertSelectorTextSame('.skip-link', 'Zum Inhalt springen');
-    }
-
-    private function signIn(string $role): void
-    {
-        $this->service(UserWriter::class)->create(new CreateUser(ucfirst($role), $role.'@example.com', password: 'correct-horse-42', roles: [$role]));
-        $this->client->request('GET', '/login');
-        $this->client->submitForm('Sign in', ['_username' => $role, '_password' => 'correct-horse-42']);
     }
 }

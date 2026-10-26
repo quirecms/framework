@@ -28,7 +28,7 @@ final class SkeletonTest extends TestCase
     ];
 
     /** Files only the application has: those of the tests and of the development tools */
-    private const array APPLICATION_ONLY = ['.env.test', 'bin/phpunit', 'config/packages/test/quire.yaml', 'config/services_test.yaml'];
+    private const array APPLICATION_ONLY = ['.env.test', 'bin/phpunit', 'config/packages/test/quire.yaml', 'config/services_dev.yaml', 'config/services_test.yaml'];
 
     /** The parts of this repository that make up the application */
     private const array APPLICATION_DIRECTORIES = ['assets', 'bin', 'config', 'frankenphp', 'migrations', 'public', 'src', 'templates', 'translations'];

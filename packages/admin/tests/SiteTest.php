@@ -14,20 +14,15 @@ use Quire\Extension\ExtensionSwitcher;
 use Quire\Extension\InstalledExtensions;
 use Quire\Extension\Rebuild\AppRebuilderInterface;
 use Quire\Extension\State\ExtensionStateStoreInterface;
-use Quire\Testing\ExtensionTestCase;
-use Quire\User\CreateUser;
-use Quire\User\UserWriter;
+use Quire\Testing\AdminTestCase;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
  * Site management in the admin: settings, themes and extensions, for administrators only.
  */
-final class SiteTest extends ExtensionTestCase
+final class SiteTest extends AdminTestCase
 {
-    #[\Override]
-    protected static array $extensions = ['quire-admin'];
-
     public function testOnlyAdministratorsManageTheSite(): void
     {
         $this->signIn('editor');
@@ -237,12 +232,5 @@ final class SiteTest extends ExtensionTestCase
         $container->set(ExtensionSwitcher::class, new ExtensionSwitcher($manager, $purges, $rebuilds));
 
         return [$state, $rebuilds, $purges];
-    }
-
-    private function signIn(string $role): void
-    {
-        $this->service(UserWriter::class)->create(new CreateUser(ucfirst($role), $role.'@example.com', password: 'correct-horse-42', roles: [$role]));
-        $this->client->request('GET', '/login');
-        $this->client->submitForm('Sign in', ['_username' => $role, '_password' => 'correct-horse-42']);
     }
 }

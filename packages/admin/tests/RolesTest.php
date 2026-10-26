@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Quire\Admin\Tests;
 
 use Quire\Permission\Permissions;
-use Quire\Testing\ExtensionTestCase;
+use Quire\Testing\AdminTestCase;
 use Quire\User\CreateUser;
 use Quire\User\UserRepository;
 use Quire\User\UserWriter;
@@ -17,11 +17,8 @@ use Symfony\Component\DomCrawler\Form;
  * Roles in the admin (D-20): a page per role, a review before saving, roles of the site's own, and
  * checking access.
  */
-final class RolesTest extends ExtensionTestCase
+final class RolesTest extends AdminTestCase
 {
-    #[\Override]
-    protected static array $extensions = ['quire-admin'];
-
     public function testTheOverviewShowsEachRole(): void
     {
         $this->signIn();
@@ -180,12 +177,5 @@ final class RolesTest extends ExtensionTestCase
     private function user(string $name, array $roles): \Quire\User\User
     {
         return $this->service(UserWriter::class)->create(new CreateUser($name, strtolower($name).'@example.com', roles: $roles));
-    }
-
-    private function signIn(): void
-    {
-        $this->service(UserWriter::class)->create(new CreateUser('Admin', 'admin@example.com', password: 'correct-horse-42', roles: ['admin']));
-        $this->client->request('GET', '/login');
-        $this->client->submitForm('Sign in', ['_username' => 'admin', '_password' => 'correct-horse-42']);
     }
 }

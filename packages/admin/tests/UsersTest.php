@@ -7,7 +7,7 @@ namespace Quire\Admin\Tests;
 use Quire\Content\Command\CreateContent;
 use Quire\Content\ContentRepository;
 use Quire\Content\ContentWriter;
-use Quire\Testing\ExtensionTestCase;
+use Quire\Testing\AdminTestCase;
 use Quire\User\CreateUser;
 use Quire\User\User;
 use Quire\User\UserRepository;
@@ -20,11 +20,8 @@ use Symfony\Component\Mime\Email;
 /**
  * Users in the admin: finding, adding (invited by email), changing, suspending and deleting them.
  */
-final class UsersTest extends ExtensionTestCase
+final class UsersTest extends AdminTestCase
 {
-    #[\Override]
-    protected static array $extensions = ['quire-admin'];
-
     private User $admin;
 
     public function testOnlyThoseAllowedManageUsers(): void
@@ -39,7 +36,7 @@ final class UsersTest extends ExtensionTestCase
 
     public function testUsersAreSearchedFilteredAndSorted(): void
     {
-        $this->signIn('admin');
+        $this->admin = $this->signIn('admin');
         $this->user('Grace Hopper', ['editor']);
         $suspended = $this->user('Alan Turing', ['member']);
         $this->service(UserWriter::class)->suspend($suspended->id);
@@ -58,7 +55,7 @@ final class UsersTest extends ExtensionTestCase
 
     public function testNewUsersAreInvitedToChooseTheirPassword(): void
     {
-        $this->signIn('admin');
+        $this->admin = $this->signIn('admin');
         $crawler = $this->client->request('GET', '/admin/users/new');
         self::assertSame('invite', $crawler->filter('input[name=password_mode]:checked')->attr('value'), 'Inviting is the default.');
 
@@ -79,7 +76,7 @@ final class UsersTest extends ExtensionTestCase
 
     public function testMistakesAreShownWithTheForm(): void
     {
-        $this->signIn('admin');
+        $this->admin = $this->signIn('admin');
         $this->user('Grace Hopper', []);
         $crawler = $this->client->request('GET', '/admin/users/new');
 
@@ -101,7 +98,7 @@ final class UsersTest extends ExtensionTestCase
 
     public function testUsersAreChanged(): void
     {
-        $this->signIn('admin');
+        $this->admin = $this->signIn('admin');
         $grace = $this->user('Grace Hopper', ['member']);
         $crawler = $this->client->request('GET', '/admin/users/'.$grace->id);
 
@@ -117,7 +114,7 @@ final class UsersTest extends ExtensionTestCase
 
     public function testUsersAreSuspendedButNotOneself(): void
     {
-        $this->signIn('admin');
+        $this->admin = $this->signIn('admin');
         $grace = $this->user('Grace Hopper', ['editor']);
         $crawler = $this->client->request('GET', '/admin/users/'.$grace->id);
 
@@ -136,7 +133,7 @@ final class UsersTest extends ExtensionTestCase
 
     public function testTheLastAdminKeepsTheRole(): void
     {
-        $this->signIn('admin');
+        $this->admin = $this->signIn('admin');
 
         // The only admin gives up the role.
         $crawler = $this->client->request('GET', '/admin/users/'.$this->admin->id);
@@ -149,7 +146,7 @@ final class UsersTest extends ExtensionTestCase
 
     public function testDeletingHandsTheContentOn(): void
     {
-        $this->signIn('admin');
+        $this->admin = $this->signIn('admin');
         $grace = $this->user('Grace Hopper', ['editor']);
         $ada = $this->user('Ada Lovelace', ['editor']);
         $post = $this->service(ContentWriter::class)->create(new CreateContent('post', 'Compilers', authorId: $grace->id));
@@ -198,12 +195,5 @@ final class UsersTest extends ExtensionTestCase
     private function names(Crawler $crawler): array
     {
         return $crawler->filter('tbody th a')->each(static fn (Crawler $a): string => $a->text());
-    }
-
-    private function signIn(string $role): void
-    {
-        $this->admin = $this->service(UserWriter::class)->create(new CreateUser(ucfirst($role), $role.'@example.com', password: 'correct-horse-42', roles: [$role]));
-        $this->client->request('GET', '/login');
-        $this->client->submitForm('Sign in', ['_username' => $role, '_password' => 'correct-horse-42']);
     }
 }

@@ -4,3 +4,7 @@ services:
     Quire\Testing\Database\QueryLogMiddleware:
         autowire: true
         autoconfigure: true
+    # The demo site, for tests that need a realistic one (see quire:demo:seed).
+    Quire\Testing\Demo\DemoSite:
+        autowire: true
+        public: true

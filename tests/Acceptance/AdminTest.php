@@ -10,10 +10,8 @@ use Quire\Audit\AuditQuery;
 use Quire\Content\Content;
 use Quire\Content\ContentRepository;
 use Quire\Content\Status;
-use Quire\Testing\ExtensionTestCase;
+use Quire\Testing\AdminTestCase;
 use Quire\Testing\TestInstallation;
-use Quire\User\CreateUser;
-use Quire\User\UserWriter;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Finder\Finder;
 
@@ -24,7 +22,7 @@ use Symfony\Component\Finder\Finder;
  * type, publishing, its setting, and its content in the roles' grid. Everything done is in the audit
  * log, with the console commands that do the same.
  */
-final class AdminTest extends ExtensionTestCase
+final class AdminTest extends AdminTestCase
 {
     #[\Override]
     protected static array $extensions = ['quire-admin', 'quire-fixture-recipes'];
@@ -121,13 +119,6 @@ final class AdminTest extends ExtensionTestCase
     protected static function installedJson(): string
     {
         return TestInstallation::projectDir().'/tests/Fixtures/installed.json';
-    }
-
-    private function signIn(string $role): void
-    {
-        $this->service(UserWriter::class)->create(new CreateUser(ucfirst($role), $role.'@example.com', password: 'correct-horse-42', roles: [$role]));
-        $this->client->request('GET', '/login');
-        $this->client->submitForm('Sign in', ['_username' => $role, '_password' => 'correct-horse-42']);
     }
 
     private function recipe(string $title): Content
