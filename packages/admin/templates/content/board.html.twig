@@ -1,0 +1,37 @@
+{#
+    "In motion": what's moving through the lifecycle, a column per stage with its latest items; each
+    column's count links to the list of all of them.
+    Variables: those of _base, and columns.
+#}
+{% extends '@quire_admin/content/_base.html.twig' %}
+{% import '@quire_admin/_ui.html.twig' as ui %}
+
+{% block content %}
+    <div class="content-board">
+        {% for column in columns %}
+            <section class="content-board__column" aria-labelledby="column-{{ column.id }}">
+                <h2 class="content-board__title" id="column-{{ column.id }}">
+                    {{ ui.thread(column.stage) }} {{ column.label }} <span class="q-meta">{{ column.count }}</span>
+                </h2>
+                {% if column.items is empty %}
+                    <p class="q-empty">{{ 'Nothing here.'|trans({}, 'quire-admin') }}</p>
+                {% else %}
+                    <ol class="content-board__cards">
+                        {% for item in column.items %}
+                            <li class="q-card content-board__card">
+                                <a class="content-list__title" href="{{ path('quire_admin_content_edit', {type: type.id, id: item.id}) }}">{{ item.title }}</a>
+                                <p class="q-meta">
+                                    {% if item.attributes.author_name is defined and item.attributes.author_name %}{{ item.attributes.author_name }} · {% endif %}
+                                    {% if column.id in ['scheduled', 'live'] and item.publishedAt %}{{ item.publishedAt|quire_admin_when }}{% else %}{{ item.updatedAt|quire_admin_when }}{% endif %}
+                                </p>
+                            </li>
+                        {% endfor %}
+                    </ol>
+                {% endif %}
+                {% if column.count > column.items|length %}
+                    <a class="q-link-btn" href="{{ column.url }}">{{ 'All {count}'|trans({count: column.count}, 'quire-admin') }}</a>
+                {% endif %}
+            </section>
+        {% endfor %}
+    </div>
+{% endblock %}

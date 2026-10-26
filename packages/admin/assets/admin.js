@@ -31,30 +31,192 @@ window.QuireAdmin = {
 
 window.QuireAdmin.controllers.push(...pending);
 
-// Content lists: a checkbox that selects every row, shown only with JavaScript, where it works.
+// Content lists. Without JavaScript, the selection bar is a menu of actions and an "Apply" button.
+// With it, the bar shows when something is selected, says how many items each action applies to, and
+// offers every item that matches; keys select (x, ⇧x for a range), move (j, k) and edit (e).
 application.register('content-list', class extends Controller {
-    static targets = ['all', 'item'];
+    static targets = ['all', 'item', 'row', 'edit', 'bar', 'summary', 'extra', 'buttons', 'action', 'menu', 'matching', 'allMatching'];
+
+    // labels: { selected: "{count} selected on this page.", matching: "All {count} that match are selected." }
+    static values = { total: Number, labels: Object };
 
     connect() {
         if (this.hasAllTarget) {
             this.allTarget.hidden = false;
-            this.update();
         }
+
+        if (this.hasMenuTarget) {
+            this.menuTarget.hidden = true;
+            this.barTarget.classList.add('is-enhanced');
+        }
+
+        this.cursor = -1;
+        this.last = null;
+        document.addEventListener('keydown', this.keys);
+        this.update();
+    }
+
+    disconnect() {
+        document.removeEventListener('keydown', this.keys);
     }
 
     toggleAll() {
         this.itemTargets.forEach((checkbox) => { checkbox.checked = this.allTarget.checked; });
+        this.matching = false;
         this.update();
     }
 
-    update() {
-        if (!this.hasAllTarget) {
+    selectMatching() {
+        this.itemTargets.forEach((checkbox) => { checkbox.checked = true; });
+        this.matching = true;
+        this.update();
+    }
+
+    clear() {
+        this.itemTargets.forEach((checkbox) => { checkbox.checked = false; });
+        this.matching = false;
+        this.update();
+    }
+
+    update(event) {
+        // ⇧ with a click selects the range from the last one chosen.
+        if (event?.shiftKey && this.last && event.target !== this.last) {
+            const boxes = this.itemTargets;
+            const [from, to] = [boxes.indexOf(this.last), boxes.indexOf(event.target)].sort((a, b) => a - b);
+            boxes.slice(from, to + 1).forEach((checkbox) => { checkbox.checked = event.target.checked; });
+        }
+
+        if (event?.target && this.itemTargets.includes(event.target)) {
+            this.last = event.target;
+            this.matching = this.matching && event.target.checked;
+        }
+
+        const selected = this.itemTargets.filter((checkbox) => checkbox.checked);
+
+        if (this.hasAllTarget) {
+            this.allTarget.checked = selected.length > 0 && selected.length === this.itemTargets.length;
+            this.allTarget.indeterminate = selected.length > 0 && selected.length < this.itemTargets.length;
+        }
+
+        this.rowTargets.forEach((row) => row.classList.toggle('is-selected', row.querySelector('input[type=checkbox]')?.checked ?? false));
+
+        if (!this.hasBarTarget) {
             return;
         }
 
-        const checked = this.itemTargets.filter((checkbox) => checkbox.checked).length;
-        this.allTarget.checked = checked > 0 && checked === this.itemTargets.length;
-        this.allTarget.indeterminate = checked > 0 && checked < this.itemTargets.length;
+        const labels = this.labelsValue;
+        this.allMatchingTarget.value = this.matching ? '1' : '0';
+        this.barTarget.classList.toggle('is-active', selected.length > 0);
+        this.extraTarget.hidden = selected.length === 0;
+        this.buttonsTarget.hidden = selected.length === 0;
+
+        if (this.hasMatchingTarget) {
+            this.matchingTarget.hidden = this.matching || selected.length === 0;
+        }
+
+        this.summaryTarget.textContent = selected.length === 0
+            ? (labels.none ?? '')
+            : (this.matching ? labels.matching : labels.selected).replace('{count}', String(this.matching ? this.totalValue : selected.length));
+
+        // Each action, with how many of the selected items it applies to; none, and it's hidden.
+        const rows = selected.map((checkbox) => checkbox.closest('tr'));
+
+        for (const button of this.actionTargets) {
+            const count = rows.filter((row) => (row?.dataset.actions ?? '').split(' ').includes(button.value)).length;
+            button.hidden = !this.matching && count === 0;
+            button.textContent = this.matching || count === selected.length ? button.dataset.label : `${button.dataset.label} (${count})`;
+        }
+    }
+
+    keys = (event) => {
+        if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey || event.target.closest('input, textarea, select, [contenteditable]')) {
+            return;
+        }
+
+        const rows = this.rowTargets;
+        const key = event.key.toLowerCase();
+
+        if (rows.length === 0 || !['j', 'k', 'x', 'e'].includes(key)) {
+            return;
+        }
+
+        event.preventDefault();
+
+        if (key === 'j' || key === 'k') {
+            this.cursor = Math.max(0, Math.min(rows.length - 1, this.cursor + (key === 'j' ? 1 : -1)));
+            rows.forEach((row, index) => row.classList.toggle('is-current', index === this.cursor));
+            rows[this.cursor].querySelector('.content-list__title')?.focus();
+
+            return;
+        }
+
+        const row = rows[Math.max(0, this.cursor)];
+
+        if (key === 'e') {
+            row.querySelector('.content-list__title')?.click();
+
+            return;
+        }
+
+        const checkbox = row.querySelector('input[type=checkbox]');
+        checkbox.checked = !checkbox.checked;
+        this.update({ target: checkbox, shiftKey: event.shiftKey });
+    };
+});
+
+// A disclosure that starts closed on phones (where the list should come first) and open elsewhere.
+application.register('phone-closed', class extends Controller {
+    connect() {
+        if (window.matchMedia('(max-width: 40rem)').matches) {
+            this.element.open = false;
+        }
+    }
+});
+
+// The next page of a content list, as you come near its end: its rows are appended (a Turbo Stream).
+// Without JavaScript, or until then, the link goes to the next page.
+application.register('infinite-scroll', class extends Controller {
+    static values = { url: String };
+
+    connect() {
+        this.element.closest('.content-list__footer')?.classList.add('is-infinite');
+        this.observer = new IntersectionObserver((entries) => {
+            if (entries.some((entry) => entry.isIntersecting)) {
+                this.load();
+            }
+        }, { rootMargin: '400px' });
+        this.observer.observe(this.element);
+        this.element.addEventListener('click', this.click);
+    }
+
+    disconnect() {
+        this.observer?.disconnect();
+        this.element.removeEventListener('click', this.click);
+    }
+
+    click = (event) => {
+        event.preventDefault();
+        this.load();
+    };
+
+    async load() {
+        if (this.loading) {
+            return;
+        }
+
+        this.loading = true;
+        this.element.setAttribute('aria-busy', 'true');
+
+        try {
+            const response = await fetch(this.urlValue, { headers: { Accept: 'text/vnd.turbo-stream.html' } });
+
+            if (response.ok) {
+                window.Turbo.renderStreamMessage(await response.text());
+            }
+        } finally {
+            this.loading = false;
+            this.element.removeAttribute('aria-busy');
+        }
     }
 });
 

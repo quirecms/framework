@@ -44,6 +44,7 @@ return [
         ->contentColumn('quire-fixture-hello.likes', Hello\Admin\LikesColumn::class, types: ['post'])
         ->contentFilter('quire-fixture-hello.featured', Hello\Admin\FeaturedFilter::class, types: ['post'])
         ->contentAction('quire-fixture-hello.feature', Hello\Admin\FeatureAction::class, types: ['post'])
+        ->contentNextStep('quire-fixture-hello.review', Hello\Admin\ReviewStep::class, types: ['post'])
         ->fieldWidget('color', Hello\Admin\ColorWidget::class),
 
     new Extend\ContentChecks()

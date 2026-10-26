@@ -63,8 +63,8 @@ final class AdminContentListTest extends WebTestCase
 
         $crawler = $this->client->request('GET', '/admin/content/post');
         $headings = $crawler->filter('thead th')->each(static fn (Crawler $th): string => $th->text());
-        self::assertSame(['Title', 'Status', 'Author', 'Rating', 'Event at', 'Accent', 'Updated', 'Published', 'Liked by', 'Actions'], $headings, 'Sortable fields, then the dates, then the extension\'s column.');
-        self::assertStringContainsString('Ada, &lt;script&gt;alert(1)&lt;/script&gt;', $crawler->filter('tbody tr')->first()->html(), 'A string from a column is escaped.');
+        self::assertSame(['Title', 'Where it is', 'Author', 'Rating', 'Event at', 'Accent', 'Updated', 'Published', 'Liked by', 'Next step'], $headings, 'Sortable fields, then the dates, then the extension\'s column.');
+        self::assertStringContainsString('Ada, &lt;script&gt;alert(1)&lt;/script&gt;', $crawler->filter('tbody tr[data-content-list-target=row]')->first()->html(), 'A string from a column is escaped.');
 
         $pages = $this->client->request('GET', '/admin/content/page');
         self::assertNotContains('Liked by', $pages->filter('thead th')->each(static fn (Crawler $th): string => $th->text()), 'Only for the types it\'s added to.');
@@ -97,7 +97,7 @@ final class AdminContentListTest extends WebTestCase
         $crawler = $this->client->request('GET', '/admin/content/post?sort=-fields.rating');
 
         self::assertSame(['Five stars', 'Three stars', 'No stars'], $this->titles($crawler), 'Items without a value come last.');
-        self::assertSame('5', $crawler->filter('tbody tr')->first()->filter('td')->eq(3)->text());
+        self::assertSame('5', $crawler->filter('tbody tr[data-content-list-target=row]')->first()->filter('td')->eq(3)->text());
     }
 
     public function testExtensionsAddFilters(): void
@@ -108,7 +108,7 @@ final class AdminContentListTest extends WebTestCase
         $crawler = $this->client->request('GET', '/admin/content/post');
         self::assertSame(['', 'yes', 'no'], $crawler->filter('select[name="filter[quire-fixture-hello.featured]"] option')->each(static fn (Crawler $o): string => (string) $o->attr('value')));
 
-        $form = $crawler->filter('form.q-toolbar')->form(['filter[quire-fixture-hello.featured]' => 'yes']);
+        $form = $crawler->filter('form.facet--filters')->form(['filter[quire-fixture-hello.featured]' => 'yes']);
         self::assertSame(['Featured post'], $this->titles($crawler = $this->client->submit($form)));
         self::assertSame('yes', $crawler->filter('select[name="filter[quire-fixture-hello.featured]"] option[selected]')->attr('value'), 'The choice is kept.');
         self::assertSame(['Plain post'], $this->titles($this->client->request('GET', '/admin/content/post?filter[quire-fixture-hello.featured]=no')));
@@ -125,7 +125,7 @@ final class AdminContentListTest extends WebTestCase
         self::assertContains('extension:quire-fixture-hello.feature', $crawler->filter('select[name=action] option')->each(static fn (Crawler $o): string => (string) $o->attr('value')));
         self::assertCount(0, $crawler->filter(\sprintf('button[value="extension:quire-fixture-hello.feature|%s"]', $featured->id)), 'Not where it isn\'t available.');
 
-        $token = (string) $crawler->filter('main input[name=_token]')->attr('value');
+        $token = (string) $crawler->filter('form.content-list input[name=_token]')->attr('value');
         $this->client->request('POST', '/admin/content/post', ['_token' => $token, 'action' => 'extension:quire-fixture-hello.feature', 'ids' => [$plain->id, $refusing->id]]);
         $this->client->followRedirect();
 
@@ -145,8 +145,45 @@ final class AdminContentListTest extends WebTestCase
         $this->client->submit($crawler->filter(\sprintf('button[value="transition:submit|%s"]', $draft->id))->form());
         $crawler = $this->client->followRedirect();
 
-        self::assertContains('In review 1', $crawler->filter('.q-views a')->each(static fn (Crawler $a): string => $a->text()), 'A status without a translation is named after its ID.');
-        self::assertSame(['Draft'], $this->titles($this->client->request('GET', '/admin/content/post?view=in_review')));
+        self::assertContains('In review 1', $crawler->filter('.facet__option')->each(static fn (Crawler $a): string => $a->text()), 'A status without a translation is named after its ID.');
+        self::assertSame(['Draft'], $this->titles($this->client->request('GET', '/admin/content/post?f[status][]=in_review')));
+    }
+
+    public function testFacetsOfFilterableFields(): void
+    {
+        $this->post('PHP news', ['tags' => ['php', 'cms'], 'featured' => true]);
+        $this->post('More PHP', ['tags' => ['php']]);
+        $this->post('Plain');
+
+        $crawler = $this->client->request('GET', '/admin/content/post');
+        self::assertSame(['php 2', 'cms 1'], $this->facet($crawler, 'Tags'), 'Each value of a list, the most frequent first.');
+        self::assertSame(['No 2', 'Yes 1'], $this->facet($crawler, 'Featured'));
+
+        $crawler = $this->client->request('GET', '/admin/content/post?f[fields.tags][]=cms&sort=title');
+        self::assertSame(['PHP news'], $this->titles($crawler));
+        self::assertSame(['cms (chosen) 1', 'php 2'], $this->facet($crawler, 'Tags'), 'What\'s chosen first; the others still count.');
+        self::assertSame(['More PHP', 'PHP news'], $this->titles($this->client->request('GET', '/admin/content/post?q=tag:php&sort=title')), 'A list field\'s name, or its singular, chooses its values.');
+        self::assertSame(['PHP news'], $this->titles($this->client->request('GET', '/admin/content/post?f[fields.featured][]=true')));
+    }
+
+    public function testExtensionsAddNextSteps(): void
+    {
+        // With excerpts: findings come first ("Fix it").
+        $sad = $this->writer->create(new CreateContent('post', 'Sad draft', excerpt: 'Sad.', fields: ['mood' => 'sad']));
+        $this->writer->create(new CreateContent('post', 'Happy draft', excerpt: 'Happy.', fields: ['mood' => 'happy']));
+
+        $crawler = $this->client->request('GET', '/admin/content/post?sort=title');
+
+        self::assertSame(['transition:publish', 'transition:submit'], $crawler->filter('.content-list__next button')->each(static fn (Crawler $button): string => explode('|', (string) $button->attr('value'))[0]), 'The extension\'s step comes before publishing.');
+        self::assertStringContainsString('Send for review', $crawler->filter(\sprintf('.content-list__next button[value="transition:submit|%s"]', $sad->id))->text());
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function facet(Crawler $crawler, string $title): array
+    {
+        return $crawler->filter('.facet')->reduce(static fn (Crawler $group): bool => $group->filter('.facet__title')->count() > 0 && $title === $group->filter('.facet__title')->text())->filter('.facet__option')->each(static fn (Crawler $option): string => $option->text());
     }
 
     /**

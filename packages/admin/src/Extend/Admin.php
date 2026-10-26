@@ -9,6 +9,7 @@ use Quire\Admin\Content\ContentColumnInterface;
 use Quire\Admin\Content\ContentFilterInterface;
 use Quire\Admin\Content\Form\CoreWidgets;
 use Quire\Admin\Content\Form\FieldWidgetInterface;
+use Quire\Admin\Content\NextStepInterface;
 use Quire\Admin\Dashboard\WidgetInterface;
 use Quire\Extend\ExtenderContext;
 use Quire\Extend\ExtenderInterface;
@@ -59,6 +60,7 @@ final class Admin implements ExtenderInterface
         'column' => ContentColumnInterface::class,
         'filter' => ContentFilterInterface::class,
         'action' => ContentActionInterface::class,
+        'next-step' => NextStepInterface::class,
     ];
 
     /** @internal Parameter: array<name, {class, owner}> of the widgets extensions add to the editor */
@@ -156,6 +158,20 @@ final class Admin implements ExtenderInterface
     }
 
     /**
+     * A next step of the content lists' items, e.g. for a transition your extension adds.
+     *
+     * @param string                          $id    Unique among next steps; start it with your extension's ID
+     * @param class-string<NextStepInterface> $class A service
+     * @param list<string>|null               $types The content types whose lists get it; null for all
+     */
+    public function contentNextStep(string $id, string $class, ?array $types = null, int $order = 100): self
+    {
+        $this->contentList[] = ['id' => $id, 'kind' => 'next-step', 'class' => $class, 'types' => $types, 'order' => $order];
+
+        return $this;
+    }
+
+    /**
      * How the editor shows fields whose widget has this name, e.g. those of a field type that an
      * extension adds (see {@see \Quire\Content\Field\FieldTypeInterface::widget()}).
      *
@@ -216,7 +232,7 @@ final class Admin implements ExtenderInterface
         }
 
         foreach ($this->contentList as $entry) {
-            $where = \sprintf('Admin::content%s("%s")', ucfirst($entry['kind']), $entry['id']);
+            $where = \sprintf('Admin::content%s("%s")', str_replace('-', '', ucwords($entry['kind'], '-')), $entry['id']);
             $interface = self::CONTENT_LIST_KINDS[$entry['kind']];
 
             if (1 !== preg_match(self::ID_PATTERN, $entry['id'])) {

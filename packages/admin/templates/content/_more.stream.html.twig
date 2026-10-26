@@ -1,0 +1,4 @@
+{# The next page of a content list, appended to it as you scroll (a Turbo Stream). #}
+<turbo-stream action="append" target="content-rows"><template>{% include '@quire_admin/content/_rows.html.twig' %}</template></turbo-stream>
+<turbo-stream action="update" target="content-more"><template>{% include '@quire_admin/content/_more.html.twig' %}</template></turbo-stream>
+<turbo-stream action="update" target="content-showing"><template>{% include '@quire_admin/content/_showing.html.twig' with {appended: true} %}</template></turbo-stream>

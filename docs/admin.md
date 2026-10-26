@@ -20,12 +20,18 @@ What each user can do in the admin follows their other abilities: someone who ma
 
 Every content type has a list, under "Content" in the menu, for those who may edit its items: those with `content.<type>.edit_any` see all of them, those with only `edit_own` their own.
 
-- **Views** by status (drafts, published, archived, and statuses that extensions add), and the trash, each with how many items it has.
-- **Search** as you type a word: titles count most, then excerpts and bodies, in each item's language.
-- **Sorting** by title, by the dates, and by fields declared `sortable`; choosing a column's heading again reverses it. The latest change comes first otherwise.
-- **Actions** for an item, or for the selected ones at once: publish, unpublish and archive (with `content.<type>.publish`), move to the trash, restore and delete permanently (with `content.<type>.delete`), and those of the content type's workflow and of extensions. What isn't possible for an item, or not allowed, isn't offered; when an action fails for some of the selected items, the list says which and why.
+- **Tabs:** *Needs me* (changes waiting for your review, your own changes sent back or that couldn't be published at their time, and your items that can't be published as they are), *My drafts*, *Everything*, and the trash, each with how many items it has.
+- **Filters with counts:** where items are in their lifecycle (draft, in review, scheduled, published, archived, and statuses extensions add), what the [content checks](content.md#checks-before-publishing) found, the language when there are several, and the type's filterable fields with few values (choices, yes or no, lists, links to other items). Choose several values of a filter for any of them. Each filter counts what you'd find with the others, so you see what else there is. Chosen values show in the search box; × takes one off.
+- **Search** as you type: titles count most, then excerpts and bodies, in each item's language. With "Under the hood" on, the box shows the filters as words you can type, e.g. `tag:draw status:draft check:any lang:de`.
+- **Each row** says where the item is (with the date when it's scheduled), what the checks found ("Broken link", "2 to check"), changes waiting, and the **next step**: review the changes, see what to change, fix what the checks found, an extension's step, or publish. Other actions are in the row's ⋯ menu.
+- **Sorting** by title, by the dates (grouped by month, with how many items each month has), and by fields declared `sortable`; choosing a column's heading again reverses it. The latest change comes first otherwise.
+- **Acting on several items:** select them (with ⇧ for a range), and the selection bar says what each action would apply to. *Select all … that match* takes the action on everything the filters find; more than 100 items are done in the background, as you, and the [audit log](audit.md) shows each one.
+- **More as you scroll:** 50 items at a time.
+- **Comfortable or compact** rows, remembered on the device.
 
-The list's address keeps its view, search, filters, sort and page (e.g. `/admin/content/post?view=draft&q=markdown`), so it can be bookmarked and shared. Everything works without JavaScript; with it, a checkbox selects every row.
+*In motion* shows the same content as a board: drafts, changes in review, what's scheduled, and what went live this week, the latest of each with how many there are. The *Calendar* shows a month of what was published and what's scheduled, and changes scheduled to be published, in the site's time zone; on phones, the days with something.
+
+The list's address keeps its tab, filters, search, sort and page (e.g. `/admin/content/post?view=mine&f[status][]=draft&q=markdown`), so it can be bookmarked and shared. Everything works without JavaScript, with pages and a menu of actions; with it, the selection bar, scrolling for more, and keys: <kbd>j</kbd>/<kbd>k</kbd> move, <kbd>x</kbd> selects, <kbd>e</kbd> edits.
 
 ## Editing
 

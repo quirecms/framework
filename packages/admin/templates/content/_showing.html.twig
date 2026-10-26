@@ -1,0 +1,2 @@
+{# Which items are shown: from the first when pages are appended as you scroll, else this page's. #}
+{% if page.total > 0 %}{{ 'Showing {from}–{to} of {total}'|trans({from: appended|default(false) ? 1 : (page.page - 1) * page.perPage + 1, to: (page.page - 1) * page.perPage + rows|length, total: page.total}, 'quire-admin') }}{% if next_url %}<span class="content-list__scroll-hint"> · {{ 'loads more as you scroll'|trans({}, 'quire-admin') }}</span>{% endif %}{% endif %}

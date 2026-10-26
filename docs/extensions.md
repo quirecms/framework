@@ -795,6 +795,7 @@ new Admin()
 | `contentColumn($id, $class, $types, $order)` | A column of the [content lists](admin.md#content), after the built-in ones: a service implementing `Quire\Admin\Content\ContentColumnInterface`. `$types` limits it to content types, e.g. `['product']`. |
 | `contentFilter($id, $class, $types, $order)` | A filter of the content lists: a service implementing `ContentFilterInterface`, with a label, the `choices()` and how a choice narrows the query. |
 | `contentAction($id, $class, $types, $order)` | An action of the content lists, for an item or the selected ones: a service implementing `ContentActionInterface`. |
+| `contentNextStep($id, $class, $types, $order)` | A next step of the content lists' items, e.g. for a transition your extension adds ("Send to translators"): a service implementing `Quire\Admin\Content\NextStepInterface`, which returns a `NextStep` (a label, and a URL or one of the list's actions) or null. The lists ask after their own steps that need someone, and before "Publish". |
 | `fieldWidget($name, $class)` | How the editor shows fields whose widget has this name, e.g. those of a [field type](#extendfieldtypes) you add: a service implementing `Quire\Admin\Content\Form\FieldWidgetInterface`. |
 
 Content types, fields and abilities are all the lists need: an extension that only declares a content type gets a list of it in the admin, with no admin code. Columns, filters and actions are for more:

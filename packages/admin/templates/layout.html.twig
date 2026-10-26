@@ -14,7 +14,7 @@
     {% for item in items %}{% if item.current %}{% set current_section = section %}{% endif %}{% endfor %}
 {% endfor %}
 <!doctype html>
-<html lang="{{ site.locale }}"{% if hood %} data-hood="on"{% endif %}>
+<html lang="{{ site.locale }}"{% if hood %} data-hood="on"{% endif %}{% if quire_admin_density() == 'compact' %} data-density="compact"{% endif %}>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -105,7 +105,7 @@
                     <div>
                         {% set eyebrow %}{% block eyebrow %}{{ current_section and current_section != 'general' ? ('section.' ~ current_section)|trans({}, 'quire-admin') : '' }}{% endblock %}{% endset %}
                         {% if eyebrow|trim %}<div class="q-page-head__eyebrow">{{ eyebrow }}</div>{% endif %}
-                        <h1>{{ block('title') }}</h1>
+                        <h1>{% block heading %}{{ block('title') }}{% endblock %}</h1>
                     </div>
                     {% block actions %}{% endblock %}
                 </div>

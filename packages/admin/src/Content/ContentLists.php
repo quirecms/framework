@@ -8,8 +8,13 @@ use Psr\Log\LoggerInterface;
 use Quire\Action\Actions;
 use Quire\Action\Exception\ActionDeniedException;
 use Quire\Admin\Extend\Admin;
+use Quire\Admin\Twig\RelativeTime;
+use Quire\Content\Check\ContentChecker;
+use Quire\Content\Check\Level;
 use Quire\Content\Content;
 use Quire\Content\ContentRepository;
+use Quire\Content\Field\FieldStorage;
+use Quire\Content\Field\Type\RelationField;
 use Quire\Content\Query\ContentPage;
 use Quire\Content\Query\ContentQuery;
 use Quire\Content\Status;
@@ -39,7 +44,7 @@ use Twig\Markup;
  */
 final readonly class ContentLists
 {
-    public const int PER_PAGE = 20;
+    public const int PER_PAGE = 50;
 
     /** The view of items in the trash, next to one per status */
     public const string TRASH = 'trash';
@@ -61,6 +66,8 @@ final readonly class ContentLists
         private ContentWorkflow $workflow,
         private Security $security,
         private CurrentUser $users,
+        private ContentChecker $checker,
+        private RelativeTime $time,
         private TranslatorInterface $translator,
         private LoggerInterface $logger,
         #[Autowire(param: Admin::CONTENT_LIST_PARAMETER)]
@@ -106,23 +113,204 @@ final readonly class ContentLists
     }
 
     /**
-     * The views of the list: all items not in the trash, one per status, and the trash, with how many
-     * items each has.
+     * The tabs of the list, with how many items each has: what needs the current user, their drafts,
+     * everything not in the trash, and the trash.
      *
      * @return list<array{id: string, label: string, count: int}>
      */
     public function views(ContentTypeDefinition $type): array
     {
-        $query = $this->query($type);
-        $views = [['id' => 'all', 'label' => $this->translator->trans('All', [], 'quire-admin'), 'count' => $query->count()]];
+        $labels = [
+            'needs-me' => $this->translator->trans('Needs me', [], 'quire-admin'),
+            'mine' => $this->translator->trans('My drafts', [], 'quire-admin'),
+            'all' => $this->translator->trans('Everything', [], 'quire-admin'),
+            self::TRASH => $this->translator->trans('Trash', [], 'quire-admin'),
+        ];
 
-        foreach (array_keys($this->workflow->statuses()) as $status) {
-            $views[] = ['id' => $status, 'label' => $this->statusLabel($status), 'count' => $query->status($status)->count()];
+        return array_map(fn (string $view): array => ['id' => $view, 'label' => $labels[$view], 'count' => $this->inView($type, $this->query($type), $view)->count()], ListState::VIEWS);
+    }
+
+    /**
+     * What the list shows for its state: its view, search, facets and the extensions' filters.
+     *
+     * @param string|null $except A facet to leave out, to count its own values
+     */
+    public function filtered(ContentTypeDefinition $type, ListState $state, ?string $except = null): ContentQuery
+    {
+        $query = $this->inView($type, $this->query($type), $state->view)->search($state->q, prefix: true);
+
+        foreach ($state->facets as $facet => $values) {
+            if ($facet !== $except) {
+                $query = $this->narrow($type, $query, $facet, $values);
+            }
         }
 
-        $views[] = ['id' => self::TRASH, 'label' => $this->translator->trans('Trash', [], 'quire-admin'), 'count' => $query->onlyTrashed()->count()];
+        foreach ($this->filters($type) as $id => $filter) {
+            if (isset($state->filters[$id]) && \array_key_exists($state->filters[$id], $filter->choices())) {
+                $query = $filter->apply($query, $state->filters[$id]);
+            }
+        }
 
-        return $views;
+        return $query;
+    }
+
+    /**
+     * The facets the list can narrow by: where items are in their lifecycle, findings of the checks, the
+     * language when there are several, and the type's filterable fields with few values (choices, yes or
+     * no, lists and relations).
+     *
+     * @return list<string>
+     */
+    public function facets(ContentTypeDefinition $type): array
+    {
+        $facets = ['status', 'checks', 'locale'];
+
+        foreach ($type->fields as $field) {
+            if ($field->isIndexed() && (\in_array($field->storage(), [FieldStorage::Boolean, FieldStorage::TextList], true) || [] !== $field->choices) || FieldStorage::Relation === $field->storage()) {
+                $facets[] = 'fields.'.$field->name;
+            }
+        }
+
+        return $facets;
+    }
+
+    /**
+     * Narrows a query to items with any of the values of a facet.
+     *
+     * @param list<string> $values
+     */
+    public function narrow(ContentTypeDefinition $type, ContentQuery $query, string $facet, array $values): ContentQuery
+    {
+        return match (true) {
+            'status' === $facet => $this->byStatus($query, $values),
+            'checks' === $facet => \in_array('any', $values, true)
+                ? $query->withIssues()
+                : $query->whereSql('EXISTS (SELECT 1 FROM quire.content_check_result k WHERE k.content_id = c.id AND k.check_id = ANY(CAST(? AS text[])))', ['{'.implode(',', array_map(static fn (string $id): string => '"'.addcslashes($id, '"\\').'"', $values)).'}'], 'checks'),
+            'locale' === $facet => $query->where('locale', 'in', $values),
+            str_starts_with($facet, 'fields.') => $this->byField($type, $query, $facet, $values),
+            default => $query,
+        };
+    }
+
+    /**
+     * One page of the list.
+     */
+    public function page(ContentTypeDefinition $type, ListState $state): ContentPage
+    {
+        $query = $this->filtered($type, $state);
+        $me = $this->users->get()?->id;
+
+        if ($type->has('author')) {
+            $query = $query->select('author_name', 'SELECT u.display_name FROM quire.app_user u WHERE u.id = c.author_id');
+        }
+
+        // Changes to published items that aren't published yet; the first waiting for someone else's
+        // review, and the state of the current user's own, for the next step.
+        $query = $query
+            ->select('pending_changes', 'SELECT count(*) FROM quire.content_pending_revision p WHERE p.content_id = c.id')
+            ->select('review_pending_id', "SELECT p.id::text FROM quire.content_pending_revision p WHERE p.content_id = c.id AND p.state = 'in_review' AND p.author_id IS DISTINCT FROM CAST(? AS uuid) ORDER BY p.updated_at, p.id LIMIT 1", [$me])
+            ->select('own_pending_state', 'SELECT p.state FROM quire.content_pending_revision p WHERE p.content_id = c.id AND p.author_id = CAST(? AS uuid) ORDER BY p.updated_at DESC LIMIT 1', [$me]);
+
+        foreach ($this->extensions($type, 'column') as $column) {
+            \assert($column instanceof ContentColumnInterface);
+            $query = $column->query($query);
+        }
+
+        [$field, $direction] = $this->sort($type, $state->sort, '' !== trim($state->q));
+
+        if (null !== $field) {
+            $query = $query->orderBy($field, $direction);
+        }
+
+        return $query->paginate($state->page, self::PER_PAGE);
+    }
+
+    private function inView(ContentTypeDefinition $type, ContentQuery $query, string $view): ContentQuery
+    {
+        $me = $this->users->get()?->id;
+
+        return match ($view) {
+            self::TRASH => $query->onlyTrashed(),
+            'mine' => null === $me ? $query->whereSql('FALSE', field: 'view') : $query->status(Status::DRAFT)->where('author_id', $me),
+            'needs-me' => null === $me ? $query->whereSql('FALSE', field: 'view') : $this->needsMe($type, $query, $me),
+            default => $query,
+        };
+    }
+
+    /**
+     * What needs the user: changes waiting for their review; their own changes sent back, or that couldn't
+     * be published at their time; their items that can't be published as they are.
+     */
+    private function needsMe(ContentTypeDefinition $type, ContentQuery $query, string $me): ContentQuery
+    {
+        $conditions = [
+            "EXISTS (SELECT 1 FROM quire.content_pending_revision p WHERE p.content_id = c.id AND p.author_id = CAST(? AS uuid) AND p.state = 'changes_requested')",
+            'EXISTS (SELECT 1 FROM quire.content_pending_revision p WHERE p.content_id = c.id AND p.publish_problem IS NOT NULL AND (p.scheduled_by = CAST(? AS uuid) OR p.author_id = CAST(? AS uuid)))',
+            'c.author_id = CAST(? AS uuid) AND EXISTS (SELECT 1 FROM quire.content_check_result k WHERE k.content_id = c.id AND k.check_id = ANY(CAST(? AS text[])))',
+        ];
+        $params = [$me, $me, $me, $me, '{'.implode(',', array_map(static fn (string $id): string => '"'.$id.'"', $this->errorChecks())).'}'];
+
+        if ($this->security->isGranted(self::ability($type, 'review'))) {
+            $conditions[] = "EXISTS (SELECT 1 FROM quire.content_pending_revision p WHERE p.content_id = c.id AND p.state = 'in_review' AND p.author_id IS DISTINCT FROM CAST(? AS uuid))";
+            $params[] = $me;
+        }
+
+        return $query->whereSql(implode(' OR ', array_map(static fn (string $condition): string => '('.$condition.')', $conditions)), $params, 'view');
+    }
+
+    /**
+     * @param list<string> $values Statuses, and "review" for items with changes waiting for a review
+     */
+    private function byStatus(ContentQuery $query, array $values): ContentQuery
+    {
+        $statuses = array_values(array_intersect($values, array_keys($this->workflow->statuses())));
+        $conditions = [];
+        $params = [];
+
+        if ([] !== $statuses) {
+            $conditions[] = 'c.status = ANY(CAST(? AS text[]))';
+            $params[] = '{'.implode(',', $statuses).'}';
+        }
+
+        if (\in_array('review', $values, true)) {
+            $conditions[] = "EXISTS (SELECT 1 FROM quire.content_pending_revision p WHERE p.content_id = c.id AND p.state = 'in_review')";
+        }
+
+        return $query->whereSql([] === $conditions ? 'FALSE' : implode(' OR ', $conditions), $params, 'status');
+    }
+
+    /**
+     * @param list<string> $values
+     */
+    private function byField(ContentTypeDefinition $type, ContentQuery $query, string $facet, array $values): ContentQuery
+    {
+        $field = $type->field(substr($facet, \strlen('fields.')));
+
+        return match (true) {
+            !$field instanceof \Quire\Content\Field\FieldDefinition => $query,
+            FieldStorage::TextList === $field->storage() => $query->where($facet, 'contains any', $values),
+            FieldStorage::Relation === $field->storage() => $query->where($facet, RelationField::isMultiple($field) ? 'contains any' : 'in', $values),
+            FieldStorage::Boolean === $field->storage() => $query->where($facet, 'in', array_values(array_map(static fn (string $value): bool => 'true' === $value, array_intersect($values, ['true', 'false'])))),
+            default => $query->where($facet, 'in', $values),
+        };
+    }
+
+    /**
+     * The checks whose findings block publishing now.
+     *
+     * @return list<string>
+     */
+    private function errorChecks(): array
+    {
+        return array_values(array_map(static fn (array $check): string => $check['id'], array_filter($this->checker->checks(), static fn (array $check): bool => Level::Error === $check['level'])));
+    }
+
+    /**
+     * Where a status is on the lifecycle thread (Quire UI's q-thread): draft, review, scheduled or live.
+     */
+    public static function stage(string $status): string
+    {
+        return ['scheduled' => 'scheduled', 'published' => 'live'][$status] ?? 'draft';
     }
 
     public function statusLabel(string $status): string
@@ -143,11 +331,13 @@ final readonly class ContentLists
     {
         $columns = [
             ['id' => 'title', 'label' => $this->translator->trans('Title', [], 'quire-admin'), 'sort' => 'title', 'value' => static fn (Content $item): string => $item->title],
-            ['id' => 'status', 'label' => $this->translator->trans('Status', [], 'quire-admin'), 'sort' => null, 'value' => $this->statusCell(...)],
+            ['id' => 'status', 'label' => $this->translator->trans('Where it is', [], 'quire-admin'), 'sort' => null, 'value' => $this->statusCell(...)],
         ];
 
         if ($type->has('author')) {
-            $columns[] = ['id' => 'author', 'label' => $this->translator->trans('Author', [], 'quire-admin'), 'sort' => null, 'value' => static fn (Content $item): string => \is_string($name = $item->attributes['author_name'] ?? null) ? $name : '—'];
+            $me = $this->users->get()?->id;
+            $you = $this->translator->trans('You', [], 'quire-admin');
+            $columns[] = ['id' => 'author', 'label' => $this->translator->trans('Author', [], 'quire-admin'), 'sort' => null, 'value' => static fn (Content $item): string => null !== $me && $item->authorId === $me ? $you : (\is_string($name = $item->attributes['author_name'] ?? null) ? $name : '—')];
         }
 
         foreach ($type->fields as $field) {
@@ -157,7 +347,7 @@ final readonly class ContentLists
         }
 
         $columns[] = ['id' => 'updated_at', 'label' => $this->translator->trans('Updated', [], 'quire-admin'), 'sort' => 'updated_at', 'value' => $this->dateCell(...)];
-        $columns[] = ['id' => 'published_at', 'label' => $this->translator->trans('Published', [], 'quire-admin'), 'sort' => 'published_at', 'value' => static fn (Content $item): string|Markup => $item->publishedAt instanceof \DateTimeImmutable ? self::time($item->publishedAt) : '—'];
+        $columns[] = ['id' => 'published_at', 'label' => $this->translator->trans('Published', [], 'quire-admin'), 'sort' => 'published_at', 'value' => fn (Content $item): string|Markup => $item->publishedAt instanceof \DateTimeImmutable ? $this->time->html($item->publishedAt) : '—'];
 
         foreach ($this->extensions($type, 'column') as $id => $column) {
             \assert($column instanceof ContentColumnInterface);
@@ -180,49 +370,6 @@ final readonly class ContentLists
         }
 
         return $filters;
-    }
-
-    /**
-     * One page of the list.
-     *
-     * @param string                $view    "all", a status, or {@see TRASH}
-     * @param string                $sort    A column's sort, e.g. "title", or "-updated_at" for descending; empty for the default
-     * @param array<string, string> $filters Chosen values, by filter ID
-     */
-    public function page(ContentTypeDefinition $type, string $view, string $search, string $sort, array $filters, int $page): ContentPage
-    {
-        $query = $this->query($type)->search($search, prefix: true);
-        $query = match ($view) {
-            'all' => $query,
-            self::TRASH => $query->onlyTrashed(),
-            default => $query->status($view),
-        };
-
-        foreach ($this->filters($type) as $id => $filter) {
-            if (isset($filters[$id]) && \array_key_exists($filters[$id], $filter->choices())) {
-                $query = $filter->apply($query, $filters[$id]);
-            }
-        }
-
-        if ($type->has('author')) {
-            $query = $query->select('author_name', 'SELECT u.display_name FROM quire.app_user u WHERE u.id = c.author_id');
-        }
-
-        // Changes to published items that aren't published yet.
-        $query = $query->select('pending_changes', 'SELECT count(*) FROM quire.content_pending_revision p WHERE p.content_id = c.id');
-
-        foreach ($this->extensions($type, 'column') as $column) {
-            \assert($column instanceof ContentColumnInterface);
-            $query = $column->query($query);
-        }
-
-        [$field, $direction] = $this->sort($type, $sort, '' !== trim($search));
-
-        if (null !== $field) {
-            $query = $query->orderBy($field, $direction);
-        }
-
-        return $query->paginate($page, self::PER_PAGE);
     }
 
     /**
@@ -367,6 +514,19 @@ final readonly class ContentLists
         };
     }
 
+    public function mayEdit(ContentTypeDefinition $type, Content $item): bool
+    {
+        return $this->security->isGranted(self::ability($type, 'edit_any')) || $this->security->isGranted(self::ability($type, 'edit_own'), $item);
+    }
+
+    /**
+     * @return list<NextStepInterface> The extensions' next steps for the type, in order
+     */
+    public function nextStepExtensions(ContentTypeDefinition $type): array
+    {
+        return array_values(array_filter($this->extensions($type, 'next-step'), static fn (object $step): bool => $step instanceof NextStepInterface));
+    }
+
     private function mayTransition(ContentTypeDefinition $type, Content $item, string $transition): bool
     {
         if (\in_array($transition, self::PUBLISHING, true)) {
@@ -425,28 +585,23 @@ final readonly class ContentLists
 
     private function statusCell(Content $item): Markup
     {
-        $label = $item->deletedAt instanceof \DateTimeImmutable ? $this->translator->trans('In the trash', [], 'quire-admin') : $this->statusLabel($item->status);
+        $trashed = $item->deletedAt instanceof \DateTimeImmutable;
+        // Scheduled items say when, e.g. "Tue 09:00".
+        $label = match (true) {
+            $trashed => htmlspecialchars($this->translator->trans('In the trash', [], 'quire-admin')),
+            Status::SCHEDULED === $item->status && $item->publishedAt instanceof \DateTimeImmutable => \sprintf('<span class="q-sr">%s, </span>%s', htmlspecialchars($this->statusLabel($item->status)), $this->time->html($item->publishedAt)),
+            default => htmlspecialchars($this->statusLabel($item->status)),
+        };
 
         // The lifecycle thread (Quire UI's q-status), as {{ ui.status() }} renders it.
-        $stage = $item->deletedAt instanceof \DateTimeImmutable ? 'draft' : (['scheduled' => 'scheduled', 'published' => 'live'][$item->status] ?? 'draft');
-        $html = \sprintf('<span class="q-status q-status--%1$s"><span class="q-thread q-thread--%1$s" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span>%2$s</span></span>', $stage, htmlspecialchars($label));
-        $pending = $item->attributes['pending_changes'] ?? 0;
+        $stage = $trashed ? 'draft' : self::stage($item->status);
 
-        if (is_numeric($pending) && (int) $pending > 0) {
-            $html .= \sprintf(' <span class="q-tag q-tag--review">%s</span>', htmlspecialchars($this->translator->trans('{count, plural, one {# change waiting} other {# changes waiting}}', ['count' => (int) $pending], 'quire-admin')));
-        }
-
-        return new Markup($html, 'UTF-8');
+        return new Markup(\sprintf('<span class="q-status q-status--%1$s"><span class="q-thread q-thread--%1$s" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span>%2$s</span></span>', $stage, $label), 'UTF-8');
     }
 
     private function dateCell(Content $item): Markup
     {
-        return self::time($item->updatedAt);
-    }
-
-    private static function time(\DateTimeImmutable $at): Markup
-    {
-        return new Markup(\sprintf('<time datetime="%s">%s</time>', $at->format(\DATE_ATOM), $at->format('Y-m-d H:i')), 'UTF-8');
+        return $this->time->html($item->updatedAt);
     }
 
     private static function fieldValue(mixed $value): string

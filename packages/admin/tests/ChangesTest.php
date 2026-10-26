@@ -41,7 +41,7 @@ final class ChangesTest extends AdminTestCase
         self::assertSame('Hours', $this->live($post)->title, 'Visitors still see the published text.');
         self::assertSelectorTextContains('.content-list__table, body', '');
         $list = $this->client->request('GET', '/admin/content/post');
-        self::assertStringContainsString('1 change waiting', $list->filter('tbody tr')->first()->text());
+        self::assertStringContainsString('changes waiting', $list->filter('tbody tr[data-content-list-target=row]')->first()->text());
 
         $crawler = $this->client->request('GET', $this->editor($post));
         $this->client->submit($this->button($crawler, 'publish_changes'));

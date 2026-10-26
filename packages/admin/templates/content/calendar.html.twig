@@ -1,0 +1,68 @@
+{#
+    A month of the content: what was published and what's scheduled each day, and changes scheduled to
+    be published, in the site's time zone. On phones, only the days with something are listed.
+    Variables: those of _base, calendar (month, weeks of days with entries), previous_url, next_url, today_url.
+#}
+{% extends '@quire_admin/content/_base.html.twig' %}
+
+{% block content %}
+    {% set month = calendar.month %}
+    <div class="content-calendar__head">
+        <h2 class="content-calendar__month">{{ month|quire_admin_date('LLLL y') }}</h2>
+        <nav class="q-seg" aria-label="{{ 'Months'|trans({}, 'quire-admin') }}">
+            <a href="{{ previous_url }}" rel="prev"><span aria-hidden="true">←</span> {{ 'Previous'|trans({}, 'quire-admin') }}</a>
+            <a href="{{ today_url }}">{{ 'This month'|trans({}, 'quire-admin') }}</a>
+            <a href="{{ next_url }}" rel="next">{{ 'Next'|trans({}, 'quire-admin') }} <span aria-hidden="true">→</span></a>
+        </nav>
+    </div>
+
+    <table class="content-calendar">
+        <caption class="q-sr">{{ month|quire_admin_date('LLLL y') }}</caption>
+        <thead>
+            <tr>
+                {% for day in calendar.weeks|first %}
+                    <th scope="col"><abbr title="{{ day.date|quire_admin_date('EEEE') }}">{{ day.date|quire_admin_date('EEE') }}</abbr></th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for week in calendar.weeks %}
+                <tr>
+                    {% for day in week %}
+                        <td class="content-calendar__day{% if not day.inMonth %} content-calendar__day--other{% endif %}{% if day.today %} content-calendar__day--today{% endif %}{% if day.entries is empty %} content-calendar__day--empty{% endif %}"{% if day.today %} aria-current="date"{% endif %}>
+                            <span class="content-calendar__date">{{ day.date|quire_admin_date('d') }}<span class="content-calendar__weekday"> {{ day.date|quire_admin_date('EEEE') }}</span></span>
+                            {% if day.entries is not empty %}
+                                <ul class="content-calendar__entries">
+                                    {% for entry in day.entries|slice(0, 4) %}{{ _self.entry(type, entry) }}{% endfor %}
+                                </ul>
+                                {% if day.entries|length > 4 %}
+                                    <details class="content-calendar__more">
+                                        <summary>{{ '+{count} more'|trans({count: day.entries|length - 4}, 'quire-admin') }}</summary>
+                                        <ul class="content-calendar__entries">
+                                            {% for entry in day.entries|slice(4) %}{{ _self.entry(type, entry) }}{% endfor %}
+                                        </ul>
+                                    </details>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <p class="q-meta content-calendar__legend">
+        <span class="content-calendar__key content-calendar__key--live"></span> {{ 'calendar.live'|trans({}, 'quire-admin') }}
+        <span class="content-calendar__key content-calendar__key--scheduled"></span> {{ 'calendar.scheduled'|trans({}, 'quire-admin') }}
+        <span class="content-calendar__key content-calendar__key--changes"></span> {{ 'calendar.changes'|trans({}, 'quire-admin') }}
+    </p>
+{% endblock %}
+
+{% macro entry(type, entry) %}
+    <li class="content-calendar__entry content-calendar__entry--{{ entry.kind }}">
+        <a href="{{ entry.pending ? path('quire_admin_content_changes', {type: type.id, id: entry.item.id, pending: entry.pending.id}) : path('quire_admin_content_edit', {type: type.id, id: entry.item.id}) }}" title="{{ entry.item.title }}">
+            <time datetime="{{ entry.at|date('c') }}">{{ entry.at|date('H:i') }}</time>
+            {{ entry.item.title }}
+            <span class="q-sr">({{ ('calendar.' ~ entry.kind)|trans({}, 'quire-admin') }})</span>
+        </a>
+    </li>
+{% endmacro %}
