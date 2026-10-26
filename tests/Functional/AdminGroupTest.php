@@ -90,10 +90,13 @@ final class AdminGroupTest extends WebTestCase
     {
         $this->signIn('editor');
         $this->client->request('GET', '/admin');
-        self::assertSelectorTextSame('.q-rail a[aria-current=page]', 'Home');
-        self::assertSame(['Home', 'Content', 'Greetings'], $this->client->getCrawler()->filter('.q-rail__item')->each(static fn ($item): string => $item->text()), 'The sections the editor may open, in order.');
+        self::assertSelectorTextSame('.q-rail a[aria-current=page] .q-sr', ', 1 thing waits for you', 'Home says how many things wait.');
+        self::assertSame(['Home', 'Content', 'Greetings'], $this->client->getCrawler()->filter('.q-rail__item')->each(static fn ($item): string => trim(str_replace($item->filter('.q-rail__badge')->count() > 0 ? $item->filter('.q-rail__badge')->text() : "\0", '', $item->text()))), 'The sections the editor may open, in order.');
         self::assertSelectorExists('.q-rail a[href="/admin/greetings"]');
-        self::assertSelectorTextSame('.widgets .q-card:first-child h2', 'Greetings', 'Ordered: the widget asked for position 5.');
+        self::assertSame(['Greetings'], $this->client->getCrawler()->filter('.home__aside .home-card')->reduce(static fn ($card): bool => $card->filter('.fixture-greetings')->count() > 0)->filter('h2')->each(static fn ($h2): string => $h2->text()), 'A card on Home.');
+        self::assertSame('2 greetings wait for moderation', $this->client->getCrawler()->filter('.inbox__item')->reduce(static fn ($item): bool => str_contains($item->text(), 'greetings'))->filter('.inbox__text')->text(), 'And what waits for moderators.');
+        self::assertSelectorTextSame('.inbox__item strong', 'moderation');
+        self::assertSelectorTextContains('.q-rail__badge [aria-hidden]', '1');
 
         // Members who may use the admin, but not moderate greetings.
         self::getContainer()->get(Permissions::class)->grant('member', ['quire.admin.access']);
@@ -102,6 +105,8 @@ final class AdminGroupTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorNotExists('.admin-nav a[href="/admin/greetings"]');
         self::assertSelectorNotExists('.fixture-greetings');
+        self::assertSelectorNotExists('.inbox__item');
+        self::assertSelectorNotExists('.q-rail__badge');
         self::assertSelectorNotExists('.admin-nav__heading', 'No empty sections.');
     }
 

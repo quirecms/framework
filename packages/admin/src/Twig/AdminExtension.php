@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Quire\Admin\Twig;
 
 use Quire\Admin\Content\ContentLists;
+use Quire\Admin\Dashboard\Inbox;
+use Quire\Admin\Dashboard\InboxItem;
 use Quire\Admin\Navigation\AdminMenu;
 use Quire\Admin\Navigation\MenuItem;
 use Quire\Admin\Preferences\Density;
@@ -33,7 +35,28 @@ final readonly class AdminExtension
         private Settings $settings,
         private Security $security,
         private UrlGeneratorInterface $urls,
+        private Inbox $inbox,
     ) {
+    }
+
+    /**
+     * How many things wait for the current user, for the count beside Home.
+     */
+    #[AsTwigFunction(name: 'quire_admin_inbox_count')]
+    public function inboxCount(): int
+    {
+        return $this->inbox->count();
+    }
+
+    /**
+     * Text with what it's about marked with **…** (see {@see InboxItem}): escaped, the marked parts bold.
+     */
+    #[AsTwigFilter(name: 'quire_admin_marked')]
+    public function marked(string $text): Markup
+    {
+        $html = htmlspecialchars($text, \ENT_QUOTES | \ENT_SUBSTITUTE, 'UTF-8');
+
+        return new Markup((string) preg_replace('/\*\*(.+?)\*\*/u', '<strong>$1</strong>', $html), 'UTF-8');
     }
 
     /**

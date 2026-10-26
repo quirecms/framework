@@ -237,6 +237,9 @@ final class AuditLogTest extends KernelTestCase
 
         self::assertNull($this->log->record('acme-shop.broken', details: ['amount' => \NAN]), 'An entry that can\'t be written doesn\'t fail the action.');
         self::assertCount(1, $this->log->find(new AuditQuery(action: 'acme-shop.'))->entries);
+
+        $this->log->record('acme-shop.order_viewed', 'acme-shop.order', '1042');
+        self::assertSame(['acme-shop.order_refunded'], array_map(static fn (AuditEntry $entry): string => $entry->action, $this->log->find(new AuditQuery(action: 'acme-shop.', exceptActions: ['acme-shop.order_viewed']))->entries), 'Some actions left out.');
     }
 
     public function testOldEntriesArePruned(): void

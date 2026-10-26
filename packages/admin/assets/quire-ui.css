@@ -278,6 +278,9 @@
     .q-rail__nav, .q-rail__nav li { display: contents; }
     .q-rail__nav { margin: 0; padding: 0; list-style: none; }
 
+    /* How many things wait for the user, on Home */
+    .q-rail__badge { position: absolute; top: 0.2rem; left: calc(50% + 0.3rem); display: grid; place-items: center; min-width: 1.25rem; height: 1.25rem; padding: 0 0.3rem; border-radius: 999px; background: var(--q-scheduled); color: #1d1a24; font-size: 0.6875rem; font-weight: 700; line-height: 1; }
+
     .q-rail__item {
         position: relative;
         display: grid;

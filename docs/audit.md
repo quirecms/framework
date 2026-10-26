@@ -33,7 +33,7 @@ The log is not another copy of your data:
 
 ## Seeing it
 
-In the admin, "Audit log" under "Site", for users with the ability `quire.audit.view` (admins by default). It filters by area, by where (web, command line, job) and by dates; links narrow it to a user, an item, or what was done together. A user's page links to what they did, and an item's editor and history to its activity. The dashboard shows the latest entries.
+In the admin, "Audit log" under "Site", for users with the ability `quire.audit.view` (admins by default). It filters by area, by where (web, command line, job) and by dates; links narrow it to a user, an item, or what was done together. A user's page links to what they did, and an item's editor and history to its activity. Home shows the latest entries, without signing in.
 
 After an action in the admin, those who may see the log also get the console commands that do the same, e.g. to put it in a deployment script. Bulk actions show the first five.
 

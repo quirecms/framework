@@ -57,7 +57,11 @@
                     <li>
                         <a class="q-rail__item" href="{{ items|first.url }}"{% if section == current_section %} aria-current="page"{% endif %}>
                             {#- Alone in "More", an extension's page is named after itself. -#}
-                            {{ ui.icon(icons[section] ?? 'more') }}{{ section == 'extensions' and items|length == 1 ? (items|first).label : ('section.' ~ section)|trans({}, 'quire-admin') }}
+                            {{ ui.icon(icons[section] ?? 'more') }}                            {{ section == 'extensions' and items|length == 1 ? (items|first).label : ('section.' ~ section)|trans({}, 'quire-admin') }}
+                            {%- if section == 'general' -%}
+                                {%- set waiting = quire_admin_inbox_count() -%}
+                                {%- if waiting > 0 %}<span class="q-rail__badge"><span aria-hidden="true">{{ waiting }}</span><span class="q-sr">, {{ '{count, plural, =0 {nothing waits for you} one {# thing waits for you} other {# things wait for you}}'|trans({count: waiting}, 'quire-admin') }}</span></span>{% endif -%}
+                            {%- endif %}
                         </a>
                     </li>
                 {% endfor %}

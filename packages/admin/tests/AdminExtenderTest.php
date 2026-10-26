@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace Quire\Admin\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Quire\Admin\Dashboard\Widget\ContentWidget;
 use Quire\Admin\Extend\Admin;
+use Quire\Admin\Tests\Fixtures\NoticesInbox;
+use Quire\Admin\Tests\Fixtures\NoticesWidget;
 use Quire\Admin\Tests\Fixtures\StarsWidget;
 use Quire\Admin\Tests\Fixtures\TitleLengthColumn;
 use Quire\Extend\ExtenderContext;
@@ -26,14 +27,23 @@ final class AdminExtenderTest extends TestCase
     {
         $this->apply(new Admin()
             ->menu('acme-reviews.list', 'Reviews', 'acme_reviews_admin', ['status' => 'new'], ability: 'acme-reviews.moderate', section: 'content', order: 20)
-            ->widget(ContentWidget::class, ability: 'acme-reviews.moderate', order: 5));
+            ->widget(NoticesWidget::class, ability: 'acme-reviews.moderate', order: 5));
 
         self::assertSame([[
             'id' => 'acme-reviews.list', 'label' => 'Reviews', 'route' => 'acme_reviews_admin', 'parameters' => ['status' => 'new'],
             'ability' => 'acme-reviews.moderate', 'section' => 'content', 'order' => 20, 'owner' => 'acme-reviews',
         ]], $this->container->getParameterBag()->all()[Admin::MENU_PARAMETER] ?? null);
-        self::assertSame([['class' => ContentWidget::class, 'ability' => 'acme-reviews.moderate', 'order' => 5, 'owner' => 'acme-reviews']], $this->container->getParameterBag()->all()[Admin::WIDGETS_PARAMETER] ?? null);
-        self::assertTrue($this->container->getDefinition(ContentWidget::class)->hasTag(Admin::WIDGET_TAG));
+        self::assertSame([['class' => NoticesWidget::class, 'ability' => 'acme-reviews.moderate', 'order' => 5, 'owner' => 'acme-reviews']], $this->container->getParameterBag()->all()[Admin::WIDGETS_PARAMETER] ?? null);
+        self::assertTrue($this->container->getDefinition(NoticesWidget::class)->hasTag(Admin::WIDGET_TAG));
+    }
+
+    public function testAddsToWhatNeedsTheUser(): void
+    {
+        $this->apply(new Admin()->inbox(NoticesInbox::class, ability: 'acme-reviews.moderate'));
+
+        self::assertSame([['class' => NoticesInbox::class, 'ability' => 'acme-reviews.moderate', 'owner' => 'acme-reviews']], $this->container->getParameterBag()->all()[Admin::INBOX_PARAMETER] ?? null);
+        self::assertTrue($this->container->getDefinition(NoticesInbox::class)->hasTag(Admin::INBOX_TAG));
+        $this->assertFails(new Admin()->inbox(NoticesWidget::class), 'Inbox providers are classes implementing Quire\Admin\Dashboard\InboxProviderInterface.'); // @phpstan-ignore argument.type (testing the runtime check)
     }
 
     public function testAddsToContentLists(): void
