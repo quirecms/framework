@@ -8,7 +8,7 @@
 {% block title %}{{ 'History of “{title}”'|trans({title: item.title}, 'quire-admin') }}{% endblock %}
 
 {% block actions %}
-    <p class="page-header__links">
+    <p class="q-page-head__links">
         <a href="{{ path('quire_admin_content_edit', {type: type.id, id: item.id}) }}">{{ 'Back to the item'|trans({}, 'quire-admin') }}</a>
         {% if is_granted('quire.audit.view') %}<a href="{{ path('quire_admin_audit', {subject_type: 'content', subject: item.id}) }}">{{ 'Activity'|trans({}, 'quire-admin') }}</a>{% endif %}
     </p>
@@ -16,18 +16,18 @@
 
 {% block content %}
     {% if entries is empty %}
-        <p class="empty">{{ 'The item has no saved versions yet.'|trans({}, 'quire-admin') }}</p>
+        <p class="q-empty">{{ 'The item has no saved versions yet.'|trans({}, 'quire-admin') }}</p>
     {% endif %}
 
     <ol class="history">
         {% for entry in entries %}
             {% set revision = entry.revision %}
-            <li class="card">
-                <h2 class="card__title">
+            <li class="q-card">
+                <h2 class="q-card__title">
                     <time datetime="{{ revision.createdAt|date('c') }}">{{ revision.createdAt|date('Y-m-d H:i', timezone) }}</time>
-                    {% if entry.current %}<span class="meta">({{ 'current'|trans({}, 'quire-admin') }})</span>{% endif %}
+                    {% if entry.current %}<span class="q-meta">({{ 'current'|trans({}, 'quire-admin') }})</span>{% endif %}
                 </h2>
-                <p class="meta">
+                <p class="q-meta">
                     {{ revision.authorId ? names[revision.authorId] : 'Someone'|trans({}, 'quire-admin') }}
                     {% if revision.approvedBy %} · {{ 'approved by {name}'|trans({name: names[revision.approvedBy]}, 'quire-admin') }}{% endif %}
                     {% if revision.message %} · {{ revision.message }}{% endif %}
@@ -42,8 +42,8 @@
                     <form method="post" action="{{ path('quire_admin_content_restore', {type: type.id, id: item.id}) }}">
                         <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_content_editor') }}">
                         <input type="hidden" name="revision" value="{{ revision.id }}">
-                        <button type="submit" class="button button--secondary">
-                            {{ changes ? 'Restore as your changes'|trans({}, 'quire-admin') : 'Restore this version'|trans({}, 'quire-admin') }}<span class="visually-hidden"> ({{ revision.createdAt|date('Y-m-d H:i', timezone) }})</span>
+                        <button type="submit" class="q-btn q-btn--ghost">
+                            {{ changes ? 'Restore as your changes'|trans({}, 'quire-admin') : 'Restore this version'|trans({}, 'quire-admin') }}<span class="q-sr"> ({{ revision.createdAt|date('Y-m-d H:i', timezone) }})</span>
                         </button>
                     </form>
                 {% endif %}

@@ -719,9 +719,13 @@ new Extend\Routes(group: 'admin')
 {% block title %}Reviews{% endblock %}
 
 {% block content %}
-    …
+    <div class="q-scroll">
+        <table class="q-table">…</table>
+    </div>
 {% endblock %}
 ```
+
+Use **Quire UI**, the admin's design system, so the page looks like the rest of the admin: classes such as `q-card`, `q-btn`, `q-table`, `q-field`, `q-tag` and `q-notice`, and macros for the content lifecycle (`{% import '@quire_admin/_ui.html.twig' as ui %}{{ ui.status(item.status) }}`). With "Under the hood" switched on, the account menu links to **Components** (`/admin/ui`): every component with the markup to copy. Quire UI's styles are in cascade layers, so your own stylesheet in the group `admin` always wins over them; use its tokens (`var(--q-accent)`, `var(--q-space-4)`, …) to stay in tune with light, dark and high contrast.
 
 The admin's own extender, `Quire\Admin\Extend\Admin`, adds the page to its menu, and widgets to its dashboard:
 
@@ -735,7 +739,7 @@ new Admin()
 
 | Method | Purpose |
 |--------|---------|
-| `menu($id, $label, $route, $parameters, $ability, $section, $order)` | A menu entry, shown to users with `$ability` (if given). `$section` is `content`, `site`, `users` or `extensions` (the default). The label is translated in your extension's domain. |
+| `menu($id, $label, $route, $parameters, $ability, $section, $order)` | A menu entry, shown to users with `$ability` (if given). `$section` is one of the admin's rail: `general` (Home), `content`, `users` (People), `activity`, `site` or `extensions` ("More", the default); the entries of a section are tabs above its pages. The label is translated in your extension's domain. |
 | `widget($class, $ability, $order)` | A dashboard widget: a service implementing `Quire\Admin\Dashboard\WidgetInterface`, with a `title()` and the HTML it `render()`s. An empty string hides it. |
 | `contentColumn($id, $class, $types, $order)` | A column of the [content lists](admin.md#content), after the built-in ones: a service implementing `Quire\Admin\Content\ContentColumnInterface`. `$types` limits it to content types, e.g. `['product']`. |
 | `contentFilter($id, $class, $types, $order)` | A filter of the content lists: a service implementing `ContentFilterInterface`, with a label, the `choices()` and how a choice narrows the query. |

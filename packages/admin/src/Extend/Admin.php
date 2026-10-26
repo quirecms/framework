@@ -70,7 +70,7 @@ final class Admin implements ExtenderInterface
     private const string ID_PATTERN = '/^[a-z0-9]+(?:[-.][a-z0-9]+)*$/';
 
     /** Where menu entries go, in this order */
-    public const array SECTIONS = ['general', 'content', 'site', 'users', 'extensions'];
+    public const array SECTIONS = ['general', 'content', 'users', 'activity', 'site', 'extensions'];
 
     /** @var list<array{id: string, label: string, route: string, parameters: array<string, string>, ability: ?string, section: string, order: int}> */
     private array $menu = [];
@@ -90,7 +90,7 @@ final class Admin implements ExtenderInterface
      * @param string                   $route      The page's route, in the group "admin"
      * @param array<string, string>    $parameters The route's parameters
      * @param string|null              $ability    Shown only to users with it (everyone in the admin has "quire.admin.access")
-     * @param value-of<self::SECTIONS> $section    The menu section: "general", "content", "site", "users" or "extensions"
+     * @param value-of<self::SECTIONS> $section    The menu section, a part of the rail: "general" (Home), "content", "users" (People), "activity", "site" or "extensions" (More)
      * @param int                      $order      Position in the section, lowest first
      */
     public function menu(string $id, string $label, string $route, array $parameters = [], ?string $ability = null, string $section = 'extensions', int $order = 100): self

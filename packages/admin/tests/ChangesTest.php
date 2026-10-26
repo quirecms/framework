@@ -36,7 +36,7 @@ final class ChangesTest extends AdminTestCase
         $this->client->submit($this->button($crawler, 'save'), ['title' => 'Opening times']);
         $crawler = $this->client->followRedirect();
 
-        self::assertSelectorTextSame('.notice--success', 'Your changes are saved. Visitors see them once they\'re published.');
+        self::assertSelectorTextSame('.q-notice--success', 'Your changes are saved. Visitors see them once they\'re published.');
         self::assertInputValueSame('title', 'Opening times', 'The editor shows the changes.');
         self::assertSame('Hours', $this->live($post)->title, 'Visitors still see the published text.');
         self::assertSelectorTextContains('.content-list__table, body', '');
@@ -47,7 +47,7 @@ final class ChangesTest extends AdminTestCase
         $this->client->submit($this->button($crawler, 'publish_changes'));
         $this->client->followRedirect();
 
-        self::assertSelectorTextSame('.notice--success', 'Your changes are published.');
+        self::assertSelectorTextSame('.q-notice--success', 'Your changes are published.');
         self::assertSame('Opening times', $this->live($post)->title);
         self::assertSame([], $this->pendingOf($post));
     }
@@ -80,11 +80,11 @@ final class ChangesTest extends AdminTestCase
         $crawler = $this->client->request('GET', $this->editor($post));
         self::assertCount(0, $crawler->filter('button[value=publish_changes]'), 'Publishing takes the right to publish.');
         self::assertCount(0, $crawler->filter('#publish_at'));
-        self::assertNotNull($crawler->filter('fieldset.panel')->last()->attr('disabled'), 'The address changes the item right away.');
+        self::assertNotNull($crawler->filter('fieldset.q-panel')->last()->attr('disabled'), 'The address changes the item right away.');
 
         $this->client->submit($this->button($crawler, 'submit'), ['body' => str_replace('9 to 5', '9 to 6', self::BODY)]);
         $this->client->followRedirect();
-        self::assertSelectorTextSame('.notice--success', 'Your changes are waiting for a review.');
+        self::assertSelectorTextSame('.q-notice--success', 'Your changes are waiting for a review.');
         $pending = $this->pendingOf($post)[0];
         self::assertSame(ReviewState::InReview, $pending->state);
 
@@ -94,12 +94,12 @@ final class ChangesTest extends AdminTestCase
         $crawler = $this->client->click($crawler->filter('.widgets a')->reduce(static fn (Crawler $a): bool => 'Hours' === $a->text())->link());
 
         self::assertSelectorTextSame('h1', 'Changes to “Hours”');
-        self::assertSelectorTextContains('.notice--success', 'These changes merge with what\'s published');
+        self::assertSelectorTextContains('.q-notice--success', 'These changes merge with what\'s published');
         self::assertSame(['−Removed: Monday to Friday, 9 to 5.', '+Added: Monday to Friday, 9 to 6.'], $this->changedLines($crawler));
 
         $this->client->submit($crawler->selectButton('Approve')->form(['message' => 'Good catch.']));
         $crawler = $this->client->followRedirect();
-        self::assertSelectorTextSame('.notice--success', 'The changes are approved.');
+        self::assertSelectorTextSame('.q-notice--success', 'The changes are approved.');
         self::assertSame(['Editor approved Good catch.'], $crawler->filter('.reviews li')->each(static fn (Crawler $li): string => trim((string) preg_replace('/\s+/', ' ', $li->filter('span')->eq(0)->text().' '.$li->filter('span')->eq(1)->text()))));
 
         $this->client->submit($crawler->selectButton('Publish the changes')->form());
@@ -120,12 +120,12 @@ final class ChangesTest extends AdminTestCase
 
         $crawler = $this->client->click($crawler->selectLink('Show changes and reviews')->link());
         self::assertCount(0, $crawler->filter('button[value=approve]'));
-        self::assertSelectorTextSame('.review-form .field-help', 'Someone else approves your own changes.');
+        self::assertSelectorTextSame('.review-form .q-help', 'Someone else approves your own changes.');
 
         $token = (string) $crawler->filter('.review-form input[name=_token]')->attr('value');
         $this->client->request('POST', $crawler->filter('.review-form')->form()->getUri(), ['_token' => $token, 'intent' => 'approve', 'version' => $this->pendingOf($post)[0]->version]);
         $this->client->followRedirect();
-        self::assertSelectorTextSame('.notice--error', 'You may not review these changes.');
+        self::assertSelectorTextSame('.q-notice--error', 'You may not review these changes.');
         self::assertSame(ReviewState::Editing, $this->pendingOf($post)[0]->state);
     }
 
@@ -143,8 +143,8 @@ final class ChangesTest extends AdminTestCase
         $crawler = $this->client->request('GET', $this->editor($post));
         $crawler = $this->client->submit($this->button($crawler, 'publish_changes'));
         self::assertResponseStatusCodeSame(409);
-        self::assertSelectorTextContains('.notice--warning', 'conflict with yours');
-        self::assertSame(['Body'], $crawler->filter('.notice--warning li')->each(static fn (Crawler $li): string => $li->text()));
+        self::assertSelectorTextContains('.q-notice--warning', 'conflict with yours');
+        self::assertSame(['Body'], $crawler->filter('.q-notice--warning li')->each(static fn (Crawler $li): string => $li->text()));
 
         $this->client->submit($crawler->selectButton('Keep my version')->form());
         $crawler = $this->client->followRedirect();
@@ -162,12 +162,12 @@ final class ChangesTest extends AdminTestCase
 
         $this->client->submit($this->button($crawler, 'schedule_changes'), ['title' => 'Later', 'publish_at' => '2030-01-02T09:30']);
         $crawler = $this->client->followRedirect();
-        self::assertSelectorTextSame('.notice--success', 'Your changes will be published on 2030-01-02 09:30.');
+        self::assertSelectorTextSame('.q-notice--success', 'Your changes will be published on 2030-01-02 09:30.');
         self::assertSame('2030-01-02T08:30:00+00:00', $this->pendingOf($post)[0]->publishAt?->setTimezone(new \DateTimeZone('UTC'))->format(\DATE_ATOM));
 
         $this->client->submit($this->button($crawler, 'unschedule_changes'));
         $this->client->followRedirect();
-        self::assertSelectorTextSame('.notice--success', 'Your changes are no longer scheduled.');
+        self::assertSelectorTextSame('.q-notice--success', 'Your changes are no longer scheduled.');
         self::assertNull($this->pendingOf($post)[0]->publishAt);
     }
 
@@ -201,7 +201,7 @@ final class ChangesTest extends AdminTestCase
         // A draft: restored right away.
         $this->client->submit($crawler->selectButton('Restore this version')->form());
         $this->client->followRedirect();
-        self::assertSelectorTextSame('.notice--success', 'The old version is restored.');
+        self::assertSelectorTextSame('.q-notice--success', 'The old version is restored.');
         self::assertSame('First title', $this->live($draft)->title);
 
         // A published item: restored as the user's changes, to publish.
@@ -210,7 +210,7 @@ final class ChangesTest extends AdminTestCase
         $crawler = $this->client->request('GET', '/admin/content/post/'.$published->id.'/history');
         $this->client->submit($crawler->selectButton('Restore as your changes')->form());
         $this->client->followRedirect();
-        self::assertSelectorTextSame('.notice--success', 'The old version is in your changes now. Publish them to restore it.');
+        self::assertSelectorTextSame('.q-notice--success', 'The old version is in your changes now. Publish them to restore it.');
         self::assertInputValueSame('title', 'Hours');
         self::assertSame('Renamed', $this->live($published)->title);
     }

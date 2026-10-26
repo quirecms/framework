@@ -21,14 +21,13 @@ final class ContentListTest extends AdminTestCase
     {
         $this->signIn('editor');
         $crawler = $this->client->request('GET', '/admin');
+        self::assertSame('/admin/content/post', $crawler->filter('.q-rail__item')->eq(1)->attr('href'), 'Content opens the first list.');
 
-        self::assertSame(['Posts', 'Pages'], $crawler->filter('.admin-nav__section')->eq(1)->filter('a')->each(static fn (Crawler $a): string => $a->text()));
-        self::assertSame('/admin/content/post', $crawler->filter('.admin-nav a')->eq(1)->attr('href'));
-
-        $this->client->request('GET', '/admin/content/post');
+        $crawler = $this->client->request('GET', '/admin/content/post');
+        self::assertSame(['Posts', 'Pages'], $crawler->filter('.q-tabs a')->each(static fn (Crawler $a): string => $a->text()), 'A tab per list.');
         self::assertResponseIsSuccessful();
         self::assertSelectorTextSame('title', 'Posts · Admin · Quire');
-        self::assertSelectorTextSame('.admin-nav a[aria-current=page]', 'Posts');
+        self::assertSelectorTextSame('.q-tabs a[aria-current=page]', 'Posts');
 
         $this->client->request('GET', '/admin/content/nope');
         self::assertResponseStatusCodeSame(404);
@@ -44,7 +43,7 @@ final class ContentListTest extends AdminTestCase
         $this->signIn('editor');
 
         $crawler = $this->client->request('GET', '/admin/content/post');
-        self::assertSame(['All 3', 'Draft 1', 'Published 1', 'Archived 1', 'Trash 1'], $crawler->filter('.views a')->each(static fn (Crawler $a): string => $a->text()), 'Views without items are left out.');
+        self::assertSame(['All 3', 'Draft 1', 'Published 1', 'Archived 1', 'Trash 1'], $crawler->filter('.q-views a')->each(static fn (Crawler $a): string => $a->text()), 'Views without items are left out.');
         self::assertSame(['Archived one', 'Published one', 'Draft one'], $this->titles($crawler), 'The latest change first.');
 
         self::assertSame(['Draft one'], $this->titles($this->client->request('GET', '/admin/content/post?view=draft')));
@@ -63,7 +62,7 @@ final class ContentListTest extends AdminTestCase
         self::assertSame(['Markdown editor', 'Gardening'], $this->titles($crawler = $this->client->request('GET', '/admin/content/post?q=mar')), 'Best matches first: the title weighs most.');
         self::assertSame('mar', $crawler->filter('input[name=q]')->attr('value'));
         self::assertSame([], $this->titles($crawler = $this->client->request('GET', '/admin/content/post?q=zzz')));
-        self::assertSelectorTextSame('.empty', 'Nothing matches.');
+        self::assertSelectorTextSame('.q-empty', 'Nothing matches.');
     }
 
     public function testSortingByAColumn(): void
@@ -96,9 +95,9 @@ final class ContentListTest extends AdminTestCase
 
         $crawler = $this->client->request('GET', '/admin/content/post?sort=title');
         self::assertCount(ContentLists::PER_PAGE, $this->titles($crawler));
-        self::assertSelectorTextSame('.pagination span', 'Page 1 of 2');
+        self::assertSelectorTextSame('.q-pagination span', 'Page 1 of 2');
 
-        $crawler = $this->client->click($crawler->filter('.pagination a[rel=next]')->link());
+        $crawler = $this->client->click($crawler->filter('.q-pagination a[rel=next]')->link());
         self::assertSame(['Post 21', 'Post 22'], $this->titles($crawler), 'The sort is kept.');
 
         $this->client->request('GET', '/admin/content/post?page=9');
@@ -119,7 +118,7 @@ final class ContentListTest extends AdminTestCase
         self::assertSame(Status::PUBLISHED, $this->service(ContentRepository::class)->get($draft->id)->status);
 
         $this->client->followRedirect();
-        self::assertSelectorTextSame('.notice--success', 'Publish: done for 1 item.');
+        self::assertSelectorTextSame('.q-notice--success', 'Publish: done for 1 item.');
     }
 
     public function testBulkActionsOnTheSelectedItems(): void
@@ -132,12 +131,12 @@ final class ContentListTest extends AdminTestCase
         $crawler = $this->client->request('GET', '/admin/content/post');
         self::assertSame(['', 'transition:publish', 'transition:unpublish', 'transition:archive', 'trash'], $crawler->filter('select[name=action] option')->each(static fn (Crawler $o): string => (string) $o->attr('value')));
 
-        $token = (string) $crawler->filter('input[name=_token]')->attr('value');
+        $token = (string) $crawler->filter('main input[name=_token]')->attr('value');
         $this->client->request('POST', '/admin/content/post', ['_token' => $token, 'action' => 'transition:publish', 'ids' => [$one->id, $two->id]]);
         $this->client->followRedirect();
 
-        self::assertSelectorTextSame('.notice--success', 'Publish: done for 1 item.');
-        self::assertSelectorTextSame('.notice--error', 'Publish wasn\'t possible for “Two”: This isn\'t possible for it now.', 'It\'s published already.');
+        self::assertSelectorTextSame('.q-notice--success', 'Publish: done for 1 item.');
+        self::assertSelectorTextSame('.q-notice--error', 'Publish wasn\'t possible for “Two”: This isn\'t possible for it now.', 'It\'s published already.');
 
         $this->client->request('POST', '/admin/content/post', ['_token' => $token, 'action' => 'trash', 'ids' => [$one->id, $three->id]]);
         $repository = $this->service(ContentRepository::class);
@@ -184,7 +183,7 @@ final class ContentListTest extends AdminTestCase
         $this->client->request('GET', '/admin/content/page');
         self::assertResponseStatusCodeSame(403, 'Not pages.');
 
-        $token = (string) $list->filter('input[name=_token]')->attr('value');
+        $token = (string) $list->filter('main input[name=_token]')->attr('value');
         $this->client->request('POST', '/admin/content/post', ['_token' => $token, 'action' => 'trash', 'ids' => [$theirs->id, $others->id]]);
         $repository = $this->service(ContentRepository::class);
         self::assertNull($repository->get($theirs->id)->deletedAt);
@@ -220,6 +219,6 @@ final class ContentListTest extends AdminTestCase
      */
     private function rowActions(Crawler $crawler, int $row): array
     {
-        return $crawler->filter('tbody tr')->eq($row)->filter('.content-list__actions button')->each(static fn (Crawler $button): string => $button->filter('.visually-hidden')->count() > 0 ? trim(str_replace($button->filter('.visually-hidden')->text(), '', $button->text())) : $button->text());
+        return $crawler->filter('tbody tr')->eq($row)->filter('.content-list__actions button')->each(static fn (Crawler $button): string => $button->filter('.q-sr')->count() > 0 ? trim(str_replace($button->filter('.q-sr')->text(), '', $button->text())) : $button->text());
     }
 }

@@ -20,7 +20,7 @@
             <li class="checks__item checks__item--{{ result.level.value }}">
                 <strong>{{ ('check.' ~ result.level.value)|trans({}, 'quire-admin') }}:</strong>
                 {{ result.finding.message }}
-                <a href="#{{ target }}" class="meta">{{ result.finding.line ? 'Line {line}'|trans({line: result.finding.line}, 'quire-admin') : 'Go there'|trans({}, 'quire-admin') }}<span class="visually-hidden"> ({{ result.label }})</span></a>
+                <a href="#{{ target }}" class="q-meta">{{ result.finding.line ? 'Line {line}'|trans({line: result.finding.line}, 'quire-admin') : 'Go there'|trans({}, 'quire-admin') }}<span class="q-sr"> ({{ result.label }})</span></a>
             </li>
         {% endfor %}
     </ul>

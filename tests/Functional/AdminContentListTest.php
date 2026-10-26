@@ -108,7 +108,7 @@ final class AdminContentListTest extends WebTestCase
         $crawler = $this->client->request('GET', '/admin/content/post');
         self::assertSame(['', 'yes', 'no'], $crawler->filter('select[name="filter[quire-fixture-hello.featured]"] option')->each(static fn (Crawler $o): string => (string) $o->attr('value')));
 
-        $form = $crawler->filter('form.list-tools')->form(['filter[quire-fixture-hello.featured]' => 'yes']);
+        $form = $crawler->filter('form.q-toolbar')->form(['filter[quire-fixture-hello.featured]' => 'yes']);
         self::assertSame(['Featured post'], $this->titles($crawler = $this->client->submit($form)));
         self::assertSame('yes', $crawler->filter('select[name="filter[quire-fixture-hello.featured]"] option[selected]')->attr('value'), 'The choice is kept.');
         self::assertSame(['Plain post'], $this->titles($this->client->request('GET', '/admin/content/post?filter[quire-fixture-hello.featured]=no')));
@@ -125,13 +125,13 @@ final class AdminContentListTest extends WebTestCase
         self::assertContains('extension:quire-fixture-hello.feature', $crawler->filter('select[name=action] option')->each(static fn (Crawler $o): string => (string) $o->attr('value')));
         self::assertCount(0, $crawler->filter(\sprintf('button[value="extension:quire-fixture-hello.feature|%s"]', $featured->id)), 'Not where it isn\'t available.');
 
-        $token = (string) $crawler->filter('input[name=_token]')->attr('value');
+        $token = (string) $crawler->filter('main input[name=_token]')->attr('value');
         $this->client->request('POST', '/admin/content/post', ['_token' => $token, 'action' => 'extension:quire-fixture-hello.feature', 'ids' => [$plain->id, $refusing->id]]);
         $this->client->followRedirect();
 
         self::assertTrue(self::getContainer()->get(ContentRepository::class)->get($plain->id)->fields['featured'] ?? null);
-        self::assertSelectorTextSame('.notice--success', 'Feature: done for 1 item.');
-        self::assertSelectorTextSame('.notice--error', 'Feature wasn\'t possible for “Unfeaturable”: This post can\'t be featured.');
+        self::assertSelectorTextSame('.q-notice--success', 'Feature: done for 1 item.');
+        self::assertSelectorTextSame('.q-notice--error', 'Feature wasn\'t possible for “Unfeaturable”: This post can\'t be featured.');
     }
 
     public function testStatusesAndTransitionsOfExtensions(): void
@@ -145,7 +145,7 @@ final class AdminContentListTest extends WebTestCase
         $this->client->submit($crawler->filter(\sprintf('button[value="transition:submit|%s"]', $draft->id))->form());
         $crawler = $this->client->followRedirect();
 
-        self::assertContains('In review 1', $crawler->filter('.views a')->each(static fn (Crawler $a): string => $a->text()), 'A status without a translation is named after its ID.');
+        self::assertContains('In review 1', $crawler->filter('.q-views a')->each(static fn (Crawler $a): string => $a->text()), 'A status without a translation is named after its ID.');
         self::assertSame(['Draft'], $this->titles($this->client->request('GET', '/admin/content/post?view=in_review')));
     }
 

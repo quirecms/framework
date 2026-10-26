@@ -31,7 +31,7 @@ final class ChecksTest extends AdminTestCase
         self::assertSame('#body', $crawler->filter('.checks a')->attr('href'));
 
         // As the editor types, with what's in the form.
-        $token = (string) $crawler->filter('input[name=_token]')->attr('value');
+        $token = (string) $crawler->filter('main input[name=_token]')->attr('value');
         $crawler = $this->client->request('POST', '/admin/content/post/check', ['_token' => $token, 'id' => $post->id, 'title' => 'Pictures', 'body' => '![A chart](/chart.png)', 'excerpt' => '']);
         self::assertSame('No errors, 1 warning.', $crawler->filter('.checks__summary')->text());
         self::assertStringContainsString('There\'s no excerpt', $crawler->filter('.checks')->text());
@@ -46,8 +46,8 @@ final class ChecksTest extends AdminTestCase
         $this->client->submit($crawler->filter('button[name=intent][value="transition:publish"]')->form(['title' => 'Pictures', 'body' => '![](/chart.png)', 'excerpt' => 'Short.']));
         $this->client->followRedirect();
 
-        self::assertSelectorTextSame('.notice--success', 'Created.');
-        self::assertSelectorTextSame('.notice--error', 'The image “chart.png” has no description. Describe it in the brackets: ![what it shows](/chart.png).');
+        self::assertSelectorTextSame('.q-notice--success', 'Created.');
+        self::assertSelectorTextSame('.q-notice--error', 'The image “chart.png” has no description. Describe it in the brackets: ![what it shows](/chart.png).');
         self::assertSelectorTextContains('.checks__summary', '1 error');
         self::assertSelectorTextContains('.checks__summary', 'Errors block publishing.');
 

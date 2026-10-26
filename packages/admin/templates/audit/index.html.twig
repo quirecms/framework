@@ -8,7 +8,7 @@
 {% block title %}{{ 'Audit log'|trans({}, 'quire-admin') }}{% endblock %}
 
 {% block content %}
-    <form class="list-tools" method="get" action="{{ path('quire_admin_audit') }}">
+    <form class="q-toolbar" method="get" action="{{ path('quire_admin_audit') }}">
         {% for name in ['actor', 'subject_type', 'subject', 'correlation'] %}
             {% if state[name] %}<input type="hidden" name="{{ name }}" value="{{ state[name] }}">{% endif %}
         {% endfor %}
@@ -34,23 +34,23 @@
             <span>{{ 'To'|trans({}, 'quire-admin') }}</span>
             <input type="date" name="until" value="{{ state.until }}">
         </label>
-        <button type="submit" class="button">{{ 'Show'|trans({}, 'quire-admin') }}</button>
+        <button type="submit" class="q-btn">{{ 'Show'|trans({}, 'quire-admin') }}</button>
     </form>
 
     {% if narrowed %}
-        <ul class="narrowed" aria-label="{{ 'Showing only'|trans({}, 'quire-admin') }}">
+        <ul class="q-chips" aria-label="{{ 'Showing only'|trans({}, 'quire-admin') }}">
             {% for item in narrowed %}
-                <li>{{ item.label }} <a href="{{ item.remove_url }}">{{ 'Show all'|trans({}, 'quire-admin') }}<span class="visually-hidden"> ({{ item.label }})</span></a></li>
+                <li>{{ item.label }} <a href="{{ item.remove_url }}">{{ 'Show all'|trans({}, 'quire-admin') }}<span class="q-sr"> ({{ item.label }})</span></a></li>
             {% endfor %}
         </ul>
     {% endif %}
 
     {% if entries is empty %}
-        <p class="empty">{{ total == 0 and not (state|filter(v => v)) ? 'Nothing recorded yet.'|trans({}, 'quire-admin') : 'Nothing matches.'|trans({}, 'quire-admin') }}</p>
+        <p class="q-empty">{{ total == 0 and not (state|filter(v => v)) ? 'Nothing recorded yet.'|trans({}, 'quire-admin') : 'Nothing matches.'|trans({}, 'quire-admin') }}</p>
     {% else %}
-        <div class="table-scroll">
-            <table class="table audit">
-                <caption class="visually-hidden">{{ 'Audit log'|trans({}, 'quire-admin') }}, {{ 'page {page} of {pages}'|trans({page: page, pages: pages}, 'quire-admin') }}</caption>
+        <div class="q-scroll">
+            <table class="q-table audit">
+                <caption class="q-sr">{{ 'Audit log'|trans({}, 'quire-admin') }}, {{ 'page {page} of {pages}'|trans({page: page, pages: pages}, 'quire-admin') }}</caption>
                 <thead>
                     <tr>
                         <th scope="col">{{ 'When'|trans({}, 'quire-admin') }}</th>
@@ -65,12 +65,12 @@
                             <td class="audit__when">
                                 <time datetime="{{ entry.lastAt|date('c') }}">{{ entry.lastAt|date('Y-m-d H:i', timezone) }}</time>
                                 {% if entry.repeats > 1 %}
-                                    <span class="meta">{{ '{count, plural, other {# times since {time}}}'|trans({count: entry.repeats, time: entry.occurredAt|date('H:i', timezone)}, 'quire-admin') }}</span>
+                                    <span class="q-meta">{{ '{count, plural, other {# times since {time}}}'|trans({count: entry.repeats, time: entry.occurredAt|date('H:i', timezone)}, 'quire-admin') }}</span>
                                 {% endif %}
                             </td>
                             <td>
                                 {% if item.actor_url %}<a href="{{ item.actor_url }}">{{ item.actor }}</a>{% else %}{{ item.actor }}{% endif %}
-                                {% if item.via %}<span class="meta">{{ item.via }}</span>{% endif %}
+                                {% if item.via %}<span class="q-meta">{{ item.via }}</span>{% endif %}
                             </td>
                             <td class="audit__what">
                                 {% if item.subject_url %}<a class="audit__summary" href="{{ item.subject_url }}">{{ item.summary }}</a>{% else %}<span class="audit__summary">{{ item.summary }}</span>{% endif %}
@@ -81,14 +81,14 @@
                                         {% endfor %}
                                     </dl>
                                 {% endif %}
-                                <p class="audit__links meta">
+                                <p class="audit__links q-meta">
                                     {% if entry.actorId and state.actor != entry.actorId %}<a href="{{ path('quire_admin_audit', {actor: entry.actorId}) }}">{{ 'All by {name}'|trans({name: item.actor}, 'quire-admin') }}</a>{% endif %}
-                                    {% if entry.subjectId and state.subject != entry.subjectId %}<a href="{{ path('quire_admin_audit', {subject_type: entry.subjectType, subject: entry.subjectId}) }}">{{ 'All about it'|trans({}, 'quire-admin') }}<span class="visually-hidden"> ({{ entry.subjectLabel ?? entry.subjectId }})</span></a>{% endif %}
-                                    {% if state.correlation != entry.correlationId %}<a href="{{ path('quire_admin_audit', {correlation: entry.correlationId}) }}">{{ 'Done together'|trans({}, 'quire-admin') }}<span class="visually-hidden"> ({{ item.summary }})</span></a>{% endif %}
+                                    {% if entry.subjectId and state.subject != entry.subjectId %}<a href="{{ path('quire_admin_audit', {subject_type: entry.subjectType, subject: entry.subjectId}) }}">{{ 'All about it'|trans({}, 'quire-admin') }}<span class="q-sr"> ({{ entry.subjectLabel ?? entry.subjectId }})</span></a>{% endif %}
+                                    {% if state.correlation != entry.correlationId %}<a href="{{ path('quire_admin_audit', {correlation: entry.correlationId}) }}">{{ 'Done together'|trans({}, 'quire-admin') }}<span class="q-sr"> ({{ item.summary }})</span></a>{% endif %}
                                 </p>
-                                {% if entry.command %}
+                                {% if entry.command and quire_admin_hood() %}
                                     <details class="audit__command">
-                                        <summary>{{ 'As a command'|trans({}, 'quire-admin') }}<span class="visually-hidden"> ({{ item.summary }})</span></summary>
+                                        <summary>{{ 'As a command'|trans({}, 'quire-admin') }}<span class="q-sr"> ({{ item.summary }})</span></summary>
                                         {% include '@quire_admin/_command.html.twig' with {commands: [entry.command], label: false} only %}
                                     </details>
                                 {% endif %}
@@ -98,11 +98,11 @@
                 </tbody>
             </table>
         </div>
-        <p class="meta">{{ '{count, plural, one {# entry} other {# entries}}'|trans({count: total}, 'quire-admin') }}</p>
+        <p class="q-meta">{{ '{count, plural, one {# entry} other {# entries}}'|trans({count: total}, 'quire-admin') }}</p>
     {% endif %}
 
     {% if pages > 1 %}
-        <nav class="pagination" aria-label="{{ 'Pages'|trans({}, 'quire-admin') }}">
+        <nav class="q-pagination" aria-label="{{ 'Pages'|trans({}, 'quire-admin') }}">
             {% if previous_url %}<a href="{{ previous_url }}" rel="prev">{{ 'Newer'|trans({}, 'quire-admin') }}</a>{% endif %}
             <span>{{ 'Page {page} of {pages}'|trans({page: page, pages: pages}, 'quire-admin') }}</span>
             {% if next_url %}<a href="{{ next_url }}" rel="next">{{ 'Older'|trans({}, 'quire-admin') }}</a>{% endif %}

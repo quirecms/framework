@@ -80,7 +80,7 @@ final class AdminExtenderTest extends TestCase
 
     public function testChecksWhatItsGiven(): void
     {
-        $this->assertFails(new Admin()->menu('acme-reviews.list', 'Reviews', 'acme_reviews_admin', section: 'tools'), 'Unknown section "tools". Use one of: general, content, site, users, extensions.'); // @phpstan-ignore argument.type (testing the runtime check)
+        $this->assertFails(new Admin()->menu('acme-reviews.list', 'Reviews', 'acme_reviews_admin', section: 'tools'), 'Unknown section "tools". Use one of: general, content, users, activity, site, extensions.'); // @phpstan-ignore argument.type (testing the runtime check)
         $this->assertFails(new Admin()->widget(\stdClass::class), 'Widgets are classes implementing Quire\Admin\Dashboard\WidgetInterface.'); // @phpstan-ignore argument.type (testing the runtime check)
 
         $this->apply(new Admin()->menu('acme-reviews.list', 'Reviews', 'acme_reviews_admin'));

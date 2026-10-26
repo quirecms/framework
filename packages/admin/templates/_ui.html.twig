@@ -1,0 +1,22 @@
+{#
+    Quire UI macros for the admin's templates, and for extensions' admin pages:
+
+        {% import '@quire_admin/_ui.html.twig' as ui %}
+        {{ ui.status(item.status) }}
+        {{ ui.icon('content') }}
+#}
+
+{# Where a content item is in its lifecycle: the thread (draft → review → scheduled → live) and its label. #}
+{% macro status(status, label = null) %}
+    {%- set stage = {draft: 'draft', scheduled: 'scheduled', published: 'live', review: 'review'}[status] ?? 'draft' -%}
+    <span class="q-status q-status--{{ stage }}">{{ _self.thread(stage) }}<span>{{ label ?? ('status.' ~ status)|trans({}, 'quire-admin') }}</span></span>
+{%- endmacro %}
+
+{% macro thread(stage, large = false) %}
+    <span class="q-thread q-thread--{{ stage }}{% if large %} q-thread--lg{% endif %}" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+{%- endmacro %}
+
+{# An icon from the admin's sprite (see layout.html.twig), hidden from screen readers: pair it with text. #}
+{% macro icon(name) %}
+    <svg aria-hidden="true" focusable="false"><use href="#q-icon-{{ name }}"/></svg>
+{%- endmacro %}

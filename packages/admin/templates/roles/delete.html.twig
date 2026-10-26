@@ -5,13 +5,13 @@
 
 {% block content %}
     {% if not site_role %}
-        <p class="notice notice--error">{{ 'Only roles added on this site can be deleted; this one comes with Quire or an extension.'|trans({}, 'quire-admin') }}</p>
+        <p class="q-notice q-notice--error">{{ 'Only roles added on this site can be deleted; this one comes with Quire or an extension.'|trans({}, 'quire-admin') }}</p>
     {% else %}
         <p>{{ '{count, plural, =0 {No user has it.} one {# user has it and will lose it, with what it lets them do.} other {# users have it and will lose it, with what it lets them do.}}'|trans({count: users}, 'quire-admin') }}</p>
         <form method="post" action="{{ path('quire_admin_role_delete', {role: role}) }}">
             <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_roles') }}">
             <div class="editor__buttons">
-                <button type="submit" class="button button--danger">{{ 'Delete the role'|trans({}, 'quire-admin') }}</button>
+                <button type="submit" class="q-btn q-btn--danger">{{ 'Delete the role'|trans({}, 'quire-admin') }}</button>
                 <a href="{{ path('quire_admin_role', {role: role}) }}">{{ 'Cancel'|trans({}, 'quire-admin') }}</a>
             </div>
         </form>

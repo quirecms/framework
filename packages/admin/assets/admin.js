@@ -1,6 +1,11 @@
 // The admin's JavaScript. Pages work without it; Turbo makes moving between them fast, and Stimulus
 // controllers add behaviour to elements (data-controller="…").
 // Both are npm packages, which the site downloads (see "extra.quire.importmap" in composer.json).
+// Scales of Open Props (sizes, radii, easings) that Quire UI's tokens use; rendered as <link> tags,
+// so they apply without JavaScript too.
+import 'open-props/sizes.min.css';
+import 'open-props/borders.min.css';
+import 'open-props/easings.min.css';
 import '@hotwired/turbo';
 import { Application, Controller } from '@hotwired/stimulus';
 

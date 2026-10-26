@@ -67,7 +67,7 @@ final class AdminEditorTest extends WebTestCase
         self::assertSame(['text'], $this->attributes($crawler, '#field-tags', 'type'));
         self::assertSame(['date'], $this->attributes($crawler, '#field-due', 'type'));
         self::assertSame(['datetime-local'], $this->attributes($crawler, '#field-event_at', 'type'));
-        self::assertCount(1, $crawler->filter('textarea#field-extra.code'));
+        self::assertCount(1, $crawler->filter('textarea#field-extra.q-code'));
         self::assertSame(['color'], $this->attributes($crawler, '#field-accent', 'type'), 'The extension\'s widget for its field type.');
         self::assertSame('Rating', $crawler->filter('label[for=field-rating]')->text());
     }
@@ -130,8 +130,8 @@ final class AdminEditorTest extends WebTestCase
 
         self::assertResponseStatusCodeSame(422);
         $errors = array_combine(
-            $crawler->filter('.error-summary a')->each(static fn (Crawler $a): string => (string) $a->attr('href')),
-            $crawler->filter('.error-summary a')->each(static fn (Crawler $a): string => $a->text()),
+            $crawler->filter('.q-error-summary a')->each(static fn (Crawler $a): string => (string) $a->attr('href')),
+            $crawler->filter('.q-error-summary a')->each(static fn (Crawler $a): string => $a->text()),
         );
         self::assertSame(['#field-rating', '#field-extra'], array_keys($errors), 'What can\'t be read is reported before anything is saved.');
         self::assertSame('Enter a whole number.', $errors['#field-rating']);
@@ -141,7 +141,7 @@ final class AdminEditorTest extends WebTestCase
 
         $crawler = $this->client->submit($crawler->filter('button[name=intent][value="save"]')->form(['fields[rating]' => '9', 'fields[extra]' => '{}']));
         self::assertResponseStatusCodeSame(422);
-        self::assertSame(['#field-rating', '#field-score', '#field-accent'], $crawler->filter('.error-summary a')->each(static fn (Crawler $a): string => (string) $a->attr('href')), 'Then the fields\' rules, e.g. the largest rating and the palette.');
+        self::assertSame(['#field-rating', '#field-score', '#field-accent'], $crawler->filter('.q-error-summary a')->each(static fn (Crawler $a): string => (string) $a->attr('href')), 'Then the fields\' rules, e.g. the largest rating and the palette.');
     }
 
     public function testRelationsOfferWhatTheUserMaySeeAndSearchFindsMore(): void

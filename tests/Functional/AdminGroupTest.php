@@ -59,7 +59,7 @@ final class AdminGroupTest extends WebTestCase
         $this->client->request('GET', '/admin/greetings');
         self::assertResponseIsSuccessful();
         self::assertSelectorTextSame('main h1', 'Greetings');
-        self::assertSelectorTextSame('.admin-nav a[aria-current=page]', 'Greetings', 'Its menu entry is current.');
+        self::assertSelectorTextSame('.q-rail a[aria-current=page]', 'Greetings', 'Its menu entry is current; alone in its section, it\'s named after it.');
         self::assertSelectorExists('meta[name=robots][content="noindex, nofollow"]');
     }
 
@@ -69,9 +69,11 @@ final class AdminGroupTest extends WebTestCase
 
         $crawler = $this->client->request('GET', '/admin');
         $stylesheets = $crawler->filter('head link[rel=stylesheet]')->each(static fn ($link): string => (string) $link->attr('href'));
-        self::assertCount(2, $stylesheets);
-        self::assertStringStartsWith('/assets/quire-admin/admin-', $stylesheets[0]);
-        self::assertStringStartsWith('/assets/quire-fixture-hello/admin-', $stylesheets[1], 'Other extensions\' admin stylesheets come after the admin\'s.');
+        self::assertCount(6, $stylesheets);
+        self::assertStringStartsWith('/assets/quire-admin/quire-ui-', $stylesheets[0], 'Quire UI first, then the admin\'s own pages.');
+        self::assertStringStartsWith('/assets/quire-admin/admin-', $stylesheets[1]);
+        self::assertStringStartsWith('/assets/quire-fixture-hello/admin-', $stylesheets[2], 'Other extensions\' admin stylesheets come after the admin\'s.');
+        self::assertCount(3, array_filter($stylesheets, static fn (string $href): bool => str_contains($href, 'open-props')), 'Open Props\' scales, from the importmap.');
         self::assertStringContainsString("import 'quire-admin/admin.js'", $crawler->filter('head')->html());
         // The importmap maps every module the site knows; only the admin's are loaded.
         self::assertSame(["import 'quire-admin/admin.js';"], $crawler->filter('head script[type=module]')->each(static fn ($script): string => $script->text()));
@@ -88,10 +90,10 @@ final class AdminGroupTest extends WebTestCase
     {
         $this->signIn('editor');
         $this->client->request('GET', '/admin');
-        self::assertSelectorTextSame('.admin-nav a[aria-current=page]', 'Dashboard');
-        self::assertSame(['Content', 'Extensions'], $this->client->getCrawler()->filter('.admin-nav__heading')->each(static fn ($heading): string => $heading->text()), 'The content lists come first.');
-        self::assertSelectorExists('.admin-nav a[href="/admin/greetings"]');
-        self::assertSelectorTextSame('.widgets .card:first-child h2', 'Greetings', 'Ordered: the widget asked for position 5.');
+        self::assertSelectorTextSame('.q-rail a[aria-current=page]', 'Home');
+        self::assertSame(['Home', 'Content', 'Greetings'], $this->client->getCrawler()->filter('.q-rail__item')->each(static fn ($item): string => $item->text()), 'The sections the editor may open, in order.');
+        self::assertSelectorExists('.q-rail a[href="/admin/greetings"]');
+        self::assertSelectorTextSame('.widgets .q-card:first-child h2', 'Greetings', 'Ordered: the widget asked for position 5.');
 
         // Members who may use the admin, but not moderate greetings.
         self::getContainer()->get(Permissions::class)->grant('member', ['quire.admin.access']);

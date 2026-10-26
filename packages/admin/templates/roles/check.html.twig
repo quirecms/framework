@@ -8,9 +8,9 @@
 {% block title %}{{ 'Check access'|trans({}, 'quire-admin') }}{% endblock %}
 
 {% block content %}
-    <p class="field-help">{{ 'Find out whether someone may do something, and why; or, without a user, which roles may.'|trans({}, 'quire-admin') }}</p>
+    <p class="q-help">{{ 'Find out whether someone may do something, and why; or, without a user, which roles may.'|trans({}, 'quire-admin') }}</p>
 
-    <form method="get" action="{{ path('quire_admin_access') }}" class="list-tools" role="search">
+    <form method="get" action="{{ path('quire_admin_access') }}" class="q-toolbar" role="search">
         <label>
             <span>{{ 'User'|trans({}, 'quire-admin') }}</span>
             <input type="text" name="user" value="{{ reference }}" autocomplete="off" spellcheck="false" placeholder="{{ 'username or email'|trans({}, 'quire-admin') }}">
@@ -26,31 +26,31 @@
                 {% endfor %}
             </select>
         </label>
-        <button type="submit" class="button">{{ 'Check'|trans({}, 'quire-admin') }}</button>
+        <button type="submit" class="q-btn">{{ 'Check'|trans({}, 'quire-admin') }}</button>
     </form>
 
-    {% if not_found %}<p class="notice notice--error" role="alert">{{ 'No user with the username or email “{user}”.'|trans({user: reference}, 'quire-admin') }}</p>{% endif %}
+    {% if not_found %}<p class="q-notice q-notice--error" role="alert">{{ 'No user with the username or email “{user}”.'|trans({user: reference}, 'quire-admin') }}</p>{% endif %}
 
     {% if explanation %}
-        <section class="card access-result" aria-live="polite">
-            <h2 class="card__title">
-                <span class="status status--{{ explanation.granted ? 'published' : 'archived' }}">{{ explanation.granted ? 'Yes'|trans({}, 'quire-admin') : 'No'|trans({}, 'quire-admin') }}</span>
+        <section class="q-card access-result" aria-live="polite">
+            <h2 class="q-card__title">
+                <span class="q-tag {{ explanation.granted ? 'q-tag--ok' : 'q-tag--err' }}">{{ explanation.granted ? 'Yes'|trans({}, 'quire-admin') : 'No'|trans({}, 'quire-admin') }}</span>
                 {{ (explanation.granted ? '{name} may: {ability}' : '{name} may not: {ability}')|trans({name: user.displayName, ability: ability_label}, 'quire-admin') }}
             </h2>
             <ul>{% for reason in explanation.reasons %}<li>{{ reason }}</li>{% endfor %}</ul>
-            <p class="meta"><a href="{{ path('quire_admin_user', {id: user.id}) }}">{{ 'Change their roles'|trans({}, 'quire-admin') }}</a></p>
+            <p class="q-meta"><a href="{{ path('quire_admin_user', {id: user.id}) }}">{{ 'Change their roles'|trans({}, 'quire-admin') }}</a></p>
         </section>
     {% endif %}
 
     {% if ability %}
-        <section class="card">
-            <h2 class="card__title">{{ 'Who may: {ability}'|trans({ability: ability_label}, 'quire-admin') }}</h2>
+        <section class="q-card">
+            <h2 class="q-card__title">{{ 'Who may: {ability}'|trans({ability: ability_label}, 'quire-admin') }}</h2>
             {% if holders is empty %}
                 <p>{{ 'No role has it.'|trans({}, 'quire-admin') }}</p>
             {% else %}
-                <ul class="item-list">
+                <ul class="q-list">
                     {% for holder in holders %}
-                        <li><a href="{{ path('quire_admin_role', {role: holder.name}) }}">{{ holder.label }}</a> <span class="meta">{{ holder.users is null ? 'everyone'|trans({}, 'quire-admin') : '{count, plural, =0 {no users} one {# user} other {# users}}'|trans({count: holder.users}, 'quire-admin') }}</span></li>
+                        <li><a href="{{ path('quire_admin_role', {role: holder.name}) }}">{{ holder.label }}</a> <span class="q-meta">{{ holder.users is null ? 'everyone'|trans({}, 'quire-admin') : '{count, plural, =0 {no users} one {# user} other {# users}}'|trans({count: holder.users}, 'quire-admin') }}</span></li>
                     {% endfor %}
                 </ul>
             {% endif %}

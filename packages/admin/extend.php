@@ -8,9 +8,11 @@ use Quire\Admin\Controller\ContentEditController;
 use Quire\Admin\Controller\ContentListController;
 use Quire\Admin\Controller\DashboardController;
 use Quire\Admin\Controller\ExtensionsController;
+use Quire\Admin\Controller\PreferencesController;
 use Quire\Admin\Controller\RolesController;
 use Quire\Admin\Controller\SettingsController;
 use Quire\Admin\Controller\ThemesController;
+use Quire\Admin\Controller\UiController;
 use Quire\Admin\Controller\UsersController;
 use Quire\Admin\Dashboard\Widget\ActivityWidget;
 use Quire\Admin\Dashboard\Widget\ChangesWidget;
@@ -65,21 +67,25 @@ return [
         ->get('/extensions', 'quire_admin_extensions', ExtensionsController::class)
         ->get('/extensions/{id}/{action}', 'quire_admin_extension_confirm', [ExtensionsController::class, 'confirm'], requirements: ['id' => '[a-z0-9]+(?:-[a-z0-9]+)*', 'action' => 'enable|disable|purge'])
         ->post('/extensions/{id}/{action}', 'quire_admin_extension_act', [ExtensionsController::class, 'act'], requirements: ['id' => '[a-z0-9]+(?:-[a-z0-9]+)*', 'action' => 'enable|disable|purge'])
-        ->get('/audit', 'quire_admin_audit', AuditController::class),
+        ->get('/audit', 'quire_admin_audit', AuditController::class)
+        ->post('/preferences/hood', 'quire_admin_hood', [PreferencesController::class, 'hood'])
+        ->get('/ui', 'quire_admin_ui', UiController::class),
 
     new Extend\Views()
         ->namespace('quire_admin', __DIR__.'/templates'),
 
     new Extend\Assets()
+        // Quire UI, the admin's design system, then the admin's own pages.
+        ->stylesheet('quire-admin/quire-ui.css', group: 'admin')
         ->stylesheet('quire-admin/admin.css', group: 'admin')
         ->script('quire-admin/admin.js', group: 'admin'),
 
     new Admin()
-        ->menu('quire-admin.dashboard', 'Dashboard', 'quire_admin_dashboard', section: 'general', order: 0)
+        ->menu('quire-admin.dashboard', 'Home', 'quire_admin_dashboard', section: 'general', order: 0)
         ->menu('quire-admin.settings', 'Settings', 'quire_admin_settings', ability: SettingsController::ABILITY, section: 'site', order: 10)
         ->menu('quire-admin.themes', 'Themes', 'quire_admin_themes', ability: ThemesController::ABILITY, section: 'site', order: 20)
         ->menu('quire-admin.extensions', 'Extensions', 'quire_admin_extensions', ability: ExtensionsController::ABILITY, section: 'site', order: 30)
-        ->menu('quire-admin.audit', 'Audit log', 'quire_admin_audit', ability: AuditController::ABILITY, section: 'site', order: 40)
+        ->menu('quire-admin.audit', 'Activity', 'quire_admin_audit', ability: AuditController::ABILITY, section: 'activity', order: 10)
         ->menu('quire-admin.users', 'Users', 'quire_admin_users', ability: UsersController::ABILITY, section: 'users', order: 10)
         ->menu('quire-admin.roles', 'Roles', 'quire_admin_roles', ability: RolesController::ABILITY, section: 'users', order: 20)
         ->menu('quire-admin.access', 'Check access', 'quire_admin_access', ability: RolesController::ABILITY, section: 'users', order: 30)

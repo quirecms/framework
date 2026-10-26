@@ -95,7 +95,11 @@ Pages that extensions add to the admin move with it.
 
 Every page is plain HTML rendered on the server, and works without JavaScript. [Turbo](https://turbo.hotwired.dev) makes moving between pages fast, and [Stimulus](https://stimulus.hotwired.dev) adds behaviour where a page needs it. The site downloads both when the admin is installed, like the packages of its own importmap, so it needs no Node.js. Light and dark follow the system's setting, and the pages are checked against WCAG 2.2 AA in CI.
 
-The admin looks the same whatever the site's theme. To adjust it, add a stylesheet to the group `admin` (see [extensions](extensions.md#extendassets)) and override the design tokens it uses, e.g. `:root { --admin-accent: #8250df; }`.
+**Finding your way:** the rail on the left (at the bottom on phones) has Home, Content, People, Activity and Site, and "More" for pages extensions add; a section's pages are tabs above them, e.g. Posts and Pages under Content. **＋ New** starts an item of any type you may create.
+
+**Under the hood**, the switch at the top, shows what's behind the admin: the console command that does what you just did, and more as the admin grows. It's on for admins and off for others until each person switches it.
+
+The admin's look is **Quire UI**, its own design system: [Open Props](https://open-props.style) scales and Quire's tokens, with light, dark and the system's high-contrast setting, the Inter and Bricolage Grotesque fonts it ships, and no build step. It looks the same whatever the site's theme. To adjust it, add a stylesheet to the group `admin` (see [extensions](extensions.md#extendassets)) and override its tokens, e.g. `:root { --q-accent: #8250df; }`; Quire UI's styles are in cascade layers, so yours win. Its components, with their markup, are at `/admin/ui` (linked from the account menu with "Under the hood" on).
 
 The admin is translated with the site's language (`site.locale`), in the domain `quire-admin`. A site overrides its texts in its own `translations/` directory.
 

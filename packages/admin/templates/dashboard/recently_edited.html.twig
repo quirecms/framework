@@ -1,7 +1,8 @@
+{% import '@quire_admin/_ui.html.twig' as ui %}
 {% if items is empty %}
-    <p class="empty">{{ 'Nothing has been written yet.'|trans({}, 'quire-admin') }}</p>
+    <p class="q-empty">{{ 'Nothing has been written yet.'|trans({}, 'quire-admin') }}</p>
 {% else %}
-    <ul class="item-list">
+    <ul class="q-list">
         {% for item in items %}
             <li>
                 {% if item.isPublic %}
@@ -9,9 +10,9 @@
                 {% else %}
                     <span>{{ item.title }}</span>
                 {% endif %}
-                <span class="meta">
+                <span class="q-meta">
                     {{ types[item.type].label }} ·
-                    <span class="status status--{{ item.status }}">{{ ('status.' ~ item.status)|trans({}, 'quire-admin') }}</span> ·
+                    {{ ui.status(item.status) }} ·
                     <time datetime="{{ item.updatedAt|date('c') }}">{{ item.updatedAt|date('Y-m-d H:i') }}</time>
                 </span>
             </li>

@@ -1,0 +1,9 @@
+{
+    "name": "quire-browser-tests",
+    "private": true,
+    "type": "module",
+    "description": "Browser tests of Quire's admin: screenshots compared with approved ones (and, later, flows).",
+    "dependencies": {
+        "@playwright/test": "1.55.1"
+    }
+}

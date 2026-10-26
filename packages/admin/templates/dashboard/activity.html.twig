@@ -1,12 +1,12 @@
 {# The latest audit entries. Variables: entries (as AuditEntries presents them), timezone. #}
 {% if entries is empty %}
-    <p class="empty">{{ 'Nothing recorded yet.'|trans({}, 'quire-admin') }}</p>
+    <p class="q-empty">{{ 'Nothing recorded yet.'|trans({}, 'quire-admin') }}</p>
 {% else %}
-    <ul class="item-list">
+    <ul class="q-list">
         {% for item in entries %}
             <li>
                 {% if item.subject_url %}<a href="{{ item.subject_url }}">{{ item.summary }}</a>{% else %}<span>{{ item.summary }}</span>{% endif %}
-                <span class="meta">
+                <span class="q-meta">
                     {{ item.actor }} ·
                     <time datetime="{{ item.entry.lastAt|date('c') }}">{{ item.entry.lastAt|date('Y-m-d H:i', timezone) }}</time>
                 </span>

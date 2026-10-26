@@ -1,9 +1,20 @@
 {#
-    The admin's page layout. Pages extend it and fill "title" and "content"; "actions" holds buttons next
-    to the page heading.
+    The admin's page layout (Quire UI). Pages extend it and fill "title" and "content"; "eyebrow" goes
+    above the heading, "actions" next to it.
+
+    The menu's sections are the rail (at the bottom on phones); a section's entries are tabs above its
+    pages. Everything works without JavaScript: the "New" and account menus are <details>.
 #}
+{% import '@quire_admin/_ui.html.twig' as ui %}
+{% set menu = quire_admin_menu() %}
+{% set hood = quire_admin_hood() %}
+{% set icons = {general: 'home', content: 'content', users: 'people', activity: 'activity', site: 'site', extensions: 'more'} %}
+{% set current_section = null %}
+{% for section, items in menu %}
+    {% for item in items %}{% if item.current %}{% set current_section = section %}{% endif %}{% endfor %}
+{% endfor %}
 <!doctype html>
-<html lang="{{ site.locale }}">
+<html lang="{{ site.locale }}"{% if hood %} data-hood="on"{% endif %}>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -12,55 +23,103 @@
     <title>{% block title %}{% endblock %} · {{ 'Admin'|trans({}, 'quire-admin') }} · {{ site.title }}</title>
     {{ quire_slot('admin.head') }}
 </head>
-<body class="admin">
-    <a class="skip-link" href="#main">{{ 'Skip to content'|trans({}, 'quire-admin') }}</a>
+<body class="q-admin">
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+        <symbol id="q-icon-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7v9H4z"/><path d="M10 20v-5h4v5"/></symbol>
+        <symbol id="q-icon-content" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></symbol>
+        <symbol id="q-icon-people" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17.5" cy="9" r="2.5"/><path d="M17 14c2.5 0 4 1.8 4 4.5"/></symbol>
+        <symbol id="q-icon-activity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-7 4 14 3-7h4"/></symbol>
+        <symbol id="q-icon-site" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18M8 21h8"/></symbol>
+        <symbol id="q-icon-more" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3h4v4a2 2 0 1 0 0 4v4h-4a2 2 0 1 0-4 0H3v-4a2 2 0 1 0 0-4V3h4a2 2 0 1 0 3 0z"/></symbol>
+    </svg>
+    <a class="q-skip" href="#main">{{ 'Skip to content'|trans({}, 'quire-admin') }}</a>
 
-    <header class="admin-bar">
-        <a class="admin-bar__site" href="{{ path('quire_home') }}">{{ site.title }}</a>
-        <span class="admin-bar__label">{{ 'Admin'|trans({}, 'quire-admin') }}</span>
-        {% if app.user %}
-            <nav class="admin-bar__user" aria-label="{{ 'Account'|trans({}, 'quire-admin') }}">
-                <span>{{ app.user.displayName ?? app.user.userIdentifier }}</span>
-                <a href="{{ logout_path() }}" data-turbo="false">{{ 'Sign out'|trans({}, 'quire-admin') }}</a>
-            </nav>
-        {% endif %}
-    </header>
+    <div class="q-shell">
+        <nav class="q-rail" aria-label="{{ 'Admin menu'|trans({}, 'quire-admin') }}">
+            <a class="q-rail__brand" href="{{ path('quire_admin_dashboard') }}" title="{{ 'Admin'|trans({}, 'quire-admin') }}"><span aria-hidden="true">Q</span><span class="q-sr">{{ 'Admin'|trans({}, 'quire-admin') }}</span></a>
 
-    <div class="admin-shell">
-        <nav class="admin-nav" id="admin-nav" aria-label="{{ 'Admin menu'|trans({}, 'quire-admin') }}">
-            {% for section, items in quire_admin_menu() %}
-                <div class="admin-nav__section">
-                    {% if section != 'general' %}
-                        <h2 class="admin-nav__heading">{{ ('section.' ~ section)|trans({}, 'quire-admin') }}</h2>
-                    {% endif %}
-                    <ul>
-                        {% for item in items %}
-                            <li><a href="{{ item.url }}"{% if item.current %} aria-current="page"{% endif %}>{{ item.label }}</a></li>
-                        {% endfor %}
+            {% set creatable = quire_admin_new() %}
+            {% if creatable is not empty %}
+                <details class="q-menu">
+                    <summary class="q-new"><b aria-hidden="true">＋</b>{{ 'New'|trans({}, 'quire-admin') }}</summary>
+                    <ul class="q-menu__panel q-menu__panel--side">
+                        <li class="q-menu__label">{{ 'Create'|trans({}, 'quire-admin') }}</li>
+                        {% for entry in creatable %}<li><a href="{{ entry.url }}">{{ entry.label }}</a></li>{% endfor %}
                     </ul>
-                </div>
-            {% endfor %}
+                </details>
+            {% endif %}
+
+            <ul class="q-rail__nav">
+                {% for section, items in menu %}
+                    <li>
+                        <a class="q-rail__item" href="{{ items|first.url }}"{% if section == current_section %} aria-current="page"{% endif %}>
+                            {#- Alone in "More", an extension's page is named after itself. -#}
+                            {{ ui.icon(icons[section] ?? 'more') }}{{ section == 'extensions' and items|length == 1 ? (items|first).label : ('section.' ~ section)|trans({}, 'quire-admin') }}
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+            <span class="q-rail__spacer"></span>
         </nav>
 
-        <main class="admin-main" id="main" tabindex="-1">
-            {% for type, messages in app.flashes %}
-                {% if type == 'command' %}
-                    {# What was just done, as console commands (see AsCommandListener). #}
-                    {% include '@quire_admin/_command.html.twig' with {commands: messages} only %}
-                {% else %}
-                    {% for message in messages %}
-                        <p class="notice notice--{{ type }}" role="{{ type == 'error' ? 'alert' : 'status' }}">{{ message }}</p>
-                    {% endfor %}
+        <div class="q-canvas">
+            <header class="q-topbar">
+                <div class="q-topbar__site"><span class="q-live-dot" aria-hidden="true"></span>{{ site.title }} <a href="{{ path('quire_home') }}">{{ 'view site'|trans({}, 'quire-admin') }} ↗</a></div>
+                <div class="q-topbar__end">
+                    <form method="post" action="{{ path('quire_admin_hood') }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_preferences') }}">
+                        <input type="hidden" name="back" value="{{ app.request.requestUri }}">
+                        <button class="q-switch" aria-pressed="{{ hood ? 'true' : 'false' }}" title="{{ 'Show the commands behind actions, IDs and keyboard hints'|trans({}, 'quire-admin') }}">
+                            <span class="q-switch__label">{{ 'Under the hood'|trans({}, 'quire-admin') }}</span><span class="q-switch__track" aria-hidden="true"></span>
+                        </button>
+                    </form>
+                    {% if app.user %}
+                        <details class="q-menu q-account">
+                            <summary aria-label="{{ 'Account'|trans({}, 'quire-admin') }}"><span class="q-avatar">{{ (app.user.displayName ?? app.user.userIdentifier)|split(' ')|map(word => word|first)|slice(0, 2)|join|upper }}</span></summary>
+                            <ul class="q-menu__panel q-menu__panel--end">
+                                <li class="q-menu__label">{{ app.user.displayName ?? app.user.userIdentifier }}</li>
+                                {% if hood %}<li><a href="{{ path('quire_admin_ui') }}">{{ 'Components'|trans({}, 'quire-admin') }}</a></li>{% endif %}
+                                <li><a href="{{ logout_path() }}" data-turbo="false">{{ 'Sign out'|trans({}, 'quire-admin') }}</a></li>
+                            </ul>
+                        </details>
+                    {% endif %}
+                </div>
+            </header>
+
+            <main class="q-main" id="main" tabindex="-1">
+                {% for type, messages in app.flashes %}
+                    {% if type == 'command' %}
+                        {# What was just done, as console commands (see AsCommandListener). #}
+                        {% include '@quire_admin/_command.html.twig' with {commands: messages} only %}
+                    {% else %}
+                        {% for message in messages %}
+                            <p class="q-notice q-notice--{{ type }}" role="{{ type == 'error' ? 'alert' : 'status' }}">{{ message }}</p>
+                        {% endfor %}
+                    {% endif %}
+                {% endfor %}
+
+                <div class="q-page-head">
+                    <div>
+                        {% set eyebrow %}{% block eyebrow %}{{ current_section and current_section != 'general' ? ('section.' ~ current_section)|trans({}, 'quire-admin') : '' }}{% endblock %}{% endset %}
+                        {% if eyebrow|trim %}<div class="q-page-head__eyebrow">{{ eyebrow }}</div>{% endif %}
+                        <h1>{{ block('title') }}</h1>
+                    </div>
+                    {% block actions %}{% endblock %}
+                </div>
+
+                {% if current_section and menu[current_section]|length > 1 %}
+                    <nav class="q-tabs" aria-label="{{ ('section.' ~ current_section)|trans({}, 'quire-admin') }}">
+                        <ul>
+                            {% for item in menu[current_section] %}
+                                <li><a href="{{ item.url }}"{% if item.current %} aria-current="page"{% endif %}>{{ item.label }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </nav>
                 {% endif %}
-            {% endfor %}
 
-            <div class="page-header">
-                <h1>{{ block('title') }}</h1>
-                {% block actions %}{% endblock %}
-            </div>
-
-            {% block content %}{% endblock %}
-        </main>
+                {% block content %}{% endblock %}
+            </main>
+        </div>
     </div>
 </body>
 </html>

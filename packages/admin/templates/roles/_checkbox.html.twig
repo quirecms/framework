@@ -3,7 +3,7 @@
 {% set default = name in defaults %}
 {% set on = name in has %}
 <input type="checkbox" id="{{ id }}" name="abilities[]" value="{{ name }}"{% if on %} checked{% endif %} aria-describedby="{{ id }}-state">
-<label for="{{ id }}"{% if hide_label ?? false %} class="visually-hidden"{% endif %}>{{ label }}</label>
+<label for="{{ id }}"{% if hide_label ?? false %} class="q-sr"{% endif %}>{{ label }}</label>
 <span class="ability__state{% if on != default %} ability__state--changed{% endif %}" id="{{ id }}-state">
     {%- if on != default -%}{{ (default ? 'changed: by default it has this' : 'changed: by default it hasn\'t this')|trans({}, 'quire-admin') }}{%- endif -%}
 </span>
