@@ -31,6 +31,9 @@
 {# The editor's bar takes the place of the page's heading. #}
 {% block page_head %}{% endblock %}
 
+{# On phones, a task of its own: without the top bar and the menu. #}
+{% block body_class %}q-admin--task{% endblock %}
+
 {% block content %}
 <div class="editor-page" data-controller="content-editor"
           data-content-editor-preview-url-value="{{ path('quire_admin_content_preview', {type: type.id}) }}"
@@ -72,6 +75,8 @@
         </div>
 
         {% if not readonly %}
+            {# On phones: from writing to the rest, and back (see the content-editor controller). #}
+            <button type="button" class="q-btn q-btn--sm editor-bar__step" data-content-editor-target="stepButton" data-action="content-editor#step" data-next="{{ 'Next'|trans({}, 'quire-admin') }}" data-back="{{ 'Back to the text'|trans({}, 'quire-admin') }}">{{ 'Next'|trans({}, 'quire-admin') }}</button>
             <div class="editor-bar__actions">
                 <button type="button" class="q-btn q-btn--ghost q-btn--sm editor-bar__focus" data-action="content-editor#focus" data-content-editor-target="focusButton" aria-pressed="false" hidden>{{ 'Focus'|trans({}, 'quire-admin') }}</button>
                 <button type="submit" form="editor-form" class="q-btn q-btn--ghost" name="intent" value="preview" formnovalidate data-content-editor-target="previewButton">{{ 'Preview'|trans({}, 'quire-admin') }}</button>
@@ -255,6 +260,9 @@
                     {# Commenting on selected text: shown with JavaScript, at the selection. #}
                     <div class="editor-comment q-card" data-manuscript-target="commenter" hidden>
                         <label for="new-comment" class="q-sr">{{ 'Comment on the selected text'|trans({}, 'quire-admin') }}</label>
+                        {# What's commented on, filled in from the selection; inside the manuscript, where its controller can reach them. #}
+                        <input type="hidden" name="quote" form="comment-new" data-manuscript-target="quote">
+                        <input type="hidden" name="line" form="comment-new" data-manuscript-target="line">
                         <textarea id="new-comment" name="message" form="comment-new" rows="2" placeholder="{{ 'Comment on “{quote}”'|trans({quote: '…'}, 'quire-admin') }}" data-manuscript-target="commentText"></textarea>
                         <button type="submit" form="comment-new" class="q-btn q-btn--sm">{{ 'Comment'|trans({}, 'quire-admin') }}</button>
                     </div>
@@ -379,7 +387,7 @@
 
     {% if pending %}
         {# Comments are forms of their own: their controls are in the margin, with form="…". #}
-        {{ _self.comment_form('comment-new', type, item, pending, back_url, {quote: '', line: '', property: 'body'}) }}
+        {{ _self.comment_form('comment-new', type, item, pending, back_url, {property: 'body'}) }}
         {% for thread in threads %}
             {{ _self.comment_form('comment-' ~ thread.comment.id, type, item, pending, back_url, {comment: thread.comment.id}) }}
         {% endfor %}
@@ -417,7 +425,7 @@
     <form method="post" id="{{ id }}" action="{{ path('quire_admin_content_comment', {type: type.id, id: item.id, pending: pending.id}) }}" hidden>
         <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_content_editor') }}">
         <input type="hidden" name="back" value="{{ back }}">
-        {% for name, value in values %}<input type="hidden" name="{{ name }}" value="{{ value }}"{% if name in ['quote', 'line'] %} data-manuscript-target="{{ name }}"{% endif %}>{% endfor %}
+        {% for name, value in values %}<input type="hidden" name="{{ name }}" value="{{ value }}">{% endfor %}
     </form>
 {% endmacro %}
 

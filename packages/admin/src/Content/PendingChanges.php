@@ -128,10 +128,10 @@ final readonly class PendingChanges
     public function names(array $ids): array
     {
         $names = [];
+        $users = $this->userRepository->findMany(array_filter($ids, \is_string(...)));
 
         foreach (array_unique(array_filter($ids, \is_string(...))) as $id) {
-            $user = $this->userRepository->find($id);
-            $names[$id] = $user->displayName ?? $this->translator->trans('a former user', [], 'quire-admin');
+            $names[$id] = ($users[$id] ?? null)->displayName ?? $this->translator->trans('a former user', [], 'quire-admin');
         }
 
         return $names;

@@ -13,6 +13,7 @@ use Quire\Settings\SettingsSchema;
 use Quire\User\User;
 use Quire\User\UserRepository;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Contracts\Service\ResetInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
@@ -21,7 +22,7 @@ use Symfony\Contracts\Translation\TranslatorInterface;
  *
  * @internal
  */
-final class AuditEntries
+final class AuditEntries implements ResetInterface
 {
     /** Details the sentence or the links say already */
     private const array HIDDEN_DETAILS = ['type', 'locale', 'status', 'pending_revision', 'version', 'firewall', 'transition', 'sensitive', 'verdict'];
@@ -52,7 +53,9 @@ final class AuditEntries
      */
     public function present(iterable $entries, string $timezone): array
     {
+        $entries = array_values([...$entries]);
         $presented = [];
+        $this->load($entries);
 
         foreach ($entries as $entry) {
             $presented[] = [
@@ -178,6 +181,36 @@ final class AuditEntries
         } catch (\Exception) {
             return $value;
         }
+    }
+
+    /**
+     * The people and items the entries are by and about, all at once.
+     *
+     * @param list<AuditEntry> $entries
+     */
+    private function load(array $entries): void
+    {
+        $users = array_filter([...array_map(static fn (AuditEntry $entry): ?string => $entry->actorId, $entries), ...array_map(static fn (AuditEntry $entry): ?string => 'user' === $entry->subjectType ? $entry->subjectId : null, $entries)], \is_string(...));
+        $items = array_filter(array_map(static fn (AuditEntry $entry): ?string => 'content' === $entry->subjectType ? $entry->subjectId : null, $entries), \is_string(...));
+        $missing = array_values(array_diff(array_unique($users), array_keys($this->users)));
+        $found = $this->userRepository->findMany($missing);
+
+        foreach ($missing as $id) {
+            $this->users[$id] = $found[$id] ?? null;
+        }
+
+        $missing = array_values(array_diff(array_unique($items), array_keys($this->content)));
+        $found = $this->contentRepository->findMany($missing);
+
+        foreach ($missing as $id) {
+            $this->content[$id] = $found[$id] ?? null;
+        }
+    }
+
+    public function reset(): void
+    {
+        $this->users = [];
+        $this->content = [];
     }
 
     private function user(string $id): ?User

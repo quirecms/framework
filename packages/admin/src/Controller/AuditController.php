@@ -297,15 +297,16 @@ final readonly class AuditController
             }
         }
 
-        // Then the days, and undo for a card: all of it, when each can be undone.
+        // Then the days, and undo for a card: all of it, when each can be undone (worked out for all at once).
         $groups = [];
+        $undoable = $this->undo->undoable(array_merge(...array_map(static fn (array $card): array => array_map(static fn (array $item): AuditEntry => $item['entry'], $card['items']), $cards)));
 
         foreach ($cards as $card) {
             $entries = array_map(static fn (array $item): AuditEntry => $item['entry'], $card['items']);
             $groups[$card['day']] ??= ['date' => new \DateTimeImmutable($card['day'], $zone), 'count' => $byDay[$card['day']] ?? null, 'cards' => []];
             $groups[$card['day']]['cards'][] = [
                 'items' => $card['items'],
-                'undo' => array_all($entries, $this->undo->canUndo(...)) ? array_map(static fn (AuditEntry $entry): string => $entry->id, $entries) : [],
+                'undo' => array_all($entries, static fn (AuditEntry $entry): bool => isset($undoable[$entry->id])) ? array_map(static fn (AuditEntry $entry): string => $entry->id, $entries) : [],
             ];
         }
 

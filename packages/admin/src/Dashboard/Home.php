@@ -150,8 +150,11 @@ final readonly class Home
             }
         }
 
-        foreach ($this->pending->scheduledBetween($now, $end) as $changes) {
-            $item = $this->content->find($changes->contentId);
+        $scheduledChanges = $this->pending->scheduledBetween($now, $end);
+        $items = $this->content->findMany(array_map(static fn (\Quire\Content\Revision\PendingRevision $changes): string => $changes->contentId, $scheduledChanges));
+
+        foreach ($scheduledChanges as $changes) {
+            $item = $items[$changes->contentId] ?? null;
 
             if ($item instanceof Content && null !== $changes->publishAt && \in_array($item->type, array_map(static fn (\Quire\Content\Type\ContentTypeDefinition $type): string => $type->id, $this->lists->listableTypes()), true)) {
                 $review = \in_array($changes->state, [ReviewState::InReview, ReviewState::ChangesRequested], true);

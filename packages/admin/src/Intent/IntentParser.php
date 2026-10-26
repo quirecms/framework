@@ -73,6 +73,8 @@ final readonly class IntentParser
     public function parse(string $text, ?\DateTimeImmutable $now = null): ?Intent
     {
         $text = trim((string) preg_replace('/\s+/u', ' ', $text));
+        // "let kim in again" names the person in the middle.
+        $text = (string) preg_replace('/^let\s+(.+?)\s+in(?:\s+again)?$/iu', 'let in $1', $text);
         $lower = mb_strtolower($text);
         $verb = null;
 

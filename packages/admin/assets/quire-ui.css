@@ -772,7 +772,8 @@
 
     /* --- Phones: the rail becomes a bar at the bottom ------------------------------- */
     @media (max-width: 48rem) {
-        .q-shell { grid-template-columns: minmax(0, 1fr); }
+        /* The rail is a bar at the bottom: no rail's colour down the side. */
+        .q-shell { grid-template-columns: minmax(0, 1fr); background: none; }
 
         .q-rail {
             position: fixed;

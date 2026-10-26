@@ -61,6 +61,22 @@ const prefix = (marker) => (view) => {
     return true;
 };
 
+// An image on a line of its own, after the cursor's line, with its description selected to write.
+const image = (view, labels = {}) => {
+    const alt = labels.image_alt ?? 'Description';
+    const line = view.state.doc.lineAt(view.state.selection.main.head);
+    const at = line.length === 0 ? line.from : line.to;
+    const before = line.length === 0 ? '' : '\n\n';
+
+    view.dispatch({
+        changes: { from: at, insert: `${before}![${alt}](https://)` },
+        selection: EditorSelection.range(at + before.length + 2, at + before.length + 2 + alt.length),
+    });
+    view.focus();
+
+    return true;
+};
+
 export const commands = {
     bold: wrap('**'),
     italic: wrap('_'),
@@ -69,6 +85,7 @@ export const commands = {
     heading: prefix('## '),
     list: prefix('- '),
     quote: prefix('> '),
+    image,
 };
 
 // An image, as a box with its description and file, while the cursor isn't on its line.

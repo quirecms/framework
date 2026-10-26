@@ -73,6 +73,12 @@ final class IntentTest extends AdminTestCase
         $this->client->request('GET', '/admin/find?q=suspend+kim');
         self::assertSelectorTextContains('.intent-denied', 'is suspended already');
 
+        // The person in the middle, as people say it.
+        $crawler = $this->client->request('GET', '/admin/find?q='.rawurlencode('let kim in again'));
+        self::assertSame(['Let in again', 'Kim Ono'], $crawler->filter('.intent-part')->each(static fn (Crawler $part): string => trim($part->text())));
+        $this->client->submit($crawler->selectButton('Do it')->form());
+        self::assertTrue($this->service(UserRepository::class)->find($kim->id)?->isActive());
+
         $crawler = $this->client->request('GET', '/admin/find?q='.rawurlencode('set site title to Tournament News'));
         self::assertSame(['Set', 'Site title', 'Tournament News'], $crawler->filter('.intent-part')->each(static fn (Crawler $part): string => trim($part->text())), 'The value as it was typed.');
         $this->client->submit($crawler->selectButton('Do it')->form());

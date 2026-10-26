@@ -792,6 +792,16 @@ new Extend\Routes(group: 'admin')
 
 Use **Quire UI**, the admin's design system, so the page looks like the rest of the admin: classes such as `q-card`, `q-btn`, `q-table`, `q-field`, `q-tag` and `q-notice`, and macros for the content lifecycle (`{% import '@quire_admin/_ui.html.twig' as ui %}{{ ui.status(item.status) }}`). With "Under the hood" switched on, the account menu links to **Components** (`/admin/ui`): every component with the markup to copy. Quire UI's styles are in cascade layers, so your own stylesheet in the group `admin` always wins over them; use its tokens (`var(--q-accent)`, `var(--q-space-4)`, …) to stay in tune with light, dark and high contrast.
 
+A page that's a task of its own, such as writing or reviewing, can take the whole screen on phones, without the top bar and the menu at the bottom, as the editor and the review do. It then needs its own way back, e.g. a link at the top:
+
+```twig
+{% block body_class %}q-admin--task{% endblock %}
+```
+
+Keep a page's queries the same however many rows it shows: load what the rows need for all of them at once, e.g. `ContentRepository::findMany($ids)` and `UserRepository::findMany($ids)` (by ID, in one query), or `select()` and `with()` on a content query. The admin's own pages are held to budgets like that (`packages/admin/tests/QueryBudgetTest.php`); `ExtensionTestCase::assertQueryCount()` checks yours.
+
+The [actions](#extendactions) your extension declares are run from its pages like everyone else's, recorded in the audit log with their commands. The admin's intent bar ("Find anything, or say what to do") understands the core's actions in a fixed set of phrases; it finds an extension's content, but doesn't run an extension's actions yet.
+
 The admin's own extender, `Quire\Admin\Extend\Admin`, adds the page to its menu, what waits for moderators to Home, and a card beside it:
 
 ```php

@@ -17,6 +17,21 @@ final class ManuscriptTest extends AdminTestCase
 {
     private const string BODY = "Sixteen teams, four groups.\n\nHosts open against Northside on Friday.\n";
 
+    public function testWhatIsCommentedOnIsWhereTheManuscriptFillsItIn(): void
+    {
+        $grace = $this->createUser('Grace', ['editor']);
+        $post = $this->content('post', 'Spring draw')->body(self::BODY)->published()->create();
+        $this->changes($post)->by($grace)->body(self::BODY.' More.')->create();
+        $this->signIn($grace);
+
+        $crawler = $this->client->request('GET', '/admin/content/post/'.$post->id);
+
+        // Its controller only sees inside its element: the selection's quote and line go there, sent with the comment's form.
+        foreach (['quote', 'line'] as $name) {
+            self::assertCount(1, $crawler->filter('[data-controller="manuscript"] input[name="'.$name.'"][form="comment-new"][data-manuscript-target="'.$name.'"]'), $name);
+        }
+    }
+
     public function testWhereItWillAppear(): void
     {
         $this->setSetting('site.title', 'Tournament News');

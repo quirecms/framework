@@ -155,7 +155,7 @@ Visitors who aren't signed in are guests. Extensions can add roles, e.g. `modera
 
 Its Symfony roles are `ROLE_USER` plus `ROLE_<NAME>` for each of its roles, e.g. `ROLE_EDITOR`.
 
-Find users with `Quire\User\UserRepository` (by ID, email, username, or an identity at another provider), and change them with `Quire\User\UserWriter`, which keeps the rules: unique emails and usernames, hashed passwords, known roles.
+Find users with `Quire\User\UserRepository` (by ID, email, username, or an identity at another provider; many by their IDs in one query with `findMany()`), and change them with `Quire\User\UserWriter`, which keeps the rules: unique emails and usernames, hashed passwords, known roles.
 
 ```php
 $user = $writer->create(new CreateUser('Grace Hopper', 'grace@example.com', password: $password, roles: [Role::EDITOR]));

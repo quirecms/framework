@@ -119,6 +119,31 @@ final class AuditUndoTest extends KernelTestCase
         $this->undo->undo($suspended);
     }
 
+    public function testForAPageOfEntriesAtOnceTheSameAsOneByOne(): void
+    {
+        $writer = self::getContainer()->get(ContentWriter::class);
+        $draw = $writer->create(new CreateContent('post', 'Spring draw'));
+        $venue = $writer->create(new CreateContent('post', 'Venue'));
+        $kim = $this->user('Kim', Role::EDITOR);
+        $this->actions->run('content.transition', ['content' => $draw->id, 'transition' => 'publish']);
+        $this->actions->run('content.trash', ['content' => $venue->id]);
+        $this->actions->run('content.restore', ['content' => $venue->id]);
+        $this->actions->run('user.suspend', ['user' => $kim->id]);
+        $this->actions->run('setting.set', ['setting' => 'site.title', 'value' => 'Spring Cup']);
+        // Only this test's: tests that commit leave entries behind.
+        $entries = array_values(array_filter(self::getContainer()->get(AuditLog::class)->find(perPage: 50)->entries, static fn (AuditEntry $entry): bool => \in_array($entry->subjectId, [$draw->id, $venue->id, $kim->id, 'site.title'], true)));
+        $oneByOne = array_keys(array_filter(array_combine(array_map(static fn (AuditEntry $entry): string => $entry->id, $entries), array_map($this->undo->canUndo(...), $entries))));
+
+        self::assertCount(4, $oneByOne, 'Publishing, restoring, suspending and the setting; trashing was restored since.');
+        self::assertEqualsCanonicalizing($oneByOne, array_keys($this->undo->undoable($entries)));
+
+        // Only what the person may do: an editor may take publishing back, not suspending.
+        $this->signIn($this->user('Grace', Role::EDITOR));
+        $oneByOne = array_keys(array_filter(array_combine(array_map(static fn (AuditEntry $entry): string => $entry->id, $entries), array_map($this->undo->canUndo(...), $entries))));
+        self::assertCount(2, $oneByOne);
+        self::assertEqualsCanonicalizing($oneByOne, array_keys($this->undo->undoable($entries)));
+    }
+
     public function testFindingByTextAndCounting(): void
     {
         $log = self::getContainer()->get(AuditLog::class);
