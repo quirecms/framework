@@ -2237,7 +2237,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/core",
-                "reference": "f1b33660e4ea18bcd6bf1e1633d3e35ab3ec51d4"
+                "reference": "fc6fb9c72bc3feeecb23bfbb02c88790efc838e0"
             },
             "require": {
                 "doctrine/dbal": "^4.2",
@@ -2274,7 +2274,8 @@
                 "symfony/string": "^8.1",
                 "symfony/translation": "^8.1",
                 "symfony/twig-bundle": "^8.1",
-                "symfony/workflow": "^8.1"
+                "symfony/workflow": "^8.1",
+                "symfony/yaml": "^8.1"
             },
             "suggest": {
                 "league/flysystem-async-aws-s3": "Storage disks on S3-compatible services (AWS S3, Cloudflare R2, Backblaze B2, SeaweedFS, Garage)"

@@ -64,13 +64,16 @@ To go back to the declared default:
 bin/console quire:settings:set site.title --default
 ```
 
-To copy settings from one site to another, or keep them in version control, export what the site changed as JSON and import it elsewhere:
+To copy settings from one site to another, or keep them in version control, export what the site changed as JSON or YAML and import it elsewhere:
 
 ```bash
 bin/console quire:settings:export > settings.json      # what's stored, not defaults (--all) nor sensitive settings (--include-sensitive)
-bin/console quire:settings:import settings.json --dry-run
-bin/console quire:settings:import settings.json
+bin/console quire:settings:export --format yaml > settings.yaml
+bin/console quire:settings:import settings.yaml --dry-run   # every difference, nothing changed
+bin/console quire:settings:import settings.yaml
 ```
+
+In code, `Quire\Settings\SettingsTransfer` does the same: `export()`, `toYaml()` or `toJson()`, `parse()` a file, `plan()` the import to look at what would change, and `apply()` it.
 
 An import checks every value before it changes any: when one doesn't fit, or a key isn't declared by an enabled extension (unless `--skip-unknown`), nothing changes. Settings the file doesn't list keep their value.
 
