@@ -10,19 +10,21 @@ use Quire\Admin\Content\ContentFilterInterface;
 use Quire\Admin\Content\Form\CoreWidgets;
 use Quire\Admin\Content\Form\FieldWidgetInterface;
 use Quire\Admin\Content\NextStepInterface;
+use Quire\Admin\Dashboard\InboxProviderInterface;
 use Quire\Admin\Dashboard\WidgetInterface;
 use Quire\Extend\ExtenderContext;
 use Quire\Extend\ExtenderInterface;
 
 /**
- * Adds to the admin interface: entries in its menu, widgets on its dashboard, columns, filters and
- * actions to its content lists, and widgets for fields to its editor.
+ * Adds to the admin interface: entries in its menu, what needs the user and cards on its home page,
+ * columns, filters and actions to its content lists, and widgets for fields to its editor.
  *
  *     new Extend\Routes(group: 'admin')
  *         ->get('/reviews', 'acme_reviews_admin', ReviewsAdminController::class),
  *
  *     new Admin()
  *         ->menu('acme-reviews', 'Reviews', 'acme_reviews_admin', ability: 'acme-reviews.moderate')
+ *         ->inbox(ReviewsToModerate::class, ability: 'acme-reviews.moderate')
  *         ->widget(PendingReviewsWidget::class)
  *         ->contentColumn('acme-reviews.rating', RatingColumn::class, types: ['product'])
  *         ->contentFilter('acme-reviews.rated', RatedFilter::class, types: ['product'])
@@ -45,6 +47,12 @@ final class Admin implements ExtenderInterface
 
     /** @internal Parameter: list<{class, ability, order, owner}> */
     public const string WIDGETS_PARAMETER = 'quire_admin.widgets';
+
+    /** @internal Parameter: list<{class, ability, order, owner}> */
+    public const string INBOX_PARAMETER = 'quire_admin.inbox';
+
+    /** @internal Tag of inbox providers */
+    public const string INBOX_TAG = 'quire_admin.inbox';
 
     /** @internal Tag of dashboard widgets */
     public const string WIDGET_TAG = 'quire_admin.widget';
@@ -83,6 +91,9 @@ final class Admin implements ExtenderInterface
     /** @var list<array{id: string, kind: string, class: string, types: ?list<string>, order: int}> */
     private array $contentList = [];
 
+    /** @var list<array{class: string, ability: ?string}> */
+    private array $inbox = [];
+
     /** @var array<string, string> Classes by widget name */
     private array $fieldWidgets = [];
 
@@ -103,13 +114,28 @@ final class Admin implements ExtenderInterface
     }
 
     /**
-     * @param class-string<WidgetInterface> $class   A service rendering the widget
+     * A card on the home page, beside what needs the user and what happened lately.
+     *
+     * @param class-string<WidgetInterface> $class   A service rendering the card
      * @param string|null                   $ability Shown only to users with it
-     * @param int                           $order   Position on the dashboard, lowest first
+     * @param int                           $order   Position among the cards, lowest first
      */
     public function widget(string $class, ?string $ability = null, int $order = 100): self
     {
         $this->widgets[] = ['class' => $class, 'ability' => $ability, 'order' => $order];
+
+        return $this;
+    }
+
+    /**
+     * Adds to what needs the user, on the home page ("Needs you") and as the count beside Home in the menu.
+     *
+     * @param class-string<InboxProviderInterface> $class   A service
+     * @param string|null                          $ability Asked only for users with it
+     */
+    public function inbox(string $class, ?string $ability = null): self
+    {
+        $this->inbox[] = ['class' => $class, 'ability' => $ability];
 
         return $this;
     }
@@ -219,6 +245,25 @@ final class Admin implements ExtenderInterface
 
             $context->service($widget['class'])->addTag(self::WIDGET_TAG);
             $context->appendToParameter(self::WIDGETS_PARAMETER, [...$widget, 'owner' => $context->id]);
+        }
+
+        $parameters = $context->container()->getParameterBag();
+
+        // There for the home page, even when nothing adds to them.
+        foreach ([self::WIDGETS_PARAMETER, self::INBOX_PARAMETER] as $parameter) {
+            $value = $parameters->all()[$parameter] ?? [];
+            $context->container()->setParameter($parameter, \is_array($value) ? $value : []);
+        }
+
+        foreach ($this->inbox as $provider) {
+            $where = \sprintf('Admin::inbox("%s")', $provider['class']);
+
+            if (!class_exists($provider['class']) || !is_a($provider['class'], InboxProviderInterface::class, true)) {
+                throw $context->error($where, \sprintf('Inbox providers are classes implementing %s.', InboxProviderInterface::class));
+            }
+
+            $context->service($provider['class'])->addTag(self::INBOX_TAG);
+            $context->appendToParameter(self::INBOX_PARAMETER, [...$provider, 'owner' => $context->id]);
         }
 
         /** @var list<array{id: string, kind: string, owner: string}> $added */

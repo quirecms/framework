@@ -1,6 +1,6 @@
 /*
  * The admin's screens, compared with the approved screenshots in screenshots/. Times and what changes
- * with them (the latest activity) are masked: the demo site is dated relative to when it was made.
+ * with them (the latest activity, Home's greeting, week and what waits since when) are masked: the demo site is dated relative to when it was made.
  */
 import { test, expect } from '@playwright/test';
 import { signIn } from './sign-in.mjs';
@@ -41,7 +41,8 @@ for (const [name, path] of Object.entries(screens)) {
 
         await expect(page).toHaveScreenshot(`${name}.png`, {
             fullPage: true,
-            mask: [page.locator('time'), page.locator('.widgets .q-card:has(a[href*="/admin/audit"])')],
+            // Home says it in words: the time of day, the week and what waits since when.
+            mask: [page.locator('time'), page.locator('.home-head, .home-week, .latest, .inbox__text, .inbox__meta')],
         });
     });
 }

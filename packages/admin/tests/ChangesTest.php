@@ -90,8 +90,9 @@ final class ChangesTest extends AdminTestCase
 
         $this->signIn('editor');
         $crawler = $this->client->request('GET', '/admin');
-        self::assertSelectorTextContains('.widgets', 'Waiting for your review');
-        $crawler = $this->client->click($crawler->filter('.widgets a')->reduce(static fn (Crawler $a): bool => 'Hours' === $a->text())->link());
+        $item = $crawler->filter('.inbox__item')->reduce(static fn (Crawler $item): bool => str_contains($item->text(), 'Hours'));
+        self::assertSame('Member asks you to review their changes to Hours', $item->filter('.inbox__text')->text());
+        $crawler = $this->client->click($item->selectLink('Review changes')->link());
 
         self::assertSelectorTextSame('h1', 'Member’s changes to “Hours”');
         self::assertSelectorTextContains('.review-bar__detail', 'merges cleanly with what’s live');

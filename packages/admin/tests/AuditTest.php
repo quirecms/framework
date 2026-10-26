@@ -100,8 +100,9 @@ final class AuditTest extends AdminTestCase
         $crawler = $this->client->click($crawler->selectLink('What they did')->link());
         self::assertSelectorTextContains('.q-chips', 'By Admin');
 
+        $this->content('post', 'Live')->published()->create();
         $crawler = $this->client->request('GET', '/admin');
-        self::assertContains('Recent activity', $crawler->filter('.widgets .q-card h2')->each(static fn (Crawler $h2): string => $h2->text()));
+        self::assertContains('Latest', $crawler->filter('.home-card h2')->each(static fn (Crawler $h2): string => $h2->text()));
     }
 
     private function post(string $title): Content

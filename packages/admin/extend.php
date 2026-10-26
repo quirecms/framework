@@ -14,10 +14,8 @@ use Quire\Admin\Controller\SettingsController;
 use Quire\Admin\Controller\ThemesController;
 use Quire\Admin\Controller\UiController;
 use Quire\Admin\Controller\UsersController;
-use Quire\Admin\Dashboard\Widget\ActivityWidget;
-use Quire\Admin\Dashboard\Widget\ChangesWidget;
-use Quire\Admin\Dashboard\Widget\ContentWidget;
-use Quire\Admin\Dashboard\Widget\RecentlyEditedWidget;
+use Quire\Admin\Dashboard\Inbox\ChangesInbox;
+use Quire\Admin\Dashboard\Inbox\ScheduledChecksInbox;
 use Quire\Admin\Extend\Admin;
 use Quire\Extend;
 use Symfony\Component\Routing\Requirement\Requirement;
@@ -92,8 +90,6 @@ return [
         ->menu('quire-admin.users', 'Users', 'quire_admin_users', ability: UsersController::ABILITY, section: 'users', order: 10)
         ->menu('quire-admin.roles', 'Roles', 'quire_admin_roles', ability: RolesController::ABILITY, section: 'users', order: 20)
         ->menu('quire-admin.access', 'Check access', 'quire_admin_access', ability: RolesController::ABILITY, section: 'users', order: 30)
-        ->widget(ContentWidget::class, order: 10)
-        ->widget(ChangesWidget::class, order: 15)
-        ->widget(RecentlyEditedWidget::class, order: 20)
-        ->widget(ActivityWidget::class, order: 30),
+        ->inbox(ChangesInbox::class)
+        ->inbox(ScheduledChecksInbox::class),
 ];

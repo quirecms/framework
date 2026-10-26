@@ -37,9 +37,10 @@ return [
     new Extend\Routes(group: 'admin')
         ->get('/greetings', 'fixture_hello_admin', Hello\Admin\GreetingsController::class),
 
-    // The admin's own extender: a menu entry for the page above, and a dashboard widget.
+    // The admin's own extender: a menu entry for the page above, what waits for moderators, and a card on Home.
     new Admin()
         ->menu('quire-fixture-hello.greetings', 'Greetings', 'fixture_hello_admin', ability: 'quire-fixture-hello.moderate')
+        ->inbox(Hello\Admin\GreetingsInbox::class, ability: 'quire-fixture-hello.moderate')
         ->widget(Hello\Admin\GreetingsWidget::class, ability: 'quire-fixture-hello.moderate', order: 5)
         ->contentColumn('quire-fixture-hello.likes', Hello\Admin\LikesColumn::class, types: ['post'])
         ->contentFilter('quire-fixture-hello.featured', Hello\Admin\FeaturedFilter::class, types: ['post'])

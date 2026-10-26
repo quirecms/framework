@@ -1,18 +1,181 @@
+{#
+    The admin's home. Variables: greeting, summary, inbox (InboxItem list), week ({days, now, points}),
+    latest (presented audit entries, or null), health (list of {label, tone}, or null), steps (a new
+    site's first steps, or null), first_run, widgets (extensions' cards: {title, html}).
+#}
 {% extends '@quire_admin/layout.html.twig' %}
+{% import '@quire_admin/_ui.html.twig' as ui %}
 
 {% block title %}{{ 'Home'|trans({}, 'quire-admin') }}{% endblock %}
 
+{% block page_head %}{% endblock %}
+
 {% block content %}
-    {% if widgets is empty %}
-        <p class="q-empty">{{ 'Nothing to show yet.'|trans({}, 'quire-admin') }}</p>
-    {% else %}
-        <div class="widgets">
-            {% for widget in widgets %}
-                <section class="q-card" aria-labelledby="widget-{{ loop.index }}">
-                    <h2 class="q-card__title" id="widget-{{ loop.index }}">{{ widget.title }}</h2>
-                    {{ widget.html|raw }}
+<div class="home">
+    {% if first_run %}
+        <header class="home-head">
+            <h1 class="home-head__title">{{ app.user.displayName is defined and app.user.displayName ? 'Welcome to your new site, {name}'|trans({name: app.user.displayName|split(' ')|first}, 'quire-admin') : 'Welcome to your new site'|trans({}, 'quire-admin') }}</h1>
+            <p class="home-head__summary">{{ '{count, plural, one {# step} other {# steps}} and it’s ready for visitors. Each one is the real thing, not a tour.'|trans({count: steps.steps|length}, 'quire-admin') }}</p>
+        </header>
+        <div class="home__layout">
+            <div class="home__main">{{ _self.first_steps(steps, true) }}</div>
+            <div class="home__aside">
+                <section class="q-card home-card" aria-labelledby="lifecycle-heading">
+                    <h2 id="lifecycle-heading" class="home-card__title">{{ 'How content moves'|trans({}, 'quire-admin') }}</h2>
+                    <p>{{ 'Everything you write follows one line. You’ll see it next to every item.'|trans({}, 'quire-admin') }}</p>
+                    {{ ui.thread('live', true) }}
+                    <dl class="lifecycle">
+                        <dt class="lifecycle__draft">{{ 'status.draft'|trans({}, 'quire-admin') }}</dt><dd>{{ 'Only people who edit can see it.'|trans({}, 'quire-admin') }}</dd>
+                        <dt class="lifecycle__review">{{ 'Review'|trans({}, 'quire-admin') }}</dt><dd>{{ 'Someone checks it before it goes out (optional).'|trans({}, 'quire-admin') }}</dd>
+                        <dt class="lifecycle__scheduled">{{ 'status.scheduled'|trans({}, 'quire-admin') }}</dt><dd>{{ 'Goes live by itself at the time you chose.'|trans({}, 'quire-admin') }}</dd>
+                        <dt class="lifecycle__live">{{ 'Live'|trans({}, 'quire-admin') }}</dt><dd>{{ 'Visitors see it. Edits wait until you publish them.'|trans({}, 'quire-admin') }}</dd>
+                    </dl>
                 </section>
-            {% endfor %}
+                {{ _self.cards(widgets) }}
+            </div>
+        </div>
+    {% else %}
+        <header class="home-head">
+            <h1 class="home-head__title">{{ greeting }}</h1>
+            <p class="home-head__summary">{{ summary }}</p>
+        </header>
+
+        <section class="q-card home-week" aria-labelledby="week-heading">
+            <header class="home-week__head">
+                <h2 id="week-heading" class="home-card__title">{{ 'This week'|trans({}, 'quire-admin') }}</h2>
+                <p class="q-meta" aria-hidden="true">{{ 'solid: happened · dashed: scheduled'|trans({}, 'quire-admin') }}</p>
+            </header>
+            <div class="week" style="--now: {{ week.now }}%">
+                <div class="week__line" aria-hidden="true"><span class="week__now">{{ 'now'|trans({}, 'quire-admin') }}</span></div>
+                {% if week.points is empty %}
+                    <p class="q-empty week__empty">{{ 'Nothing went live this week, and nothing is scheduled.'|trans({}, 'quire-admin') }}</p>
+                {% else %}
+                    <ol class="week__points">
+                        {% for point in week.points %}
+                            <li class="week__point week__point--{{ point.kind }}{% if point.below %} week__point--below{% endif %}{% if point.x > 72 %} week__point--end{% endif %}" style="--x: {{ point.x }}%">
+                                <a href="{{ point.url }}">
+                                    <span class="week__title">{{ point.title }}</span>
+                                    <span class="week__when"><span class="q-sr">{{ ('week.' ~ point.kind)|trans({}, 'quire-admin') }} </span>{{ point.when }}{% if point.note %} · {{ point.note }}{% endif %}</span>
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ol>
+                {% endif %}
+                <ol class="week__days" aria-hidden="true">
+                    {% for day in week.days %}<li{% if day.today %} class="week__today"{% endif %}>{{ day.label }}</li>{% endfor %}
+                </ol>
+            </div>
+        </section>
+
+        <div class="home__layout">
+            <section class="q-card home-inbox home__main" aria-labelledby="inbox-heading">
+                <h2 id="inbox-heading" class="home-card__title">{{ 'Needs you'|trans({}, 'quire-admin') }}</h2>
+                {% if inbox is empty %}
+                    <p class="q-empty">{{ 'Nothing waits for you.'|trans({}, 'quire-admin') }}</p>
+                {% else %}
+                    {% set primary = inbox|filter(item => item.primary)|first %}
+                    <ul class="inbox">
+                        {% for item in inbox %}
+                            <li class="inbox__item">
+                                {% if item.person %}
+                                    <span class="q-avatar" aria-hidden="true">{{ item.person|split(' ')|map(word => word|first)|slice(0, 2)|join|upper }}</span>
+                                {% else %}
+                                    <span class="q-avatar inbox__system" aria-hidden="true">{{ ui.icon('site') }}</span>
+                                {% endif %}
+                                <div class="inbox__body">
+                                    <p class="inbox__text">{{ item.text|quire_admin_marked }}</p>
+                                    <p class="inbox__meta">
+                                        {% if item.stage %}{{ ui.status({live: 'published'}[item.stage] ?? item.stage) }}{% endif %}
+                                        {% for tag in item.tags %}<span class="q-tag inbox__tag inbox__tag--{{ tag.tone }}">{{ tag.label }}</span>{% endfor %}
+                                        {% if item.detail %}<span class="inbox__detail">{{ item.detail }}</span>{% endif %}
+                                    </p>
+                                </div>
+                                <a class="q-btn{% if item is not same as(primary) %} q-btn--ghost{% endif %} inbox__action" href="{{ item.url }}">{{ item.action }}</a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </section>
+
+            <div class="home__aside">
+                {% if latest is not null %}
+                    <section class="q-card home-card" aria-labelledby="latest-heading">
+                        <header class="home-card__head">
+                            <h2 id="latest-heading" class="home-card__title">{{ 'Latest'|trans({}, 'quire-admin') }}</h2>
+                            <a href="{{ path('quire_admin_audit') }}">{{ 'All activity'|trans({}, 'quire-admin') }}</a>
+                        </header>
+                        {% if latest is empty %}
+                            <p class="q-empty">{{ 'Nothing recorded yet.'|trans({}, 'quire-admin') }}</p>
+                        {% else %}
+                            <ul class="latest">
+                                {% for entry in latest %}
+                                    <li class="latest__entry">
+                                        <span class="q-avatar" aria-hidden="true">{{ entry.actor|split(' ')|map(word => word|first)|slice(0, 2)|join|upper }}</span>
+                                        <div>
+                                            <p class="latest__what">{% if entry.subject_url %}<a href="{{ entry.subject_url }}">{{ entry.summary }}</a>{% else %}{{ entry.summary }}{% endif %}</p>
+                                            <p class="q-meta">{{ entry.actor }} · {{ entry.entry.lastAt|quire_admin_when }}</p>
+                                        </div>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </section>
+                {% endif %}
+
+                {% if health is not null %}
+                    <section class="q-card home-card" aria-labelledby="health-heading">
+                        <h2 id="health-heading" class="home-card__title">{{ 'Site health'|trans({}, 'quire-admin') }}</h2>
+                        <ul class="health">
+                            {% for sign in health %}<li class="health__sign health__sign--{{ sign.tone }}">{{ sign.label }}</li>{% endfor %}
+                        </ul>
+                        {% for sign in health|filter(sign => sign.detail is defined) %}<p class="health__detail">{{ sign.detail }}</p>{% endfor %}
+                    </section>
+                {% endif %}
+
+                {% if steps is not null %}{{ _self.first_steps(steps, false) }}{% endif %}
+
+                {{ _self.cards(widgets) }}
+            </div>
         </div>
     {% endif %}
+</div>
 {% endblock %}
+
+{# A new site's first steps: in full on a new site, compact beside the rest later. #}
+{% macro first_steps(steps, full) %}
+    {% set total = steps.steps|length %}
+    <section class="q-card home-card first-steps{% if not full %} first-steps--compact{% endif %}" aria-labelledby="steps-heading">
+        <header class="home-card__head">
+            <h2 id="steps-heading" class="home-card__title">{{ 'Get started'|trans({}, 'quire-admin') }}</h2>
+            <p class="q-meta">{{ '{done} of {total} done'|trans({done: steps.done, total: total}, 'quire-admin') }}</p>
+        </header>
+        <progress class="first-steps__progress" max="{{ total }}" value="{{ steps.done }}" aria-labelledby="steps-heading">{{ steps.done }}/{{ total }}</progress>
+        <ol class="first-steps__list">
+            {% for step in steps.steps %}
+                {% set next = not step.done and (steps.steps|filter(s => not s.done)|first) is same as(step) %}
+                <li class="first-steps__step{% if step.done %} first-steps__step--done{% endif %}">
+                    <span class="first-steps__mark" aria-hidden="true">{{ step.done ? '✓' : loop.index }}</span>
+                    <div class="first-steps__body">
+                        <p class="first-steps__title">{% if step.done %}<span class="q-sr">{{ 'Done:'|trans({}, 'quire-admin') }} </span>{% endif %}{{ step.title }}</p>
+                        {% if full or not step.done %}<p class="first-steps__text">{{ step.text }}</p>{% endif %}
+                    </div>
+                    {% if step.done %}
+                        <span class="q-tag first-steps__done" aria-hidden="true">{{ 'Done'|trans({}, 'quire-admin') }}</span>
+                    {% elseif step.url %}
+                        <a class="q-btn{% if not next %} q-btn--ghost{% endif %}{% if not full %} q-btn--sm{% endif %}" href="{{ step.url }}">{{ step.action }}</a>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ol>
+    </section>
+{% endmacro %}
+
+{# The cards extensions add. #}
+{% macro cards(widgets) %}
+    {% for widget in widgets %}
+        <section class="q-card home-card" aria-labelledby="widget-{{ loop.index }}">
+            <h2 class="home-card__title" id="widget-{{ loop.index }}">{{ widget.title }}</h2>
+            {{ widget.html|raw }}
+        </section>
+    {% endfor %}
+{% endmacro %}

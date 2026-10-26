@@ -778,20 +778,22 @@ new Extend\Routes(group: 'admin')
 
 Use **Quire UI**, the admin's design system, so the page looks like the rest of the admin: classes such as `q-card`, `q-btn`, `q-table`, `q-field`, `q-tag` and `q-notice`, and macros for the content lifecycle (`{% import '@quire_admin/_ui.html.twig' as ui %}{{ ui.status(item.status) }}`). With "Under the hood" switched on, the account menu links to **Components** (`/admin/ui`): every component with the markup to copy. Quire UI's styles are in cascade layers, so your own stylesheet in the group `admin` always wins over them; use its tokens (`var(--q-accent)`, `var(--q-space-4)`, …) to stay in tune with light, dark and high contrast.
 
-The admin's own extender, `Quire\Admin\Extend\Admin`, adds the page to its menu, and widgets to its dashboard:
+The admin's own extender, `Quire\Admin\Extend\Admin`, adds the page to its menu, what waits for moderators to Home, and a card beside it:
 
 ```php
 use Quire\Admin\Extend\Admin;
 
 new Admin()
     ->menu('acme-reviews', 'Reviews', 'acme_reviews_admin', ability: 'acme-reviews.moderate')
+    ->inbox(ReviewsToModerate::class, ability: 'acme-reviews.moderate')
     ->widget(PendingReviewsWidget::class, ability: 'acme-reviews.moderate'),
 ```
 
 | Method | Purpose |
 |--------|---------|
 | `menu($id, $label, $route, $parameters, $ability, $section, $order)` | A menu entry, shown to users with `$ability` (if given). `$section` is one of the admin's rail: `general` (Home), `content`, `users` (People), `activity`, `site` or `extensions` ("More", the default); the entries of a section are tabs above its pages. The label is translated in your extension's domain. |
-| `widget($class, $ability, $order)` | A dashboard widget: a service implementing `Quire\Admin\Dashboard\WidgetInterface`, with a `title()` and the HTML it `render()`s. An empty string hides it. |
+| `inbox($class, $ability)` | Adds to what needs the user: Home's "Needs you", and the count beside Home in the menu. A service implementing `Quire\Admin\Dashboard\InboxProviderInterface`, whose `items()` are `InboxItem`s: a text (with `**…**` around what it's about, e.g. `InboxItem::about($title)`), the one thing to do (a label and a URL), since when it waits, a priority (30 for what others wait for, 20 for what failed, 10 by default), and optionally who it's from, the item's stage, tags and a detail. It's asked on every page, so keep it to a query or two. |
+| `widget($class, $ability, $order)` | A card on Home, beside what needs the user: a service implementing `Quire\Admin\Dashboard\WidgetInterface`, with a `title()` and the HTML it `render()`s. An empty string hides it. |
 | `contentColumn($id, $class, $types, $order)` | A column of the [content lists](admin.md#content), after the built-in ones: a service implementing `Quire\Admin\Content\ContentColumnInterface`. `$types` limits it to content types, e.g. `['product']`. |
 | `contentFilter($id, $class, $types, $order)` | A filter of the content lists: a service implementing `ContentFilterInterface`, with a label, the `choices()` and how a choice narrows the query. |
 | `contentAction($id, $class, $types, $order)` | An action of the content lists, for an item or the selected ones: a service implementing `ContentActionInterface`. |

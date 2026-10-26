@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Quire\Admin\Controller;
 
+use Quire\Admin\Dashboard\Home;
+use Quire\Admin\Dashboard\Inbox;
 use Quire\Admin\Dashboard\WidgetInterface;
 use Quire\Admin\Extend\Admin;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -14,7 +16,8 @@ use Symfony\Component\HttpFoundation\Response;
 use Twig\Environment;
 
 /**
- * The admin's start page: the widgets the user may see.
+ * The admin's home: what needs the user, the week, what happened lately, the site's health, and the
+ * cards extensions add; on a new site, its first steps.
  *
  * @internal
  */
@@ -31,6 +34,8 @@ final readonly class DashboardController
         private ServiceLocator $services,
         private Security $security,
         private Environment $twig,
+        private Inbox $inbox,
+        private Home $home,
     ) {
     }
 
@@ -53,6 +58,22 @@ final readonly class DashboardController
             }
         }
 
-        return new Response($this->twig->render('@quire_admin/dashboard/index.html.twig', ['widgets' => $boxes]));
+        $now = new \DateTimeImmutable();
+        $inbox = $this->inbox->items();
+        $steps = $this->home->firstSteps();
+        // A new site starts with its first steps, until something of it is live or nothing needs the user.
+        $firstRun = null !== $steps && [] === $inbox && $this->home->isNew();
+
+        return new Response($this->twig->render('@quire_admin/dashboard/index.html.twig', [
+            'widgets' => $boxes,
+            'inbox' => $inbox,
+            'first_run' => $firstRun,
+            'steps' => $steps,
+            'greeting' => $this->home->greeting($now),
+            'summary' => $firstRun ? null : $this->home->summary($now, \count($inbox)),
+            'week' => $firstRun ? null : $this->home->week($now),
+            'latest' => $this->home->latest(),
+            'health' => $this->home->health(),
+        ]));
     }
 }

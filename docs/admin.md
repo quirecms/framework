@@ -16,6 +16,18 @@ bin/console quire:permissions:grant moderator quire.admin.access
 
 What each user can do in the admin follows their other abilities: someone who may only edit posts sees only posts.
 
+## Home
+
+Home greets you with what happened since yesterday, and then:
+
+- **This week,** Monday to Sunday along a line: solid up to now, with what went live, dashed after, with what's scheduled to go live and changes scheduled (in the review colour while they wait for a review). Each opens its item.
+- **Needs you:** what waits for you, most pressing first, each with the one thing to do: others' changes to review, your changes a reviewer asked you to change, your scheduled changes that couldn't go live, and items scheduled within a week that the checks found something in (first those with errors, which stop them going live). Extensions add theirs. The count is beside Home in the menu on every page.
+- **Latest:** the latest entries of the [audit log](audit.md), for those who may read it.
+- **Site health,** for those who manage settings: whether background tasks run (and what to do when they don't) and when the site was last backed up.
+- Cards that extensions add.
+
+A new site, with nothing live yet, starts with its **first steps** instead: naming it, writing the first post, inviting someone, and choosing a look, each a link to the real page; the steps left stay beside the rest afterwards.
+
 ## Content
 
 Every content type has a list, under "Content" in the menu, for those who may edit its items: those with `content.<type>.edit_any` see all of them, those with only `edit_own` their own.
@@ -57,14 +69,14 @@ Visitors never see half-written changes. Editing a published item writes **your 
 
 - **Publish changes** when they're ready, or **schedule** them for a date and time; at that time the background worker publishes them. Both take the ability to publish (`content.<type>.publish`).
 - **The text shows your changes** against the published version: what you added, and what you took out, struck through, with a bar beside the lines that changed.
-- **Ask for a review:** reviewers (`content.<type>.review`, editors by default) find the changes on their dashboard and review them:
+- **Ask for a review:** reviewers (`content.<type>.review`, editors by default) find the changes under "Needs you" on Home and review them:
   - **What's live and the changes, side by side,** each changed word marked in its sentence, with unchanged lines folded away, and what else changed (the title, the summary, fields) below. On a phone, each change is a card: what's replaced, struck through, above what replaces it.
   - **The conversation:** the author's message, the reviews, and comments, those on text with what they quote; reply, resolve, or write a comment of your own.
   - **The checks,** what passed and what was found, marked when it isn't the changes' doing (the live version has it too).
   - **Approve or ask for changes,** with what you wrote as the review's message; on a phone, both stay at the bottom of the screen. **Comments** can point at text: select it in the manuscript and comment; the comment then sits beside it in the margin, moves with it as the text is edited, and shows the text it quoted once it's gone. Replies and "Resolve" settle them. When the site asks for approval (the setting `quire.content.changes_need_approval`), changes are published only once someone other than their author approved them.
 - **Several people can change an item at once,** each with their own changes. When changes are published, they're merged with what was published since, line by line: they only **conflict** where both changed the same lines or fields. The editor then lists those parts, and "Keep my version" uses yours there and keeps the others' changes everywhere else.
 - **Discard** your changes to start again from the published version.
-- When scheduled changes can't be published at their time, e.g. because of a conflict or a missing approval, they stay unpublished, and their author sees why in the editor and on the dashboard.
+- When scheduled changes can't be published at their time, e.g. because of a conflict or a missing approval, they stay unpublished, and their author sees why in the editor and on Home.
 
 An item's **address and place** (slug, author, parent) aren't part of the changes: saving them changes the published item right away, which takes the ability to publish.
 
@@ -121,6 +133,6 @@ The admin is translated with the site's language (`site.locale`), in the domain 
 
 ## Adding to it
 
-Extensions add pages, menu entries, dashboard widgets, and columns, filters and actions of content lists: see [admin pages](extensions.md#admin-pages).
+Extensions add pages, menu entries, what needs the user and cards on Home, and columns, filters and actions of content lists: see [admin pages](extensions.md#admin-pages).
 
 Most extensions need none of that. The admin builds its screens from what extensions declare: a content type gets a menu entry, a list that sorts and filters by its fields, and a form with a control for each field; a field type picks the control that edits it (or adds one); settings get their page; abilities appear in the roles' pages; and the extension's actions, recorded in the [audit log](audit.md), are listed with everyone else's.
