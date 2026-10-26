@@ -98,6 +98,19 @@ if ($this->security->isGranted('content.product.publish', $product)) {
 
 Pass the item as the subject when there is one, so `edit_own` and the rules of extensions can look at it.
 
+For **another user** than the signed-in one, e.g. to list who may publish, use `Quire\Permission\Access`; it decides exactly as `is_granted()` does for them (Symfony's `isGrantedForUser()`), with the host application's roles mapped:
+
+```php
+$access->for($kim)->allows('content.post.publish');
+$access->for($kim)->allows('content.post.edit_own', $post);
+```
+
+## Seeing the site as someone else
+
+Admins can see the site and the admin as another user does, to check what they can do: each page then shows what that user would see, and nothing can be changed, not even what they may change; forms answer "403 Forbidden". It takes the ability `quire.users.view_as` (admins by default), and only works for users who may do nothing the viewer may not, so it never shows more than the viewer could see anyway. It's recorded in the audit log.
+
+The admin offers it on a user's page. Forms start and stop it by posting to the routes `quire_view_as` (with `user`, the user's ID) and `quire_view_as_stop`, with a CSRF token for `quire_view_as` and, optionally, `back`, the page to go back to. In code, `Quire\Permission\ViewAs` tells whom the site is seen as (`target()`) and by whom (`viewer()`); a route with the default `_quire_view_as_allowed: true` is let through while it's on. Each request runs as the user, but the session keeps the viewer's own sign-in: stopping, or a problem, always leaves them as themselves.
+
 ## Declaring them
 
 Extensions declare roles, abilities and rules with `Extend\Permissions`:

@@ -29,9 +29,9 @@ final class RolesTest extends AdminTestCase
 
         $rows = $crawler->filter('tbody tr')->each(static fn (Crawler $row): string => trim((string) preg_replace('/\s+/', ' ', $row->text())));
         self::assertSame([
-            'Everyone guest everyone 2 of 23 Quire',
-            'Member member · 1 change from the defaults No users 1 of 23 Quire',
-            'Editor editor 1 user 15 of 23 Quire',
+            'Everyone guest everyone 2 of 24 Quire',
+            'Member member · 1 change from the defaults No users 1 of 24 Quire',
+            'Editor editor 1 user 15 of 24 Quire',
             'Admin admin 1 user everything but strict abilities Quire',
         ], $rows);
     }
