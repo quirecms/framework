@@ -32,7 +32,7 @@ final class ChangesTest extends AdminTestCase
         $post = $this->published();
 
         $crawler = $this->client->request('GET', $this->editor($post));
-        self::assertSelectorTextSame('#changes-heading', 'Your changes');
+        self::assertSelectorTextSame('.editor-bar__headline', 'Live · what you see is what visitors see');
         $this->client->submit($this->button($crawler, 'save'), ['title' => 'Opening times']);
         $crawler = $this->client->followRedirect();
 
@@ -80,7 +80,7 @@ final class ChangesTest extends AdminTestCase
         $crawler = $this->client->request('GET', $this->editor($post));
         self::assertCount(0, $crawler->filter('button[value=publish_changes]'), 'Publishing takes the right to publish.');
         self::assertCount(0, $crawler->filter('#publish_at'));
-        self::assertNotNull($crawler->filter('fieldset.q-panel')->last()->attr('disabled'), 'The address changes the item right away.');
+        self::assertNotNull($crawler->filter('fieldset.editor-panel__group')->last()->attr('disabled'), 'The address changes the item right away.');
 
         $this->client->submit($this->button($crawler, 'submit'), ['body' => str_replace('9 to 5', '9 to 6', self::BODY)]);
         $this->client->followRedirect();
@@ -116,7 +116,7 @@ final class ChangesTest extends AdminTestCase
         $this->client->submit($this->button($crawler, 'save'), ['title' => 'Unapproved']);
         $crawler = $this->client->followRedirect();
         self::assertCount(0, $crawler->filter('button[value=publish_changes]'));
-        self::assertSelectorTextContains('#changes-heading + p + dl + p + div + p', 'approved by a reviewer');
+        self::assertSelectorTextContains('.editor-popover', 'approved by a reviewer');
 
         $crawler = $this->client->click($crawler->selectLink('Show changes and reviews')->link());
         self::assertCount(0, $crawler->filter('button[value=approve]'));

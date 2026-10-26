@@ -101,6 +101,7 @@
                     {% endif %}
                 {% endfor %}
 
+                {% block page_head %}
                 <div class="q-page-head">
                     <div>
                         {% set eyebrow %}{% block eyebrow %}{{ current_section and current_section != 'general' ? ('section.' ~ current_section)|trans({}, 'quire-admin') : '' }}{% endblock %}{% endset %}
@@ -119,6 +120,8 @@
                         </ul>
                     </nav>
                 {% endif %}
+
+                {% endblock %}
 
                 {% block content %}{% endblock %}
             </main>

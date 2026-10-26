@@ -1,0 +1,27 @@
+{#
+    Where an item will appear: its card in lists, as the site's theme draws it (in a sandboxed frame,
+    with the theme's stylesheets and no scripts), in search results, and when shared.
+    Variables: placement (card, title, site, description, url, breadcrumb, image, domain).
+#}
+<div class="placement">
+    <h3 class="placement__label">{{ 'In lists'|trans({}, 'quire-admin') }}</h3>
+    <iframe class="placement__card" sandbox="" srcdoc="{{ placement.card }}" title="{{ 'The item in lists, as the site shows it'|trans({}, 'quire-admin') }}" loading="lazy"></iframe>
+
+    <h3 class="placement__label">{{ 'In search results'|trans({}, 'quire-admin') }}</h3>
+    <div class="placement__search">
+        <p class="placement__breadcrumb">{{ placement.breadcrumb|join(' › ') }}</p>
+        <p class="placement__search-title">{{ placement.title ?: 'Untitled'|trans({}, 'quire-admin') }}{% if placement.site and placement.site != placement.title %} | {{ placement.site }}{% endif %}</p>
+        {% if placement.description %}<p class="placement__description">{{ placement.description }}</p>{% endif %}
+    </div>
+
+    <h3 class="placement__label">{{ 'When shared'|trans({}, 'quire-admin') }}</h3>
+    <div class="placement__share">
+        {% if placement.image %}
+            <img class="placement__image" src="{{ placement.image }}" alt="" loading="lazy">
+        {% else %}
+            <div class="placement__image placement__image--none"><span>{{ 'No share image'|trans({}, 'quire-admin') }}</span></div>
+        {% endif %}
+        <p class="placement__domain">{{ placement.domain|upper }}</p>
+        <p class="placement__share-title">{{ placement.title ?: 'Untitled'|trans({}, 'quire-admin') }}</p>
+    </div>
+</div>

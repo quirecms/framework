@@ -7,6 +7,7 @@ namespace Quire\Admin\Controller;
 use Quire\Admin\Content\ContentLists;
 use Quire\Admin\Content\Form\ContentForm;
 use Quire\Admin\Content\PendingChanges;
+use Quire\Admin\Twig\RelativeTime;
 use Quire\Content\Check\CheckReport;
 use Quire\Content\Check\ContentChecker;
 use Quire\Content\Command\UpdatePendingRevision;
@@ -19,14 +20,20 @@ use Quire\Content\Exception\InvalidContentException;
 use Quire\Content\Exception\MergeConflictException;
 use Quire\Content\Exception\PendingRevisionConflictException;
 use Quire\Content\Exception\TransitionNotAllowedException;
+use Quire\Content\Revision\Comment;
+use Quire\Content\Revision\CommentThread;
 use Quire\Content\Revision\PendingRevision;
+use Quire\Content\Revision\PendingRevisionComments;
 use Quire\Content\Revision\PendingRevisionRepository;
 use Quire\Content\Revision\PendingRevisionWriter;
+use Quire\Content\Revision\Revision;
+use Quire\Content\Revision\RevisionRepository;
 use Quire\Content\Status;
 use Quire\Content\Type\ContentTypeDefinition;
 use Quire\Content\Type\ContentTypeRegistry;
 use Quire\Formatter\Formatter;
 use Quire\Settings\Settings;
+use Quire\Theme\ContentPreviews;
 use Quire\User\CurrentUser;
 use Quire\User\UserRepository;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -40,6 +47,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Csrf\CsrfToken;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
+use Symfony\Component\String\Slugger\AsciiSlugger;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Twig\Environment;
 
@@ -65,6 +73,9 @@ final readonly class ContentEditController
     /** Items a relation search returns */
     private const int SEARCH_RESULTS = 20;
 
+    /** Versions the scrubber shows: the latest */
+    private const int SCRUBBER_VERSIONS = 30;
+
     public function __construct(
         private ContentTypeRegistry $types,
         private ContentRepository $content,
@@ -84,6 +95,10 @@ final readonly class ContentEditController
         private PendingRevisionWriter $pendingWriter,
         private PendingRevisionRepository $pendingRepository,
         private ContentChecker $checker,
+        private RevisionRepository $revisions,
+        private PendingRevisionComments $comments,
+        private ContentPreviews $previews,
+        private RelativeTime $time,
     ) {
     }
 
@@ -199,6 +214,101 @@ final readonly class ContentEditController
         ['values' => $values] = $this->form->read($definition, $request);
 
         return new Response($this->twig->render('@quire_admin/content/_checks.html.twig', ['checks' => $this->checks($definition, $item, $values)]));
+    }
+
+    /**
+     * Where the item will appear, for the form's values: its card in lists, in search results and when
+     * shared, as the editor's side column shows them while it's written.
+     */
+    public function placementFragment(Request $request, string $type): Response
+    {
+        $definition = $this->type($type);
+        $this->assertToken($request);
+        $id = $request->request->getString('id');
+        $item = '' === $id ? null : $this->item($definition, $id);
+        ['values' => $values] = $this->form->read($definition, $request);
+
+        return new Response($this->twig->render('@quire_admin/content/_placement.html.twig', ['placement' => $this->placement($definition, $item, $values)]));
+    }
+
+    /**
+     * @param array<string, mixed> $values
+     *
+     * @return array{card: string, title: string, site: string, description: ?string, url: string, breadcrumb: list<string>, image: ?string, domain: string}
+     */
+    private function placement(ContentTypeDefinition $type, ?Content $item, array $values): array
+    {
+        $preview = $this->previewItem($type, $item, $values);
+
+        try {
+            $card = $this->previews->cardDocument($preview);
+            $tags = $this->previews->seo($preview);
+        } catch (\Throwable $e) {
+            // E.g. a theme whose card needs what a preview doesn't have: the editor still works.
+            $card = \sprintf('<!doctype html><p>%s</p>', htmlspecialchars($this->translator->trans('The theme couldn\'t show the card: {problem}', ['problem' => $e->getMessage()], 'quire-admin')));
+            $tags = null;
+        }
+
+        $url = $tags->canonicalUrl ?? '';
+        $host = (string) parse_url($url, \PHP_URL_HOST);
+        $segments = array_values(array_filter(explode('/', (string) parse_url($url, \PHP_URL_PATH)), static fn (string $segment): bool => '' !== $segment));
+
+        return [
+            'card' => $card,
+            'title' => $tags->title ?? $preview->title,
+            'site' => $tags->siteName ?? $this->settings->getString('site.title'),
+            'description' => $tags?->description,
+            'url' => $url,
+            // As search engines show where a page is: the site, then the path without the page itself.
+            'breadcrumb' => [$host, ...\array_slice($segments, 0, -1)],
+            'image' => $tags?->imageUrl,
+            'domain' => $host,
+        ];
+    }
+
+    /**
+     * The item as the form would save it, with the slug saving would give it.
+     *
+     * @param array<string, mixed> $values
+     */
+    private function previewItem(ContentTypeDefinition $type, ?Content $item, array $values): Content
+    {
+        /** @var array{title: string, slug: string, body: string, excerpt: ?string, parent_id: ?string, position: ?int, author_id?: ?string, fields: array<string, mixed>} $form */
+        $form = $values;
+
+        if ('' === $form['slug'] && !$item instanceof Content) {
+            $slug = new AsciiSlugger()->slug($form['title'], '-', str_replace('-', '_', $this->settings->getString('site.locale')))->lower()->toString();
+            $form['slug'] = '' === $slug ? 'untitled' : $slug;
+        }
+
+        return $this->form->preview($type, $item, $form, $this->users->get()?->id);
+    }
+
+    /**
+     * The versions of the item, oldest first, for the editor's scrubber: the live one marked.
+     *
+     * @return array{count: int, versions: list<array{id: string, version: int, at: \DateTimeImmutable, label: string, live: bool}>}
+     */
+    private function scrubber(Content $item): array
+    {
+        $revisions = $this->revisions->forContent($item->id, 200);
+        $names = $this->changes->names(array_map(static fn (Revision $revision): ?string => $revision->authorId, $revisions));
+        $versions = [];
+        // What visitors see: the newest revision up to the item's version (publishing doesn't make one).
+        $liveId = Status::PUBLISHED === $item->status ? array_find($revisions, static fn (Revision $revision): bool => $revision->contentVersion <= $item->version)?->id : null;
+
+        foreach (array_reverse(\array_slice($revisions, 0, self::SCRUBBER_VERSIONS)) as $revision) {
+            $live = $revision->id === $liveId;
+            $versions[] = [
+                'id' => $revision->id,
+                'version' => $revision->contentVersion,
+                'at' => $revision->createdAt,
+                'label' => $this->time->text($revision->createdAt).(null === $revision->authorId ? '' : ' · '.($names[$revision->authorId] ?? '')).($live ? ' · '.$this->translator->trans('live version', [], 'quire-admin') : ''),
+                'live' => $live,
+            ];
+        }
+
+        return ['count' => \count($revisions), 'versions' => $versions];
     }
 
     /**
@@ -456,6 +566,7 @@ final readonly class ContentEditController
 
         $editAny = $this->security->isGranted(ContentLists::ability($type, 'edit_any'));
         $changes = $item instanceof Content && $this->changes->applies($item);
+        $threads = $pending instanceof PendingRevision ? $this->comments->threads($pending) : [];
         $others = $changes ? $this->changes->others($item) : [];
 
         return new Response($this->twig->render('@quire_admin/content/edit.html.twig', [
@@ -473,6 +584,12 @@ final readonly class ContentEditController
             'preview' => $preview,
             'conflict' => $conflict,
             'checks' => $this->checks($type, $item, $values),
+            'placement' => $this->placement($type, $item, $values),
+            'scrubber' => $item instanceof Content ? $this->scrubber($item) : null,
+            // The live text, which the manuscript shows the changes against.
+            'live_body' => $changes && $pending instanceof PendingRevision ? $item->body : null,
+            'threads' => $threads,
+            'thread_names' => $this->changes->names(array_merge([], ...array_map(static fn (CommentThread $thread): array => array_map(static fn (Comment $comment): ?string => $comment->authorId, [$thread->comment, ...$thread->replies]), $threads))),
             'timezone' => $this->settings->getString('site.timezone'),
             'changes' => $changes ? [
                 'pending' => $pending,

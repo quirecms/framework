@@ -1,22 +1,31 @@
 // The Markdown editor of the admin, on CodeMirror 6: loaded only on pages that have one (see admin.js).
 // The textarea stays the form's field: the editor writes every change into it, so the form works as it
 // does without JavaScript.
-import { EditorView, keymap, drawSelection } from '@codemirror/view';
+//
+// It's written as a manuscript: emphasis and links read as they will (their marks show on the line
+// being written), headings and quotes keep their marks muted, images show as a box with their
+// description, and changes to the live text are marked in it when there is one.
+import { EditorView, keymap, drawSelection, placeholder, Decoration, ViewPlugin, WidgetType } from '@codemirror/view';
 import { EditorSelection } from '@codemirror/state';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
-import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
+import { HighlightStyle, syntaxHighlighting, syntaxTree } from '@codemirror/language';
 import { markdown, markdownKeymap } from '@codemirror/lang-markdown';
+import { autocompletion } from '@codemirror/autocomplete';
+import { unifiedMergeView } from '@codemirror/merge';
 import { tags } from '@lezer/highlight';
 
 // Colours come from the admin's tokens, so they follow light and dark.
 const highlighting = HighlightStyle.define([
-    { tag: tags.heading, fontWeight: '700' },
+    { tag: tags.heading1, fontWeight: '700', fontSize: '1.6em' },
+    { tag: tags.heading2, fontWeight: '700', fontSize: '1.3em' },
+    { tag: [tags.heading3, tags.heading4, tags.heading5, tags.heading6], fontWeight: '700' },
     { tag: tags.strong, fontWeight: '700' },
     { tag: tags.emphasis, fontStyle: 'italic' },
     { tag: tags.strikethrough, textDecoration: 'line-through' },
-    { tag: [tags.link, tags.url], color: 'var(--admin-accent)' },
-    { tag: [tags.quote, tags.processingInstruction, tags.contentSeparator], color: 'var(--admin-muted)' },
-    { tag: tags.monospace, fontFamily: 'var(--admin-font-mono)' },
+    { tag: [tags.link, tags.url], color: 'var(--q-accent)' },
+    { tag: [tags.quote], color: 'var(--q-muted)', fontStyle: 'italic' },
+    { tag: [tags.processingInstruction, tags.contentSeparator], color: 'var(--q-muted)' },
+    { tag: tags.monospace, fontFamily: 'var(--q-font-mono)', fontSize: '0.9em' },
 ]);
 
 // Wraps the selection in a marker, or inserts the markers around the cursor.
@@ -62,10 +71,125 @@ export const commands = {
     quote: prefix('> '),
 };
 
+// An image, as a box with its description and file, while the cursor isn't on its line.
+class ImageWidget extends WidgetType {
+    constructor(alt, src, missing) {
+        super();
+        this.alt = alt;
+        this.src = src;
+        this.missing = missing;
+    }
+
+    eq(other) {
+        return other.alt === this.alt && other.src === this.src;
+    }
+
+    toDOM() {
+        const box = document.createElement('span');
+        box.className = `cm-md-image${this.missing ? ' cm-md-image--missing' : ''}`;
+        box.textContent = this.alt === '' ? this.src.split('/').pop() : `${this.alt} · ${this.src.split('/').pop()}`;
+
+        return box;
+    }
+
+    ignoreEvent() {
+        return false;
+    }
+}
+
+const hidden = Decoration.replace({});
+const muted = Decoration.mark({ class: 'cm-md-mark' });
+
+function manuscript(view) {
+    const ranges = [];
+    const active = new Set(view.state.selection.ranges.map((range) => view.state.doc.lineAt(range.head).number));
+
+    for (const { from, to } of view.visibleRanges) {
+        syntaxTree(view.state).iterate({
+            from,
+            to,
+            enter: (node) => {
+                const line = view.state.doc.lineAt(node.from).number;
+
+                if (active.has(line) && node.name !== 'HeaderMark' && node.name !== 'QuoteMark') {
+                    return;
+                }
+
+                if (node.name === 'Image') {
+                    const text = view.state.doc.sliceString(node.from, node.to);
+                    const match = /^!\[([^\]]*)\]\(([^)\s]*)/.exec(text);
+
+                    if (match && view.state.doc.lineAt(node.to).number === line) {
+                        ranges.push(Decoration.replace({ widget: new ImageWidget(match[1], match[2], match[1].trim() === '') }).range(node.from, node.to));
+                    }
+
+                    return false;
+                }
+
+                if (node.name === 'EmphasisMark' || node.name === 'StrikethroughMark' || node.name === 'CodeMark') {
+                    ranges.push(hidden.range(node.from, node.to));
+                } else if (node.name === 'HeaderMark' || node.name === 'QuoteMark' || node.name === 'ListMark') {
+                    ranges.push(muted.range(node.from, node.to));
+                } else if ((node.name === 'URL' || node.name === 'LinkMark') && node.node.parent?.name === 'Link') {
+                    // A link reads as its text: its brackets and address show on the line being written.
+                    ranges.push(hidden.range(node.from, node.to));
+                }
+            },
+        });
+    }
+
+    return Decoration.set(ranges, true);
+}
+
+const manuscriptPlugin = ViewPlugin.fromClass(class {
+    constructor(view) {
+        this.decorations = manuscript(view);
+    }
+
+    update(update) {
+        if (update.docChanged || update.viewportChanged || update.selectionSet) {
+            this.decorations = manuscript(update.view);
+        }
+    }
+}, { decorations: (plugin) => plugin.decorations });
+
+// "/" at the start of a line offers what to add.
+const blocks = (labels) => (context) => {
+    const word = context.matchBefore(/^\/\w*$/m);
+
+    if (!word || word.from !== context.state.doc.lineAt(context.pos).from) {
+        return null;
+    }
+
+    const option = (label, text, cursor) => ({
+        label,
+        apply: (view, completion, from, to) => {
+            view.dispatch({ changes: { from, to, insert: text }, selection: { anchor: from + (cursor ?? text.length) } });
+        },
+    });
+    const alt = labels.image_alt ?? 'Description';
+
+    return {
+        from: word.from,
+        options: [
+            option(labels.heading ?? 'Heading', '## '),
+            option(labels.subheading ?? 'Subheading', '### '),
+            option(labels.image ?? 'Image', `![${alt}](https://)`, 2 + alt.length + 2),
+            option((labels.link ?? 'Link').replace(/\s*\(.*\)$/, ''), '[](https://)', 1),
+            option(labels.list ?? 'List', '- '),
+            option(labels.quote ?? 'Quote', '> '),
+            option(labels.separator ?? 'Separator', '---\n'),
+        ],
+        filter: true,
+    };
+};
+
 /**
  * Replaces the textarea with an editor, and returns it.
+ *
+ * @param {{placeholder?: string, original?: string|null, labels?: object, onUpdate?: function}} options
  */
-export function createEditor(textarea, label) {
+export function createEditor(textarea, label, options = {}) {
     const view = new EditorView({
         doc: textarea.value,
         extensions: [
@@ -74,6 +198,11 @@ export function createEditor(textarea, label) {
             EditorView.lineWrapping,
             markdown(),
             syntaxHighlighting(highlighting),
+            manuscriptPlugin,
+            autocompletion({ override: [blocks(options.labels ?? {})], icons: false }),
+            ...(options.placeholder ? [placeholder(options.placeholder)] : []),
+            // Changes to the live text, marked in it: added text, and what was taken out.
+            ...(typeof options.original === 'string' ? [unifiedMergeView({ original: options.original, mergeControls: false, gutter: true, syntaxHighlightDeletions: false, allowInlineDiffs: true })] : []),
             // Tab isn't taken: it moves on to the next control, as everywhere else.
             keymap.of([
                 { key: 'Mod-b', run: commands.bold },
@@ -89,6 +218,8 @@ export function createEditor(textarea, label) {
                     textarea.value = update.state.doc.toString();
                     textarea.dispatchEvent(new Event('input', { bubbles: true }));
                 }
+
+                options.onUpdate?.(update);
             }),
         ],
     });

@@ -22,7 +22,7 @@
     <ol class="history">
         {% for entry in entries %}
             {% set revision = entry.revision %}
-            <li class="q-card">
+            <li class="q-card" id="revision-{{ revision.id }}">
                 <h2 class="q-card__title">
                     <time datetime="{{ revision.createdAt|date('c') }}">{{ revision.createdAt|date('Y-m-d H:i', timezone) }}</time>
                     {% if entry.current %}<span class="q-meta">({{ 'current'|trans({}, 'quire-admin') }})</span>{% endif %}

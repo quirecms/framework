@@ -46,7 +46,9 @@ for (const colorScheme of ['light', 'dark']) {
                 continue;
             }
 
-            const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
+            // Frames that may run no scripts, e.g. the editor's preview of the theme's card, can't be
+            // checked from inside (axe waits for them in vain); the site's own pages are checked for that.
+            const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).exclude('iframe[sandbox=""]').analyze();
 
             for (const violation of results.violations) {
                 violations++;
