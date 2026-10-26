@@ -70,6 +70,8 @@ return [
         ->get('/extensions/{id}/{action}', 'quire_admin_extension_confirm', [ExtensionsController::class, 'confirm'], requirements: ['id' => '[a-z0-9]+(?:-[a-z0-9]+)*', 'action' => 'enable|disable|purge'])
         ->post('/extensions/{id}/{action}', 'quire_admin_extension_act', [ExtensionsController::class, 'act'], requirements: ['id' => '[a-z0-9]+(?:-[a-z0-9]+)*', 'action' => 'enable|disable|purge'])
         ->get('/audit', 'quire_admin_audit', AuditController::class)
+        ->get('/audit/export', 'quire_admin_audit_export', [AuditController::class, 'export'])
+        ->post('/audit/undo', 'quire_admin_audit_undo', [AuditController::class, 'undo'])
         ->add('/preferences', 'quire_admin_preferences', PreferencesController::class, ['GET', 'HEAD', 'POST'])
         ->post('/preferences/hood', 'quire_admin_hood', [PreferencesController::class, 'hood'])
         ->post('/preferences/density', 'quire_admin_density', [PreferencesController::class, 'density'])

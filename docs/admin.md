@@ -94,7 +94,14 @@ When the theme and extensions are pinned in configuration, as for immutable prod
 
 ## Audit log and commands
 
-"Audit log", under "Site" in the menu, shows who did what and when, in the admin, on the command line and in background jobs, for users with the ability `quire.audit.view` (admins). See [audit log](audit.md).
+**Activity**, in the menu, shows who did what and when, in the admin, on the command line and in background jobs, for users with the ability `quire.audit.view` (admins). See [audit log](audit.md).
+
+- **Search** for a title, a person, or what was done in the admin's words, e.g. "published" or "settings".
+- **Bars** show how much was done on each of the last 30 days; choosing one shows that day.
+- **Who** and **About** narrow it to a person ("Me", or "Only mine" at the top), what happened automatically, or an area: content, people, sign-ins, roles, settings, the look, extensions. "Where and when" narrows it to the web, the command line or background jobs, and to dates.
+- **Similar things fold together:** what was done at once, e.g. publishing several items from a list, and sign-ins one after another.
+- **Undo** where it can be taken back, while nothing changed it since (see [undoing](audit.md#undoing)); for what was done at once, all of it.
+- **Under the hood**, each entry shows its command, and **Export** downloads what's shown, one JSON object per line, as `quire:audit:list --format jsonl` does.
 
 Everything the admin does, it does through the same services as the console commands. So after an action, those who may see the audit log get the command that does the same, e.g. `bin/console quire:user:suspend ada`, with a button to copy it: what you clicked once can go in a script.
 

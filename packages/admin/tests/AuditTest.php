@@ -7,7 +7,9 @@ namespace Quire\Admin\Tests;
 use Quire\Audit\AuditLog;
 use Quire\Content\Command\CreateContent;
 use Quire\Content\Content;
+use Quire\Content\ContentRepository;
 use Quire\Content\ContentWriter;
+use Quire\Content\Status;
 use Quire\Testing\AdminTestCase;
 use Symfony\Component\DomCrawler\Crawler;
 
@@ -56,27 +58,68 @@ final class AuditTest extends AdminTestCase
 
         $crawler = $this->client->request('GET', '/admin/audit');
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextSame('title', 'Audit log · Admin · Quire');
-        $rows = $crawler->filter('.audit tbody tr');
-        $summaries = $rows->each(static fn (Crawler $row): string => $row->filter('.audit__summary')->text());
-        self::assertEqualsCanonicalizing(['Published “Two”', 'Published “One”'], \array_slice($summaries, 0, 2), 'In the order the list did them.');
-        self::assertSame(['Created “Two”', 'Created “One”', 'Admin signed in', 'Added the user Admin'], \array_slice($summaries, 2));
-        self::assertSame('Admin Admin', $rows->first()->filter('td')->eq(1)->text(), 'Who, and where: in the admin.');
-        self::assertContains($rows->first()->filter('a.audit__summary')->attr('href'), ['/admin/content/post/'.$one->id, '/admin/content/post/'.$two->id], 'What it was about, where it is now.');
-        self::assertSame('Command line', $rows->eq(2)->filter('td')->eq(1)->text(), 'Created outside a request, as by a console command.');
+        self::assertSelectorTextSame('title', 'Activity · Admin · Quire');
+        self::assertSelectorTextSame('h1', 'Who did what');
+        $cards = $crawler->filter('.activity-card');
+        self::assertSame(['Published “One” and 1 more at once', 'Created “Two” and 1 more at once', 'Admin signed in', 'Added the user Admin'], $cards->each(static fn (Crawler $card): string => $card->filter('.activity-card__what')->text()), 'What was done together, folded.');
+        self::assertEqualsCanonicalizing(['Published “One”', 'Published “Two”'], $cards->first()->filter('.activity-card__all li > a')->each(static fn (Crawler $a): string => $a->text()));
+        self::assertContains($cards->first()->filter('.activity-card__all a')->attr('href'), ['/admin/content/post/'.$one->id, '/admin/content/post/'.$two->id], 'What it was about, where it is now.');
+        self::assertStringStartsWith('Admin · Admin', $cards->first()->filter('.activity-card__meta')->text(), 'Who, and where: in the admin.');
+        self::assertStringStartsWith('Command line', $cards->eq(1)->filter('.activity-card__meta')->text(), 'Created outside a request, as by a console command.');
+        self::assertStringContainsString('Today · 6 actions', $crawler->filter('.activity-day__title')->text());
+        self::assertSame(6, array_sum($crawler->filter('.activity-days__bar')->each(static fn (Crawler $bar): int => (int) preg_replace('/\D+/', '', explode(':', $bar->text())[1] ?? ''))), 'The bars count them by day.');
 
-        // Narrowed to what was done together: the bulk action.
-        $crawler = $this->client->click($rows->first()->selectLink('Done together')->link());
-        self::assertEqualsCanonicalizing(['Published “Two”', 'Published “One”'], $crawler->filter('a.audit__summary')->each(static fn (Crawler $a): string => $a->text()));
+        // Narrowed to what was done together: the bulk action, from under the hood.
+        $crawler = $this->client->click($cards->first()->selectLink('Done together')->link());
+        self::assertSame(['Published “One” and 1 more at once'], $crawler->filter('.activity-card__what')->each(static fn (Crawler $p): string => $p->text()));
         self::assertSelectorTextContains('.q-chips', 'Done together');
 
-        // Narrowed by area and by who.
+        // Narrowed by area, by who, and by words.
         $crawler = $this->client->request('GET', '/admin/audit?area=user.');
-        self::assertSame(['Admin signed in', 'Added the user Admin'], $crawler->filter('.audit__summary')->each(static fn (Crawler $node): string => $node->text()));
+        self::assertSame(['Admin signed in', 'Added the user Admin'], $crawler->filter('.activity-card__what')->each(static fn (Crawler $node): string => $node->text()));
+        self::assertSame(['Everyone', 'People'], $crawler->filter('.activity-chips a[aria-current]')->each(static fn (Crawler $a): string => $a->text()));
         $crawler = $this->client->request('GET', '/admin/audit?actor='.$admin->id);
-        self::assertSame(['Published', 'Published', 'Admin signed in'], $crawler->filter('.audit__summary')->each(static fn (Crawler $node): string => (string) preg_replace('/ “.*$/', '', $node->text())));
-        self::assertSelectorTextContains('.q-chips', 'By Admin');
-        self::assertSame('/admin/audit', $crawler->filter('.q-chips a')->attr('href'));
+        self::assertSame(['Published “One” and 1 more at once', 'Admin signed in'], $crawler->filter('.activity-card__what')->each(static fn (Crawler $node): string => $node->text()));
+        self::assertSelectorTextSame('.activity-chips a[aria-current]', 'Me');
+        $crawler = $this->client->request('GET', '/admin/audit?q=published');
+        self::assertSame(['Published “One” and 1 more at once'], $crawler->filter('.activity-card__what')->each(static fn (Crawler $node): string => $node->text()), 'In the words the admin says it.');
+        $crawler = $this->client->request('GET', '/admin/audit?q=two');
+        self::assertSame(['Published “Two”', 'Created “Two”'], $crawler->filter('.activity-card__what')->each(static fn (Crawler $node): string => $node->text()), 'And what it\'s about.');
+    }
+
+    public function testUndoingFromTheActivity(): void
+    {
+        $this->signIn('admin');
+        [$one, $two] = [$this->post('One'), $this->post('Two')];
+        $crawler = $this->client->request('GET', '/admin/content/post');
+        $this->client->request('POST', '/admin/content/post', ['_token' => (string) $crawler->filter('form.content-list input[name=_token]')->attr('value'), 'action' => 'transition:publish', 'ids' => [$one->id, $two->id]]);
+
+        $crawler = $this->client->request('GET', '/admin/audit');
+        self::assertCount(1, $crawler->filter('.activity-card button')->reduce(static fn (Crawler $button): bool => str_starts_with($button->text(), 'Undo')), 'Only what can be undone: not creating, not signing in.');
+        $this->client->submit($crawler->filter('.activity-card')->first()->selectButton('Undo (Published “One”)')->form());
+        self::assertResponseRedirects('/admin/audit', 303);
+        $crawler = $this->client->followRedirect();
+        self::assertSelectorTextSame('.q-notice--success', '2 undone.');
+        self::assertSame([Status::DRAFT, Status::DRAFT], [$this->service(ContentRepository::class)->find($one->id)?->status, $this->service(ContentRepository::class)->find($two->id)?->status]);
+        self::assertStringStartsWith('Unpublished', $crawler->filter('.activity-card__what')->first()->text(), 'Recorded like any action.');
+        self::assertCount(0, $crawler->filter('.activity-card')->eq(1)->filter('input[name="entries[]"]'), 'Undone once.');
+    }
+
+    public function testExportingWhatIsShown(): void
+    {
+        $this->signIn('admin');
+        $this->post('One');
+        $crawler = $this->client->request('GET', '/admin/audit?area=content.');
+        self::assertSame('/admin/audit/export?area=content.', $crawler->selectLink('Export')->attr('href'), 'Under the hood, which is on for admins.');
+
+        $this->client->request('GET', '/admin/audit/export?area=content.');
+        $content = $this->client->getInternalResponse()->getContent();
+        self::assertResponseHeaderSame('Content-Type', 'application/x-ndjson; charset=utf-8');
+        $lines = array_values(array_filter(explode("\n", $content), static fn (string $line): bool => '' !== $line));
+        self::assertCount(1, $lines);
+        $line = json_decode($lines[0], true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsArray($line);
+        self::assertSame('content.created', $line['action'] ?? null);
     }
 
     public function testDetailsCommandsAndLinksFromElsewhere(): void
@@ -86,19 +129,23 @@ final class AuditTest extends AdminTestCase
         $this->service(AuditLog::class)->record('acme-shop.order_refunded', 'acme-shop.order', '1042', 'Order 1042', ['amount' => 12.5, 'lines' => ['a', 'b']]);
 
         $crawler = $this->client->request('GET', '/admin/audit');
-        $setting = $crawler->filter('.audit tbody tr')->eq(1);
-        self::assertSame('Changed the setting “Site title”', $setting->filter('a.audit__summary')->text());
-        self::assertSame('/admin/settings/site', $setting->filter('a.audit__summary')->attr('href'));
-        self::assertSame(['Before: Quire', 'After: Audited'], $setting->filter('.audit__details div')->each(static fn (Crawler $d): string => $d->filter('dt')->text().': '.$d->filter('dd')->text()));
-        self::assertSame('bin/console quire:settings:set site.title Audited', $setting->filter('.audit__command .q-command__text')->text());
+        $setting = $crawler->filter('.activity-card')->eq(1);
+        self::assertSame('Changed the setting “Site title”', $setting->filter('.activity-card__what a')->text());
+        self::assertSame('/admin/settings/site', $setting->filter('.activity-card__what a')->attr('href'));
+        self::assertSame(['Before: Quire', 'After: Audited'], $setting->filter('.activity-card__details div')->each(static fn (Crawler $d): string => $d->filter('dt')->text().': '.$d->filter('dd')->text()));
+        self::assertSame('bin/console quire:settings:set site.title Audited', $setting->filter('.q-command__text')->text());
+        self::assertCount(1, $setting->filter('input[name="entries[]"]'), 'It can be undone.');
 
-        $extension = $crawler->filter('.audit tbody tr')->first();
-        self::assertSame('acme-shop.order_refunded: Order 1042', $extension->filter('.audit__summary')->text(), 'An action without a translation shows its name.');
-        self::assertSame(['amount: 12.5', 'lines: a, b'], $extension->filter('.audit__details div')->each(static fn (Crawler $d): string => $d->filter('dt')->text().': '.$d->filter('dd')->text()));
+        $extension = $crawler->filter('.activity-card')->first();
+        self::assertSame('acme-shop.order_refunded: Order 1042', $extension->filter('.activity-card__what')->text(), 'An action without a translation shows its name.');
+        self::assertSame(['amount: 12.5', 'lines: a, b'], $extension->filter('.activity-card__details div')->each(static fn (Crawler $d): string => $d->filter('dt')->text().': '.$d->filter('dd')->text()));
 
         $crawler = $this->client->request('GET', '/admin/users/'.$admin->id);
         $crawler = $this->client->click($crawler->selectLink('What they did')->link());
-        self::assertSelectorTextContains('.q-chips', 'By Admin');
+        self::assertSelectorTextSame('.activity-chips a[aria-current]', 'Me');
+        $kim = $this->createUser('Kim Ono', ['editor']);
+        $this->client->request('GET', '/admin/audit?actor='.$kim->id);
+        self::assertSelectorTextContains('.q-chips', 'By Kim Ono');
 
         $this->content('post', 'Live')->published()->create();
         $crawler = $this->client->request('GET', '/admin');

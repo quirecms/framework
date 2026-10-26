@@ -93,7 +93,7 @@ final class AdminTest extends AdminTestCase
 
         $crawler = $this->client->request('GET', '/admin/audit');
         self::assertResponseIsSuccessful();
-        $summaries = $crawler->filter('.audit__summary')->each(static fn (Crawler $node): string => $node->text());
+        $summaries = $this->summaries($crawler);
         self::assertContains('Changed the setting “Units”', $summaries);
         self::assertContains('Published “Pancakes”', $summaries);
         self::assertContains('Created “Toast”', $summaries);
@@ -110,9 +110,21 @@ final class AdminTest extends AdminTestCase
         self::assertSame('bin/console quire:settings:set quire-fixture-recipes.units imperial', $crawler->filter('.q-command__text')->text(), 'Not the sensitive one.');
 
         $crawler = $this->client->request('GET', '/admin/audit?area=setting.');
-        self::assertSame(['Changed the setting “Units”', 'Changed the setting “Nutrition API key”'], $crawler->filter('.audit__summary')->each(static fn (Crawler $node): string => $node->text()));
+        self::assertSame(['Changed the setting “Units”', 'Changed the setting “Nutrition API key”'], $this->summaries($crawler), 'Saved together, so folded together.');
         self::assertStringNotContainsString('secret-123', (string) $this->client->getResponse()->getContent());
         self::assertStringNotContainsString('secret-123', (string) json_encode($this->connection()->fetchAllAssociative('SELECT * FROM quire.audit_entry')));
+    }
+
+    /**
+     * What the activity shows was done, those folded together each on its own.
+     *
+     * @return list<string>
+     */
+    private function summaries(Crawler $page): array
+    {
+        return array_merge(...$page->filter('.activity-card')->each(static fn (Crawler $card): array => $card->filter('.activity-card__all')->count() > 0
+            ? $card->filter('.activity-card__all li > a')->each(static fn (Crawler $a): string => $a->text())
+            : [$card->filter('.activity-card__what')->text()]));
     }
 
     #[\Override]
