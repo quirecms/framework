@@ -1,0 +1,11 @@
+{# The preferences as a page of its own, e.g. without JavaScript; with it, they open in a dialog. #}
+{% extends '@quire_admin/layout.html.twig' %}
+
+{% block title %}{{ 'Your preferences'|trans({}, 'quire-admin') }}{% endblock %}
+
+{% block content %}
+    <section class="q-card prefs-page">
+        <p class="q-meta">{{ 'Only for you, on every device'|trans({}, 'quire-admin') }}</p>
+        {{ include('@quire_admin/_preferences.html.twig') }}
+    </section>
+{% endblock %}

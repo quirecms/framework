@@ -1,0 +1,98 @@
+{#
+    A person's preferences of the admin, and the keyboard: in a dialog on every page (opened from the
+    account menu, or with "?"), and as a page of its own without JavaScript. Each change is saved as
+    it's made; without JavaScript, with "Save".
+#}
+{% set preferences = quire_admin_preferences() %}
+{% set values = preferences.values %}
+
+{% macro choice(name, value, label, checked, sr = null) %}
+    <label class="prefs-choice"><input type="radio" name="{{ name }}" value="{{ value }}"{% if checked %} checked{% endif %}><span>{{ label }}{% if sr %}<span class="q-sr"> {{ sr }}</span>{% endif %}</span></label>
+{% endmacro %}
+
+<form method="post" action="{{ path('quire_admin_preferences') }}" class="prefs" data-preferences-target="form" data-action="change->preferences#save">
+    <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_preferences') }}">
+    <input type="hidden" name="back" value="{{ app.request.requestUri }}">
+
+    <div class="prefs__grid">
+        <fieldset class="prefs__row">
+            <legend>{{ 'Light or dark'|trans({}, 'quire-admin') }}</legend>
+            <span class="prefs-choices">
+                {{ _self.choice('theme', 'light', 'Light'|trans({}, 'quire-admin'), values.theme == 'light') }}
+                {{ _self.choice('theme', 'dark', 'Dark'|trans({}, 'quire-admin'), values.theme == 'dark') }}
+                {{ _self.choice('theme', 'system', 'Like my system'|trans({}, 'quire-admin'), values.theme == 'system') }}
+            </span>
+        </fieldset>
+        <fieldset class="prefs__row">
+            <legend>{{ 'Text size'|trans({}, 'quire-admin') }}</legend>
+            <span class="prefs-choices prefs-choices--text">
+                {% for size, label in {sm: 'Small', md: 'Default', lg: 'Large', xl: 'Larger'} %}
+                    {{ _self.choice('text', size, 'A', values.text == size, label|trans({}, 'quire-admin')) }}
+                {% endfor %}
+            </span>
+        </fieldset>
+        <fieldset class="prefs__row">
+            <legend>{{ 'Contrast'|trans({}, 'quire-admin') }}</legend>
+            <span class="prefs-choices">
+                {{ _self.choice('contrast', 'standard', 'Standard'|trans({}, 'quire-admin'), values.contrast == 'standard') }}
+                {{ _self.choice('contrast', 'high', 'High'|trans({}, 'quire-admin'), values.contrast == 'high') }}
+            </span>
+        </fieldset>
+        <fieldset class="prefs__row">
+            <legend>{{ 'Movement'|trans({}, 'quire-admin') }}</legend>
+            <span class="prefs-choices">
+                {{ _self.choice('motion', 'system', 'Like my system'|trans({}, 'quire-admin'), values.motion == 'system') }}
+                {{ _self.choice('motion', 'reduce', 'Reduce'|trans({}, 'quire-admin'), values.motion == 'reduce') }}
+            </span>
+        </fieldset>
+        <fieldset class="prefs__row">
+            <legend>{{ 'Density'|trans({}, 'quire-admin') }}</legend>
+            <span class="prefs-choices">
+                {{ _self.choice('density', 'comfortable', 'Comfortable'|trans({}, 'quire-admin'), values.density == 'comfortable') }}
+                {{ _self.choice('density', 'compact', 'Compact'|trans({}, 'quire-admin'), values.density == 'compact') }}
+            </span>
+        </fieldset>
+        <fieldset class="prefs__row">
+            <legend>{{ 'Admin language'|trans({}, 'quire-admin') }}</legend>
+            <span class="prefs-choices" data-reload>
+                {{ _self.choice('language', '', 'Like the site'|trans({}, 'quire-admin'), preferences.language is null) }}
+                {% for code, name in preferences.languages %}
+                    <label class="prefs-choice" lang="{{ code }}"><input type="radio" name="language" value="{{ code }}"{% if preferences.language == code %} checked{% endif %}><span>{{ name }}</span></label>
+                {% endfor %}
+            </span>
+        </fieldset>
+    </div>
+
+    <div class="prefs__hood">
+        <input type="hidden" name="hood_shown" value="1">
+        <label class="prefs__switch">
+            <span>
+                <span class="prefs__switch-title">{{ 'Under the hood'|trans({}, 'quire-admin') }}</span>
+                <span class="q-help">{{ 'Show the commands behind actions, IDs and keyboard hints. Nothing else changes.'|trans({}, 'quire-admin') }}</span>
+            </span>
+            <input type="checkbox" name="hood" value="1" role="switch"{% if quire_admin_hood() %} checked{% endif %} data-reload>
+        </label>
+    </div>
+
+    <noscript><p><button type="submit" class="q-btn">{{ 'Save'|trans({}, 'quire-admin') }}</button></p></noscript>
+</form>
+
+<section class="prefs-keys" aria-labelledby="keys-heading">
+    <h3 id="keys-heading" class="prefs-keys__title">{{ 'Keyboard'|trans({}, 'quire-admin') }}</h3>
+    <dl class="prefs-keys__list">
+        {% for keys, what in {
+            'g h': 'Go home'|trans({}, 'quire-admin'),
+            'g c': 'Go to content'|trans({}, 'quire-admin'),
+            'g p': 'Go to people'|trans({}, 'quire-admin'),
+            'n': 'New post'|trans({}, 'quire-admin'),
+            'j k': 'Next / previous item'|trans({}, 'quire-admin'),
+            'x': 'Select item'|trans({}, 'quire-admin'),
+            'Ctrl+S': 'Save'|trans({}, 'quire-admin'),
+            'Ctrl+Shift+P': 'Publish'|trans({}, 'quire-admin'),
+            '?': 'Show this anytime'|trans({}, 'quire-admin'),
+        } %}
+            <div><dt>{% for key in keys|split(keys starts with 'Ctrl' ? '+' : ' ') %}<kbd>{{ key }}</kbd>{% endfor %}</dt><dd>{{ what }}</dd></div>
+        {% endfor %}
+    </dl>
+    <p class="q-help">{{ 'On a Mac, ⌘ instead of Ctrl. Keys don’t work while you type in a field, except saving and publishing.'|trans({}, 'quire-admin') }}</p>
+</section>

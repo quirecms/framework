@@ -11,7 +11,7 @@ use Quire\Admin\Content\ContentLists;
 use Quire\Admin\Content\Job\ApplyToMatching;
 use Quire\Admin\Content\ListState;
 use Quire\Admin\Content\NextSteps;
-use Quire\Admin\Preferences\Density;
+use Quire\Admin\Preferences\AdminPreferences;
 use Quire\Admin\Preferences\UnderTheHood;
 use Quire\Admin\Twig\RelativeTime;
 use Quire\Content\Check\CheckReport;
@@ -20,7 +20,6 @@ use Quire\Content\Content;
 use Quire\Content\Query\ContentPage;
 use Quire\Content\Type\ContentTypeDefinition;
 use Quire\Content\Type\ContentTypeRegistry;
-use Quire\Settings\Settings;
 use Quire\User\CurrentUser;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -73,9 +72,8 @@ final readonly class ContentListController
         private Security $security,
         private CurrentUser $users,
         private MessageBusInterface $bus,
-        private Settings $settings,
         private UnderTheHood $hood,
-        private Density $density,
+        private AdminPreferences $preferences,
         private RelativeTime $time,
     ) {
     }
@@ -91,7 +89,7 @@ final readonly class ContentListController
             'can_create' => $this->security->isGranted(ContentLists::ability($definition, 'create')),
             'total' => $this->lists->query($definition)->count(),
             'modes' => array_map(fn (string $mode): array => ['id' => $mode, 'url' => $this->url($definition, $state->with(page: 1, mode: $mode)), 'current' => $mode === $state->mode], ListState::MODES),
-            'density' => $this->density->get($request),
+            'density' => $this->preferences->get(AdminPreferences::DENSITY),
             'back' => $request->getRequestUri(),
         ];
 
@@ -148,7 +146,7 @@ final readonly class ContentListController
             'views' => array_map(fn (array $view): array => [...$view, 'url' => $this->url($definition, new ListState(view: $view['id'], mode: $state->mode)), 'current' => $view['id'] === $state->view], $this->lists->views($definition)),
             'groups' => $this->facetGroups($definition, $state),
             'chips' => $this->chips($definition, $state),
-            'syntax' => $this->hood->isOn($request) ? $state->syntax($aliases) : '',
+            'syntax' => $this->hood->isOn() ? $state->syntax($aliases) : '',
             'filters' => $this->lists->filters($definition),
             'bulk_actions' => $this->lists->bulkActions($definition, ContentLists::TRASH === $state->view),
             'previous_url' => $page->hasPreviousPage() ? $this->url($definition, $state->with(page: min($page->page, $page->pageCount() + 1) - 1)) : null,
@@ -347,7 +345,7 @@ final readonly class ContentListController
 
     private function monthLabel(\DateTimeImmutable $at): string
     {
-        $formatter = new \IntlDateFormatter($this->settings->getString('site.locale'), \IntlDateFormatter::NONE, \IntlDateFormatter::NONE, $at->getTimezone(), null, 'LLLL y');
+        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::NONE, \IntlDateFormatter::NONE, $at->getTimezone(), null, 'LLLL y');
 
         return (string) $formatter->format($at);
     }

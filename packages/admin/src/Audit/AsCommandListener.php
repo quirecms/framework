@@ -46,7 +46,7 @@ final readonly class AsCommandListener
         $commands = array_values(array_unique(array_filter(array_map(static fn (AuditEntry $entry): ?string => $entry->command, $this->log->recordedNow()), \is_string(...))));
         $session = $request->getSession();
 
-        if ([] === $commands || !$session instanceof FlashBagAwareSessionInterface || !$this->hood->isOn($request)) {
+        if ([] === $commands || !$session instanceof FlashBagAwareSessionInterface || !$this->hood->isOn()) {
             return;
         }
 

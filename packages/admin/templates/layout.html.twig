@@ -14,7 +14,8 @@
     {% for item in items %}{% if item.current %}{% set current_section = section %}{% endif %}{% endfor %}
 {% endfor %}
 <!doctype html>
-<html lang="{{ site.locale }}"{% if hood %} data-hood="on"{% endif %}{% if quire_admin_density() == 'compact' %} data-density="compact"{% endif %}>
+{% set preferences = quire_admin_preferences() %}
+<html lang="{{ app.request.locale }}"{% if hood %} data-hood="on"{% endif %}{% for name, value in preferences.attributes %} {{ name }}="{{ value }}"{% endfor %}>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -26,7 +27,11 @@
     <title>{% block title %}{% endblock %} · {{ 'Admin'|trans({}, 'quire-admin') }} · {{ site.title }}</title>
     {{ quire_slot('admin.head') }}
 </head>
-<body class="q-admin">
+{# Keyboard shortcuts, and opening the preferences (see admin.js). #}
+{% set creatable = quire_admin_new() %}
+{% set content_url = (menu.content ?? [])|first.url ?? null %}
+<body class="q-admin" data-controller="shortcuts" data-action="keydown@window->shortcuts#key"
+      data-shortcuts-urls-value="{{ {home: path('quire_admin_dashboard'), content: content_url, people: is_granted('quire.users.manage') ? path('quire_admin_users') : null, new: (creatable|first).url ?? null}|json_encode }}">
     <svg width="0" height="0" style="position:absolute" aria-hidden="true">
         <symbol id="q-icon-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7v9H4z"/><path d="M10 20v-5h4v5"/></symbol>
         <symbol id="q-icon-content" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></symbol>
@@ -41,7 +46,6 @@
         <nav class="q-rail" aria-label="{{ 'Admin menu'|trans({}, 'quire-admin') }}">
             <a class="q-rail__brand" href="{{ path('quire_admin_dashboard') }}" title="{{ 'Admin'|trans({}, 'quire-admin') }}">{{ ui.logo() }}<span class="q-sr">{{ 'Admin'|trans({}, 'quire-admin') }}</span></a>
 
-            {% set creatable = quire_admin_new() %}
             {% if creatable is not empty %}
                 <details class="q-menu">
                     <summary class="q-new"><b aria-hidden="true">＋</b>{{ 'New'|trans({}, 'quire-admin') }}</summary>
@@ -85,6 +89,7 @@
                             <summary aria-label="{{ 'Account'|trans({}, 'quire-admin') }}"><span class="q-avatar">{{ (app.user.displayName ?? app.user.userIdentifier)|split(' ')|map(word => word|first)|slice(0, 2)|join|upper }}</span></summary>
                             <ul class="q-menu__panel q-menu__panel--end">
                                 <li class="q-menu__label">{{ app.user.displayName ?? app.user.userIdentifier }}</li>
+                                <li><a href="{{ path('quire_admin_preferences') }}" data-action="shortcuts#preferences">{{ 'Your preferences'|trans({}, 'quire-admin') }}</a></li>
                                 {% if hood %}<li><a href="{{ path('quire_admin_ui') }}">{{ 'Components'|trans({}, 'quire-admin') }}</a></li>{% endif %}
                                 <li><a href="{{ logout_path() }}" data-turbo="false">{{ 'Sign out'|trans({}, 'quire-admin') }}</a></li>
                             </ul>
@@ -131,5 +136,16 @@
             </main>
         </div>
     </div>
+
+    {% if app.user and app.request.attributes.get('_route') != 'quire_admin_preferences' %}
+        <dialog class="prefs-dialog" id="preferences" aria-labelledby="preferences-title" data-controller="preferences" data-shortcuts-target="preferences">
+            <header class="prefs-dialog__head">
+                <h2 id="preferences-title">{{ 'Your preferences'|trans({}, 'quire-admin') }}</h2>
+                <p class="q-meta">{{ 'Only for you, on every device'|trans({}, 'quire-admin') }}</p>
+                <form method="dialog"><button class="q-btn q-btn--ghost q-btn--sm" aria-label="{{ 'Close'|trans({}, 'quire-admin') }}">✕</button></form>
+            </header>
+            {{ include('@quire_admin/_preferences.html.twig') }}
+        </dialog>
+    {% endif %}
 </body>
 </html>

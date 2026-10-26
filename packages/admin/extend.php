@@ -17,6 +17,7 @@ use Quire\Admin\Controller\UsersController;
 use Quire\Admin\Dashboard\Inbox\ChangesInbox;
 use Quire\Admin\Dashboard\Inbox\ScheduledChecksInbox;
 use Quire\Admin\Extend\Admin;
+use Quire\Admin\Preferences\AdminPreferences;
 use Quire\Extend;
 use Symfony\Component\Routing\Requirement\Requirement;
 
@@ -69,9 +70,19 @@ return [
         ->get('/extensions/{id}/{action}', 'quire_admin_extension_confirm', [ExtensionsController::class, 'confirm'], requirements: ['id' => '[a-z0-9]+(?:-[a-z0-9]+)*', 'action' => 'enable|disable|purge'])
         ->post('/extensions/{id}/{action}', 'quire_admin_extension_act', [ExtensionsController::class, 'act'], requirements: ['id' => '[a-z0-9]+(?:-[a-z0-9]+)*', 'action' => 'enable|disable|purge'])
         ->get('/audit', 'quire_admin_audit', AuditController::class)
+        ->add('/preferences', 'quire_admin_preferences', PreferencesController::class, ['GET', 'HEAD', 'POST'])
         ->post('/preferences/hood', 'quire_admin_hood', [PreferencesController::class, 'hood'])
         ->post('/preferences/density', 'quire_admin_density', [PreferencesController::class, 'density'])
         ->get('/ui', 'quire_admin_ui', UiController::class),
+
+    // How each person likes the admin (see Preferences\AdminPreferences).
+    new Extend\Preferences()
+        ->define(AdminPreferences::THEME, 'enum', 'system', choices: AdminPreferences::CHOICES[AdminPreferences::THEME])
+        ->define(AdminPreferences::CONTRAST, 'enum', 'standard', choices: AdminPreferences::CHOICES[AdminPreferences::CONTRAST])
+        ->define(AdminPreferences::TEXT, 'enum', 'md', choices: AdminPreferences::CHOICES[AdminPreferences::TEXT])
+        ->define(AdminPreferences::DENSITY, 'enum', 'comfortable', choices: AdminPreferences::CHOICES[AdminPreferences::DENSITY])
+        ->define(AdminPreferences::MOTION, 'enum', 'system', choices: AdminPreferences::CHOICES[AdminPreferences::MOTION])
+        ->define(AdminPreferences::HOOD, 'bool', null, nullable: true),
 
     new Extend\Views()
         ->namespace('quire_admin', __DIR__.'/templates'),
