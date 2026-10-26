@@ -1,45 +1,71 @@
 {#
-    The installed themes, the site's first. Variables: themes (manifest, parent, active, problem), builtin
-    (no theme is used), problem (why the theme that's set can't be used), read_only (why it can't change).
+    The site's look: the installed themes, the one in use first, each with its screenshot, a preview of
+    the site in it, and using it. Variables: themes (manifest, parent, active, problem, screenshot,
+    preview: why it can't be previewed, or null), builtin (no theme is used), problem (why the theme
+    that's set can't be used), read_only (why it can't change).
 #}
 {% extends '@quire_admin/layout.html.twig' %}
 
-{% block title %}{{ 'Themes'|trans({}, 'quire-admin') }}{% endblock %}
+{% block title %}{{ 'Look'|trans({}, 'quire-admin') }}{% endblock %}
+
+{% block page_head %}{{ include('@quire_admin/site/_head.html.twig', {title: 'Look'|trans({}, 'quire-admin'), current: 'themes'}) }}{% endblock %}
 
 {% block content %}
     {% if problem %}<p class="q-notice q-notice--error">{{ problem }}</p>{% endif %}
     {% if read_only %}<p class="q-notice q-notice--warning">{{ read_only }}</p>{% endif %}
-    <p class="q-help">{{ 'Changing the theme rebuilds the site, which takes a few seconds.'|trans({}, 'quire-admin') }}</p>
+    <p class="q-help">{{ 'Preview a theme to see the site in it, only you. Using one rebuilds the site, which takes a few seconds.'|trans({}, 'quire-admin') }}</p>
 
-    <ul class="q-cards">
+    <ul class="looks">
         {% for theme in themes %}
-            <li class="q-card">
-                <h2 class="q-card__title">{{ theme.manifest.title }}{% if theme.active %} <span class="q-tag q-tag--ok">{{ 'in use'|trans({}, 'quire-admin') }}</span>{% endif %}</h2>
-                {% if theme.manifest.description %}<p>{{ theme.manifest.description }}</p>{% endif %}
-                <p class="q-meta">
-                    {{ theme.manifest.packageName }} {{ theme.manifest.version }}
-                    {% if theme.parent %} · {{ 'based on {theme}'|trans({theme: theme.parent}, 'quire-admin') }}{% endif %}
-                </p>
-                {% if theme.problem %}<p class="q-error">{{ theme.problem }}</p>{% endif %}
-                {% if not theme.active and not read_only and not theme.problem %}
-                    <form method="post" action="{{ path('quire_admin_themes_use') }}">
-                        <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_site') }}">
-                        <input type="hidden" name="theme" value="{{ theme.manifest.id }}">
-                        <button type="submit" class="q-btn q-btn--ghost">{{ 'Use this theme'|trans({}, 'quire-admin') }}<span class="q-sr"> ({{ theme.manifest.title }})</span></button>
-                    </form>
+            <li class="q-card look{% if theme.active %} look--active{% endif %}">
+                {% if theme.screenshot %}
+                    <img class="look__shot" src="{{ path('quire_admin_theme_screenshot', {id: theme.manifest.id}) }}" alt="" width="1200" height="900" loading="lazy">
+                {% else %}
+                    <div class="look__shot look__shot--none" aria-hidden="true">{{ theme.manifest.title|first|upper }}</div>
                 {% endif %}
+                <div class="look__body">
+                    <h2 class="look__title">{{ theme.manifest.title }}{% if theme.active %} <span class="q-tag q-tag--ok">{{ 'in use'|trans({}, 'quire-admin') }}</span>{% endif %}</h2>
+                    {% if theme.manifest.description %}<p>{{ theme.manifest.description }}</p>{% endif %}
+                    <p class="q-meta">
+                        {{ theme.manifest.packageName }} {{ theme.manifest.version }}
+                        {% if theme.parent %} · {{ 'based on {theme}'|trans({theme: theme.parent}, 'quire-admin') }}{% endif %}
+                    </p>
+                    {% if theme.problem %}<p class="q-error">{{ theme.problem }}</p>{% endif %}
+                    {% if not theme.active and not theme.problem %}
+                        <p class="look__actions">
+                            {% if theme.preview is null %}
+                                <form method="post" action="{{ path('quire_theme_preview') }}" data-turbo="false">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('quire_theme_preview') }}">
+                                    <input type="hidden" name="theme" value="{{ theme.manifest.id }}">
+                                    <button type="submit" class="q-btn q-btn--ghost">{{ 'Preview'|trans({}, 'quire-admin') }}<span class="q-sr"> ({{ theme.manifest.title }})</span></button>
+                                </form>
+                            {% endif %}
+                            {% if not read_only %}
+                                <form method="post" action="{{ path('quire_admin_themes_use') }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_site') }}">
+                                    <input type="hidden" name="theme" value="{{ theme.manifest.id }}">
+                                    <button type="submit" class="q-btn">{{ 'Use this theme'|trans({}, 'quire-admin') }}<span class="q-sr"> ({{ theme.manifest.title }})</span></button>
+                                </form>
+                            {% endif %}
+                        </p>
+                        {% if theme.preview %}<p class="q-help">{{ 'No preview: {reason}'|trans({reason: theme.preview}, 'quire-admin') }}</p>{% endif %}
+                    {% endif %}
+                </div>
             </li>
         {% endfor %}
-        <li class="q-card">
-            <h2 class="q-card__title">{{ 'Quire\'s built-in templates'|trans({}, 'quire-admin') }}{% if builtin %} <span class="q-tag q-tag--ok">{{ 'in use'|trans({}, 'quire-admin') }}</span>{% endif %}</h2>
-            <p>{{ 'Plain pages without a theme, e.g. while you write your own.'|trans({}, 'quire-admin') }}</p>
-            {% if not builtin and not read_only %}
-                <form method="post" action="{{ path('quire_admin_themes_use') }}">
-                    <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_site') }}">
-                    <input type="hidden" name="theme" value="">
-                    <button type="submit" class="q-btn q-btn--ghost">{{ 'Use the built-in templates'|trans({}, 'quire-admin') }}</button>
-                </form>
-            {% endif %}
+        <li class="q-card look{% if builtin %} look--active{% endif %}">
+            <div class="look__shot look__shot--none" aria-hidden="true">Q</div>
+            <div class="look__body">
+                <h2 class="look__title">{{ 'Quire\'s built-in templates'|trans({}, 'quire-admin') }}{% if builtin %} <span class="q-tag q-tag--ok">{{ 'in use'|trans({}, 'quire-admin') }}</span>{% endif %}</h2>
+                <p>{{ 'Plain pages without a theme, e.g. while you write your own.'|trans({}, 'quire-admin') }}</p>
+                {% if not builtin and not read_only %}
+                    <form method="post" action="{{ path('quire_admin_themes_use') }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_site') }}">
+                        <input type="hidden" name="theme" value="">
+                        <button type="submit" class="q-btn q-btn--ghost">{{ 'Use the built-in templates'|trans({}, 'quire-admin') }}</button>
+                    </form>
+                {% endif %}
+            </div>
         </li>
     </ul>
 {% endblock %}

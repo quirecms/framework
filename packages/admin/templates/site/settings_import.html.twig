@@ -1,0 +1,48 @@
+{#
+    What bringing in a file of settings would change, before anything changes. Variables: import
+    (SettingsImport), changes (by key: label, from, to), content (the file, to send again).
+#}
+{% extends '@quire_admin/layout.html.twig' %}
+
+{% block title %}{{ 'Bring in settings'|trans({}, 'quire-admin') }}{% endblock %}
+
+{% block page_head %}{{ include('@quire_admin/site/_head.html.twig', {title: 'Bring in settings'|trans({}, 'quire-admin'), current: 'settings'}) }}{% endblock %}
+
+{% block content %}
+    <section class="q-card home-card settings-import">
+        {% if import.errors is not empty %}
+            <div class="q-notice q-notice--error" role="alert">
+                <p>{{ 'The file can’t be brought in:'|trans({}, 'quire-admin') }}</p>
+                <ul>{% for error in import.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+            </div>
+        {% endif %}
+        {% if import.skipped is not empty %}
+            <p class="q-help">{{ 'Left out, as nothing on this site has them: {keys}.'|trans({keys: import.skipped|join(', ')}, 'quire-admin') }}</p>
+        {% endif %}
+
+        {% if changes is empty %}
+            <p class="q-empty">{{ 'The settings already have these values: nothing would change.'|trans({}, 'quire-admin') }}</p>
+        {% else %}
+            <table class="q-table">
+                <caption>{{ '{count, plural, one {# setting would change} other {# settings would change}}'|trans({count: changes|length}, 'quire-admin') }}</caption>
+                <thead><tr><th scope="col">{{ 'Setting'|trans({}, 'quire-admin') }}</th><th scope="col">{{ 'Now'|trans({}, 'quire-admin') }}</th><th scope="col">{{ 'Then'|trans({}, 'quire-admin') }}</th></tr></thead>
+                <tbody>
+                    {% for key, change in changes %}
+                        <tr><th scope="row">{{ change.label }} <span class="q-meta">{{ key }}</span></th><td class="diff-old"><del>{{ change.from }}</del></td><td class="diff-new"><ins>{{ change.to }}</ins></td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+
+        <p class="settings-doc__actions">
+            {% if import.canApply and changes is not empty %}
+                <form method="post" action="{{ path('quire_admin_settings_import') }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_site') }}">
+                    <input type="hidden" name="content" value="{{ content }}">
+                    <button type="submit" class="q-btn" name="apply" value="1">{{ 'Change them'|trans({}, 'quire-admin') }}</button>
+                </form>
+            {% endif %}
+            <a class="q-btn q-btn--ghost" href="{{ path('quire_admin_settings') }}">{{ 'Back to the settings'|trans({}, 'quire-admin') }}</a>
+        </p>
+    </section>
+{% endblock %}

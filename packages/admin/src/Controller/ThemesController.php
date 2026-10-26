@@ -7,14 +7,17 @@ namespace Quire\Admin\Controller;
 use Quire\Extension\ExtensionManifest;
 use Quire\Extension\Rebuild\RebuildFailedException;
 use Quire\Theme\Exception\ThemeException;
+use Quire\Theme\ThemePreview;
 use Quire\Theme\Themes;
 use Quire\Theme\ThemeSwitcher;
 use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Session\FlashBagAwareSessionInterface;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Csrf\CsrfToken;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
@@ -40,6 +43,7 @@ final readonly class ThemesController
         private CsrfTokenManagerInterface $csrf,
         private TranslatorInterface $translator,
         private Environment $twig,
+        private ThemePreview $preview,
     ) {
     }
 
@@ -62,6 +66,9 @@ final readonly class ThemesController
                 'parent' => null === $theme->parent ? null : ($installed[$theme->parent]->title ?? $theme->parent),
                 'active' => $id === $this->themes->active()?->id,
                 'problem' => $problem,
+                'screenshot' => null !== $this->screenshotFile($theme),
+                // Already the site's look: nothing to preview.
+                'preview' => $id === $this->themes->active()?->id ? null : $this->preview->reason($id),
             ];
         }
 
@@ -99,6 +106,32 @@ final readonly class ThemesController
         }
 
         return new RedirectResponse($this->urls->generate('quire_admin_themes'), Response::HTTP_SEE_OTHER);
+    }
+
+    /**
+     * A theme's screenshot (see "extra.quire.theme.screenshot" of its composer.json).
+     */
+    public function screenshot(string $id): BinaryFileResponse
+    {
+        $this->assertAllowed();
+        $theme = $this->themes->installed()[$id] ?? throw new NotFoundHttpException(\sprintf('No theme "%s" is installed.', $id));
+        $file = $this->screenshotFile($theme) ?? throw new NotFoundHttpException(\sprintf('The theme "%s" has no screenshot.', $id));
+        $response = new BinaryFileResponse($file, headers: ['Cache-Control' => 'private, max-age=86400']);
+        $response->setAutoEtag();
+
+        return $response;
+    }
+
+    /**
+     * The theme's screenshot file, when it has one: an image inside the theme's directory.
+     */
+    private function screenshotFile(ExtensionManifest $theme): ?string
+    {
+        $path = $theme->screenshotPath();
+        $real = null === $path ? false : realpath($path);
+        $root = realpath($theme->path);
+
+        return false !== $real && false !== $root && str_starts_with($real, $root.\DIRECTORY_SEPARATOR) && 1 === preg_match('/\.(png|jpe?g|webp)$/i', $real) ? $real : null;
     }
 
     private function assertAllowed(): void
