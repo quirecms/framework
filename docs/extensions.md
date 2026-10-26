@@ -1088,6 +1088,10 @@ Set `DATABASE_URL` for your tests, for example in `phpunit.dist.xml`:
 
 The `extend.php` in the project root works exactly like an extension's, and runs after all of them. Use it for site-specific changes that don't deserve their own package.
 
+### What an extension adds
+
+`Quire\Extension\ExtensionContributions::of($id)` tells what an extension (or theme, or `core`) adds to the site, as it was built: content types and the fields it adds to others' types, field types, settings, preferences, abilities and roles, pages per route group, content checks, actions, scheduled tasks, and whether it keeps data of its own (migrations). The admin's extension cards say it from this.
+
 ### After enabling or disabling extensions
 
 Extensions are compiled into the application, so it must be rebuilt after the enabled extensions change. Quire does this for you:

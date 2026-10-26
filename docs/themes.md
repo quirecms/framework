@@ -39,6 +39,12 @@ Admins can also choose the theme in the admin interface, under "Site" → "Theme
 
 If the active theme can't be used later, e.g. because the theme it inherits from was uninstalled, the site keeps working with Quire's built-in templates and `quire:theme:list` reports the problem.
 
+### Previewing a theme
+
+Admins (with `quire.themes.manage`) can see the site in another installed theme before using it: until they stop, the site's pages render with its templates, its stylesheets and its settings at their defaults, for them only; a bar at the top of each page says so and stops it. The admin's own pages stay as they are. Forms start and stop it by posting to the routes `quire_theme_preview` (with `theme`, the theme's ID) and `quire_theme_preview_stop`, with a CSRF token for `quire_theme_preview`; in code, use `Quire\Theme\ThemePreview`.
+
+A theme can be previewed when it and the themes it inherits from add only templates, stylesheets, settings and template namespaces: what else a theme's `extend.php` does (services, slots, scripts, migrations…) only runs once the site is built with it, so for those `ThemePreview::reason()` says why it can't be previewed.
+
 ### Pinning the theme in production
 
 When the extensions are pinned in configuration (see [extensions](extensions.md#pinning-extensions-in-production)), so is the theme:
