@@ -9,6 +9,8 @@ use Quire\Action\Exception\ActionDeniedException;
 use Quire\Action\Exception\InvalidArgumentsException;
 use Quire\Admin\Content\ContentLists;
 use Quire\Admin\Content\PendingChanges;
+use Quire\Admin\Content\SideBySide;
+use Quire\Content\Check\CheckResult;
 use Quire\Content\Check\ContentChecker;
 use Quire\Content\Command\UpdateContent;
 use Quire\Content\Content;
@@ -22,8 +24,10 @@ use Quire\Content\Exception\PendingRevisionConflictException;
 use Quire\Content\Revision\Diff;
 use Quire\Content\Revision\DiffLine;
 use Quire\Content\Revision\PendingRevision;
+use Quire\Content\Revision\PendingRevisionComments;
 use Quire\Content\Revision\PendingRevisionRepository;
 use Quire\Content\Revision\PendingRevisionWriter;
+use Quire\Content\Revision\Review;
 use Quire\Content\Revision\Revision;
 use Quire\Content\Revision\RevisionRepository;
 use Quire\Content\Revision\Snapshot;
@@ -76,6 +80,7 @@ final readonly class ContentChangesController
         private Environment $twig,
         private ContentChecker $checker,
         private Actions $actions,
+        private PendingRevisionComments $comments,
     ) {
     }
 
@@ -311,17 +316,54 @@ final readonly class ContentChangesController
     {
         $reviews = $this->pending->reviews($revision->id);
         $merge = $this->pending->merge($revision, $item);
+        $threads = $this->comments->threads($revision);
+        $diff = $revision->diff();
+        $checks = $this->checker->check($this->pending->preview($revision));
+        // Findings that the live item has too aren't the changes' doing.
+        $live = array_map(static fn (CheckResult $result): string => $result->check.'|'.$result->finding->message, $this->checker->check($item)->results);
+        $found = [];
+        $toCheck = 0;
+
+        foreach ($checks->results as $result) {
+            $isLive = \in_array($result->check.'|'.$result->finding->message, $live, true);
+            $found[$result->check][] = ['result' => $result, 'live' => $isLive];
+            $toCheck += $isLive ? 0 : 1;
+        }
+
+        $conversation = [];
+
+        foreach ($reviews as $review) {
+            $conversation[] = ['kind' => 'review', 'at' => $review->createdAt, 'author' => $review->reviewerId, 'verdict' => $review->verdict->value, 'body' => $review->message, 'thread' => null];
+        }
+
+        foreach ($threads as $thread) {
+            $conversation[] = ['kind' => 'thread', 'at' => $thread->comment->createdAt, 'author' => $thread->comment->authorId, 'verdict' => null, 'body' => $thread->comment->body, 'thread' => $thread];
+        }
+
+        usort($conversation, static fn (array $a, array $b): int => $a['at'] <=> $b['at']);
+        $people = [$revision->authorId, $revision->scheduledBy, ...array_map(static fn (Review $review): ?string => $review->reviewerId, $reviews)];
+
+        foreach ($threads as $thread) {
+            foreach ([$thread->comment, ...$thread->replies] as $comment) {
+                $people[] = $comment->authorId;
+            }
+        }
 
         return new Response($this->twig->render('@quire_admin/content/changes.html.twig', [
+            'rows' => SideBySide::rows($diff->bodyLines),
+            'conversation' => $conversation,
+            'check_list' => array_values(array_filter(array_map(static fn (array $check): ?array => null === $check['level'] ? null : ['id' => $check['id'], 'label' => $check['label'], 'found' => $found[$check['id']] ?? []], $this->checker->checks($type->id)))),
+            'to_check' => $toCheck,
+            'live_at' => $item->publishedAt ?? $item->updatedAt,
             'type' => $type,
             'item' => $item,
             'pending' => $revision,
             'state' => $this->changes->stateLabel($revision->state),
             'diff' => $this->diffView($type, $revision->diff()),
             'conflicts' => $conflicts ?? ($merge->isClean() ? [] : $merge->conflicts),
-            'checks' => $this->checker->check($this->pending->preview($revision)),
+            'checks' => $checks,
             'reviews' => $reviews,
-            'names' => $this->changes->names([$revision->authorId, $revision->scheduledBy, ...array_map(static fn (\Quire\Content\Revision\Review $review): ?string => $review->reviewerId, $reviews)]),
+            'names' => $this->changes->names($people),
             'own' => $this->changes->isOwn($revision),
             'may_review' => $this->changes->mayReview($type),
             'may_approve' => $this->changes->mayApprove($type, $revision),

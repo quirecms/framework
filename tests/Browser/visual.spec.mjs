@@ -18,6 +18,13 @@ const screens = {
         await page.waitForURL(/\/admin\/content\/post\/[0-9a-f-]{36}$/);
         await page.waitForLoadState('networkidle');
     },
+    // Changes waiting for a review, from the home page.
+    review: async (page) => {
+        await page.goto('/admin', { waitUntil: 'networkidle' });
+        await page.locator('a[href*="/changes/"]').first().click();
+        await page.waitForURL(/\/changes\/[0-9a-f-]{36}$/);
+        await page.waitForLoadState('networkidle');
+    },
     people: '/admin/users',
     'role-editor': '/admin/roles/editor',
     settings: '/admin/settings/site',

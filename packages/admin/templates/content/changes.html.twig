@@ -1,36 +1,48 @@
 {#
-    Changes to a published item that aren't published yet (a pending revision): what they change, whether
-    they merge with what's published, their reviews, and what the user may do with them.
-    Variables: type, item, pending, state, diff, conflicts, checks, reviews, names, own, may_review, may_approve,
-    can_publish, may_discard, timezone.
+    Reviewing changes to a published item that aren't published yet (a pending revision): what's live and
+    the changes side by side, the conversation about them, what the checks found, and what the user may do.
+    Variables: type, item, pending, state, diff, rows, conversation, check_list, to_check, live_at, conflicts, checks,
+    reviews, names, own, may_review, may_approve, can_publish, may_discard, timezone.
 #}
 {% extends '@quire_admin/layout.html.twig' %}
+{% import '@quire_admin/content/edit.html.twig' as editor %}
+
+{% set author = own ? null : (pending.authorId ? names[pending.authorId] ?? null : null) %}
+{% set here = path('quire_admin_content_changes', {type: type.id, id: item.id, pending: pending.id}) %}
 
 {% block title %}{{ 'Changes to “{title}”'|trans({title: item.title}, 'quire-admin') }}{% endblock %}
 
-{% block actions %}
-    <p class="q-page-head__links">
-        <a href="{{ path('quire_admin_content_edit', {type: type.id, id: item.id}) }}">{{ own ? 'Edit your changes'|trans({}, 'quire-admin') : 'Back to the item'|trans({}, 'quire-admin') }}</a>
-    </p>
-{% endblock %}
+{% block page_head %}{% endblock %}
 
 {% block content %}
-    <dl class="q-facts q-facts--wide">
-        <dt>{{ 'By'|trans({}, 'quire-admin') }}</dt>
-        <dd>{{ pending.authorId ? names[pending.authorId] : 'Someone'|trans({}, 'quire-admin') }}</dd>
-        <dt>{{ 'Status'|trans({}, 'quire-admin') }}</dt>
-        <dd>{{ state }}</dd>
-        <dt>{{ 'Saved'|trans({}, 'quire-admin') }}</dt>
-        <dd><time datetime="{{ pending.updatedAt|date('c') }}">{{ pending.updatedAt|date('Y-m-d H:i', timezone) }}</time></dd>
-        {% if pending.message %}
-            <dt>{{ 'About'|trans({}, 'quire-admin') }}</dt>
-            <dd>{{ pending.message }}</dd>
-        {% endif %}
-        {% if pending.publishAt %}
-            <dt>{{ 'Publish on'|trans({}, 'quire-admin') }}</dt>
-            <dd><time datetime="{{ pending.publishAt|date('c') }}">{{ pending.publishAt|date('Y-m-d H:i', timezone) }}</time></dd>
-        {% endif %}
-    </dl>
+<div class="review">
+    <header class="review-bar q-card">
+        <a class="review-bar__back" href="{{ path('quire_admin_content_edit', {type: type.id, id: item.id}) }}"><span aria-hidden="true">←</span> {{ own ? 'Edit your changes'|trans({}, 'quire-admin') : 'Back to the item'|trans({}, 'quire-admin') }}</a>
+        {% set who = own ? (app.user.displayName ?? app.user.userIdentifier) : (author ?? '?') %}
+        <span class="q-avatar review-bar__avatar" aria-hidden="true">{{ who|split(' ')|map(word => word|first)|slice(0, 2)|join|upper }}</span>
+        <div class="review-bar__text">
+            <h1 class="review-bar__title">
+                {% if own %}{{ 'Your changes to “{title}”'|trans({title: item.title}, 'quire-admin') }}
+                {% elseif author %}{{ '{name}’s changes to “{title}”'|trans({name: author, title: item.title}, 'quire-admin') }}
+                {% else %}{{ 'Changes to “{title}”'|trans({title: item.title}, 'quire-admin') }}{% endif %}
+            </h1>
+            <p class="review-bar__detail">
+                {{ state }} · {{ 'saved {when}'|trans({when: pending.updatedAt|quire_admin_when}, 'quire-admin')|raw }}
+                · {% if conflicts is empty %}<span class="review-bar__clean">{{ 'merges cleanly with what’s live'|trans({}, 'quire-admin') }}</span>{% else %}<span class="review-bar__conflict">{{ 'conflicts with what’s live'|trans({}, 'quire-admin') }}</span>{% endif %}
+                · {{ to_check == 0 ? 'checks pass'|trans({}, 'quire-admin') : '{count, plural, one {# check to look at} other {# checks to look at}}'|trans({count: to_check}, 'quire-admin') }}
+                {% if pending.publishAt %}· {{ 'goes live {when}'|trans({when: pending.publishAt|quire_admin_when}, 'quire-admin')|raw }}{% endif %}
+            </p>
+        </div>
+        <div class="review-bar__actions">
+            {% if may_review %}
+                <button type="submit" form="review-form" class="q-btn q-btn--ghost" name="intent" value="request_changes">{{ 'Ask for changes'|trans({}, 'quire-admin') }}</button>
+                {% if may_approve %}<button type="submit" form="review-form" class="q-btn" name="intent" value="approve">{{ 'Approve'|trans({}, 'quire-admin') }}</button>{% endif %}
+            {% endif %}
+            {% if can_publish is same as(true) %}
+                <button type="submit" form="review-form" class="q-btn{% if may_review %} q-btn--soft{% endif %}" name="intent" value="publish">{{ 'Publish the changes'|trans({}, 'quire-admin') }}</button>
+            {% endif %}
+        </div>
+    </header>
 
     {% if pending.publishProblem %}
         <p class="q-notice q-notice--error">{{ 'These changes couldn\'t be published at their time: {problem}'|trans({problem: pending.publishProblem}, 'quire-admin') }}</p>
@@ -45,64 +57,154 @@
             <p>{{ own ? 'Open your changes and keep your version of these parts, or change them.'|trans({}, 'quire-admin') : 'Their author resolves them before they\'re published.'|trans({}, 'quire-admin') }}</p>
         </div>
     {% else %}
-        <p class="q-notice q-notice--success" role="status">{{ 'These changes merge with what\'s published: what was published since is kept.'|trans({}, 'quire-admin') }}</p>
+        <p class="q-sr" role="status">{{ 'These changes merge with what\'s published: what was published since is kept.'|trans({}, 'quire-admin') }}</p>
     {% endif %}
 
-    <section aria-labelledby="diff-heading" class="q-section">
-        <h2 id="diff-heading">{{ 'What changes'|trans({}, 'quire-admin') }}</h2>
-        {{ include('@quire_admin/content/_diff.html.twig', {diff: diff, caption: 'What changes'|trans({}, 'quire-admin')}) }}
-    </section>
-
-    <section aria-labelledby="checks-heading" class="q-section">
-        <h2 id="checks-heading">{{ 'Checks'|trans({}, 'quire-admin') }}</h2>
-        {{ include('@quire_admin/content/_checks.html.twig') }}
-    </section>
-
-    <section aria-labelledby="reviews-heading" class="q-section">
-        <h2 id="reviews-heading">{{ 'Reviews'|trans({}, 'quire-admin') }}</h2>
-        {% if reviews is empty %}
-            <p class="q-empty">{{ 'No reviews yet.'|trans({}, 'quire-admin') }}</p>
-        {% else %}
-            <ol class="q-list reviews">
-                {% for review in reviews %}
-                    <li>
-                        <span><strong>{{ review.reviewerId ? names[review.reviewerId] : 'Someone'|trans({}, 'quire-admin') }}</strong> {{ ('review.' ~ review.verdict.value)|trans({}, 'quire-admin') }}</span>
-                        {% if review.message %}<span>{{ review.message }}</span>{% endif %}
-                        <span class="q-meta"><time datetime="{{ review.createdAt|date('c') }}">{{ review.createdAt|date('Y-m-d H:i', timezone) }}</time></span>
-                    </li>
-                {% endfor %}
-            </ol>
-        {% endif %}
-
-        {% if may_review %}
-            <form method="post" class="review-form">
-                <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_content_editor') }}">
-                <input type="hidden" name="version" value="{{ pending.version }}">
-                <div class="q-field">
-                    <label for="message">{{ 'Your review'|trans({}, 'quire-admin') }}</label>
-                    <textarea id="message" name="message" rows="3"></textarea>
-                </div>
-                <div class="editor__buttons">
-                    {% if may_approve %}<button type="submit" class="q-btn" name="intent" value="approve">{{ 'Approve'|trans({}, 'quire-admin') }}</button>{% endif %}
-                    <button type="submit" class="q-btn q-btn--ghost" name="intent" value="request_changes">{{ 'Ask for changes'|trans({}, 'quire-admin') }}</button>
-                    <button type="submit" class="q-btn q-btn--ghost" name="intent" value="comment">{{ 'Comment'|trans({}, 'quire-admin') }}</button>
-                </div>
-                {% if not may_approve %}<p class="q-help">{{ 'Someone else approves your own changes.'|trans({}, 'quire-admin') }}</p>{% endif %}
-            </form>
-        {% endif %}
-    </section>
-
-    {% if can_publish is same as(true) or may_discard %}
-        <form method="post" class="editor__buttons q-section">
-            <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_content_editor') }}">
-            <input type="hidden" name="version" value="{{ pending.version }}">
-            {% if can_publish is same as(true) %}
-                <button type="submit" class="q-btn" name="intent" value="publish">{{ 'Publish the changes'|trans({}, 'quire-admin') }}</button>
+    <div class="review__layout">
+        <section class="review-diff q-card" aria-labelledby="diff-heading">
+            <h2 id="diff-heading" class="q-sr">{{ 'What changes'|trans({}, 'quire-admin') }}</h2>
+            {% if rows is empty and diff.properties is empty %}
+                <p class="q-empty">{{ 'Nothing is changed.'|trans({}, 'quire-admin') }}</p>
+            {% endif %}
+            {% if rows is not empty %}
+                <table class="review-diff__table">
+                    <caption class="q-sr">{{ 'Changes to the text'|trans({}, 'quire-admin') }}</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">{{ 'What’s live · {date}'|trans({date: live_at|date('j M', timezone)}, 'quire-admin') }}</th>
+                            <th scope="col">{{ own ? 'Your version'|trans({}, 'quire-admin') : (author ? '{name}’s version'|trans({name: author}, 'quire-admin') : 'The changes'|trans({}, 'quire-admin')) }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in rows %}
+                            {% if row.kind == 'skip' %}
+                                <tr class="review-diff__skip"><td colspan="2">{{ '{count, plural, one {# line without changes} other {# lines without changes}}'|trans({count: row.count}, 'quire-admin') }}</td></tr>
+                            {% else %}
+                                <tr class="review-diff__row review-diff__row--{{ row.kind }}">
+                                    {% for side in ['old', 'new'] %}
+                                        {% set segments = row[side] %}
+                                        {% set text = segments is null ? '' : segments|map(segment => segment[1])|join %}
+                                        <td class="review-diff__{{ side }}{% if segments is null %} review-diff__none{% endif %}{% if text matches '/^\\s*(#|!\\[|```|\\||<)/' %} review-diff__mark{% endif %}">
+                                            {%- if segments is not null -%}
+                                                {%- for segment in segments -%}
+                                                    {%- if segment[0] == 'removed' -%}<del><span class="q-sr">{{ 'Removed:'|trans({}, 'quire-admin') }} </span>{{ segment[1] }}</del>
+                                                    {%- elseif segment[0] == 'added' -%}<ins><span class="q-sr">{{ 'Added:'|trans({}, 'quire-admin') }} </span>{{ segment[1] }}</ins>
+                                                    {%- else -%}{{ segment[1] }}{%- endif -%}
+                                                {%- endfor -%}
+                                            {%- endif -%}
+                                        </td>
+                                    {% endfor %}
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+            {% if diff.properties is not empty %}
+                <details class="review-diff__also"{% if rows is empty %} open{% endif %}>
+                    <summary><strong>{{ 'Also changed'|trans({}, 'quire-admin') }}</strong> {{ diff.properties|map(property => property.name)|join(' · ') }}</summary>
+                    {{ include('@quire_admin/content/_diff.html.twig', {diff: diff|merge({lines: []}), caption: 'Also changed'|trans({}, 'quire-admin')}) }}
+                </details>
             {% endif %}
             {% if may_discard %}
-                <button type="submit" class="q-link-btn q-link-btn--danger" name="intent" value="discard" data-turbo-confirm="{{ 'Discard these changes? They can\'t be restored.'|trans({}, 'quire-admin') }}">{{ 'Discard the changes'|trans({}, 'quire-admin') }}</button>
+                <p class="review-diff__discard">
+                    <button type="submit" form="review-form" class="q-link-btn q-link-btn--danger" name="intent" value="discard" data-turbo-confirm="{{ 'Discard these changes? They can\'t be restored.'|trans({}, 'quire-admin') }}">{{ 'Discard the changes'|trans({}, 'quire-admin') }}</button>
+                </p>
             {% endif %}
-        </form>
-    {% endif %}
-    {% if can_publish is not same as(true) %}<p class="q-help">{{ can_publish }}</p>{% endif %}
+        </section>
+
+        <aside class="review__aside">
+            <section class="review-panel q-card" aria-labelledby="conversation-heading">
+                <h2 id="conversation-heading">{{ 'Conversation'|trans({}, 'quire-admin') }}</h2>
+                <ol class="conversation">
+                    {% if pending.message %}
+                        {{ _self.entry(pending.authorId, names, pending.createdAt, pending.message, null) }}
+                    {% endif %}
+                    {% for entry in conversation %}
+                        {% if entry.kind == 'review' %}
+                            {{ _self.entry(entry.author, names, entry.at, entry.body, ('review.' ~ entry.verdict)|trans({}, 'quire-admin'), 'conversation__entry--' ~ entry.verdict) }}
+                        {% else %}
+                            {% set thread = entry.thread %}
+                            <li class="conversation__thread{% if thread.comment.resolvedAt %} conversation__thread--resolved{% endif %}">
+                                {% if thread.comment.anchor %}
+                                    <p class="conversation__quote">“{{ thread.comment.anchor.quote }}”{% if thread.line %} <span class="q-meta">{{ 'line {line}'|trans({line: thread.line}, 'quire-admin') }}</span>{% endif %}{% if thread.outdated %} <span class="q-tag">{{ 'outdated'|trans({}, 'quire-admin') }}</span>{% endif %}</p>
+                                {% endif %}
+                                <ol class="conversation__replies">
+                                    {% for comment in [thread.comment]|merge(thread.replies) %}
+                                        {{ _self.entry(comment.authorId, names, comment.createdAt, comment.body, null) }}
+                                    {% endfor %}
+                                </ol>
+                                <p class="conversation__thread-actions">
+                                    {% if thread.comment.resolvedAt %}
+                                        <span class="q-meta">{{ 'Resolved'|trans({}, 'quire-admin') }}</span>
+                                        <button type="submit" form="comment-{{ thread.comment.id }}" class="q-link-btn" name="intent" value="reopen">{{ 'Open again'|trans({}, 'quire-admin') }}</button>
+                                    {% else %}
+                                        <button type="submit" form="comment-{{ thread.comment.id }}" class="q-btn q-btn--ghost q-btn--sm" name="intent" value="resolve">{{ 'Resolve'|trans({}, 'quire-admin') }}</button>
+                                    {% endif %}
+                                </p>
+                                {% if not thread.comment.resolvedAt %}
+                                    <details class="conversation__reply">
+                                        <summary class="q-btn q-btn--ghost q-btn--sm">{{ 'Reply'|trans({}, 'quire-admin') }}</summary>
+                                        <label for="reply-{{ thread.comment.id }}" class="q-sr">{{ 'Reply'|trans({}, 'quire-admin') }}</label>
+                                        <textarea id="reply-{{ thread.comment.id }}" name="message" form="comment-{{ thread.comment.id }}" rows="2" required></textarea>
+                                        <button type="submit" form="comment-{{ thread.comment.id }}" class="q-btn q-btn--sm" name="intent" value="reply">{{ 'Send'|trans({}, 'quire-admin') }}</button>
+                                    </details>
+                                {% endif %}
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                </ol>
+                {% if not pending.message and conversation is empty %}
+                    <p class="q-empty">{{ 'Nothing said yet.'|trans({}, 'quire-admin') }}</p>
+                {% endif %}
+
+                {# The message goes with a review (the buttons above) or, sent on its own, is a comment. #}
+                <form method="post" id="review-form" class="review-form" action="{{ here }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_content_editor') }}">
+                    <input type="hidden" name="version" value="{{ pending.version }}">
+                    <input type="hidden" name="back" value="{{ here }}">
+                    <label for="message" class="q-sr">{{ may_review ? 'Your review'|trans({}, 'quire-admin') : 'Your comment'|trans({}, 'quire-admin') }}</label>
+                    <textarea id="message" name="message" rows="2" placeholder="{{ author ? 'Reply to {name}…'|trans({name: author}, 'quire-admin') : 'Write a comment…'|trans({}, 'quire-admin') }}"></textarea>
+                    <p class="review-form__send">
+                        <button type="submit" class="q-btn q-btn--ghost q-btn--sm" name="intent" value="comment" formaction="{{ path('quire_admin_content_comment', {type: type.id, id: item.id, pending: pending.id}) }}">{{ 'Send'|trans({}, 'quire-admin') }}</button>
+                    </p>
+                    {% if may_review and not may_approve %}<p class="q-help">{{ 'Someone else approves your own changes.'|trans({}, 'quire-admin') }}</p>{% endif %}
+                    {% if can_publish is not same as(true) %}<p class="q-help">{{ can_publish }}</p>{% endif %}
+                </form>
+            </section>
+
+            <section class="review-panel q-card" aria-labelledby="checks-heading">
+                <h2 id="checks-heading">{{ 'Checks'|trans({}, 'quire-admin') }}</h2>
+                <ul class="review-checks">
+                    {% for check in check_list %}
+                        {% if check.found is empty %}
+                            <li class="review-checks__pass"><span aria-hidden="true">✓</span> {{ check.label }}</li>
+                        {% else %}
+                            {% for found in check.found %}
+                                <li class="review-checks__{{ found.result.level.value }}"><span aria-hidden="true">!</span>
+                                    <span><span class="q-sr">{{ found.result.level.value == 'error' ? 'Error:'|trans({}, 'quire-admin') : 'Warning:'|trans({}, 'quire-admin') }} </span>{{ found.result.finding.message }}{% if found.live %} <span class="q-meta">{{ '(not part of these changes)'|trans({}, 'quire-admin') }}</span>{% endif %}</span>
+                                </li>
+                            {% endfor %}
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+            </section>
+        </aside>
+    </div>
+
+    {% for entry in conversation|filter(entry => entry.kind == 'thread') %}
+        {{ editor.comment_form('comment-' ~ entry.thread.comment.id, type, item, pending, here, {comment: entry.thread.comment.id}) }}
+    {% endfor %}
+</div>
 {% endblock %}
+
+{% macro entry(author_id, names, at, body, verdict, class = '') %}
+    {% set name = author_id ? names[author_id] ?? 'Someone'|trans({}, 'quire-admin') : 'Someone'|trans({}, 'quire-admin') %}
+    <li class="conversation__entry {{ class }}">
+        <span class="q-avatar" aria-hidden="true">{{ name|split(' ')|map(word => word|first)|slice(0, 2)|join|upper }}</span>
+        <div>
+            <p class="conversation__who"><strong>{{ name }}</strong>{% if verdict %} {{ verdict }}{% endif %} <span class="q-meta">{{ at|quire_admin_when }}</span></p>
+            {% if body %}<p class="conversation__body">{{ body|nl2br }}</p>{% endif %}
+        </div>
+    </li>
+{% endmacro %}

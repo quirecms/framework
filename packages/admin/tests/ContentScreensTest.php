@@ -88,6 +88,9 @@ final class ContentScreensTest extends AdminTestCase
             $this->content('post', 'More '.$number)->create();
         }
 
+        // Their own jobs (checking each) first, so what follows is only the one to test.
+        $this->runJobs(1000);
+
         $this->client->request('POST', '/admin/content/post', ['_token' => (string) $form->filter('input[name=_token]')->attr('value'), 'state' => (string) $form->filter('input[name=state]')->attr('value'), 'action' => 'trash', 'all_matching' => '1']);
         $this->client->followRedirect();
         self::assertNotice('success', 'Move to trash: 101 items are being done in the background. The activity log shows each one as it\'s done.');

@@ -93,14 +93,15 @@ final class ChangesTest extends AdminTestCase
         self::assertSelectorTextContains('.widgets', 'Waiting for your review');
         $crawler = $this->client->click($crawler->filter('.widgets a')->reduce(static fn (Crawler $a): bool => 'Hours' === $a->text())->link());
 
-        self::assertSelectorTextSame('h1', 'Changes to “Hours”');
-        self::assertSelectorTextContains('.q-notice--success', 'These changes merge with what\'s published');
-        self::assertSame(['−Removed: Monday to Friday, 9 to 5.', '+Added: Monday to Friday, 9 to 6.'], $this->changedLines($crawler));
+        self::assertSelectorTextSame('h1', 'Member’s changes to “Hours”');
+        self::assertSelectorTextContains('.review-bar__detail', 'merges cleanly with what’s live');
+        self::assertSame([['Monday to Friday, 9 to Removed: 5.', 'Monday to Friday, 9 to Added: 6.']], $this->changedLines($crawler), 'Side by side, the changed word marked.');
 
         $this->client->submit($crawler->selectButton('Approve')->form(['message' => 'Good catch.']));
         $crawler = $this->client->followRedirect();
         self::assertSelectorTextSame('.q-notice--success', 'The changes are approved.');
-        self::assertSame(['Editor approved Good catch.'], $crawler->filter('.reviews li')->each(static fn (Crawler $li): string => trim((string) preg_replace('/\s+/', ' ', $li->filter('span')->eq(0)->text().' '.$li->filter('span')->eq(1)->text()))));
+        self::assertSame(['Editor approved Good catch.'], $crawler->filter('.conversation__entry')->each(static fn (Crawler $li): string => trim((string) preg_replace('/\s+/', ' ', $li->filter('strong')->text().' approved '.$li->filter('.conversation__body')->text()))));
+        self::assertStringContainsString('approved', $crawler->filter('.conversation__who')->text());
 
         $this->client->submit($crawler->selectButton('Publish the changes')->form());
         self::assertSame(str_replace('9 to 5', '9 to 6', self::BODY), $this->live($post)->body);
@@ -260,10 +261,10 @@ final class ChangesTest extends AdminTestCase
     }
 
     /**
-     * @return list<string>
+     * @return list<list<string>>
      */
     private function changedLines(Crawler $crawler): array
     {
-        return $crawler->filter('.diff-added .diff-text, .diff-removed .diff-text')->each(static fn (Crawler $td): string => $td->text());
+        return $crawler->filter('.review-diff__row--change')->each(static fn (Crawler $tr): array => $tr->filter('td')->each(static fn (Crawler $td): string => $td->text()));
     }
 }
