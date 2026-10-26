@@ -89,6 +89,26 @@ final class UserCommandsTest extends KernelTestCase
         self::assertStringContainsString('No user with the ID, email or username "nobody".', $output);
     }
 
+    public function testShowsAndChangesPreferences(): void
+    {
+        $this->console('quire:user:create', ['email' => 'lin@example.com', '--name' => 'Lin Tao', '--no-password' => true]);
+
+        [, $output] = $this->console('quire:user:preferences', ['user' => 'lin@example.com', 'name' => 'quire.language', 'value' => 'de']);
+        self::assertMatchesRegularExpression('/quire\.language\s+"de"\s+changed/', $output);
+        [, $output] = $this->console('quire:user:preferences', ['user' => 'lin@example.com']);
+        self::assertStringContainsString('"de"', $output);
+
+        [$status, $output] = $this->console('quire:user:preferences', ['user' => 'lin@example.com', 'name' => 'quire.language', 'value' => '12']);
+        self::assertSame(1, $status, 'JSON is read as JSON: 12 is a number, not a language.');
+        self::assertStringContainsString('doesn\'t fit the preference', $output);
+        [$status, $output] = $this->console('quire:user:preferences', ['user' => 'lin@example.com', 'name' => 'quire.colour']);
+        self::assertSame(1, $status);
+        self::assertStringContainsString('No preference "quire.colour" is declared', $output);
+
+        [, $output] = $this->console('quire:user:preferences', ['user' => 'lin@example.com', '--default' => true]);
+        self::assertMatchesRegularExpression('/quire\.language\s+null\s+default/', $output);
+    }
+
     public function testChangesProfiles(): void
     {
         $this->console('quire:user:create', ['email' => 'grace@example.com', '--no-password' => true]);

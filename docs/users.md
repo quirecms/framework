@@ -35,6 +35,8 @@ bin/console quire:user:role grace --add=admin --remove=editor
 bin/console quire:user:suspend grace
 bin/console quire:user:activate grace
 bin/console quire:user:delete grace --reassign=ada
+bin/console quire:user:preferences grace
+bin/console quire:user:preferences grace quire.language de
 ```
 
 Commands that take a user accept their ID, email or username.
@@ -43,7 +45,8 @@ Commands that take a user accept their ID, email or username.
 
 - **Passwords** are asked for twice, without being shown, and must have at least 8 characters. Without a terminal, a strong password is generated and shown once. Passwords are never options, so they don't end up in the shell history or the list of running processes. `--no-password` (when creating) and `--remove` (on `quire:user:password`) leave a user without a password, for users who sign in another way.
 - **Usernames** are derived from the email unless you choose one: `grace.hopper@example.com` becomes `grace-hopper`, or `grace-hopper-2` when that's taken. Emails are unique regardless of case.
-- **Invitations** email the user a link to choose their password, so nobody else ever knows it. The link works once, for seven days; inviting again replaces it. It works whether or not [password reset](#registration-and-password-reset) is on, but not when signing in with a password is off.
+- **Invitations** email the user a link to choose their password, so nobody else ever knows it. The link works once, for seven days; inviting again replaces it. It works whether or not [password reset](#registration-and-password-reset) is on, but not when signing in with a password is off. `Quire\User\Invitations::pending()` lists those not used yet, with when they were sent and whether they expired.
+- **Preferences** are each person's, e.g. the language they read the admin in: they set them themselves, and `quire:user:preferences` shows and changes anyone's (see [`Extend\Preferences`](extensions.md#extendpreferences)).
 - **Suspended users** can't sign in, and are signed out on their next request. Changing a password signs the user out everywhere, too.
 - **The site keeps an active admin:** the last one can't lose the role, be suspended or be deleted, so nobody is locked out of the admin by mistake. Make another user an admin first. (Not when Quire runs in an application whose own users can be admins: those are [mapped in](#users-of-the-application-quire-is-installed-in) on every request.)
 

@@ -338,6 +338,18 @@ final readonly class ListReviews
 
 The site's own `extend.php` declares settings under `custom.`, e.g. `custom.footer_text`.
 
+#### `Extend\Preferences`
+
+Settings are the site's; preferences are each person's, e.g. how your page sorts for them. They follow the person to every device:
+
+```php
+new Extend\Preferences()
+    ->define('acme-reviews.sort', 'enum', 'newest', choices: ['newest', 'oldest'])
+    ->define('acme-reviews.show_spam', 'bool', false),
+```
+
+The types are those of settings. Read and change them with `Quire\User\Preference\UserPreferences`: `mine($name)` for the signed-in person (the default for visitors), `get($user, $name)`, `set($user, $name, $value)` and `restoreDefault($user, $name)`. Only what someone changed is stored, so a new default reaches everyone who kept the old one, and a stored value that no longer fits, e.g. a choice you took away, reads as the default. Core's own is `quire.language`, the language a person reads the admin in (null for the site's).
+
 #### `Extend\ContentType`
 
 Registers a content type (see [Content](content.md)):
