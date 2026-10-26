@@ -175,6 +175,8 @@ bin/console quire:content:check --strict        # warnings fail it too
 
 `quire:content:check` exits with 1 when it finds an error, so a scheduled job or a CI step notices, for example when a page that others link to was unpublished. Drafts may have errors: they're work in progress.
 
+What the checks find is also **stored** for each item, so lists show it and filter by it without checking every item they show: `$query->withIssues()` finds items with something to look at, `withIssues(Level::Error)` those that can't be published, `withIssues(check: 'core.alt-text')` those of one check, and `Quire\Content\Check\CheckResults` reads the findings of a page of items in one query. An item is checked when it's saved; the items that link to it when visitors start or stop seeing it, or its URL changes; all items when the site turns a check on; and every night (the scheduled task `quire.recheck-content`). The site's levels apply when findings are read, so changing a level takes effect at once. After upgrading a site, `bin/console quire:content:check --store` checks every item right away instead of the next night.
+
 ### Editing conflicts
 
 Each save increases the item's **version**. Editing tools send the version they started from, and if someone else saved the item in the meantime, the save fails instead of overwriting the other person's work. On the command line, pass `--expect-version` to get the same protection.
@@ -403,6 +405,40 @@ On the command line: `bin/console quire:content:list --search "markdown -draft"`
 Page numbers below 1 count as the first page, so a number from the URL can be passed as is. `isOutOfRange()` tells you when a page is past the last one, so the listing can respond with 404.
 
 In templates, queries return 10 items unless you set a limit, and at most 100 at once (`limit()` and `paginate()` refuse more). An accidental `quire_content('post')` therefore never loads the whole site.
+
+### Counting
+
+`countBy()` counts the items a query finds by one of their properties, in one database query: the numbers next to the filters of a list (facets), or an archive by month.
+
+```twig
+{% for month, count in quire_content('post').countBy('published_at', per: 'month') %}
+    <a href="/blog/{{ month }}">{{ month }}</a> ({{ count }})
+{% endfor %}
+```
+
+```php
+$posts->countBy('status');                        // ['published' => 40, 'draft' => 10]
+$posts->countBy('fields.tags');                   // a list field: each value, e.g. ['php' => 31, 'cms' => 12]
+$posts->countBy('fields.topics');                 // a relation: by the linked item's ID
+$posts->countBy('published_at', per: 'week');     // ['2026-W43' => 5, …], in the site's time zone
+$posts->countBy('checks');                        // by check, items with findings (see checks below)
+```
+
+You can count by `type`, `status`, `locale`, `author_id`, `parent_id`; by `published_at`, `created_at` and `updated_at` per `year`, `month`, `week` or `day`; by a filterable field; and by `checks`. The most frequent values come first (for dates, the latest), at most 100 unless you pass a `limit`. Items without a value aren't counted. Like everything a query does, only what visitors may see is counted unless the query opts out.
+
+A filter's own numbers usually ignore that filter, so people see what else they could choose: `withoutWhere()` takes a field's filters off, e.g. `$drafts->withoutWhere('status')->countBy('status')` still counts the published items that the search finds.
+
+### Running a query later
+
+A query can be written down as plain values, e.g. to act on every item a list finds in a background job instead of during the request:
+
+```php
+$job = new ArchiveAll($query->toArray());            // types, and the methods that made the query
+// …later, in the job's handler:
+foreach ($content->queryFromArray($job->query)->get() as $item) { … }
+```
+
+It holds what your code wrote, including SQL from `whereSql()`, so keep it on the server: never make a query from what a visitor sends.
 
 ### Related content
 

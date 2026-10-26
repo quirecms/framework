@@ -49,6 +49,8 @@ final class JobsTest extends KernelTestCase
         $container = self::getContainer();
         $this->connection = $container->get(Connection::class);
         $this->connection->beginTransaction();
+        // Jobs that other tests left, e.g. by saving content outside a transaction.
+        $this->connection->executeStatement('DELETE FROM quire.job');
         $this->bus = $container->get(MessageBusInterface::class);
         SendGreetingHandler::$greeted = [];
         TickHandler::$ticks = 0;
@@ -116,7 +118,7 @@ final class JobsTest extends KernelTestCase
 
         // The workers were down for an hour: the last missed occurrence runs, once.
         self::assertSame(['quire.publish-due', 'quire-fixture-hello.tick'], $scheduler->run('web-1', $at('11:07')));
-        self::assertSame(['quire.publish-due', 'quire-fixture-hello.tick'], array_column($this->connection->fetchAllAssociative("SELECT task, to_char(last_due_at AT TIME ZONE 'UTC', 'HH24:MI') AS due, last_run_by FROM quire.job_schedule WHERE task NOT IN ('quire.collect-garbage', 'quire.prune-audit-log') ORDER BY task DESC"), 'task'));
+        self::assertSame(['quire.publish-due', 'quire-fixture-hello.tick'], array_column($this->connection->fetchAllAssociative("SELECT task, to_char(last_due_at AT TIME ZONE 'UTC', 'HH24:MI') AS due, last_run_by FROM quire.job_schedule WHERE task NOT IN ('quire.collect-garbage', 'quire.prune-audit-log', 'quire.recheck-content') ORDER BY task DESC"), 'task'));
         self::assertSame('11:05', $this->connection->fetchOne("SELECT to_char(last_due_at AT TIME ZONE 'UTC', 'HH24:MI') FROM quire.job_schedule WHERE task = 'quire-fixture-hello.tick'"));
 
         self::assertSame(6, JobRunner::run(self::getContainer()), '4 × publishing due content, 2 ticks.');
@@ -288,9 +290,10 @@ final class JobsTest extends KernelTestCase
 
         $this->bus->dispatch(new PublishDueContent());
         $this->bus->dispatch(new CollectGarbage());
+        // Visitors saw it once its date passed: publishing it changes nothing for links to it, so no re-check.
         self::assertSame(2, JobRunner::run(self::getContainer()));
 
         self::assertSame(Status::PUBLISHED, $this->connection->fetchOne('SELECT status FROM quire.content WHERE id = ?', [$post->id]));
-        self::assertSame(['quire.publish-due', 'quire.collect-garbage', 'quire.prune-audit-log', 'quire-fixture-hello.tick'], array_keys(self::getContainer()->get(ScheduledTasks::class)->all()));
+        self::assertSame(['quire.publish-due', 'quire.collect-garbage', 'quire.prune-audit-log', 'quire.recheck-content', 'quire-fixture-hello.tick'], array_keys(self::getContainer()->get(ScheduledTasks::class)->all()));
     }
 }
