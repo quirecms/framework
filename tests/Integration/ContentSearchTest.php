@@ -80,6 +80,17 @@ final class ContentSearchTest extends KernelTestCase
         self::assertSame(['Writing', 'Markdown basics'], $this->titles($this->content->query('post')->search('markdown')->orderBy('search_rank')));
     }
 
+    public function testEveryWordOfATitleFindsIt(): void
+    {
+        // "About" and "Who we are" are only stop words in English, so the stems alone would never find them.
+        $this->published('About', 'The club and its history.', locale: 'en');
+        $this->published('Who we are', locale: 'en');
+
+        self::assertSame(['About'], $this->titles($this->content->query('post')->search('about')));
+        self::assertSame(['About'], $this->titles($this->content->query('post')->search('abo', prefix: true)));
+        self::assertSame(['Who we are'], $this->titles($this->content->query('post')->search('who we', prefix: true)));
+    }
+
     public function testSearchSyntax(): void
     {
         $this->published('Site search', body: 'Search the whole site.');

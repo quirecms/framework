@@ -819,3 +819,73 @@ application.register('shortcuts', class extends Controller {
         }
     }
 });
+
+// The intent bar: Ctrl/⌘+K, or the search box at the top, opens it; what's typed is understood as it's
+// typed, as what to do (a plan, done with Enter) and what it names (opened with the arrows and Enter).
+application.register('intent', class extends Controller {
+    static targets = ['dialog', 'input', 'body'];
+    static values = { url: String };
+
+    shortcut(event) {
+        if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === 'k') {
+            event.preventDefault();
+            this.open();
+        }
+    }
+
+    open(event) {
+        if (this.dialogTarget.open) {
+            return;
+        }
+
+        const trigger = event?.target instanceof HTMLInputElement ? event.target : null;
+        this.dialogTarget.showModal();
+        this.inputTarget.value = trigger?.value ?? this.inputTarget.value;
+        this.inputTarget.focus();
+        this.inputTarget.select();
+        this.search();
+    }
+
+    closed() {
+        this.element.querySelector('.q-intent-trigger input')?.blur();
+    }
+
+    search() {
+        clearTimeout(this.timer);
+        this.timer = setTimeout(() => this.fetch(), 140);
+    }
+
+    async fetch() {
+        this.asked = (this.asked ?? 0) + 1;
+        const asked = this.asked;
+        const url = `${this.urlValue}?q=${encodeURIComponent(this.inputTarget.value.trim())}`;
+        const response = await fetch(url, { headers: { 'X-Quire-Request': 'fetch' } });
+
+        // Only the answer to what's typed now.
+        if (response.ok && asked === this.asked) {
+            this.bodyTarget.innerHTML = await response.text();
+        }
+    }
+
+    // The places to go: the plan's buttons, then what was found.
+    choices() {
+        return [...this.bodyTarget.querySelectorAll('.intent-actions button, .intent-actions a, .intent-found__item')];
+    }
+
+    key(event) {
+        const choices = this.choices();
+
+
+        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault();
+            const index = choices.indexOf(document.activeElement);
+            const next = event.key === 'ArrowDown' ? Math.min(choices.length - 1, index + 1) : index - 1;
+            (next < 0 ? this.inputTarget : choices[next])?.focus();
+        } else if (event.key === 'Enter' && event.target === this.inputTarget) {
+            event.preventDefault();
+            clearTimeout(this.timer);
+            // What's on screen may be for an earlier text: understand the latest first.
+            this.fetch().then(() => this.choices()[0]?.click());
+        }
+    }
+});

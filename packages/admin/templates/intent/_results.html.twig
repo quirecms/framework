@@ -1,0 +1,49 @@
+{#
+    What the intent bar understood: the plan of what the words ask to do, then what they name. Variables:
+    q, intent (Intent, or null), found (by kind: label, detail, url, status?).
+#}
+{% import '@quire_admin/_ui.html.twig' as ui %}
+<div class="intent-results" data-intent-target="results">
+    {% if intent %}
+        <section class="intent-plan" aria-labelledby="intent-plan-heading">
+            <h2 id="intent-plan-heading" class="q-sr">{{ 'What you asked'|trans({}, 'quire-admin') }}</h2>
+            <p class="intent-parts">
+                {% for part in intent.parts %}
+                    <span class="intent-part intent-part--{{ part.kind }}">{% if part.kind == 'item' %}{{ ui.thread({draft: 'draft', scheduled: 'scheduled', published: 'live'}[part.status] ?? 'draft') }} {% endif %}{{ part.label }}</span>
+                {% endfor %}
+            </p>
+            {% if intent.steps is not empty %}
+                <h3 class="intent-plan__title">{{ 'What will happen'|trans({}, 'quire-admin') }}</h3>
+                <ol class="intent-steps">{% for step in intent.steps %}<li>{{ step }}</li>{% endfor %}</ol>
+            {% endif %}
+            {% if intent.command and quire_admin_hood() %}
+                <pre class="intent-command" tabindex="0"><code># {{ 'the same, from a terminal'|trans({}, 'quire-admin') }}
+{{ intent.command }}</code></pre>
+            {% endif %}
+            {% if intent.denied %}<p class="q-notice q-notice--warning intent-denied">{{ intent.denied }}</p>{% endif %}
+            <form method="post" action="{{ path('quire_admin_intent') }}" class="intent-actions" data-intent-target="doForm">
+                <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_intent') }}">
+                <input type="hidden" name="q" value="{{ q }}">
+                {% if not intent.denied %}<button type="submit" class="q-btn">{{ 'Do it'|trans({}, 'quire-admin') }}</button>{% endif %}
+                {% if intent.change %}<a class="q-btn q-btn--ghost" href="{{ intent.change }}">{{ 'Change something'|trans({}, 'quire-admin') }}</a>{% endif %}
+            </form>
+        </section>
+    {% endif %}
+
+    {% for kind, items in found %}
+        <section class="intent-found" aria-labelledby="found-{{ kind }}">
+            <h2 class="intent-found__title" id="found-{{ kind }}">{{ ('find.' ~ kind)|trans({}, 'quire-admin') }}</h2>
+            <ul class="intent-found__list">
+                {% for item in items %}
+                    <li><a href="{{ item.url }}" class="intent-found__item">{% if item.status is defined %}{{ ui.status(item.status) }}{% endif %}<span class="intent-found__label">{{ item.label }}</span><span class="q-meta">{{ item.detail }}</span></a></li>
+                {% endfor %}
+            </ul>
+        </section>
+    {% endfor %}
+
+    {% if q and not intent and found is empty %}
+        <p class="q-empty">{{ 'Nothing found for “{q}”. Try a title, a person or a setting, or say what to do: “publish …”, “schedule … friday 18:00”, “suspend …”, “set … to …”.'|trans({q: q}, 'quire-admin') }}</p>
+    {% elseif not q %}
+        <p class="intent-hint">{{ 'Find a title, a person, a setting or a page, or say what to do: “publish spring draw”, “schedule venue guide friday 18:00”, “invite ana@example.org as editor”.'|trans({}, 'quire-admin') }}</p>
+    {% endif %}
+</div>

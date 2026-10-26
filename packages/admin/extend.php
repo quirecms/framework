@@ -8,6 +8,7 @@ use Quire\Admin\Controller\ContentEditController;
 use Quire\Admin\Controller\ContentListController;
 use Quire\Admin\Controller\DashboardController;
 use Quire\Admin\Controller\ExtensionsController;
+use Quire\Admin\Controller\IntentController;
 use Quire\Admin\Controller\PreferencesController;
 use Quire\Admin\Controller\RolesController;
 use Quire\Admin\Controller\SettingsController;
@@ -79,6 +80,8 @@ return [
         ->add('/preferences', 'quire_admin_preferences', PreferencesController::class, ['GET', 'HEAD', 'POST'])
         ->post('/preferences/hood', 'quire_admin_hood', [PreferencesController::class, 'hood'])
         ->post('/preferences/density', 'quire_admin_density', [PreferencesController::class, 'density'])
+        ->get('/find', 'quire_admin_find', IntentController::class)
+        ->post('/find', 'quire_admin_intent', [IntentController::class, 'do'])
         ->get('/ui', 'quire_admin_ui', UiController::class),
 
     // How each person likes the admin (see Preferences\AdminPreferences).

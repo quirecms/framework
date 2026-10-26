@@ -801,4 +801,52 @@
     @media (max-width: 64rem) {
         .settings-doc__layout { grid-template-columns: minmax(0, 1fr); }
     }
+
+    /* The intent bar: at the top, and the dialog it opens */
+    .q-intent { flex: 1 1 22rem; max-width: 34rem; margin-inline: auto; }
+    .q-intent-trigger { position: relative; display: flex; align-items: center; margin: 0; }
+    .q-intent-trigger input { width: 100%; min-height: 2.6rem; padding: 0.4rem 4.5rem 0.4rem 1rem; border: 1px solid var(--q-line); border-radius: var(--q-radius); background: var(--q-surface); }
+    .q-intent-trigger__keys { position: absolute; right: 0.6rem; padding: 0.05rem 0.4rem; border: 1px solid var(--q-line); border-radius: 0.35rem; color: var(--q-muted); font: 600 0.6875rem var(--q-font-mono); pointer-events: none; }
+    .intent-dialog { width: min(48rem, calc(100vw - 2rem)); max-height: min(44rem, calc(100dvh - 4rem)); margin: 8vh auto auto; padding: 0; border: 1px solid var(--q-line); border-radius: var(--q-radius-lg, 1rem); background: var(--q-surface); color: var(--q-ink); box-shadow: var(--q-shadow); }
+    .intent-dialog[open] { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; }
+    .intent-dialog::backdrop { background: rgb(20 18 28 / 0.4); }
+    .intent-dialog__bar { padding: var(--q-space-3) var(--q-space-5); border-bottom: 1px solid var(--q-line); }
+    .intent-dialog__bar input { width: 100%; min-height: 2.75rem; padding: 0; border: 0; background: none; color: var(--q-ink); font-size: 1.25rem; }
+    .intent-dialog__bar input:focus { outline: none; }
+    .intent-dialog__bar:focus-within { box-shadow: inset 0 -2px 0 var(--q-accent); }
+    .intent-dialog__body { overflow: auto; padding: var(--q-space-4) var(--q-space-5); }
+    .intent-dialog__keys { display: flex; flex-wrap: wrap; align-items: center; gap: var(--q-space-2); margin: 0; padding: var(--q-space-2) var(--q-space-5); border-top: 1px solid var(--q-line); color: var(--q-muted); font-size: var(--q-text-sm); }
+    .intent-dialog__keys span { margin-left: auto; }
+    .intent-dialog__keys kbd, .intent-command kbd { padding: 0 0.35rem; border: 1px solid var(--q-line); border-radius: 0.3rem; font: 600 0.75rem var(--q-font-mono); }
+    .intent-results { display: grid; gap: var(--q-space-4); }
+    .intent-plan { display: grid; gap: var(--q-space-3); }
+    .intent-parts { display: flex; flex-wrap: wrap; gap: var(--q-space-2); margin: 0; }
+    .intent-part { display: inline-flex; align-items: center; gap: var(--q-space-2); padding: 0.45rem 0.9rem; border-radius: var(--q-radius-sm); background: var(--q-paper); font-weight: 600; }
+    .intent-part--verb { background: var(--q-ink); color: var(--q-paper); }
+    .intent-part--item, .intent-part--theme, .intent-part--setting, .intent-part--person { background: var(--q-accent-soft); color: var(--q-accent-strong); }
+    .intent-part--time, .intent-part--value { background: color-mix(in srgb, var(--q-scheduled) 22%, transparent); color: var(--q-ink); }
+    .intent-part--role { background: color-mix(in srgb, var(--q-review) 14%, transparent); color: var(--q-review); }
+    .intent-plan__title { margin: 0; font-size: 1rem; }
+    .intent-steps { margin: 0; padding-left: 1.4rem; }
+    .intent-steps li + li { margin-top: var(--q-space-1); }
+    .intent-command { margin: 0; padding: var(--q-space-3) var(--q-space-4); overflow-x: auto; border-radius: var(--q-radius); background: #1d1a24; color: #f4f1ea; font: 0.8125rem / 1.6 var(--q-font-mono); }
+    .intent-denied { margin: 0; }
+    .intent-actions { display: flex; flex-wrap: wrap; gap: var(--q-space-2); margin: 0; }
+    .intent-found { display: grid; gap: var(--q-space-1); }
+    .intent-found__title { margin: 0; color: var(--q-muted); font-size: var(--q-text-sm); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+    .intent-found__list { display: grid; margin: 0; padding: 0; list-style: none; }
+    .intent-found__item { display: flex; flex-wrap: wrap; align-items: center; gap: var(--q-space-1) var(--q-space-3); min-height: var(--q-target); padding: var(--q-space-2) var(--q-space-3); border-radius: var(--q-radius-sm); color: var(--q-ink); text-decoration: none; }
+    .intent-found__item:hover, .intent-found__item:focus-visible { background: var(--q-paper); }
+    .intent-found__label { font-weight: 600; }
+    .intent-hint { margin: 0; color: var(--q-muted); }
+    .intent-page { display: grid; gap: var(--q-space-4); padding: var(--q-space-5); }
+    .intent-page__form { display: flex; gap: var(--q-space-2); }
+    .intent-page__form input { flex: 1; }
+
+    @media (max-width: 48rem) {
+        .q-topbar { flex-wrap: wrap; }
+        .q-intent { order: 3; flex-basis: 100%; max-width: none; }
+        .q-intent-trigger__keys { display: none; }
+        .intent-dialog { width: 100vw; max-width: none; max-height: 100dvh; height: 100dvh; margin: 0; border-radius: 0; }
+    }
 }

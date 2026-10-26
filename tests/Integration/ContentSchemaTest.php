@@ -112,7 +112,8 @@ final class ContentSchemaTest extends KernelTestCase
         $id = $this->insert(['slug' => 'dogs', 'title' => 'Running dogs', 'excerpt' => 'About dogs', 'body' => 'The dogs ran home.', 'search_config' => 'english']);
 
         self::assertTrue($this->searchMatches($id, 'run'), 'Stemmed with the English configuration.');
-        self::assertSame("'dog':2A,4B,6C 'home':8C 'ran':7C 'run':1A", $this->connection->fetchOne('SELECT search::text FROM quire.content WHERE id = ?', [$id]));
+        // The title also as it's written, so its stop words can be found too.
+        self::assertSame("'dog':2A,6B,8C 'dogs':4A 'home':10C 'ran':9C 'run':1A 'running':3A", $this->connection->fetchOne('SELECT search::text FROM quire.content WHERE id = ?', [$id]));
 
         $this->connection->executeStatement("UPDATE quire.content SET body = 'Cats too.' WHERE id = ?", [$id]);
 

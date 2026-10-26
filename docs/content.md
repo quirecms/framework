@@ -391,7 +391,7 @@ Without `orderBy()`, a query uses its type's default order (newest first for pos
 {% endfor %}
 ```
 
-- **Words are matched in the item's language,** so `running` finds `run` in English items, and common words such as `the` are left out. Items in languages PostgreSQL has no rules for match the words as they are.
+- **Words are matched in the item's language,** so `running` finds `run` in English items, and common words such as `the` are left out. Titles match their words as they're written too, so a page called "About" is found by `about`. Items in languages PostgreSQL has no rules for match the words as they are.
 - **The syntax is the one people know from search engines:** all words must match, `"site search"` is a phrase, `-plugin` leaves out items with the word, and `or` between words matches either.
 - **`prefix: true`** matches words that start with the last one, for search as you type: `search('mark', prefix: true)` finds "Markdown". Then the terms are words only.
 - **Ranking:** a word in the title counts most, then in the excerpt, then in the body. Each item has `search_rank`, from 0 to 1. `orderBy()` replaces the ranking, e.g. `search('php').latest()`, and `orderBy('search_rank')` uses it.

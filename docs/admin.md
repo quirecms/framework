@@ -16,6 +16,24 @@ bin/console quire:permissions:grant moderator quire.admin.access
 
 What each user can do in the admin follows their other abilities: someone who may only edit posts sees only posts.
 
+## Find or do anything
+
+The box at the top of every page (or Ctrl+K, ⌘K on a Mac) finds what you type among what you may open: content by its text, people by name, username or email, settings by their name, and the admin's pages. Choose with the arrow keys and Enter.
+
+It also understands what to do, in your words, and shows the plan before anything happens:
+
+| You type | It does |
+|---|---|
+| `publish spring draw` | publishes the item |
+| `schedule venue guide friday 18:00` | schedules it, in the site's time zone (also `tomorrow at 9`, `in 2 hours`, `30 oct 18:00`, `2026-12-24 09:00`) |
+| `unpublish results`, `trash old news`, `restore old news` | takes it off the site, moves it to the trash, brings it back |
+| `suspend kim`, `let kim in again` | suspends or lets in the person |
+| `invite ana@example.org, ben@example.org as editors` | invites them, with the role |
+| `use the theme Default` | switches the site's look |
+| `set site title to Tournament News` | changes the setting |
+
+German works too, e.g. `veröffentliche spring draw` or `plane venue guide freitag 18:00`. "Do it" runs the action the plan names, with your abilities, into the [audit log](audit.md), as the [actions](extensions.md#extendactions) any extension can call do; what you may not do, or what doesn't fit (a time that's past, a person suspended already), says why instead. With "Under the hood" on, the plan shows the command that does the same from a terminal. Without JavaScript, the box opens the same as a page.
+
 ## Home
 
 Home greets you with what happened since yesterday, and then:
