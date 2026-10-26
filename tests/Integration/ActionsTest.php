@@ -80,6 +80,8 @@ final class ActionsTest extends KernelTestCase
             'content.schedule_changes' => [...$changes, 'at' => '2026-12-24T09:00:00+01:00'],
             'content.publish_changes' => $changes,
             'content.discard_changes' => $changes,
+            'content.comment_changes' => [...$changes, 'message' => 'Is it "Northside United"?', 'property' => 'body', 'quote' => 'Northside', 'line' => 12, 'reply_to' => '0192b6a2-0000-7000-8000-000000000003'],
+            'content.resolve_comment' => [...$changes, 'comment' => '0192b6a2-0000-7000-8000-000000000003', 'reopen' => true],
             'user.create' => ['email' => 'ada@example.com', 'name' => 'Ada Lovelace', 'username' => 'ada', 'roles' => ['editor', 'translator'], 'password' => 'correct-horse-42'],
             'user.invite' => ['users' => ['ada', 'kim@example.com'], 'roles' => ['editor']],
             'user.update' => [...$ada, 'name' => 'Ada L.', 'email' => 'ada@example.org', 'username' => 'ada-l'],

@@ -954,7 +954,7 @@ Each change dispatches events from `Quire\Content\Event`:
 | `ContentPublishing` | `ContentPublished`, `ContentUnpublished`, `ContentStatusChanged` |
 | `ContentDeleting` (to the trash) | `ContentDeleted`, `ContentRestored` |
 | `ContentPurging` (permanently) | `ContentPurged` |
-| | `PendingRevisionSaved`, `PendingRevisionSubmitted`, `PendingRevisionReviewed`, `PendingRevisionDiscarded` |
+| | `PendingRevisionSaved`, `PendingRevisionSubmitted`, `PendingRevisionReviewed`, `PendingRevisionCommented`, `PendingRevisionCommentResolved`, `PendingRevisionDiscarded` |
 | `ContentUpdating` (publishing a pending revision) | `ContentUpdated` (its `publishedPendingRevision` set), `PendingRevisionPublished` |
 
 `ContentViewing` is dispatched before an item's page is rendered. Its listeners can add template variables with `$event->set('related', $items)`, or call `$event->deny()` to respond with "404 Not Found".
