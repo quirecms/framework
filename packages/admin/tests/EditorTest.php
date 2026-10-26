@@ -21,7 +21,7 @@ final class EditorTest extends AdminTestCase
     {
         $editor = $this->signIn('editor');
         $crawler = $this->client->request('GET', '/admin/content/post');
-        $crawler = $this->client->click($crawler->filter('a.button')->link());
+        $crawler = $this->client->click($crawler->filter('a.q-btn')->link());
 
         self::assertSelectorTextSame('h1', 'New item');
         $this->client->submit($crawler->filter('button[name=intent][value="save"]')->form(['title' => 'From the form', 'body' => 'Some *Markdown*.', 'excerpt' => 'In short.']));
@@ -32,7 +32,7 @@ final class EditorTest extends AdminTestCase
         self::assertSame(['From the form', 'from-the-form', 'Some *Markdown*.', 'In short.', Status::DRAFT, $editor->id], [$item->title, $item->slug, $item->body, $item->excerpt, $item->status, $item->authorId]);
 
         $this->client->followRedirect();
-        self::assertSelectorTextSame('.notice--success', 'Created.');
+        self::assertSelectorTextSame('.q-notice--success', 'Created.');
         self::assertSelectorTextSame('h1', 'From the form');
         self::assertInputValueSame('slug', 'from-the-form');
     }
@@ -45,7 +45,7 @@ final class EditorTest extends AdminTestCase
         $crawler = $this->client->submit($crawler->filter('button[name=intent][value="save"]')->form(['title' => '', 'body' => 'Kept.', 'slug' => 'Not A Slug!']));
 
         self::assertResponseStatusCodeSame(422);
-        self::assertSame(['#title', '#slug'], $crawler->filter('.error-summary a')->each(static fn (Crawler $a): string => (string) $a->attr('href')));
+        self::assertSame(['#title', '#slug'], $crawler->filter('.q-error-summary a')->each(static fn (Crawler $a): string => (string) $a->attr('href')));
         self::assertSame('true', $crawler->filter('#title')->attr('aria-invalid'));
         self::assertSame('title-error', $crawler->filter('#title')->attr('aria-describedby'));
         self::assertSelectorExists('#title-error');
@@ -67,7 +67,7 @@ final class EditorTest extends AdminTestCase
         self::assertNull($this->latest());
 
         // The live preview, as the editor's script asks for it.
-        $token = (string) $crawler->filter('input[name=_token]')->attr('value');
+        $token = (string) $crawler->filter('main input[name=_token]')->attr('value');
         $this->client->request('POST', '/admin/content/post/preview', ['_token' => $token, 'body' => '# Title']);
         self::assertSame('<h1 id="preview-title">Title</h1>', trim((string) $this->client->getResponse()->getContent()), 'Its IDs aren\'t the form\'s, e.g. "title".');
 
@@ -87,7 +87,7 @@ final class EditorTest extends AdminTestCase
 
         $item = $this->service(ContentRepository::class)->get($item->id);
         self::assertSame(['Published now', Status::PUBLISHED], [$item->title, $item->status]);
-        self::assertSelectorTextSame('.notice--success', 'Saved, and the status is now: Published.');
+        self::assertSelectorTextSame('.q-notice--success', 'Saved, and the status is now: Published.');
     }
 
     public function testSchedulingInTheSitesTimeZone(): void
@@ -100,7 +100,7 @@ final class EditorTest extends AdminTestCase
 
         $this->client->submit($crawler->filter('button[name=intent][value="transition:schedule"]')->form(['publish_at' => '']));
         $crawler = $this->client->followRedirect();
-        self::assertSelectorTextSame('.notice--error', 'Choose when to publish it.');
+        self::assertSelectorTextSame('.q-notice--error', 'Choose when to publish it.');
         self::assertSame(Status::DRAFT, $this->service(ContentRepository::class)->get($item->id)->status);
 
         $this->client->submit($crawler->filter('button[name=intent][value="transition:schedule"]')->form(['publish_at' => '2030-01-02T09:30']));
@@ -122,7 +122,7 @@ final class EditorTest extends AdminTestCase
 
         $crawler = $this->client->submit($form);
         self::assertResponseStatusCodeSame(409);
-        self::assertSelectorTextContains('.notice--warning', 'Someone saved this item after you opened it.');
+        self::assertSelectorTextContains('.q-notice--warning', 'Someone saved this item after you opened it.');
         self::assertInputValueSame('title', 'Mine', 'What was entered stays.');
         self::assertSame('Theirs', $this->service(ContentRepository::class)->get($item->id)->title);
 

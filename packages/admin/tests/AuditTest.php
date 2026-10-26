@@ -27,7 +27,7 @@ final class AuditTest extends AdminTestCase
 
         $crawler = $this->client->request('GET', '/admin');
         self::assertCount(0, $crawler->filter('nav a[href="/admin/audit"]'));
-        self::assertNotContains('Recent activity', $crawler->filter('.widgets .card h2')->each(static fn (Crawler $h2): string => $h2->text()));
+        self::assertNotContains('Recent activity', $crawler->filter('.widgets .q-card h2')->each(static fn (Crawler $h2): string => $h2->text()));
 
         $this->client->request('GET', '/admin/audit');
         self::assertResponseStatusCodeSame(403);
@@ -35,10 +35,10 @@ final class AuditTest extends AdminTestCase
         // Editors don't run console commands: no command after their actions either.
         $post = $this->post('Mine');
         $crawler = $this->client->request('GET', '/admin/content/post');
-        $this->client->request('POST', '/admin/content/post', ['_token' => (string) $crawler->filter('input[name=_token]')->attr('value'), 'row' => 'transition:publish|'.$post->id]);
+        $this->client->request('POST', '/admin/content/post', ['_token' => (string) $crawler->filter('main input[name=_token]')->attr('value'), 'row' => 'transition:publish|'.$post->id]);
         $crawler = $this->client->followRedirect();
-        self::assertSelectorExists('.notice--success');
-        self::assertCount(0, $crawler->filter('.command'));
+        self::assertSelectorExists('.q-notice--success');
+        self::assertCount(0, $crawler->filter('.q-command'));
     }
 
     public function testTheLogSaysWhoDidWhatWhereAndHow(): void
@@ -49,10 +49,10 @@ final class AuditTest extends AdminTestCase
 
         // A bulk action: one request, two entries, and the commands of both shown after it.
         $crawler = $this->client->request('GET', '/admin/content/post');
-        $this->client->request('POST', '/admin/content/post', ['_token' => (string) $crawler->filter('input[name=_token]')->attr('value'), 'action' => 'transition:publish', 'ids' => [$one->id, $two->id]]);
+        $this->client->request('POST', '/admin/content/post', ['_token' => (string) $crawler->filter('main input[name=_token]')->attr('value'), 'action' => 'transition:publish', 'ids' => [$one->id, $two->id]]);
         $crawler = $this->client->followRedirect();
-        self::assertEqualsCanonicalizing(["bin/console quire:content:transition {$one->id} publish", "bin/console quire:content:transition {$two->id} publish"], explode("\n", $crawler->filter('.command__text')->text(normalizeWhitespace: false)));
-        self::assertSelectorTextSame('.command__label', 'As a command');
+        self::assertEqualsCanonicalizing(["bin/console quire:content:transition {$one->id} publish", "bin/console quire:content:transition {$two->id} publish"], explode("\n", $crawler->filter('.q-command__text')->text(normalizeWhitespace: false)));
+        self::assertSelectorTextSame('.q-command__label', 'As a command');
 
         $crawler = $this->client->request('GET', '/admin/audit');
         self::assertResponseIsSuccessful();
@@ -68,15 +68,15 @@ final class AuditTest extends AdminTestCase
         // Narrowed to what was done together: the bulk action.
         $crawler = $this->client->click($rows->first()->selectLink('Done together')->link());
         self::assertEqualsCanonicalizing(['Published “Two”', 'Published “One”'], $crawler->filter('a.audit__summary')->each(static fn (Crawler $a): string => $a->text()));
-        self::assertSelectorTextContains('.narrowed', 'Done together');
+        self::assertSelectorTextContains('.q-chips', 'Done together');
 
         // Narrowed by area and by who.
         $crawler = $this->client->request('GET', '/admin/audit?area=user.');
         self::assertSame(['Admin signed in', 'Added the user Admin'], $crawler->filter('.audit__summary')->each(static fn (Crawler $node): string => $node->text()));
         $crawler = $this->client->request('GET', '/admin/audit?actor='.$admin->id);
         self::assertSame(['Published', 'Published', 'Admin signed in'], $crawler->filter('.audit__summary')->each(static fn (Crawler $node): string => (string) preg_replace('/ “.*$/', '', $node->text())));
-        self::assertSelectorTextContains('.narrowed', 'By Admin');
-        self::assertSame('/admin/audit', $crawler->filter('.narrowed a')->attr('href'));
+        self::assertSelectorTextContains('.q-chips', 'By Admin');
+        self::assertSame('/admin/audit', $crawler->filter('.q-chips a')->attr('href'));
     }
 
     public function testDetailsCommandsAndLinksFromElsewhere(): void
@@ -90,7 +90,7 @@ final class AuditTest extends AdminTestCase
         self::assertSame('Changed the setting “Site title”', $setting->filter('a.audit__summary')->text());
         self::assertSame('/admin/settings/site', $setting->filter('a.audit__summary')->attr('href'));
         self::assertSame(['Before: Quire', 'After: Audited'], $setting->filter('.audit__details div')->each(static fn (Crawler $d): string => $d->filter('dt')->text().': '.$d->filter('dd')->text()));
-        self::assertSame('bin/console quire:settings:set site.title Audited', $setting->filter('.audit__command .command__text')->text());
+        self::assertSame('bin/console quire:settings:set site.title Audited', $setting->filter('.audit__command .q-command__text')->text());
 
         $extension = $crawler->filter('.audit tbody tr')->first();
         self::assertSame('acme-shop.order_refunded: Order 1042', $extension->filter('.audit__summary')->text(), 'An action without a translation shows its name.');
@@ -98,10 +98,10 @@ final class AuditTest extends AdminTestCase
 
         $crawler = $this->client->request('GET', '/admin/users/'.$admin->id);
         $crawler = $this->client->click($crawler->selectLink('What they did')->link());
-        self::assertSelectorTextContains('.narrowed', 'By Admin');
+        self::assertSelectorTextContains('.q-chips', 'By Admin');
 
         $crawler = $this->client->request('GET', '/admin');
-        self::assertContains('Recent activity', $crawler->filter('.widgets .card h2')->each(static fn (Crawler $h2): string => $h2->text()));
+        self::assertContains('Recent activity', $crawler->filter('.widgets .q-card h2')->each(static fn (Crawler $h2): string => $h2->text()));
     }
 
     private function post(string $title): Content

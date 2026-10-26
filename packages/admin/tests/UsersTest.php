@@ -44,13 +44,13 @@ final class UsersTest extends AdminTestCase
         $crawler = $this->client->request('GET', '/admin/users');
         self::assertSame(['Admin', 'Alan Turing', 'Grace Hopper'], $this->names($crawler));
         self::assertSame('ascending', $crawler->filter('th[aria-sort]')->attr('aria-sort'));
-        self::assertSelectorTextSame('main p.meta', '3 users');
+        self::assertSelectorTextSame('main p.q-meta', '3 users');
 
         self::assertSame(['Grace Hopper'], $this->names($this->client->request('GET', '/admin/users?q=hopp')));
         self::assertSame(['Grace Hopper'], $this->names($this->client->request('GET', '/admin/users?role=editor')));
         self::assertSame(['Alan Turing'], $this->names($this->client->request('GET', '/admin/users?status=suspended')));
         self::assertSame(['Grace Hopper', 'Alan Turing', 'Admin'], $this->names($this->client->request('GET', '/admin/users?sort=-name')));
-        self::assertSelectorTextContains('.status', 'Suspended');
+        self::assertSelectorTextContains('.q-tag--err', 'Suspended');
     }
 
     public function testNewUsersAreInvitedToChooseTheirPassword(): void
@@ -71,7 +71,7 @@ final class UsersTest extends AdminTestCase
         self::assertStringContainsString('Admin added you to', (string) $email->getTextBody());
 
         $this->client->followRedirect();
-        self::assertSelectorTextContains('.notice--success:nth-of-type(2), .notice--success', 'Added Grace Hopper.');
+        self::assertSelectorTextContains('.q-notice--success:nth-of-type(2), .q-notice--success', 'Added Grace Hopper.');
     }
 
     public function testMistakesAreShownWithTheForm(): void
@@ -89,7 +89,7 @@ final class UsersTest extends AdminTestCase
         $crawler = $this->client->submit($crawler->selectButton('Add the user')->form(['password_mode' => 'set', 'password' => 'long enough now']));
         self::assertResponseStatusCodeSame(422);
         self::assertSame('Another user has this email.', $crawler->filter('#email-error')->text());
-        self::assertSame('#email', $crawler->filter('.error-summary a')->attr('href'));
+        self::assertSame('#email', $crawler->filter('.q-error-summary a')->attr('href'));
 
         $crawler = $this->client->submit($crawler->selectButton('Add the user')->form(['email' => '', 'password_mode' => 'invite']));
         self::assertResponseStatusCodeSame(422);
@@ -120,7 +120,7 @@ final class UsersTest extends AdminTestCase
 
         $this->client->submit($crawler->selectButton('Suspend')->form());
         $crawler = $this->client->followRedirect();
-        self::assertSelectorTextSame('.notice--success', 'Grace Hopper is suspended: they can\'t sign in.');
+        self::assertSelectorTextSame('.q-notice--success', 'Grace Hopper is suspended: they can\'t sign in.');
         self::assertFalse($this->reload($grace)->isActive());
         $this->client->submit($crawler->selectButton('Activate')->form());
         self::assertTrue($this->reload($grace)->isActive());

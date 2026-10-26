@@ -2153,7 +2153,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/admin",
-                "reference": "cce589abc2bd3fe5d8751981f1d4d935cf560ea8"
+                "reference": "08b433780e3bf000c18aee1ee1e2ec28ec8f5428"
             },
             "require": {
                 "php": ">=8.5",
@@ -2189,6 +2189,9 @@
                         "@lezer/markdown": "1.7.2",
                         "@marijn/find-cluster-break": "1.0.4",
                         "crelt": "1.0.7",
+                        "open-props/borders.min.css": "1.7.23",
+                        "open-props/easings.min.css": "1.7.23",
+                        "open-props/sizes.min.css": "1.7.23",
                         "style-mod": "4.1.4",
                         "w3c-keyname": "2.2.8"
                     }

@@ -13,18 +13,18 @@
 
 {% block actions %}
     {% if can_create %}
-        <a class="button" href="{{ path('quire_admin_content_new', {type: type.id}) }}">{{ 'New'|trans({}, 'quire-admin') }}<span class="visually-hidden"> ({{ type.label|trans({}, type.owner) }})</span></a>
+        <a class="q-btn" href="{{ path('quire_admin_content_new', {type: type.id}) }}">{{ 'New'|trans({}, 'quire-admin') }}<span class="q-sr"> ({{ type.label|trans({}, type.owner) }})</span></a>
     {% endif %}
 {% endblock %}
 
 {% block content %}
-    <nav class="views" aria-label="{{ 'Views'|trans({}, 'quire-admin') }}">
+    <nav class="q-views" aria-label="{{ 'Views'|trans({}, 'quire-admin') }}">
         <ul>
             {% for view in views %}
                 {% if view.count > 0 or view.current or view.id == 'all' %}
                     <li>
                         <a href="{{ view.url }}"{% if view.current %} aria-current="page"{% endif %}>
-                            {{ view.label }} <span class="views__count">{{ view.count }}</span>
+                            {{ view.label }} <span class="q-views__count">{{ view.count }}</span>
                         </a>
                     </li>
                 {% endif %}
@@ -32,12 +32,12 @@
         </ul>
     </nav>
 
-    <form class="list-tools" role="search" method="get" action="{{ path('quire_admin_content', {type: type.id}) }}">
+    <form class="q-toolbar q-toolbar--bar" role="search" method="get" action="{{ path('quire_admin_content', {type: type.id}) }}">
         {% if state.view != 'all' %}<input type="hidden" name="view" value="{{ state.view }}">{% endif %}
         {% if state.sort %}<input type="hidden" name="sort" value="{{ state.sort }}">{% endif %}
-        <label class="list-tools__search">
-            <span>{{ 'Search'|trans({}, 'quire-admin') }}</span>
-            <input type="search" name="q" value="{{ state.q }}" autocomplete="off">
+        <label class="q-toolbar__search">
+            <span class="q-sr">{{ 'Search'|trans({}, 'quire-admin') }}</span>
+            <input type="search" name="q" value="{{ state.q }}" autocomplete="off" placeholder="{{ 'Search {type}…'|trans({type: plural|lower}, 'quire-admin') }}">
         </label>
         {% for id, filter in filters %}
             <label>
@@ -50,7 +50,7 @@
                 </select>
             </label>
         {% endfor %}
-        <button type="submit" class="button">{{ 'Show'|trans({}, 'quire-admin') }}</button>
+        <button type="submit" class="q-btn q-btn--ghost">{{ 'Show'|trans({}, 'quire-admin') }}</button>
     </form>
 
     <form method="post" action="{{ action_url }}" class="content-list" data-controller="content-list">
@@ -60,7 +60,7 @@
         {% if bulk_actions is not empty and rows is not empty %}
             <div class="bulk">
                 <label>
-                    <span>{{ 'Action for the selected items'|trans({}, 'quire-admin') }}</span>
+                    <span class="q-sr">{{ 'Action for the selected items'|trans({}, 'quire-admin') }}</span>
                     <select name="action">
                         <option value="">{{ 'Choose an action'|trans({}, 'quire-admin') }}</option>
                         {% for action, label in bulk_actions %}
@@ -68,12 +68,12 @@
                         {% endfor %}
                     </select>
                 </label>
-                <button type="submit" class="button" name="bulk" value="1"{% if trash %} data-turbo-confirm="{{ 'Items deleted permanently can\'t be restored. Continue?'|trans({}, 'quire-admin') }}"{% endif %}>{{ 'Apply'|trans({}, 'quire-admin') }}</button>
+                <button type="submit" class="q-btn q-btn--ghost" name="bulk" value="1"{% if trash %} data-turbo-confirm="{{ 'Items deleted permanently can\'t be restored. Continue?'|trans({}, 'quire-admin') }}"{% endif %}>{{ 'Apply'|trans({}, 'quire-admin') }}</button>
             </div>
         {% endif %}
 
         {% if rows is empty %}
-            <p class="empty">
+            <p class="q-empty">
                 {% if state.q or state.filter is not empty %}
                     {{ 'Nothing matches.'|trans({}, 'quire-admin') }}
                 {% elseif trash %}
@@ -83,9 +83,9 @@
                 {% endif %}
             </p>
         {% else %}
-            <div class="table-scroll">
-                <table class="table content-list__table">
-                    <caption class="visually-hidden">
+            <div class="q-scroll">
+                <table class="q-table content-list__table">
+                    <caption class="q-sr">
                         {{ plural }}, {{ 'page {page} of {pages}'|trans({page: page.page, pages: page.pageCount}, 'quire-admin') }}
                     </caption>
                     <thead>
@@ -102,7 +102,7 @@
                                     {% endif %}
                                 </th>
                             {% endfor %}
-                            <th scope="col"><span class="visually-hidden">{{ 'Actions'|trans({}, 'quire-admin') }}</span></th>
+                            <th scope="col"><span class="q-sr">{{ 'Actions'|trans({}, 'quire-admin') }}</span></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -111,7 +111,7 @@
                             <tr>
                                 <td class="content-list__select">
                                     <input type="checkbox" name="ids[]" value="{{ item.id }}" id="select-{{ item.id }}" data-content-list-target="item" data-action="content-list#update">
-                                    <label for="select-{{ item.id }}" class="visually-hidden">{{ 'Select “{title}”'|trans({title: item.title}, 'quire-admin') }}</label>
+                                    <label for="select-{{ item.id }}" class="q-sr">{{ 'Select “{title}”'|trans({title: item.title}, 'quire-admin') }}</label>
                                 </td>
                                 {% for cell in row.cells %}
                                     {% if loop.first %}
@@ -124,11 +124,11 @@
                                 {% endfor %}
                                 <td class="content-list__actions">
                                     {% if item.isPublic %}
-                                        <a class="link-button" href="{{ quire_url(item) }}">{{ 'View'|trans({}, 'quire-admin') }}<span class="visually-hidden"> “{{ item.title }}”</span></a>
+                                        <a class="q-link-btn" href="{{ quire_url(item) }}">{{ 'View'|trans({}, 'quire-admin') }}<span class="q-sr"> “{{ item.title }}”</span></a>
                                     {% endif %}
                                     {% for action, label in row.actions %}
-                                        <button type="submit" class="link-button{% if action in ['trash', 'purge'] %} link-button--danger{% endif %}" name="row" value="{{ action }}|{{ item.id }}"{% if action == 'purge' %} data-turbo-confirm="{{ '“{title}” will be deleted permanently and can\'t be restored. Continue?'|trans({title: item.title}, 'quire-admin') }}"{% endif %}>
-                                            {{ label }}<span class="visually-hidden"> “{{ item.title }}”</span>
+                                        <button type="submit" class="q-link-btn{% if action in ['trash', 'purge'] %} q-link-btn--danger{% endif %}" name="row" value="{{ action }}|{{ item.id }}"{% if action == 'purge' %} data-turbo-confirm="{{ '“{title}” will be deleted permanently and can\'t be restored. Continue?'|trans({title: item.title}, 'quire-admin') }}"{% endif %}>
+                                            {{ label }}<span class="q-sr"> “{{ item.title }}”</span>
                                         </button>
                                     {% endfor %}
                                 </td>
@@ -141,7 +141,7 @@
     </form>
 
     {% if page.pageCount > 1 %}
-        <nav class="pagination" aria-label="{{ 'Pages'|trans({}, 'quire-admin') }}">
+        <nav class="q-pagination" aria-label="{{ 'Pages'|trans({}, 'quire-admin') }}">
             {% if previous_url %}
                 <a href="{{ previous_url }}" rel="prev">{{ 'Previous'|trans({}, 'quire-admin') }}</a>
             {% endif %}

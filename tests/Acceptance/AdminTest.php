@@ -40,8 +40,8 @@ final class AdminTest extends AdminTestCase
         self::assertSame([], $this->adminCodeIn(TestInstallation::projectDir().'/tests/Fixtures/extensions/recipes'), 'The extension has no admin code.');
 
         $this->signIn('editor');
-        $crawler = $this->client->request('GET', '/admin');
-        self::assertCount(1, $crawler->filter('nav a[href="/admin/content/recipe"]'), 'Recipes are in the menu.');
+        $crawler = $this->client->request('GET', '/admin/content/post');
+        self::assertCount(1, $crawler->filter('.q-tabs a[href="/admin/content/recipe"]'), 'Recipes have a list under Content.');
 
         // A form from the type's fields, with the admin's controls; the duration type picked the text one.
         $crawler = $this->client->request('GET', '/admin/content/recipe/new');
@@ -56,8 +56,8 @@ final class AdminTest extends AdminTestCase
         $form = $crawler->filter('button[name=intent][value="save"]')->form(['title' => 'Pancakes', 'body' => 'Mix, then fry.', 'fields[servings]' => '4', 'fields[cook_time]' => 'soon', 'fields[ingredients]' => 'flour, milk, eggs']);
         $crawler = $this->client->submit($form);
         self::assertResponseStatusCodeSame(422);
-        self::assertSame(['#field-cook_time'], $crawler->filter('.error-summary a')->each(static fn (Crawler $a): string => (string) $a->attr('href')));
-        self::assertStringContainsString('Expected a duration such as "1h 30m"', $crawler->filter('.error-summary')->text());
+        self::assertSame(['#field-cook_time'], $crawler->filter('.q-error-summary a')->each(static fn (Crawler $a): string => (string) $a->attr('href')));
+        self::assertStringContainsString('Expected a duration such as "1h 30m"', $crawler->filter('.q-error-summary')->text());
 
         $this->client->submit($crawler->filter('button[name=intent][value="transition:publish"]')->form(['fields[cook_time]' => '1h 30m']));
         $pancakes = $this->recipe('Pancakes');
@@ -107,7 +107,7 @@ final class AdminTest extends AdminTestCase
         $crawler = $this->client->followRedirect();
 
         self::assertSame('secret-123', $this->settings()->get('quire-fixture-recipes.api_key'));
-        self::assertSame('bin/console quire:settings:set quire-fixture-recipes.units imperial', $crawler->filter('.command__text')->text(), 'Not the sensitive one.');
+        self::assertSame('bin/console quire:settings:set quire-fixture-recipes.units imperial', $crawler->filter('.q-command__text')->text(), 'Not the sensitive one.');
 
         $crawler = $this->client->request('GET', '/admin/audit?area=setting.');
         self::assertSame(['Changed the setting “Units”', 'Changed the setting “Nutrition API key”'], $crawler->filter('.audit__summary')->each(static fn (Crawler $node): string => $node->text()));

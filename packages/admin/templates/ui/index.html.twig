@@ -1,0 +1,106 @@
+{#
+    Quire UI's components, with the markup an extension's admin page uses for them. Extend
+    '@quire_admin/layout.html.twig' and use these classes; '@quire_admin/_ui.html.twig' has macros for
+    the lifecycle status and icons.
+#}
+{% extends '@quire_admin/layout.html.twig' %}
+{% import '@quire_admin/_ui.html.twig' as ui %}
+
+{% block title %}{{ 'Components'|trans({}, 'quire-admin') }}{% endblock %}
+{% block eyebrow %}Quire UI{% endblock %}
+
+{% block content %}
+    <div class="ui-guide">
+        <section class="q-card" aria-labelledby="ui-colours">
+            <h2 class="q-card__title" id="ui-colours">{{ 'Colours'|trans({}, 'quire-admin') }}</h2>
+            <p class="q-help">Tokens such as <code>var(--q-accent)</code>; light, dark and high contrast follow each person’s choice.</p>
+            <div class="ui-guide__swatches">
+                {% for token in ['paper', 'surface', 'ink', 'muted', 'line', 'accent', 'accent-soft', 'danger', 'warn', 'draft', 'review', 'scheduled', 'live'] %}
+                    <div class="ui-guide__swatch"><span style="background: var(--q-{{ token }})"></span><code>--q-{{ token }}</code></div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="q-card" aria-labelledby="ui-buttons">
+            <h2 class="q-card__title" id="ui-buttons">{{ 'Buttons'|trans({}, 'quire-admin') }}</h2>
+            <div class="ui-guide__row">
+                <button class="q-btn">Publish</button>
+                <button class="q-btn q-btn--ghost">Preview</button>
+                <button class="q-btn q-btn--soft">Fix 2 things</button>
+                <button class="q-btn q-btn--danger">Delete permanently</button>
+                <button class="q-btn q-btn--sm">Small</button>
+                <button class="q-link-btn">A link-like button</button>
+                <span class="q-seg"><button aria-pressed="true">Board</button><button aria-pressed="false">List</button><button aria-pressed="false">Calendar</button></span>
+            </div>
+            <pre class="q-code">&lt;button class="q-btn"&gt;…&lt;/button&gt;  q-btn--ghost  q-btn--soft  q-btn--danger  q-btn--sm  q-link-btn  q-seg</pre>
+        </section>
+
+        <section class="q-card" aria-labelledby="ui-status">
+            <h2 class="q-card__title" id="ui-status">{{ 'Status and tags'|trans({}, 'quire-admin') }}</h2>
+            <div class="ui-guide__row">
+                {{ ui.status('draft') }} {{ ui.status('review', 'In review') }} {{ ui.status('scheduled') }} {{ ui.status('published') }}
+            </div>
+            <div class="ui-guide__row">
+                <span class="q-tag">Plain</span><span class="q-tag q-tag--ok">Ready</span><span class="q-tag q-tag--warn">1 to check</span><span class="q-tag q-tag--err">Broken link</span><span class="q-tag q-tag--review">changes waiting</span><span class="q-tag q-tag--changed">changed</span>
+            </div>
+            <pre class="q-code">{{ "{% import '@quire_admin/_ui.html.twig' as ui %}  {{ ui.status(item.status) }}" }}
+&lt;span class="q-tag q-tag--warn"&gt;…&lt;/span&gt;</pre>
+        </section>
+
+        <section class="q-card" aria-labelledby="ui-notices">
+            <h2 class="q-card__title" id="ui-notices">{{ 'Notices'|trans({}, 'quire-admin') }}</h2>
+            <p class="q-notice q-notice--success" role="status">Saved.</p>
+            <p class="q-notice q-notice--warning">The changes need a review before they go live.</p>
+            <p class="q-notice q-notice--error">The form expired. Reload the page and try again.</p>
+            {% include '@quire_admin/_command.html.twig' with {commands: ['bin/console quire:content:transition 0192b6a0 publish']} only %}
+            <p class="q-help">After an action, a flash of the type "success", "warning" or "error" shows as a notice.</p>
+        </section>
+
+        <section class="q-card" aria-labelledby="ui-table">
+            <h2 class="q-card__title" id="ui-table">{{ 'Tables'|trans({}, 'quire-admin') }}</h2>
+            <div class="q-scroll" tabindex="0" role="region" aria-label="Example table">
+                <table class="q-table">
+                    <caption class="q-sr">Example</caption>
+                    <thead><tr><th scope="col">Title</th><th scope="col">Where it is</th><th scope="col" class="q-num">Views</th></tr></thead>
+                    <tbody>
+                        <tr><th scope="row">Spring draw: all groups <span class="q-tag q-tag--review">changes waiting</span></th><td>{{ ui.status('published') }}</td><td class="q-num">1,204</td></tr>
+                        <tr><th scope="row">Referee assignments explained <span class="q-tag q-tag--err">Broken link</span></th><td>{{ ui.status('draft') }}</td><td class="q-num">—</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <pre class="q-code">&lt;div class="q-scroll"&gt;&lt;table class="q-table"&gt;…&lt;/table&gt;&lt;/div&gt;   q-num for numbers</pre>
+        </section>
+
+        <section class="q-card" aria-labelledby="ui-forms">
+            <h2 class="q-card__title" id="ui-forms">{{ 'Forms'|trans({}, 'quire-admin') }}</h2>
+            <div class="q-error-summary" role="alert">
+                <h2>{{ 'There\'s a problem'|trans({}, 'quire-admin') }}</h2>
+                <ul><li><a href="#ui-title">Give it a title.</a></li></ul>
+            </div>
+            <div class="q-field">
+                <label for="ui-title">Title</label>
+                <p class="q-error" id="ui-title-error">Give it a title.</p>
+                <input type="text" id="ui-title" aria-invalid="true" aria-describedby="ui-title-error">
+            </div>
+            <div class="q-field">
+                <label for="ui-summary">Summary</label>
+                <p class="q-help" id="ui-summary-help">Shown in lists and when the post is shared.</p>
+                <textarea id="ui-summary" rows="2" aria-describedby="ui-summary-help"></textarea>
+            </div>
+            <div class="q-field q-field--check"><input type="checkbox" id="ui-featured"><label for="ui-featured">Featured</label></div>
+            <pre class="q-code">q-field  q-field--check  q-help  q-error  q-error-summary  q-fieldset  q-toolbar  q-inline  q-choices</pre>
+        </section>
+
+        <section class="q-card" aria-labelledby="ui-lists">
+            <h2 class="q-card__title" id="ui-lists">{{ 'Lists and details'|trans({}, 'quire-admin') }}</h2>
+            <ul class="q-list">
+                <li><a href="#">Group stage recap</a><span class="q-meta">Grace · 8 min ago</span></li>
+                <li><a href="#">Draw ceremony</a><span class="q-meta">Ada · 09:00</span></li>
+            </ul>
+            <dl class="q-facts"><dt>Author</dt><dd>Grace Hopper</dd><dt>Version</dt><dd>23</dd></dl>
+            <ul class="q-chips"><li>By Ada <a href="#">Show all</a></li></ul>
+            <p class="q-empty">Nothing here yet.</p>
+            <p><kbd>⌘</kbd> <kbd>K</kbd></p>
+        </section>
+    </div>
+{% endblock %}

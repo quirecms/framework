@@ -9,13 +9,13 @@
 {% block title %}{{ 'Changes to “{title}”'|trans({title: item.title}, 'quire-admin') }}{% endblock %}
 
 {% block actions %}
-    <p class="page-header__links">
+    <p class="q-page-head__links">
         <a href="{{ path('quire_admin_content_edit', {type: type.id, id: item.id}) }}">{{ own ? 'Edit your changes'|trans({}, 'quire-admin') : 'Back to the item'|trans({}, 'quire-admin') }}</a>
     </p>
 {% endblock %}
 
 {% block content %}
-    <dl class="facts facts--wide">
+    <dl class="q-facts q-facts--wide">
         <dt>{{ 'By'|trans({}, 'quire-admin') }}</dt>
         <dd>{{ pending.authorId ? names[pending.authorId] : 'Someone'|trans({}, 'quire-admin') }}</dd>
         <dt>{{ 'Status'|trans({}, 'quire-admin') }}</dt>
@@ -33,11 +33,11 @@
     </dl>
 
     {% if pending.publishProblem %}
-        <p class="notice notice--error">{{ 'These changes couldn\'t be published at their time: {problem}'|trans({problem: pending.publishProblem}, 'quire-admin') }}</p>
+        <p class="q-notice q-notice--error">{{ 'These changes couldn\'t be published at their time: {problem}'|trans({problem: pending.publishProblem}, 'quire-admin') }}</p>
     {% endif %}
 
     {% if conflicts is not empty %}
-        <div class="notice notice--warning" role="status">
+        <div class="q-notice q-notice--warning" role="status">
             <p>{{ 'Changes published since these were started conflict with them, in:'|trans({}, 'quire-admin') }}</p>
             <ul>
                 {% for property, reason in conflicts %}<li>{{ property starts with 'fields.' ? property[7:] : property|capitalize }}</li>{% endfor %}
@@ -45,30 +45,30 @@
             <p>{{ own ? 'Open your changes and keep your version of these parts, or change them.'|trans({}, 'quire-admin') : 'Their author resolves them before they\'re published.'|trans({}, 'quire-admin') }}</p>
         </div>
     {% else %}
-        <p class="notice notice--success" role="status">{{ 'These changes merge with what\'s published: what was published since is kept.'|trans({}, 'quire-admin') }}</p>
+        <p class="q-notice q-notice--success" role="status">{{ 'These changes merge with what\'s published: what was published since is kept.'|trans({}, 'quire-admin') }}</p>
     {% endif %}
 
-    <section aria-labelledby="diff-heading" class="section">
+    <section aria-labelledby="diff-heading" class="q-section">
         <h2 id="diff-heading">{{ 'What changes'|trans({}, 'quire-admin') }}</h2>
         {{ include('@quire_admin/content/_diff.html.twig', {diff: diff, caption: 'What changes'|trans({}, 'quire-admin')}) }}
     </section>
 
-    <section aria-labelledby="checks-heading" class="section">
+    <section aria-labelledby="checks-heading" class="q-section">
         <h2 id="checks-heading">{{ 'Checks'|trans({}, 'quire-admin') }}</h2>
         {{ include('@quire_admin/content/_checks.html.twig') }}
     </section>
 
-    <section aria-labelledby="reviews-heading" class="section">
+    <section aria-labelledby="reviews-heading" class="q-section">
         <h2 id="reviews-heading">{{ 'Reviews'|trans({}, 'quire-admin') }}</h2>
         {% if reviews is empty %}
-            <p class="empty">{{ 'No reviews yet.'|trans({}, 'quire-admin') }}</p>
+            <p class="q-empty">{{ 'No reviews yet.'|trans({}, 'quire-admin') }}</p>
         {% else %}
-            <ol class="item-list reviews">
+            <ol class="q-list reviews">
                 {% for review in reviews %}
                     <li>
                         <span><strong>{{ review.reviewerId ? names[review.reviewerId] : 'Someone'|trans({}, 'quire-admin') }}</strong> {{ ('review.' ~ review.verdict.value)|trans({}, 'quire-admin') }}</span>
                         {% if review.message %}<span>{{ review.message }}</span>{% endif %}
-                        <span class="meta"><time datetime="{{ review.createdAt|date('c') }}">{{ review.createdAt|date('Y-m-d H:i', timezone) }}</time></span>
+                        <span class="q-meta"><time datetime="{{ review.createdAt|date('c') }}">{{ review.createdAt|date('Y-m-d H:i', timezone) }}</time></span>
                     </li>
                 {% endfor %}
             </ol>
@@ -78,31 +78,31 @@
             <form method="post" class="review-form">
                 <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_content_editor') }}">
                 <input type="hidden" name="version" value="{{ pending.version }}">
-                <div class="form-field">
+                <div class="q-field">
                     <label for="message">{{ 'Your review'|trans({}, 'quire-admin') }}</label>
                     <textarea id="message" name="message" rows="3"></textarea>
                 </div>
                 <div class="editor__buttons">
-                    {% if may_approve %}<button type="submit" class="button" name="intent" value="approve">{{ 'Approve'|trans({}, 'quire-admin') }}</button>{% endif %}
-                    <button type="submit" class="button button--secondary" name="intent" value="request_changes">{{ 'Ask for changes'|trans({}, 'quire-admin') }}</button>
-                    <button type="submit" class="button button--secondary" name="intent" value="comment">{{ 'Comment'|trans({}, 'quire-admin') }}</button>
+                    {% if may_approve %}<button type="submit" class="q-btn" name="intent" value="approve">{{ 'Approve'|trans({}, 'quire-admin') }}</button>{% endif %}
+                    <button type="submit" class="q-btn q-btn--ghost" name="intent" value="request_changes">{{ 'Ask for changes'|trans({}, 'quire-admin') }}</button>
+                    <button type="submit" class="q-btn q-btn--ghost" name="intent" value="comment">{{ 'Comment'|trans({}, 'quire-admin') }}</button>
                 </div>
-                {% if not may_approve %}<p class="field-help">{{ 'Someone else approves your own changes.'|trans({}, 'quire-admin') }}</p>{% endif %}
+                {% if not may_approve %}<p class="q-help">{{ 'Someone else approves your own changes.'|trans({}, 'quire-admin') }}</p>{% endif %}
             </form>
         {% endif %}
     </section>
 
     {% if can_publish is same as(true) or may_discard %}
-        <form method="post" class="editor__buttons section">
+        <form method="post" class="editor__buttons q-section">
             <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_content_editor') }}">
             <input type="hidden" name="version" value="{{ pending.version }}">
             {% if can_publish is same as(true) %}
-                <button type="submit" class="button" name="intent" value="publish">{{ 'Publish the changes'|trans({}, 'quire-admin') }}</button>
+                <button type="submit" class="q-btn" name="intent" value="publish">{{ 'Publish the changes'|trans({}, 'quire-admin') }}</button>
             {% endif %}
             {% if may_discard %}
-                <button type="submit" class="link-button link-button--danger" name="intent" value="discard" data-turbo-confirm="{{ 'Discard these changes? They can\'t be restored.'|trans({}, 'quire-admin') }}">{{ 'Discard the changes'|trans({}, 'quire-admin') }}</button>
+                <button type="submit" class="q-link-btn q-link-btn--danger" name="intent" value="discard" data-turbo-confirm="{{ 'Discard these changes? They can\'t be restored.'|trans({}, 'quire-admin') }}">{{ 'Discard the changes'|trans({}, 'quire-admin') }}</button>
             {% endif %}
         </form>
     {% endif %}
-    {% if can_publish is not same as(true) %}<p class="field-help">{{ can_publish }}</p>{% endif %}
+    {% if can_publish is not same as(true) %}<p class="q-help">{{ can_publish }}</p>{% endif %}
 {% endblock %}

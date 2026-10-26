@@ -3,11 +3,11 @@
     can do with them, and who else is changing the item. Variables: those of content/edit.html.twig.
 #}
 {% set pending = changes.pending %}
-<section class="panel" aria-labelledby="changes-heading">
+<section class="q-panel" aria-labelledby="changes-heading">
     <h2 id="changes-heading">{{ 'Your changes'|trans({}, 'quire-admin') }}</h2>
-    <p class="field-help">{{ 'Visitors see the published version until your changes are published.'|trans({}, 'quire-admin') }}</p>
+    <p class="q-help">{{ 'Visitors see the published version until your changes are published.'|trans({}, 'quire-admin') }}</p>
 
-    <dl class="facts">
+    <dl class="q-facts">
         <dt>{{ 'Status'|trans({}, 'quire-admin') }}</dt>
         <dd>{{ pending ? changes.state : 'No changes yet'|trans({}, 'quire-admin') }}</dd>
         {% if pending %}
@@ -16,59 +16,59 @@
         {% endif %}
         {% if pending and pending.publishAt %}
             <dt>{{ 'Publish on'|trans({}, 'quire-admin') }}</dt>
-            <dd><time datetime="{{ pending.publishAt|date('c') }}">{{ pending.publishAt|date('Y-m-d H:i', timezone) }}</time>{% if pending.scheduledBy %} <span class="meta">({{ changes.names[pending.scheduledBy] }})</span>{% endif %}</dd>
+            <dd><time datetime="{{ pending.publishAt|date('c') }}">{{ pending.publishAt|date('Y-m-d H:i', timezone) }}</time>{% if pending.scheduledBy %} <span class="q-meta">({{ changes.names[pending.scheduledBy] }})</span>{% endif %}</dd>
         {% endif %}
     </dl>
 
-    <p class="meta" role="status" data-content-editor-target="status"></p>
+    <p class="q-meta" role="status" data-content-editor-target="status"></p>
 
     {% if pending and pending.publishProblem %}
-        <p class="notice notice--error">{{ 'Your changes couldn\'t be published at their time: {problem}'|trans({problem: pending.publishProblem}, 'quire-admin') }}</p>
+        <p class="q-notice q-notice--error">{{ 'Your changes couldn\'t be published at their time: {problem}'|trans({problem: pending.publishProblem}, 'quire-admin') }}</p>
     {% endif %}
 
     <div class="editor__buttons">
-        <button type="submit" class="button" name="intent" value="save">{{ 'Save changes'|trans({}, 'quire-admin') }}</button>
-        <button type="submit" class="button button--secondary" name="intent" value="preview" formnovalidate data-content-editor-target="previewButton">{{ 'Preview'|trans({}, 'quire-admin') }}</button>
+        <button type="submit" class="q-btn" name="intent" value="save">{{ 'Save changes'|trans({}, 'quire-admin') }}</button>
+        <button type="submit" class="q-btn q-btn--ghost" name="intent" value="preview" formnovalidate data-content-editor-target="previewButton">{{ 'Preview'|trans({}, 'quire-admin') }}</button>
     </div>
 
     {% if changes.can_publish is same as(true) %}
-        <button type="submit" class="button button--secondary" name="intent" value="publish_changes">{{ 'Publish changes'|trans({}, 'quire-admin') }}</button>
+        <button type="submit" class="q-btn q-btn--ghost" name="intent" value="publish_changes">{{ 'Publish changes'|trans({}, 'quire-admin') }}</button>
     {% elseif pending %}
-        <p class="field-help">{{ changes.can_publish }}</p>
+        <p class="q-help">{{ changes.can_publish }}</p>
     {% endif %}
 
     {% if pending is null or pending.state.value in ['editing', 'changes_requested'] %}
-        <button type="submit" class="button button--secondary" name="intent" value="submit">{{ 'Ask for a review'|trans({}, 'quire-admin') }}</button>
+        <button type="submit" class="q-btn q-btn--ghost" name="intent" value="submit">{{ 'Ask for a review'|trans({}, 'quire-admin') }}</button>
     {% endif %}
 
     {% if changes.may_publish %}
-        <div class="form-field">
-            <label for="publish_at">{{ 'Publish the changes on'|trans({}, 'quire-admin') }} <span class="meta">({{ timezone }})</span></label>
-            {% if errors.published_at is defined %}<p class="field-error" id="publish_at-error">{{ errors.published_at }}</p>{% endif %}
+        <div class="q-field">
+            <label for="publish_at">{{ 'Publish the changes on'|trans({}, 'quire-admin') }} <span class="q-meta">({{ timezone }})</span></label>
+            {% if errors.published_at is defined %}<p class="q-error" id="publish_at-error">{{ errors.published_at }}</p>{% endif %}
             <input type="datetime-local" id="publish_at" name="publish_at"{% if errors.published_at is defined %} aria-describedby="publish_at-error" aria-invalid="true"{% endif %}>
         </div>
-        <button type="submit" class="button button--secondary" name="intent" value="schedule_changes">{{ 'Schedule changes'|trans({}, 'quire-admin') }}</button>
+        <button type="submit" class="q-btn q-btn--ghost" name="intent" value="schedule_changes">{{ 'Schedule changes'|trans({}, 'quire-admin') }}</button>
         {% if pending and pending.publishAt %}
-            <button type="submit" class="link-button" name="intent" value="unschedule_changes" formnovalidate>{{ 'Don\'t publish them at that time'|trans({}, 'quire-admin') }}</button>
+            <button type="submit" class="q-link-btn" name="intent" value="unschedule_changes" formnovalidate>{{ 'Don\'t publish them at that time'|trans({}, 'quire-admin') }}</button>
         {% endif %}
     {% endif %}
 
     {% if pending %}
         <p class="editor__links">
             <a href="{{ path('quire_admin_content_changes', {type: type.id, id: item.id, pending: pending.id}) }}">{{ 'Show changes and reviews'|trans({}, 'quire-admin') }}</a>
-            <button type="submit" class="link-button link-button--danger" name="intent" value="discard" formnovalidate data-turbo-confirm="{{ 'Discard your changes? They can\'t be restored.'|trans({}, 'quire-admin') }}">{{ 'Discard changes'|trans({}, 'quire-admin') }}</button>
+            <button type="submit" class="q-link-btn q-link-btn--danger" name="intent" value="discard" formnovalidate data-turbo-confirm="{{ 'Discard your changes? They can\'t be restored.'|trans({}, 'quire-admin') }}">{{ 'Discard changes'|trans({}, 'quire-admin') }}</button>
         </p>
     {% endif %}
 </section>
 
 {% if changes.others is not empty %}
-    <section class="panel" aria-labelledby="others-heading">
+    <section class="q-panel" aria-labelledby="others-heading">
         <h2 id="others-heading">{{ 'Others\' changes'|trans({}, 'quire-admin') }}</h2>
-        <ul class="item-list">
+        <ul class="q-list">
             {% for other in changes.others %}
                 <li>
                     <a href="{{ path('quire_admin_content_changes', {type: type.id, id: item.id, pending: other.id}) }}">{{ other.authorId ? changes.names[other.authorId] : 'Someone'|trans({}, 'quire-admin') }}</a>
-                    <span class="meta">{{ ('changes.' ~ other.state.value)|trans({}, 'quire-admin') }} · <time datetime="{{ other.updatedAt|date('c') }}">{{ other.updatedAt|date('Y-m-d H:i', timezone) }}</time></span>
+                    <span class="q-meta">{{ ('changes.' ~ other.state.value)|trans({}, 'quire-admin') }} · <time datetime="{{ other.updatedAt|date('c') }}">{{ other.updatedAt|date('Y-m-d H:i', timezone) }}</time></span>
                 </li>
             {% endfor %}
         </ul>

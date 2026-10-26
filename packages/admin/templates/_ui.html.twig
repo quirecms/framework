@@ -1,0 +1,28 @@
+{#
+    Quire UI macros for the admin's templates, and for extensions' admin pages:
+
+        {% import '@quire_admin/_ui.html.twig' as ui %}
+        {{ ui.status(item.status) }}
+        {{ ui.icon('content') }}
+        {{ ui.logo() }}
+#}
+
+{# Where a content item is in its lifecycle: the thread (draft → review → scheduled → live) and its label. #}
+{% macro status(status, label = null) %}
+    {%- set stage = {draft: 'draft', scheduled: 'scheduled', published: 'live', review: 'review'}[status] ?? 'draft' -%}
+    <span class="q-status q-status--{{ stage }}">{{ _self.thread(stage) }}<span>{{ label ?? ('status.' ~ status)|trans({}, 'quire-admin') }}</span></span>
+{%- endmacro %}
+
+{% macro thread(stage, large = false) %}
+    <span class="q-thread q-thread--{{ stage }}{% if large %} q-thread--lg{% endif %}" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+{%- endmacro %}
+
+{# Quire's mark: the Q with its folded corner, in the brand's colours (white instead of navy in dark mode). #}
+{% macro logo() %}
+    <svg class="q-logo" viewBox="221 214 800 800" aria-hidden="true" focusable="false"><path class="q-logo__q" fill-rule="evenodd" d="M 612 228 C 431 237, 268 370, 232 539 C 215 622, 225 705, 262 781 C 321 902, 428 980, 557 997 C 643 1009, 725 991, 799 947 L 811 940 915 940 L 1019 940 1017 935 C 1011 919, 995 907, 976 903 C 971 901, 959 901, 936 900 C 918 900, 885 899, 862 898 C 834 897, 818 896, 814 895 C 792 891, 773 877, 764 858 C 756 842, 756 842, 755 794 L 755 752 744 763 C 711 795, 678 813, 636 821 C 623 823, 588 823, 574 821 C 521 812, 479 785, 448 742 C 370 633, 409 481, 528 422 C 615 380, 716 396, 779 462 C 809 494, 828 534, 834 584 C 836 596, 836 638, 834 652 L 833 662 845 675 C 851 682, 864 696, 873 705 C 890 724, 925 762, 972 813 C 987 828, 1003 845, 1009 851 L 1019 862 1019 742 C 1019 674, 1019 616, 1018 605 C 1013 512, 986 440, 930 370 C 855 275, 735 222, 612 228"/><path class="q-logo__fold" d="M 756 753 C 756 837, 756 839, 761 852 C 771 876, 792 892, 820 896 C 827 896, 850 897, 884 898 C 972 900, 978 900, 992 907 C 1001 911, 1012 922, 1016 931 C 1019 937, 1019 937, 1019 934 C 1019 929, 1015 916, 1011 908 C 1006 899, 1006 899, 963 854 C 934 822, 917 804, 883 768 C 811 690, 811 690, 798 684 C 787 678, 778 676, 765 676 L 756 676 756 753"/></svg>
+{%- endmacro %}
+
+{# An icon from the admin's sprite (see layout.html.twig), hidden from screen readers: pair it with text. #}
+{% macro icon(name) %}
+    <svg aria-hidden="true" focusable="false"><use href="#q-icon-{{ name }}"/></svg>
+{%- endmacro %}

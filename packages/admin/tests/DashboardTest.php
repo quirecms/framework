@@ -25,14 +25,14 @@ final class DashboardTest extends AdminTestCase
         $crawler = $this->client->request('GET', '/admin');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextSame('title', 'Dashboard · Admin · Quire');
-        self::assertSame(['Content', 'Recently edited'], $crawler->filter('.widgets .card h2')->each(static fn ($h2): string => $h2->text()));
+        self::assertSelectorTextSame('title', 'Home · Admin · Quire');
+        self::assertSame(['Content', 'Recently edited'], $crawler->filter('.widgets .q-card h2')->each(static fn ($h2): string => $h2->text()));
         self::assertSame(
             [['Posts', '1', '0', '1'], ['Pages', '0', '0', '1']],
-            $crawler->filter('.widgets .card:first-child tbody tr')->each(static fn ($row): array => $row->filter('th, td')->each(static fn ($cell): string => $cell->text())),
+            $crawler->filter('.widgets .q-card:first-child tbody tr')->each(static fn ($row): array => $row->filter('th, td')->each(static fn ($cell): string => $cell->text())),
         );
-        self::assertSame(['About us', 'Draft post', 'Hello'], $crawler->filter('.item-list li > :first-child')->each(static fn ($title): string => $title->text()), 'Last changed first.');
-        self::assertSame('/blog/hello', $crawler->filter('.item-list a')->attr('href'), 'Published items link to their page.');
+        self::assertSame(['About us', 'Draft post', 'Hello'], $crawler->filter('.q-list li > :first-child')->each(static fn ($title): string => $title->text()), 'Last changed first.');
+        self::assertSame('/blog/hello', $crawler->filter('.q-list a')->attr('href'), 'Published items link to their page.');
     }
 
     public function testThePageIsAccessibleWithoutJavaScript(): void
@@ -40,12 +40,12 @@ final class DashboardTest extends AdminTestCase
         $this->signIn('editor');
         $crawler = $this->client->request('GET', '/admin');
 
-        self::assertSame('skip-link', $crawler->filter('body a')->first()->attr('class'), 'The first link skips to the content.');
+        self::assertSame('q-skip', $crawler->filter('body a')->first()->attr('class'), 'The first link skips to the content.');
         self::assertSelectorExists('main#main');
-        self::assertSelectorExists('nav.admin-nav[aria-label="Admin menu"]');
+        self::assertSelectorExists('nav.q-rail[aria-label="Admin menu"]');
         self::assertSelectorExists('html[lang=en]');
-        self::assertSelectorTextSame('.admin-bar__user span', 'Editor');
-        self::assertSelectorExists('.admin-bar__user a[href^="/logout"]');
+        self::assertSelectorTextSame('.q-account .q-menu__label', 'Editor');
+        self::assertSelectorExists('.q-account a[href^="/logout"]');
     }
 
     public function testThePagesLoadTurboAndStimulusFromTheSitesDownloads(): void
@@ -71,7 +71,7 @@ final class DashboardTest extends AdminTestCase
         $this->setSetting('site.locale', 'de');
         $this->client->request('GET', '/admin');
 
-        self::assertSelectorTextSame('main h1', 'Übersicht');
-        self::assertSelectorTextSame('.skip-link', 'Zum Inhalt springen');
+        self::assertSelectorTextSame('main h1', 'Start');
+        self::assertSelectorTextSame('.q-skip', 'Zum Inhalt springen');
     }
 }

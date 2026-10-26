@@ -7,21 +7,21 @@
 {% block title %}{{ 'Extensions'|trans({}, 'quire-admin') }}{% endblock %}
 
 {% block content %}
-    {% if read_only %}<p class="notice notice--warning">{{ read_only }}</p>{% endif %}
+    {% if read_only %}<p class="q-notice q-notice--warning">{{ read_only }}</p>{% endif %}
     {% for id in missing %}
-        <p class="notice notice--error">{{ '“{id}” is enabled but no longer installed. Install it again with Composer, or disable it with "bin/console quire:extension:disable {id}".'|trans({id: id}, 'quire-admin') }}</p>
+        <p class="q-notice q-notice--error">{{ '“{id}” is enabled but no longer installed. Install it again with Composer, or disable it with "bin/console quire:extension:disable {id}".'|trans({id: id}, 'quire-admin') }}</p>
     {% endfor %}
-    <p class="field-help">{{ 'Install extensions with Composer; here you enable them. Enabling or disabling one rebuilds the site, which takes a few seconds.'|trans({}, 'quire-admin') }}</p>
+    <p class="q-help">{{ 'Install extensions with Composer; here you enable them. Enabling or disabling one rebuilds the site, which takes a few seconds.'|trans({}, 'quire-admin') }}</p>
 
-    <div class="table-scroll">
-        <table class="table">
-            <caption class="visually-hidden">{{ 'Installed extensions'|trans({}, 'quire-admin') }}</caption>
+    <div class="q-scroll">
+        <table class="q-table">
+            <caption class="q-sr">{{ 'Installed extensions'|trans({}, 'quire-admin') }}</caption>
             <thead>
                 <tr>
                     <th scope="col">{{ 'Extension'|trans({}, 'quire-admin') }}</th>
                     <th scope="col">{{ 'Status'|trans({}, 'quire-admin') }}</th>
                     <th scope="col">{{ 'Requires'|trans({}, 'quire-admin') }}</th>
-                    <th scope="col"><span class="visually-hidden">{{ 'Actions'|trans({}, 'quire-admin') }}</span></th>
+                    <th scope="col"><span class="q-sr">{{ 'Actions'|trans({}, 'quire-admin') }}</span></th>
                 </tr>
             </thead>
             <tbody>
@@ -30,21 +30,21 @@
                     <tr>
                         <th scope="row">
                             <span class="content-list__title">{{ manifest.title }}</span>
-                            {% if manifest.description %}<span class="meta">{{ manifest.description }}</span>{% endif %}
-                            <span class="meta"><code>{{ manifest.id }}</code> · {{ manifest.packageName }} {{ manifest.version }}</span>
+                            {% if manifest.description %}<span class="q-meta">{{ manifest.description }}</span>{% endif %}
+                            <span class="q-meta"><code>{{ manifest.id }}</code> · {{ manifest.packageName }} {{ manifest.version }}</span>
                         </th>
                         <td>
-                            <span class="status status--{{ entry.status == 'enabled' ? 'published' : entry.status }}">{{ ('extensions.status.' ~ entry.status)|trans({}, 'quire-admin') }}</span>
-                            {% if entry.problem %}<span class="field-error">{{ entry.problem }}</span>{% endif %}
+                            <span class="q-tag {{ {enabled: 'q-tag--ok', broken: 'q-tag--err'}[entry.status] ?? '' }}">{{ ('extensions.status.' ~ entry.status)|trans({}, 'quire-admin') }}</span>
+                            {% if entry.problem %}<span class="q-error">{{ entry.problem }}</span>{% endif %}
                         </td>
                         <td>{{ manifest.requires|join(', ') ?: '—' }}</td>
                         <td class="content-list__actions">
                             {% if not read_only %}
                                 {% if entry.status == 'disabled' %}
-                                    <a class="link-button" href="{{ path('quire_admin_extension_confirm', {id: manifest.id, action: 'enable'}) }}">{{ 'Enable'|trans({}, 'quire-admin') }}<span class="visually-hidden"> {{ manifest.title }}</span></a>
+                                    <a class="q-link-btn" href="{{ path('quire_admin_extension_confirm', {id: manifest.id, action: 'enable'}) }}">{{ 'Enable'|trans({}, 'quire-admin') }}<span class="q-sr"> {{ manifest.title }}</span></a>
                                 {% else %}
-                                    <a class="link-button" href="{{ path('quire_admin_extension_confirm', {id: manifest.id, action: 'disable'}) }}">{{ 'Disable'|trans({}, 'quire-admin') }}<span class="visually-hidden"> {{ manifest.title }}</span></a>
-                                    <a class="link-button link-button--danger" href="{{ path('quire_admin_extension_confirm', {id: manifest.id, action: 'purge'}) }}">{{ 'Delete its data'|trans({}, 'quire-admin') }}<span class="visually-hidden"> ({{ manifest.title }})</span></a>
+                                    <a class="q-link-btn" href="{{ path('quire_admin_extension_confirm', {id: manifest.id, action: 'disable'}) }}">{{ 'Disable'|trans({}, 'quire-admin') }}<span class="q-sr"> {{ manifest.title }}</span></a>
+                                    <a class="q-link-btn q-link-btn--danger" href="{{ path('quire_admin_extension_confirm', {id: manifest.id, action: 'purge'}) }}">{{ 'Delete its data'|trans({}, 'quire-admin') }}<span class="q-sr"> ({{ manifest.title }})</span></a>
                                 {% endif %}
                             {% endif %}
                         </td>

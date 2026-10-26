@@ -42,7 +42,7 @@ final class RolesTest extends AdminTestCase
         $this->user('Mia', ['member']);
         $crawler = $this->client->request('GET', '/admin/roles/member');
 
-        self::assertSelectorTextContains('main p.meta', '1 user');
+        self::assertSelectorTextContains('main p.q-meta', '1 user');
         self::assertCount(2, $crawler->filter('.ability-grid tbody tr'), 'Posts and pages.');
         self::assertSame('everyone may', $crawler->filter('#ability-content-post-view ~ .ability__everyone')->text());
 
@@ -51,7 +51,7 @@ final class RolesTest extends AdminTestCase
         self::assertSelectorTextSame('h1', 'Change what “Member” may do?');
         self::assertSelectorTextContains('main', 'This applies to the 1 user with this role.');
         self::assertSame(['Create posts content.post.create'], $crawler->filter('.review-list__added')->each(static fn (Crawler $li): string => $li->text()));
-        self::assertSelectorTextContains('.notice--warning', 'They may create posts, which is done in the admin, but they can\'t open it.');
+        self::assertSelectorTextContains('.q-notice--warning', 'They may create posts, which is done in the admin, but they can\'t open it.');
         self::assertSame([], $this->service(Permissions::class)->abilitiesOf('member'), 'Nothing saved yet.');
 
         $this->client->submit($crawler->selectButton('Save')->form());
@@ -72,11 +72,11 @@ final class RolesTest extends AdminTestCase
     {
         $this->signIn();
         $crawler = $this->client->request('GET', '/admin/roles/guest');
-        self::assertSelectorTextContains('main p.meta', 'Everyone, including visitors who aren\'t signed in.');
+        self::assertSelectorTextContains('main p.q-meta', 'Everyone, including visitors who aren\'t signed in.');
 
         $crawler = $this->client->submit($this->tick($crawler->selectButton('Review the changes')->form(), ['content.post.view', 'content.page.view', 'quire.settings.manage']));
         self::assertSelectorTextContains('main', 'This applies to everyone, including visitors who aren\'t signed in.');
-        self::assertSame('for everyone', $crawler->filter('.review-list__added .tag--warning')->text());
+        self::assertSame('for everyone', $crawler->filter('.review-list__added .q-tag--warn')->text());
     }
 
     public function testSavingWhatSomeoneChangedMeanwhileIsRefused(): void
@@ -89,7 +89,7 @@ final class RolesTest extends AdminTestCase
         $this->client->submit($crawler->selectButton('Save')->form());
         $this->client->followRedirect();
 
-        self::assertSelectorTextContains('.notice--error', 'Someone changed this role while you reviewed it.');
+        self::assertSelectorTextContains('.q-notice--error', 'Someone changed this role while you reviewed it.');
         self::assertSame(['content.page.create'], $this->service(Permissions::class)->abilitiesOf('member'));
     }
 
@@ -98,7 +98,7 @@ final class RolesTest extends AdminTestCase
         $this->signIn();
         $crawler = $this->client->request('GET', '/admin/roles/admin');
 
-        self::assertSelectorTextContains('.notice--warning', 'Admins may do everything, except strict abilities');
+        self::assertSelectorTextContains('.q-notice--warning', 'Admins may do everything, except strict abilities');
         self::assertCount(0, $crawler->filter('input[name="abilities[]"]'));
         self::assertSelectorTextContains('main', 'No ability is strict: admins may do everything.');
     }
@@ -114,7 +114,7 @@ final class RolesTest extends AdminTestCase
         self::assertSame($permissions->abilitiesOf('editor'), $permissions->abilitiesOf('translator'));
 
         $crawler = $this->client->followRedirect();
-        self::assertSelectorTextContains('main p.meta', 'added on this site');
+        self::assertSelectorTextContains('main p.q-meta', 'added on this site');
         $this->client->submit($crawler->selectButton('Rename')->form(['label' => 'Übersetzer']));
         self::assertSame('Übersetzer', $this->service(Permissions::class)->roles()['translator']);
 
@@ -129,9 +129,9 @@ final class RolesTest extends AdminTestCase
         $crawler = $this->client->request('GET', '/admin/roles');
         $this->client->submit($crawler->selectButton('Add the role')->form(['label' => 'Editors', 'name' => 'editor']));
         $this->client->followRedirect();
-        self::assertSelectorTextSame('.notice--error', 'There\'s a role "editor" already.');
+        self::assertSelectorTextSame('.q-notice--error', 'There\'s a role "editor" already.');
         $this->client->request('GET', '/admin/roles/editor/delete');
-        self::assertSelectorTextContains('.notice--error', 'Only roles added on this site can be deleted');
+        self::assertSelectorTextContains('.q-notice--error', 'Only roles added on this site can be deleted');
     }
 
     public function testAccessIsExplained(): void
@@ -142,13 +142,13 @@ final class RolesTest extends AdminTestCase
         $crawler = $this->client->request('GET', '/admin/access?user=grace&ability=quire.settings.manage');
         self::assertSame('No Grace may not: Change the site\'s settings', $crawler->filter('.access-result h2')->text());
         self::assertSame(['None of their roles (editor) has it.'], $crawler->filter('.access-result li')->each(static fn (Crawler $li): string => $li->text()));
-        self::assertSame(['Admin 1 user'], $crawler->filter('.card')->last()->filter('.item-list li')->each(static fn (Crawler $li): string => $li->text()));
+        self::assertSame(['Admin 1 user'], $crawler->filter('.q-card')->last()->filter('.q-list li')->each(static fn (Crawler $li): string => $li->text()));
 
         $crawler = $this->client->request('GET', '/admin/access?user=grace&ability=content.post.publish');
         self::assertSame('Yes Grace may: Publish posts', $crawler->filter('.access-result h2')->text());
 
         $this->client->request('GET', '/admin/access?user=nobody&ability=content.post.publish');
-        self::assertSelectorTextSame('.notice--error', 'No user with the username or email “nobody”.');
+        self::assertSelectorTextSame('.q-notice--error', 'No user with the username or email “nobody”.');
         self::assertSelectorNotExists('.access-result');
     }
 

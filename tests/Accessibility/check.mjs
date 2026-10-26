@@ -1,6 +1,7 @@
 /*
  * Checks pages of a running site with axe-core against WCAG 2.2 A and AA, in light and dark mode, at
- * desktop and phone widths, and that the first Tab reaches the skip link. Exits with 1 on violations.
+ * desktop width and at 320px, where nothing may be wider than the screen (reflow, WCAG 1.4.10, which
+ * axe doesn't test), and that the first Tab reaches the skip link. Exits with 1 on violations.
  *
  *     node check.mjs https://quire.localhost / /blog/hello-world /about
  *
@@ -22,7 +23,7 @@ const browser = await chromium.launch({ args: server ? [`--host-resolver-rules=M
 let violations = 0;
 
 for (const colorScheme of ['light', 'dark']) {
-    for (const width of [1280, 390]) {
+    for (const width of [1280, 320]) {
         const context = await browser.newContext({ ignoreHTTPSErrors: true, colorScheme, viewport: { width, height: 900 } });
         const page = await context.newPage();
         const errors = [];
@@ -53,7 +54,15 @@ for (const colorScheme of ['light', 'dark']) {
                 violation.nodes.slice(0, 3).forEach((node) => console.log(`    ${node.target.join(' ')}`));
             }
 
-            if (results.violations.length === 0) {
+            // Content may scroll inside its own box (e.g. a wide table), never the whole page.
+            const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+
+            if (overflow > 1) {
+                violations++;
+                console.log(`✗ ${path} (${colorScheme}, ${width}px): reflow: the page is ${overflow}px wider than the screen`);
+            }
+
+            if (results.violations.length === 0 && overflow <= 1) {
                 console.log(`✓ ${path} (${colorScheme}, ${width}px): ${results.passes.length} rules passed`);
             }
         }
@@ -66,7 +75,7 @@ for (const colorScheme of ['light', 'dark']) {
         await page.goto(base + pages[0]);
         await page.keyboard.press('Tab');
 
-        if (!(await page.evaluate(() => document.activeElement?.classList.contains('skip-link')))) {
+        if (!(await page.evaluate(() => document.activeElement?.matches('.skip-link, .q-skip')))) {
             violations++;
             console.log(`✗ ${pages[0]} (${colorScheme}, ${width}px): the first Tab doesn't reach the skip link`);
         }

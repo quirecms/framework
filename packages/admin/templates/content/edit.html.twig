@@ -7,6 +7,7 @@
     may_publish, approval, merge_conflicts) and others' (others, names).
 #}
 {% extends '@quire_admin/layout.html.twig' %}
+{% import '@quire_admin/_ui.html.twig' as ui %}
 {% import '@quire_admin/content/widgets.html.twig' as widgets %}
 
 {% set plural = type.pluralLabel|trans({}, type.owner) %}
@@ -15,7 +16,7 @@
 {% block title %}{{ item ? item.title : 'New item'|trans({}, 'quire-admin') }}{% endblock %}
 
 {% block actions %}
-    <p class="page-header__links">
+    <p class="q-page-head__links">
         <a href="{{ path('quire_admin_content', {type: type.id}) }}">{{ 'All {type}'|trans({type: plural}, 'quire-admin') }}</a>
         {% if item and item.isPublic %}
             <a href="{{ quire_url(item) }}">{{ 'View on the site'|trans({}, 'quire-admin') }}</a>
@@ -25,14 +26,14 @@
 
 {% block content %}
     {% if conflict %}
-        <div class="notice notice--warning" role="alert">
+        <div class="q-notice q-notice--warning" role="alert">
             <p>{{ 'Someone saved this item after you opened it. What you entered is below and isn\'t saved. Save again to replace their changes with yours, or open the item in a new tab to see theirs first.'|trans({}, 'quire-admin') }}</p>
             <p><a href="{{ path('quire_admin_content_edit', {type: type.id, id: item.id}) }}" target="_blank">{{ 'Open the saved item in a new tab'|trans({}, 'quire-admin') }}</a></p>
         </div>
     {% endif %}
 
     {% if changes and changes.merge_conflicts %}
-        <div class="notice notice--warning" role="alert">
+        <div class="q-notice q-notice--warning" role="alert">
             <p>{{ 'Changes published since you started conflict with yours, so yours aren\'t published yet. They differ in:'|trans({}, 'quire-admin') }}</p>
             <ul>
                 {% for property, reason in changes.merge_conflicts %}
@@ -41,20 +42,20 @@
             </ul>
             <p>{{ 'Keep your version of these parts, then publish again; the other changes are kept. Or look at both first.'|trans({}, 'quire-admin') }}</p>
             <p>
-                <button type="submit" form="editor-form" class="button" name="intent" value="keep_mine">{{ 'Keep my version'|trans({}, 'quire-admin') }}</button>
+                <button type="submit" form="editor-form" class="q-btn" name="intent" value="keep_mine">{{ 'Keep my version'|trans({}, 'quire-admin') }}</button>
                 <a href="{{ path('quire_admin_content_changes', {type: type.id, id: item.id, pending: changes.pending.id}) }}">{{ 'Compare the changes'|trans({}, 'quire-admin') }}</a>
             </p>
         </div>
     {% endif %}
 
     {% if item and item.deletedAt %}
-        <p class="notice notice--warning" role="status">{{ 'This item is in the trash. Restore it from the list to change it.'|trans({}, 'quire-admin') }}</p>
+        <p class="q-notice q-notice--warning" role="status">{{ 'This item is in the trash. Restore it from the list to change it.'|trans({}, 'quire-admin') }}</p>
     {% elseif not can_save %}
-        <p class="notice notice--warning" role="status">{{ 'This item is published, and changes to it go live, which you may not do.'|trans({}, 'quire-admin') }}</p>
+        <p class="q-notice q-notice--warning" role="status">{{ 'This item is published, and changes to it go live, which you may not do.'|trans({}, 'quire-admin') }}</p>
     {% endif %}
 
     {% if errors is not empty %}
-        <div class="error-summary" role="alert" tabindex="-1" data-controller="focus">
+        <div class="q-error-summary" role="alert" tabindex="-1" data-controller="focus">
             <h2>{{ 'There\'s a problem'|trans({}, 'quire-admin') }}</h2>
             <ul>
                 {% for property, message in errors %}
@@ -83,19 +84,19 @@
         {% endif %}
 
         <fieldset class="editor__main"{% if readonly %} disabled{% endif %}>
-            <legend class="visually-hidden">{{ 'Text'|trans({}, 'quire-admin') }}</legend>
+            <legend class="q-sr">{{ 'Text'|trans({}, 'quire-admin') }}</legend>
 
-            <div class="form-field">
+            <div class="q-field">
                 {{ _self.field('title', 'Title'|trans({}, 'quire-admin'), errors.title ?? null, true) }}
                 <input type="text" id="title" name="title" class="editor__title" value="{{ values.title }}" required{{ _self.described('title', errors.title ?? null) }}>
             </div>
 
-            <div class="form-field">
+            <div class="q-field">
                 <div class="editor__body-heading">
                     <label for="body">{{ 'Text'|trans({}, 'quire-admin') }}</label>
-                    <span class="meta">{{ 'Markdown'|trans({}, 'quire-admin') }}</span>
+                    <span class="q-meta">{{ 'Markdown'|trans({}, 'quire-admin') }}</span>
                 </div>
-                {% if errors.body is defined %}<p class="field-error" id="body-error">{{ errors.body }}</p>{% endif %}
+                {% if errors.body is defined %}<p class="q-error" id="body-error">{{ errors.body }}</p>{% endif %}
                 <div class="markdown-field" data-controller="markdown-editor" data-markdown-editor-label-value="{{ 'Text'|trans({}, 'quire-admin') }}" data-markdown-editor-labels-value="{{ widgets.toolbar_labels() }}">
                     <textarea id="body" name="body" rows="18" class="markdown-field__source" data-markdown-editor-target="source" data-content-editor-target="body"{{ _self.described('body', errors.body ?? null) }}>{{ values.body }}</textarea>
                 </div>
@@ -103,25 +104,25 @@
 
             <section class="preview" aria-labelledby="preview-heading" data-content-editor-target="preview"{% if preview is null %} hidden{% endif %}>
                 <h2 id="preview-heading">{{ 'Preview'|trans({}, 'quire-admin') }}</h2>
-                <div class="preview__body prose" data-content-editor-target="previewBody">{{ preview|raw }}</div>
+                <div class="preview__body q-prose" data-content-editor-target="previewBody">{{ preview|raw }}</div>
             </section>
 
             {% if type.has('excerpt') %}
-                <div class="form-field">
+                <div class="q-field">
                     {{ _self.field('excerpt', 'Excerpt'|trans({}, 'quire-admin'), errors.excerpt ?? null) }}
-                    <p class="field-help" id="excerpt-help">{{ 'A short summary for lists and search engines.'|trans({}, 'quire-admin') }}</p>
+                    <p class="q-help" id="excerpt-help">{{ 'A short summary for lists and search engines.'|trans({}, 'quire-admin') }}</p>
                     <textarea id="excerpt" name="excerpt" rows="3" aria-describedby="excerpt-help{{ errors.excerpt is defined ? ' excerpt-error' }}"{% if errors.excerpt is defined %} aria-invalid="true"{% endif %}>{{ values.excerpt }}</textarea>
                 </div>
             {% endif %}
 
             {% for group, list in fields %}
-                <fieldset class="field-group">
+                <fieldset class="q-fieldset">
                     <legend>{{ group ?: 'Fields'|trans({}, 'quire-admin') }}</legend>
                     {% for entry in list %}
-                        <div class="form-field form-field--{{ entry.field.widget }}">
-                            <label for="{{ entry.control.id }}">{{ entry.label }}{% if entry.field.required %} <span class="meta">({{ 'required'|trans({}, 'quire-admin') }})</span>{% endif %}</label>
-                            {% if entry.field.help %}<p class="field-help" id="{{ entry.control.id }}-help">{{ entry.field.help }}</p>{% endif %}
-                            {% if entry.error %}<p class="field-error" id="{{ entry.control.id }}-error">{{ entry.error }}</p>{% endif %}
+                        <div class="q-field form-field--{{ entry.field.widget }}">
+                            <label for="{{ entry.control.id }}">{{ entry.label }}{% if entry.field.required %} <span class="q-meta">({{ 'required'|trans({}, 'quire-admin') }})</span>{% endif %}</label>
+                            {% if entry.field.help %}<p class="q-help" id="{{ entry.control.id }}-help">{{ entry.field.help }}</p>{% endif %}
+                            {% if entry.error %}<p class="q-error" id="{{ entry.control.id }}-error">{{ entry.error }}</p>{% endif %}
                             {{ entry.html }}
                         </div>
                     {% endfor %}
@@ -133,11 +134,11 @@
             {% if changes %}
                 {{ include('@quire_admin/content/_changes_panel.html.twig') }}
             {% else %}
-            <section class="panel" aria-labelledby="publishing-heading">
+            <section class="q-panel" aria-labelledby="publishing-heading">
                 <h2 id="publishing-heading">{{ 'Publishing'|trans({}, 'quire-admin') }}</h2>
-                <dl class="facts">
+                <dl class="q-facts">
                     <dt>{{ 'Status'|trans({}, 'quire-admin') }}</dt>
-                    <dd>{% if item %}<span class="status status--{{ item.status }}">{{ ('status.' ~ item.status)|trans({}, 'quire-admin') }}</span>{% else %}{{ 'Not saved yet'|trans({}, 'quire-admin') }}{% endif %}</dd>
+                    <dd>{% if item %}{{ ui.status(item.status) }}{% else %}{{ 'Not saved yet'|trans({}, 'quire-admin') }}{% endif %}</dd>
                     {% if item and item.publishedAt %}
                         <dt>{{ 'Published'|trans({}, 'quire-admin') }}</dt>
                         <dd><time datetime="{{ item.publishedAt|date('c') }}">{{ item.publishedAt|date('Y-m-d H:i', timezone) }}</time></dd>
@@ -146,25 +147,25 @@
 
                 {% if not readonly %}
                     <div class="editor__buttons">
-                        <button type="submit" class="button" name="intent" value="save">{{ 'Save'|trans({}, 'quire-admin') }}</button>
-                        <button type="submit" class="button button--secondary" name="intent" value="preview" formnovalidate data-content-editor-target="previewButton">{{ 'Preview'|trans({}, 'quire-admin') }}</button>
+                        <button type="submit" class="q-btn" name="intent" value="save">{{ 'Save'|trans({}, 'quire-admin') }}</button>
+                        <button type="submit" class="q-btn q-btn--ghost" name="intent" value="preview" formnovalidate data-content-editor-target="previewButton">{{ 'Preview'|trans({}, 'quire-admin') }}</button>
                     </div>
 
                     {% for intent, label in transitions %}
                         {% if intent == 'transition:schedule' %}
-                            <div class="form-field">
-                                <label for="publish_at">{{ 'Publish on'|trans({}, 'quire-admin') }} <span class="meta">({{ timezone }})</span></label>
-                                {% if errors.published_at is defined %}<p class="field-error" id="publish_at-error">{{ errors.published_at }}</p>{% endif %}
+                            <div class="q-field">
+                                <label for="publish_at">{{ 'Publish on'|trans({}, 'quire-admin') }} <span class="q-meta">({{ timezone }})</span></label>
+                                {% if errors.published_at is defined %}<p class="q-error" id="publish_at-error">{{ errors.published_at }}</p>{% endif %}
                                 <input type="datetime-local" id="publish_at" name="publish_at"{{ _self.described('publish_at', errors.published_at ?? null) }}>
                             </div>
                         {% endif %}
-                        <button type="submit" class="button button--secondary" name="intent" value="{{ intent }}">{{ 'Save and {action}'|trans({action: label|lower}, 'quire-admin') }}</button>
+                        <button type="submit" class="q-btn q-btn--ghost" name="intent" value="{{ intent }}">{{ 'Save and {action}'|trans({action: label|lower}, 'quire-admin') }}</button>
                     {% endfor %}
                 {% endif %}
             </section>
             {% endif %}
 
-            <section class="panel" aria-labelledby="checks-heading">
+            <section class="q-panel" aria-labelledby="checks-heading">
                 <h2 id="checks-heading">{{ 'Checks'|trans({}, 'quire-admin') }}</h2>
                 <div data-content-editor-target="checks">{{ include('@quire_admin/content/_checks.html.twig') }}</div>
             </section>
@@ -177,17 +178,17 @@
             {% endif %}
 
             {% set place = changes ? ' form="place-form"' : '' %}
-            <fieldset class="panel"{% if readonly or (changes and not changes.may_publish) %} disabled{% endif %}>
+            <fieldset class="q-panel"{% if readonly or (changes and not changes.may_publish) %} disabled{% endif %}>
                 <legend>{{ 'Address and place'|trans({}, 'quire-admin') }}</legend>
-                {% if changes %}<p class="field-help">{{ 'These change the published item right away.'|trans({}, 'quire-admin') }}</p>{% endif %}
-                <div class="form-field">
+                {% if changes %}<p class="q-help">{{ 'These change the published item right away.'|trans({}, 'quire-admin') }}</p>{% endif %}
+                <div class="q-field">
                     {{ _self.field('slug', 'Slug'|trans({}, 'quire-admin'), errors.slug ?? null) }}
-                    <p class="field-help" id="slug-help">{{ 'The last part of its address. Left empty, it\'s made from the title.'|trans({}, 'quire-admin') }}</p>
+                    <p class="q-help" id="slug-help">{{ 'The last part of its address. Left empty, it\'s made from the title.'|trans({}, 'quire-admin') }}</p>
                     <input type="text" id="slug" name="slug"{{ place|raw }} value="{{ values.slug }}" aria-describedby="slug-help{{ errors.slug is defined ? ' slug-error' }}"{% if errors.slug is defined %} aria-invalid="true"{% endif %}>
                 </div>
 
                 {% if authors is not empty %}
-                    <div class="form-field">
+                    <div class="q-field">
                         {{ _self.field('author_id', 'Author'|trans({}, 'quire-admin'), errors.author_id ?? null) }}
                         <select id="author_id" name="author_id"{{ place|raw }}{{ _self.described('author_id', errors.author_id ?? null) }}>
                             <option value="">—</option>
@@ -199,7 +200,7 @@
                 {% endif %}
 
                 {% if type.has('hierarchical') %}
-                    <div class="form-field">
+                    <div class="q-field">
                         {{ _self.field('parent_id', 'Parent'|trans({}, 'quire-admin'), errors.parent_id ?? null) }}
                         <select id="parent_id" name="parent_id"{{ place|raw }}{{ _self.described('parent_id', errors.parent_id ?? null) }}>
                             <option value="">{{ '(top level)'|trans({}, 'quire-admin') }}</option>
@@ -208,13 +209,13 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <div class="form-field">
+                    <div class="q-field">
                         {{ _self.field('position', 'Position'|trans({}, 'quire-admin'), errors.position ?? null) }}
                         <input type="number" id="position" name="position"{{ place|raw }} min="0" step="1" value="{{ values.position }}"{{ _self.described('position', errors.position ?? null) }}>
                     </div>
                 {% endif %}
                 {% if changes and changes.may_publish %}
-                    <button type="submit" form="place-form" class="button button--secondary">{{ 'Save address and place'|trans({}, 'quire-admin') }}</button>
+                    <button type="submit" form="place-form" class="q-btn q-btn--ghost">{{ 'Save address and place'|trans({}, 'quire-admin') }}</button>
                 {% endif %}
             </fieldset>
         </div>
@@ -230,8 +231,8 @@
 {% endblock %}
 
 {% macro field(id, label, error, required = false) %}
-    <label for="{{ id }}">{{ label }}{% if required %} <span class="meta">({{ 'required'|trans({}, 'quire-admin') }})</span>{% endif %}</label>
-    {% if error %}<p class="field-error" id="{{ id }}-error">{{ error }}</p>{% endif %}
+    <label for="{{ id }}">{{ label }}{% if required %} <span class="q-meta">({{ 'required'|trans({}, 'quire-admin') }})</span>{% endif %}</label>
+    {% if error %}<p class="q-error" id="{{ id }}-error">{{ error }}</p>{% endif %}
 {% endmacro %}
 
 {% macro described(id, error) %}{% if error %} aria-describedby="{{ id }}-error" aria-invalid="true"{% endif %}{% endmacro %}

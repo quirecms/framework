@@ -254,7 +254,7 @@ final readonly class SettingsForm
     private function checkLevels(mixed $value, FieldControl $control): Markup
     {
         $levels = \is_array($value) ? $value : [];
-        $html = '<table class="table check-levels"><tbody>';
+        $html = '<table class="q-table check-levels"><tbody>';
 
         foreach ($this->checker->checks() as $check) {
             $name = htmlspecialchars($control->name.'['.$check['id'].']');
@@ -266,7 +266,7 @@ final readonly class SettingsForm
                 $options .= \sprintf('<option value="%s"%s>%s</option>', $level, $level === $current ? ' selected' : '', htmlspecialchars($label));
             }
 
-            $html .= \sprintf('<tr><th scope="row"><label for="%s">%s</label> <span class="meta">%s</span></th><td><select name="%s" id="%s">%s</select></td></tr>', $id, htmlspecialchars($this->translator->trans($check['label'], [], $check['owner'])), htmlspecialchars($check['id']), $name, $id, $options);
+            $html .= \sprintf('<tr><th scope="row"><label for="%s">%s</label> <span class="q-meta">%s</span></th><td><select name="%s" id="%s">%s</select></td></tr>', $id, htmlspecialchars($this->translator->trans($check['label'], [], $check['owner'])), htmlspecialchars($check['id']), $name, $id, $options);
         }
 
         return new Markup($html.'</tbody></table>', 'UTF-8');

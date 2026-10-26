@@ -3,15 +3,15 @@
     "removed", or "skip" for unchanged lines left out). Variables: diff, caption.
 #}
 {% if diff.properties is empty and diff.lines is empty %}
-    <p class="empty">{{ 'Nothing is changed.'|trans({}, 'quire-admin') }}</p>
+    <p class="q-empty">{{ 'Nothing is changed.'|trans({}, 'quire-admin') }}</p>
 {% endif %}
 
 {% if diff.properties is not empty %}
-    <table class="table diff-properties">
-        <caption class="visually-hidden">{{ caption }}</caption>
+    <table class="q-table diff-properties">
+        <caption class="q-sr">{{ caption }}</caption>
         <thead>
             <tr>
-                <th scope="col"><span class="visually-hidden">{{ 'Changed'|trans({}, 'quire-admin') }}</span></th>
+                <th scope="col"><span class="q-sr">{{ 'Changed'|trans({}, 'quire-admin') }}</span></th>
                 <th scope="col">{{ 'Before'|trans({}, 'quire-admin') }}</th>
                 <th scope="col">{{ 'After'|trans({}, 'quire-admin') }}</th>
             </tr>
@@ -29,9 +29,9 @@
 {% endif %}
 
 {% if diff.lines is not empty %}
-    <div class="table-scroll">
+    <div class="q-scroll">
         <table class="diff-lines">
-            <caption class="visually-hidden">{{ 'Changes to the text'|trans({}, 'quire-admin') }}</caption>
+            <caption class="q-sr">{{ 'Changes to the text'|trans({}, 'quire-admin') }}</caption>
             <tbody>
                 {% for line in diff.lines %}
                     {% if line.operation == 'skip' %}
@@ -42,9 +42,9 @@
                             <td class="diff-number" aria-hidden="true">{{ line.new }}</td>
                             <td class="diff-text">
                                 {%- if line.operation == 'added' -%}
-                                    <span class="diff-sign" aria-hidden="true">+</span><ins><span class="visually-hidden">{{ 'Added:'|trans({}, 'quire-admin') }} </span>{{ line.text }}</ins>
+                                    <span class="diff-sign" aria-hidden="true">+</span><ins><span class="q-sr">{{ 'Added:'|trans({}, 'quire-admin') }} </span>{{ line.text }}</ins>
                                 {%- elseif line.operation == 'removed' -%}
-                                    <span class="diff-sign" aria-hidden="true">−</span><del><span class="visually-hidden">{{ 'Removed:'|trans({}, 'quire-admin') }} </span>{{ line.text }}</del>
+                                    <span class="diff-sign" aria-hidden="true">−</span><del><span class="q-sr">{{ 'Removed:'|trans({}, 'quire-admin') }} </span>{{ line.text }}</del>
                                 {%- else -%}
                                     <span class="diff-sign" aria-hidden="true"> </span>{{ line.text }}
                                 {%- endif -%}

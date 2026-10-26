@@ -575,7 +575,7 @@ final readonly class ContentEditController
             // The preview is part of the editor's page: its IDs (e.g. of headings) mustn't be the form's.
             return (string) preg_replace('/\b(id="|href="#)/', '$1preview-', $html);
         } catch (\Throwable $e) {
-            return \sprintf('<p class="notice notice--error">%s</p>', htmlspecialchars($this->translator->trans('The preview failed: {problem}', ['problem' => $e->getMessage()], 'quire-admin')));
+            return \sprintf('<p class="q-notice q-notice--error">%s</p>', htmlspecialchars($this->translator->trans('The preview failed: {problem}', ['problem' => $e->getMessage()], 'quire-admin')));
         }
     }
 

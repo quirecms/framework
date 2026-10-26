@@ -41,8 +41,8 @@ final class SiteTest extends AdminTestCase
         $this->signIn('admin');
         $crawler = $this->client->request('GET', '/admin/settings');
 
-        self::assertSame(['Site', 'Content', 'Addresses', 'Users', 'Storage'], $crawler->filter('.views a')->each(static fn (Crawler $a): string => $a->text()));
-        self::assertSame('page', $crawler->filter('.views a')->first()->attr('aria-current'));
+        self::assertSame(['Site', 'Content', 'Addresses', 'Users', 'Storage'], $crawler->filter('.q-views a')->each(static fn (Crawler $a): string => $a->text()));
+        self::assertSame('page', $crawler->filter('.q-views a')->first()->attr('aria-current'));
         self::assertSame('The language of the site and of new content, as a language tag such as "en", "de" or "pt-BR".', $crawler->filter('#setting-site-locale-help')->text());
         self::assertSame('setting-site-locale-help', $crawler->filter('#setting-site-locale')->attr('aria-describedby'));
         self::assertCount(0, $crawler->filter('[name="settings[theme.active]"], [name="settings[quire.permissions.grants]"]'), 'Those have pages of their own.');
@@ -51,7 +51,7 @@ final class SiteTest extends AdminTestCase
         $this->client->submit($crawler->selectButton('Save settings')->form(['settings[site.title]' => 'My site', 'settings[site.homepage]' => 'page', 'settings[site.homepage_page]' => 'home']));
         self::assertResponseRedirects('/admin/settings/site', 303);
         $crawler = $this->client->followRedirect();
-        self::assertSelectorTextSame('.notice--success', '3 settings saved.');
+        self::assertSelectorTextSame('.q-notice--success', '3 settings saved.');
         self::assertSame('My site', $this->settings()->get('site.title'));
         self::assertSame('home', $this->settings()->get('site.homepage_page'));
 
@@ -73,7 +73,7 @@ final class SiteTest extends AdminTestCase
         $crawler = $this->client->submit($crawler->selectButton('Save settings')->form(['settings[quire.content.per_page]' => 'ten', 'settings[quire.content.revisions_keep]' => '20']));
 
         self::assertResponseStatusCodeSame(422);
-        self::assertSame('#setting-quire-content-per_page', $crawler->filter('.error-summary a')->attr('href'));
+        self::assertSame('#setting-quire-content-per_page', $crawler->filter('.q-error-summary a')->attr('href'));
         self::assertSame('ten', $crawler->filter('#setting-quire-content-per_page')->attr('value'), 'What was entered, to correct.');
         self::assertSame('true', $crawler->filter('#setting-quire-content-per_page')->attr('aria-invalid'));
         self::assertSame(20, $this->settings()->get('quire.content.revisions_keep'), 'Valid ones are saved.');
@@ -96,7 +96,7 @@ final class SiteTest extends AdminTestCase
         $crawler = $this->client->followRedirect();
         $this->client->submit($crawler->selectButton('Save settings')->form());
         $this->client->followRedirect();
-        self::assertSelectorTextSame('.notice--success', 'Nothing changed.');
+        self::assertSelectorTextSame('.q-notice--success', 'Nothing changed.');
     }
 
     public function testThemesCantChangeWhenPinned(): void
@@ -105,15 +105,15 @@ final class SiteTest extends AdminTestCase
         $crawler = $this->client->request('GET', '/admin/themes');
 
         self::assertResponseIsSuccessful();
-        self::assertStringContainsString('The theme is pinned in configuration', $crawler->filter('.notice--warning')->text());
-        self::assertSame('Quire\'s built-in templates (in use)', $crawler->filter('.card__title')->last()->text());
+        self::assertStringContainsString('The theme is pinned in configuration', $crawler->filter('.q-notice--warning')->text());
+        self::assertSame('Quire\'s built-in templates in use', $crawler->filter('.q-card__title')->last()->text());
         self::assertCount(0, $crawler->filter('form[action="/admin/themes"]'));
 
         // The settings' form has the token the site's pages share.
-        $token = (string) $this->client->request('GET', '/admin/settings')->filter('input[name=_token]')->attr('value');
+        $token = (string) $this->client->request('GET', '/admin/settings')->filter('main input[name=_token]')->attr('value');
         $this->client->request('POST', '/admin/themes', ['_token' => $token, 'theme' => 'quire-theme-default']);
         $this->client->followRedirect();
-        self::assertSelectorTextContains('.notice--error', 'pinned');
+        self::assertSelectorTextContains('.q-notice--error', 'pinned');
     }
 
     public function testExtensionsAreEnabledAndDisabledAfterConfirming(): void
@@ -122,22 +122,22 @@ final class SiteTest extends AdminTestCase
         $this->signIn('admin');
 
         $crawler = $this->client->request('GET', '/admin/extensions');
-        self::assertSame('Enabled', $crawler->filter('tr:contains("quire-admin") .status')->text());
+        self::assertSame('Enabled', $crawler->filter('tr:contains("quire-admin") .q-tag')->text());
 
         $crawler = $this->client->click($crawler->selectLink('Disable Admin')->link());
         self::assertSelectorTextSame('h1', 'Disable “Admin”?');
-        self::assertSelectorTextContains('.notice--warning', 'This turns off the admin interface');
+        self::assertSelectorTextContains('.q-notice--warning', 'This turns off the admin interface');
 
         $this->client->submit($crawler->selectButton('Disable')->form());
         $this->client->followRedirect();
-        self::assertSelectorTextSame('.notice--success', 'Disabled: quire-admin.');
+        self::assertSelectorTextSame('.q-notice--success', 'Disabled: quire-admin.');
         self::assertSame([], $state->enabledIds());
         self::assertSame([false], $rebuilds->calls);
 
         $crawler = $this->client->request('GET', '/admin/extensions/quire-admin/enable');
         $this->client->submit($crawler->selectButton('Enable')->form());
         $this->client->followRedirect();
-        self::assertSelectorTextSame('.notice--success', 'Enabled: quire-admin.');
+        self::assertSelectorTextSame('.q-notice--success', 'Enabled: quire-admin.');
         self::assertSame(['quire-admin'], $state->enabledIds());
         self::assertSame([false, true], $rebuilds->calls, 'With migrations.');
     }
@@ -155,7 +155,7 @@ final class SiteTest extends AdminTestCase
 
         $this->client->submit($crawler->selectButton('Disable and delete the data')->form(['confirm' => 'quire-admin']));
         $this->client->followRedirect();
-        self::assertSelectorTextSame('.notice--success', 'Disabled, and their data deleted: quire-admin.');
+        self::assertSelectorTextSame('.q-notice--success', 'Disabled, and their data deleted: quire-admin.');
         self::assertSame(['quire-admin'], $purges->purged);
         self::assertSame([], $state->enabledIds());
     }
@@ -165,7 +165,7 @@ final class SiteTest extends AdminTestCase
         $this->signIn('admin');
         $crawler = $this->client->request('GET', '/admin/extensions');
 
-        self::assertStringContainsString('pinned', $crawler->filter('.notice--warning')->text());
+        self::assertStringContainsString('pinned', $crawler->filter('.q-notice--warning')->text());
         self::assertCount(0, $crawler->filter('.content-list__actions a'));
 
         $this->client->request('GET', '/admin/extensions/quire-admin/disable');

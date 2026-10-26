@@ -7,13 +7,13 @@
 {% block title %}{{ 'Users'|trans({}, 'quire-admin') }}{% endblock %}
 
 {% block actions %}
-    <a class="button" href="{{ path('quire_admin_user_new') }}">{{ 'Add a user'|trans({}, 'quire-admin') }}</a>
+    <a class="q-btn" href="{{ path('quire_admin_user_new') }}">{{ 'Add a user'|trans({}, 'quire-admin') }}</a>
 {% endblock %}
 
 {% block content %}
-    <form class="list-tools" role="search" method="get" action="{{ path('quire_admin_users') }}">
+    <form class="q-toolbar" role="search" method="get" action="{{ path('quire_admin_users') }}">
         {% if state.sort != 'name' %}<input type="hidden" name="sort" value="{{ state.sort }}">{% endif %}
-        <label class="list-tools__search">
+        <label class="q-toolbar__search">
             <span>{{ 'Search'|trans({}, 'quire-admin') }}</span>
             <input type="search" name="q" value="{{ state.q }}" autocomplete="off">
         </label>
@@ -32,15 +32,15 @@
                 <option value="suspended"{% if state.status == 'suspended' %} selected{% endif %}>{{ 'users.status.suspended'|trans({}, 'quire-admin') }}</option>
             </select>
         </label>
-        <button type="submit" class="button">{{ 'Show'|trans({}, 'quire-admin') }}</button>
+        <button type="submit" class="q-btn">{{ 'Show'|trans({}, 'quire-admin') }}</button>
     </form>
 
     {% if users is empty %}
-        <p class="empty">{{ (state.q or state.role or state.status) ? 'Nothing matches.'|trans({}, 'quire-admin') : 'Nothing here yet.'|trans({}, 'quire-admin') }}</p>
+        <p class="q-empty">{{ (state.q or state.role or state.status) ? 'Nothing matches.'|trans({}, 'quire-admin') : 'Nothing here yet.'|trans({}, 'quire-admin') }}</p>
     {% else %}
-        <div class="table-scroll">
-            <table class="table">
-                <caption class="visually-hidden">{{ 'Users'|trans({}, 'quire-admin') }}, {{ 'page {page} of {pages}'|trans({page: page, pages: pages}, 'quire-admin') }}</caption>
+        <div class="q-scroll">
+            <table class="q-table">
+                <caption class="q-sr">{{ 'Users'|trans({}, 'quire-admin') }}, {{ 'page {page} of {pages}'|trans({page: page, pages: pages}, 'quire-admin') }}</caption>
                 <thead>
                     <tr>
                         {% for column in columns %}
@@ -54,8 +54,8 @@
                         <tr>
                             <th scope="row">
                                 <a class="content-list__title" href="{{ path('quire_admin_user', {id: user.id}) }}">{{ user.displayName }}</a>
-                                {% if user.email %}<span class="meta">{{ user.email }}</span>{% endif %}
-                                {% if not user.active %}<span class="status status--archived">{{ 'users.status.suspended'|trans({}, 'quire-admin') }}</span>{% endif %}
+                                {% if user.email %}<span class="q-meta">{{ user.email }}</span>{% endif %}
+                                {% if not user.active %}<span class="q-tag q-tag--err">{{ 'users.status.suspended'|trans({}, 'quire-admin') }}</span>{% endif %}
                             </th>
                             <td>{{ user.username }}</td>
                             <td>{{ user.roles|map(role => roles[role] ?? role)|join(', ') ?: '—' }}</td>
@@ -66,11 +66,11 @@
                 </tbody>
             </table>
         </div>
-        <p class="meta">{{ '{count, plural, one {# user} other {# users}}'|trans({count: total}, 'quire-admin') }}</p>
+        <p class="q-meta">{{ '{count, plural, one {# user} other {# users}}'|trans({count: total}, 'quire-admin') }}</p>
     {% endif %}
 
     {% if pages > 1 %}
-        <nav class="pagination" aria-label="{{ 'Pages'|trans({}, 'quire-admin') }}">
+        <nav class="q-pagination" aria-label="{{ 'Pages'|trans({}, 'quire-admin') }}">
             {% if previous_url %}<a href="{{ previous_url }}" rel="prev">{{ 'Previous'|trans({}, 'quire-admin') }}</a>{% endif %}
             <span>{{ 'Page {page} of {pages}'|trans({page: page, pages: pages}, 'quire-admin') }}</span>
             {% if next_url %}<a href="{{ next_url }}" rel="next">{{ 'Next'|trans({}, 'quire-admin') }}</a>{% endif %}

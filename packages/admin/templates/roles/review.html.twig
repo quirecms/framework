@@ -22,9 +22,9 @@
             <ul class="review-list">
                 {% for entry in list.entries %}
                     <li class="review-list__{{ list.kind }}">
-                        {{ entry.label }} <code class="meta">{{ entry.name }}</code>
+                        {{ entry.label }} <code class="q-meta">{{ entry.name }}</code>
                         {% if list.kind == 'added' and (entry.admin or entry.strict or role == 'guest') %}
-                            <span class="tag tag--warning">{{ (entry.strict ? 'strict: destroys data or is for few people' : (role == 'guest' ? 'for everyone' : 'runs the site'))|trans({}, 'quire-admin') }}</span>
+                            <span class="q-tag q-tag--warn">{{ (entry.strict ? 'strict: destroys data or is for few people' : (role == 'guest' ? 'for everyone' : 'runs the site'))|trans({}, 'quire-admin') }}</span>
                         {% endif %}
                     </li>
                 {% endfor %}
@@ -32,14 +32,14 @@
         {% endif %}
     {% endfor %}
 
-    {% for problem in problems %}<p class="notice notice--warning">{{ problem }}</p>{% endfor %}
+    {% for problem in problems %}<p class="q-notice q-notice--warning">{{ problem }}</p>{% endfor %}
 
     <form method="post" action="{{ path('quire_admin_role_save', {role: role}) }}">
         <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_roles') }}">
         <input type="hidden" name="version" value="{{ version }}">
         {% for name in target %}<input type="hidden" name="abilities[]" value="{{ name }}">{% endfor %}
         <div class="editor__buttons">
-            <button type="submit" class="button">{{ 'Save'|trans({}, 'quire-admin') }}</button>
+            <button type="submit" class="q-btn">{{ 'Save'|trans({}, 'quire-admin') }}</button>
             <a href="{{ path('quire_admin_role', {role: role}) }}">{{ 'Cancel'|trans({}, 'quire-admin') }}</a>
         </div>
     </form>

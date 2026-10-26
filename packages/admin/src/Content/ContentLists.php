@@ -427,11 +427,13 @@ final readonly class ContentLists
     {
         $label = $item->deletedAt instanceof \DateTimeImmutable ? $this->translator->trans('In the trash', [], 'quire-admin') : $this->statusLabel($item->status);
 
-        $html = \sprintf('<span class="status status--%s">%s</span>', htmlspecialchars($item->status), htmlspecialchars($label));
+        // The lifecycle thread (Quire UI's q-status), as {{ ui.status() }} renders it.
+        $stage = $item->deletedAt instanceof \DateTimeImmutable ? 'draft' : (['scheduled' => 'scheduled', 'published' => 'live'][$item->status] ?? 'draft');
+        $html = \sprintf('<span class="q-status q-status--%1$s"><span class="q-thread q-thread--%1$s" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span>%2$s</span></span>', $stage, htmlspecialchars($label));
         $pending = $item->attributes['pending_changes'] ?? 0;
 
         if (is_numeric($pending) && (int) $pending > 0) {
-            $html .= \sprintf(' <span class="meta">%s</span>', htmlspecialchars($this->translator->trans('{count, plural, one {# change waiting} other {# changes waiting}}', ['count' => (int) $pending], 'quire-admin')));
+            $html .= \sprintf(' <span class="q-tag q-tag--review">%s</span>', htmlspecialchars($this->translator->trans('{count, plural, one {# change waiting} other {# changes waiting}}', ['count' => (int) $pending], 'quire-admin')));
         }
 
         return new Markup($html, 'UTF-8');

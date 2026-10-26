@@ -9,11 +9,11 @@
 {% block title %}{{ label }}{% endblock %}
 
 {% block actions %}
-    <a class="button button--secondary" href="{{ path('quire_admin_roles') }}">{{ 'All roles'|trans({}, 'quire-admin') }}</a>
+    <a class="q-btn q-btn--ghost" href="{{ path('quire_admin_roles') }}">{{ 'All roles'|trans({}, 'quire-admin') }}</a>
 {% endblock %}
 
 {% block content %}
-    <p class="meta">
+    <p class="q-meta">
         <code>{{ role }}</code> ·
         {% if users is null %}
             {{ 'Everyone, including visitors who aren\'t signed in.'|trans({}, 'quire-admin') }}
@@ -24,16 +24,16 @@
     </p>
 
     {% if role == 'admin' %}
-        <p class="notice notice--warning">{{ 'Admins may do everything, except strict abilities: those that destroy data or are for a few people only. Only those can be given to admins here.'|trans({}, 'quire-admin') }}</p>
+        <p class="q-notice q-notice--warning">{{ 'Admins may do everything, except strict abilities: those that destroy data or are for a few people only. Only those can be given to admins here.'|trans({}, 'quire-admin') }}</p>
     {% endif %}
-    {% for problem in problems %}<p class="notice notice--warning">{{ problem }}</p>{% endfor %}
+    {% for problem in problems %}<p class="q-notice q-notice--warning">{{ problem }}</p>{% endfor %}
 
     {# The review is a page of its own, the answer to this POST: Turbo only follows redirects. #}
     <form method="post" action="{{ path('quire_admin_role_review', {role: role}) }}" class="role-form" data-controller="ability-filter" data-turbo="false">
         <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_roles') }}">
 
-        <div class="list-tools" hidden data-ability-filter-target="tools">
-            <label class="list-tools__search">
+        <div class="q-toolbar" hidden data-ability-filter-target="tools">
+            <label class="q-toolbar__search">
                 <span>{{ 'Find an ability'|trans({}, 'quire-admin') }}</span>
                 <input type="search" autocomplete="off" data-action="ability-filter#filter" data-ability-filter-target="input">
             </label>
@@ -42,9 +42,9 @@
         {% if grid and grid.types is not empty %}
             <section class="ability-section" data-ability-filter-target="section">
                 <h2>{{ 'Content'|trans({}, 'quire-admin') }}</h2>
-                <div class="table-scroll">
-                    <table class="table ability-grid">
-                        <caption class="visually-hidden">{{ 'What {role} may do with content'|trans({role: label}, 'quire-admin') }}</caption>
+                <div class="q-scroll">
+                    <table class="q-table ability-grid">
+                        <caption class="q-sr">{{ 'What {role} may do with content'|trans({role: label}, 'quire-admin') }}</caption>
                         <thead>
                             <tr>
                                 <td></td>
@@ -67,7 +67,7 @@
                         </tbody>
                     </table>
                 </div>
-                <p class="field-help">{{ '“Edit their own” is for items they wrote. Viewing drafts lets them preview unpublished items on the site.'|trans({}, 'quire-admin') }}</p>
+                <p class="q-help">{{ '“Edit their own” is for items they wrote. Viewing drafts lets them preview unpublished items on the site.'|trans({}, 'quire-admin') }}</p>
             </section>
         {% endif %}
 
@@ -76,12 +76,12 @@
                 <h2>{{ section.label }}</h2>
                 {% for group in section.groups %}
                     {% if group.label %}<h3>{{ group.label }}</h3>{% endif %}
-                    <ul class="choices">
+                    <ul class="q-choices">
                         {% for entry in group.abilities %}
                             <li data-ability-filter-target="item" data-text="{{ entry.label|lower }} {{ entry.name }}">
                                 {% include '@quire_admin/roles/_checkbox.html.twig' with {name: entry.name, label: entry.label} %}
-                                <code class="meta">{{ entry.name }}</code>
-                                {% if entry.strict %}<span class="tag">{{ 'strict'|trans({}, 'quire-admin') }}</span>{% endif %}
+                                <code class="q-meta">{{ entry.name }}</code>
+                                {% if entry.strict %}<span class="q-tag">{{ 'strict'|trans({}, 'quire-admin') }}</span>{% endif %}
                             </li>
                         {% endfor %}
                     </ul>
@@ -92,23 +92,23 @@
         {% endfor %}
 
         <div class="editor__buttons role-form__buttons">
-            <button type="submit" class="button">{{ 'Review the changes'|trans({}, 'quire-admin') }}</button>
-            {% if changed %}<button type="submit" class="button button--secondary" name="defaults" value="1">{{ 'Back to the defaults'|trans({}, 'quire-admin') }}</button>{% endif %}
+            <button type="submit" class="q-btn">{{ 'Review the changes'|trans({}, 'quire-admin') }}</button>
+            {% if changed %}<button type="submit" class="q-btn q-btn--ghost" name="defaults" value="1">{{ 'Back to the defaults'|trans({}, 'quire-admin') }}</button>{% endif %}
         </div>
     </form>
 
     {% if site_role %}
-        <section class="card">
-            <h2 class="card__title">{{ 'This role'|trans({}, 'quire-admin') }}</h2>
-            <form method="post" action="{{ path('quire_admin_role_rename', {role: role}) }}" class="inline-form">
+        <section class="q-card">
+            <h2 class="q-card__title">{{ 'This role'|trans({}, 'quire-admin') }}</h2>
+            <form method="post" action="{{ path('quire_admin_role_rename', {role: role}) }}" class="q-inline">
                 <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_roles') }}">
-                <div class="form-field">
+                <div class="q-field">
                     <label for="role-label">{{ 'Name'|trans({}, 'quire-admin') }}</label>
                     <input type="text" id="role-label" name="label" value="{{ label }}" required maxlength="50">
                 </div>
-                <div class="editor__buttons"><button type="submit" class="button button--secondary">{{ 'Rename'|trans({}, 'quire-admin') }}</button></div>
+                <div class="editor__buttons"><button type="submit" class="q-btn q-btn--ghost">{{ 'Rename'|trans({}, 'quire-admin') }}</button></div>
             </form>
-            <a class="link-button link-button--danger" href="{{ path('quire_admin_role_delete', {role: role}) }}">{{ 'Delete this role'|trans({}, 'quire-admin') }}</a>
+            <a class="q-link-btn q-link-btn--danger" href="{{ path('quire_admin_role_delete', {role: role}) }}">{{ 'Delete this role'|trans({}, 'quire-admin') }}</a>
         </section>
     {% endif %}
 {% endblock %}
