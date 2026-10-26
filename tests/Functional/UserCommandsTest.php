@@ -89,6 +89,24 @@ final class UserCommandsTest extends KernelTestCase
         self::assertStringContainsString('No user with the ID, email or username "nobody".', $output);
     }
 
+    public function testChangesProfiles(): void
+    {
+        $this->console('quire:user:create', ['email' => 'grace@example.com', '--no-password' => true]);
+
+        [$status, $output] = $this->console('quire:user:update', ['user' => 'grace', '--name' => 'Grace Hopper', '--email' => 'grace@example.org', '--username' => 'hopper']);
+        self::assertSame(0, $status, $output);
+        self::assertStringContainsString('Updated Grace Hopper (hopper).', $output);
+        $grace = self::getContainer()->get(UserRepository::class)->findByLogin('hopper');
+        self::assertSame(['Grace Hopper', 'grace@example.org'], [$grace?->displayName, $grace?->email]);
+
+        [$status, $output] = $this->console('quire:user:update', ['user' => 'hopper']);
+        self::assertSame(1, $status);
+        self::assertStringContainsString('Give what to change: --name, --email or --username.', $output);
+        [$status, $output] = $this->console('quire:user:update', ['user' => 'hopper', '--email' => 'not an email']);
+        self::assertSame(1, $status);
+        self::assertStringContainsString('email', $output);
+    }
+
     public function testInvitesUsersToChooseTheirPassword(): void
     {
         [$status, $output] = $this->console('quire:user:create', ['email' => 'grace@example.com', '--invite' => true]);
@@ -97,14 +115,25 @@ final class UserCommandsTest extends KernelTestCase
         self::assertEmailCount(1);
         self::assertNull(self::getContainer()->get(UserRepository::class)->findByLogin('grace')?->passwordHash);
 
-        [, $output] = $this->console('quire:user:invite', ['user' => 'grace']);
-        self::assertStringContainsString('Invited Grace (grace@example.com) to choose a password.', $output);
+        [, $output] = $this->console('quire:user:invite', ['users' => ['grace']]);
+        self::assertStringContainsString('Invited Grace (grace@example.com)', $output);
+
+        // Several at once; emails of people who aren't users yet add them, with the roles given.
+        [$status, $output] = $this->console('quire:user:invite', ['users' => ['grace', 'kim@example.com'], '--role' => ['editor']]);
+        self::assertSame(0, $status, $output);
+        self::assertStringContainsString('Invited 2 people to choose a password.', $output);
+        $kim = self::getContainer()->get(UserRepository::class)->findByLogin('kim@example.com');
+        self::assertSame([['editor'], null], [$kim?->roles, $kim?->passwordHash]);
+        self::assertSame([], self::getContainer()->get(UserRepository::class)->findByLogin('grace')?->roles, 'Roles are for the people added.');
 
         $this->console('quire:user:create', ['email' => 'ada@example.com', '--no-password' => true]);
         $this->connection->executeStatement("UPDATE quire.app_user SET email = NULL WHERE username = 'ada'");
-        [$status, $output] = $this->console('quire:user:invite', ['user' => 'ada']);
+        [$status, $output] = $this->console('quire:user:invite', ['users' => ['ada', 'nobody', 'lin@example.com']]);
         self::assertSame(1, $status);
-        self::assertStringContainsString('The user has no email to send the invitation to.', $output);
+        self::assertStringContainsString('ada: The user has no email to send the invitation to.', $output);
+        self::assertStringContainsString('nobody: No user with the ID, email or username "nobody".', $output);
+        self::assertStringContainsString('Invited lin (lin@example.com)', $output, 'The others are still invited.');
+        self::assertStringContainsString('2 of 3 couldn\'t be invited.', $output);
     }
 
     public function testManagesSiteRolesAndExplainsAccess(): void

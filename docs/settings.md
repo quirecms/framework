@@ -64,6 +64,16 @@ To go back to the declared default:
 bin/console quire:settings:set site.title --default
 ```
 
+To copy settings from one site to another, or keep them in version control, export what the site changed as JSON and import it elsewhere:
+
+```bash
+bin/console quire:settings:export > settings.json      # what's stored, not defaults (--all) nor sensitive settings (--include-sensitive)
+bin/console quire:settings:import settings.json --dry-run
+bin/console quire:settings:import settings.json
+```
+
+An import checks every value before it changes any: when one doesn't fit, or a key isn't declared by an enabled extension (unless `--skip-unknown`), nothing changes. Settings the file doesn't list keep their value.
+
 ## Setting values with environment variables
 
 Every setting can be fixed with an environment variable, which takes precedence over the value in the database. This is useful for values that differ per environment, or that must not be changed at runtime.

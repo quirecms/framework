@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace Quire\Admin\Content;
 
 use Psr\Log\LoggerInterface;
+use Quire\Action\Actions;
+use Quire\Action\Exception\ActionDeniedException;
 use Quire\Admin\Extend\Admin;
 use Quire\Content\Content;
 use Quire\Content\ContentRepository;
-use Quire\Content\ContentWriter;
 use Quire\Content\Query\ContentPage;
 use Quire\Content\Query\ContentQuery;
 use Quire\Content\Status;
@@ -56,7 +57,7 @@ final readonly class ContentLists
     public function __construct(
         private ContentTypeRegistry $types,
         private ContentRepository $content,
-        private ContentWriter $writer,
+        private Actions $actions,
         private ContentWorkflow $workflow,
         private Security $security,
         private CurrentUser $users,
@@ -339,7 +340,7 @@ final readonly class ContentLists
             try {
                 $this->take($type, $item, $action);
                 ++$done;
-            } catch (ContentActionException|\Quire\Content\Exception\ContentConflictException|\Quire\Content\Exception\TransitionNotAllowedException|\Quire\Content\Exception\InvalidContentException|\Quire\Content\Exception\ContentOperationCancelledException $e) {
+            } catch (ContentActionException|ActionDeniedException|\Quire\Content\Exception\ContentConflictException|\Quire\Content\Exception\TransitionNotAllowedException|\Quire\Content\Exception\InvalidContentException|\Quire\Content\Exception\ContentOperationCancelledException $e) {
                 $failed[] = ['title' => $item->title, 'reason' => $e->getMessage()];
             } catch (\Throwable $e) {
                 $this->logger->error('The content list action "{action}" failed for {id}: {message}', ['action' => $action, 'id' => $item->id, 'message' => $e->getMessage(), 'exception' => $e]);
@@ -357,12 +358,11 @@ final readonly class ContentLists
 
     private function take(ContentTypeDefinition $type, Content $item, string $action): void
     {
+        // Core's through its actions, which check again who may, and do it as the CLI would.
         match (true) {
-            str_starts_with($action, 'transition:') => $this->writer->transition($item->id, $item->version, substr($action, \strlen('transition:'))),
+            str_starts_with($action, 'transition:') => $this->actions->run('content.transition', ['content' => $item->id, 'transition' => substr($action, \strlen('transition:'))]),
             str_starts_with($action, 'extension:') => $this->extensionAction($type, substr($action, \strlen('extension:')))->apply($item),
-            'trash' === $action => $this->writer->trash($item->id, $item->version),
-            'restore' === $action => $this->writer->restore($item->id),
-            'purge' === $action => $this->writer->purge($item->id),
+            \in_array($action, ['trash', 'restore', 'purge'], true) => $this->actions->run('content.'.$action, ['content' => $item->id]),
             default => throw new \LogicException(\sprintf('Unknown action "%s".', $action)),
         };
     }

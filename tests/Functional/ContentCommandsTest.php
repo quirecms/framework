@@ -11,7 +11,10 @@ use Quire\Content\Command\UpdateContent;
 use Quire\Content\Command\UpdatePendingRevision;
 use Quire\Content\ContentRepository;
 use Quire\Content\ContentWriter;
+use Quire\Content\Revision\PendingRevisionRepository;
 use Quire\Content\Revision\PendingRevisionWriter;
+use Quire\Content\Revision\Review;
+use Quire\Content\Revision\ReviewState;
 use Quire\Settings\Settings;
 use Quire\User\CreateUser;
 use Quire\User\UserWriter;
@@ -163,6 +166,44 @@ final class ContentCommandsTest extends KernelTestCase
         self::assertStringContainsString('Published the changes. "Opening hours" is now at version 4.', $this->flat($command));
         self::assertSame(1, $command->execute(['id' => $post->id, '--show' => $other->id]));
         self::assertStringContainsString('No pending revision with ID', $this->flat($command));
+    }
+
+    public function testReviewsFromTheCommandLine(): void
+    {
+        $container = self::getContainer();
+        $writer = $container->get(ContentWriter::class);
+        $users = $container->get(UserWriter::class);
+        $author = $users->create(new CreateUser('Lin', 'lin-'.bin2hex(random_bytes(3)).'@example.com', username: 'lin-'.bin2hex(random_bytes(3))));
+        $reviewer = $users->create(new CreateUser('Kim', 'kim-'.bin2hex(random_bytes(3)).'@example.com', username: 'kim-'.bin2hex(random_bytes(3))));
+        $post = $writer->create(new CreateContent('post', 'Fixtures'));
+        $post = $writer->transition($post->id, $post->version, 'publish');
+        $pendingWriter = $container->get(PendingRevisionWriter::class);
+        $pending = $pendingWriter->create($post->id, $author->id);
+        $pendingWriter->update(new UpdatePendingRevision($pending->id, 1)->title('Fixtures and results'));
+        $command = $this->command('quire:content:pending');
+
+        self::assertSame(0, $command->execute(['id' => $post->id, '--submit' => $pending->id]));
+        self::assertStringContainsString('The changes are waiting for a review.', $this->flat($command));
+        self::assertSame(ReviewState::InReview, self::getContainer()->get(PendingRevisionRepository::class)->get($pending->id)->state);
+
+        self::assertSame(1, $command->execute(['id' => $post->id, '--approve' => $pending->id, '--as' => $author->username]));
+        self::assertStringContainsString('Authors can\'t approve their own changes.', $this->flat($command));
+        self::assertSame(1, $command->execute(['id' => $post->id, '--comment' => $pending->id]));
+        self::assertStringContainsString('A comment needs a message.', $this->flat($command));
+        self::assertSame(1, $command->execute(['id' => $post->id, '--approve' => $pending->id, '--discard' => $pending->id]));
+        self::assertStringContainsString('Pass one of --show, --submit, --approve', $this->flat($command));
+
+        self::assertSame(0, $command->execute(['id' => $post->id, '--request-changes' => $pending->id, '--message' => 'Add the dates.', '--as' => $reviewer->username]));
+        self::assertStringContainsString('Asked for changes.', $this->flat($command));
+        self::assertSame(0, $command->execute(['id' => $post->id, '--comment' => $pending->id, '--message' => 'Thanks!', '--as' => $reviewer->username]));
+        self::assertSame(0, $command->execute(['id' => $post->id, '--approve' => $pending->id, '--as' => $reviewer->username]));
+        self::assertStringContainsString('Approved the changes.', $this->flat($command));
+
+        $repository = self::getContainer()->get(PendingRevisionRepository::class);
+        $reviews = $repository->reviews($pending->id);
+        self::assertSame([['request_changes', 'Add the dates.'], ['comment', 'Thanks!'], ['approve', null]], array_map(static fn (Review $review): array => [$review->verdict->value, $review->message], $reviews));
+        self::assertSame([$reviewer->id], array_values(array_unique(array_map(static fn (Review $review): ?string => $review->reviewerId, $reviews))));
+        self::assertSame(ReviewState::Approved, $repository->get($pending->id)->state);
     }
 
     public function testContentChecksFromTheCommandLine(): void

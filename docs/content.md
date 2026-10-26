@@ -149,6 +149,10 @@ Changes can be **reviewed** before they're published. The author asks for a revi
 ```bash
 bin/console quire:content:pending <id>                         # the item's pending revisions
 bin/console quire:content:pending <id> --show <pending-id>     # what it changes, as a diff, and whether it merges
+bin/console quire:content:pending <id> --submit <pending-id>   # ask for a review
+bin/console quire:content:pending <id> --approve <pending-id> --as kim
+bin/console quire:content:pending <id> --request-changes <pending-id> --message "Add a source." --as kim
+bin/console quire:content:pending <id> --comment <pending-id> --message "Looks good so far." --as kim
 bin/console quire:content:pending <id> --publish <pending-id>
 bin/console quire:content:pending <id> --discard <pending-id>
 bin/console quire:content:pending <id> --schedule <pending-id> --at "2026-12-24 09:00 Europe/Berlin"

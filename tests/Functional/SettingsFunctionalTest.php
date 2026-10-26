@@ -87,6 +87,68 @@ final class SettingsFunctionalTest extends WebTestCase
         self::assertStringContainsString('Pass either a value or --default.', $tester->getDisplay());
     }
 
+    public function testExportAndImport(): void
+    {
+        $settings = self::getContainer()->get(Settings::class);
+        $settings->set('site.title', 'Tournament "News"');
+        $settings->set('quire.content.check_levels', ['core.alt-text' => 'error']);
+
+        $export = $this->command('quire:settings:export');
+        self::assertSame(0, $export->execute([]));
+        $exported = $this->json($export);
+        self::assertSame(['core.alt-text' => 'error'], $exported['quire.content.check_levels'] ?? null);
+        self::assertSame('Tournament "News"', $exported['site.title'] ?? null);
+        self::assertArrayNotHasKey('site.locale', $exported, 'Defaults only with --all.');
+        $export->execute(['prefix' => 'site.', '--all' => true]);
+        self::assertSame(['site.description', 'site.homepage', 'site.homepage_listing', 'site.homepage_page', 'site.homepage_route', 'site.locale', 'site.timezone', 'site.title'], array_keys($this->json($export)));
+
+        $file = tempnam(sys_get_temp_dir(), 'settings');
+        $import = $this->command('quire:settings:import');
+
+        // Checked first: nothing changes when a value doesn't fit.
+        file_put_contents($file, json_encode(['site.title' => 'Results', 'quire.content.per_page' => 'many', 'acme.colour' => 'red'], \JSON_THROW_ON_ERROR));
+        self::assertSame(1, $import->execute(['file' => $file]));
+        self::assertStringContainsString('acme.colour: no enabled extension declares it.', $this->flat($import));
+        self::assertStringContainsString('quire.content.per_page: ', $this->flat($import));
+        self::assertSame('Tournament "News"', $this->setting('site.title'));
+
+        file_put_contents($file, json_encode(['site.title' => 'Results', 'quire.content.per_page' => 25, 'acme.colour' => 'red', 'site.locale' => 'en'], \JSON_THROW_ON_ERROR));
+        self::assertSame(0, $import->execute(['file' => $file, '--skip-unknown' => true, '--dry-run' => true]));
+        self::assertStringContainsString('Nothing was changed (--dry-run).', $this->flat($import));
+        self::assertSame('Tournament "News"', $this->setting('site.title'));
+
+        self::assertSame(0, $import->execute(['file' => $file, '--skip-unknown' => true]));
+        self::assertStringContainsString('Left out, as no enabled extension declares them: acme.colour.', $this->flat($import));
+        self::assertStringContainsString('Changed 2 settings.', $this->flat($import), 'The language already was "en".');
+        self::assertSame(['Results', 25], [$this->setting('site.title'), $this->setting('quire.content.per_page')]);
+        unlink($file);
+    }
+
+    /**
+     * @return array<mixed>
+     */
+    private function json(CommandTester $tester): array
+    {
+        $json = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsArray($json);
+
+        return $json;
+    }
+
+    /** As the commands, which run in a kernel of their own, left it. */
+    private function setting(string $key): mixed
+    {
+        $settings = self::getContainer()->get(Settings::class);
+        $settings->reset();
+
+        return $settings->get($key);
+    }
+
+    private function flat(CommandTester $tester): string
+    {
+        return preg_replace('/\s+/', ' ', $tester->getDisplay()) ?? '';
+    }
+
     private function command(string $name): CommandTester
     {
         return new CommandTester(new Application(self::bootKernel())->find($name));

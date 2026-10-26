@@ -26,6 +26,8 @@ Admins manage users in the [admin interface](admin.md#users-and-roles), or on th
 bin/console quire:user:create grace@example.com --name="Grace Hopper" --role=editor
 bin/console quire:user:create grace@example.com --role=editor --invite   # she chooses her password
 bin/console quire:user:invite grace
+bin/console quire:user:invite kim@example.com lin@example.com --role=editor   # adds them first
+bin/console quire:user:update grace --name="Grace Hopper" --email=grace@example.org
 bin/console quire:user:list
 bin/console quire:user:list --role=admin
 bin/console quire:user:password grace
