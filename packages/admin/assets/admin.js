@@ -664,3 +664,23 @@ application.register('copy', class extends Controller {
         setTimeout(() => { this.statusTarget.textContent = ''; }, 3000);
     }
 });
+
+// Inviting people: how many invitations the button sends, and what the role chosen may do.
+application.register('invite-form', class extends Controller {
+    static targets = ['emails', 'role', 'sentence', 'send'];
+    static values = { labels: Object };
+
+    connect() {
+        this.count();
+    }
+
+    count() {
+        const emails = this.emailsTarget.value.split(/[\s,;]+/).filter((email) => email.includes('@'));
+        const labels = this.labelsValue;
+        this.sendTarget.textContent = emails.length === 0 ? labels.none : emails.length === 1 ? labels.one : labels.other.replace('%count%', emails.length);
+    }
+
+    describe() {
+        this.sentenceTarget.textContent = this.roleTarget.selectedOptions[0]?.dataset.sentence ?? '';
+    }
+});

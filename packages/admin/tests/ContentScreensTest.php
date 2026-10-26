@@ -151,6 +151,7 @@ final class ContentScreensTest extends AdminTestCase
             '2026-10-27 23:00 Europe/Berlin', '2026-10-26 09:00 Europe/Berlin', '2026-11-03 09:00 Europe/Berlin', '2026-09-12 10:00 Europe/Berlin', '2025-09-12 10:00 Europe/Berlin',
         ]));
         self::assertSame('yesterday', $time->text(new \DateTimeImmutable('2026-10-27 22:30 UTC'), $now), 'In the site\'s time zone: 23:30 in Berlin.');
+        self::assertSame('just now', $time->text(new \DateTimeImmutable('2026-10-28 15:00:01 Europe/Berlin'), $now), 'Stored rounded to the second, a moment ahead.');
         self::assertStringContainsString('datetime="2026-10-27T22:30:00+00:00" title="2026-10-27 23:30"', (string) $time->html(new \DateTimeImmutable('2026-10-27 22:30 UTC'), $now));
     }
 

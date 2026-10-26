@@ -70,7 +70,9 @@ final readonly class ChangesInbox implements InboxProviderInterface
             if (null !== $pending->publishProblem) {
                 yield new InboxItem(
                     key: 'changes-not-published:'.$pending->id,
-                    text: $this->translator->trans('Scheduled changes to {title} couldn’t go live at {time}', ['title' => InboxItem::about($item->title), 'time' => $pending->publishAt?->setTimezone($this->time->timezone())->format('H:i') ?? ''], 'quire-admin'),
+                    text: null === $pending->publishAt
+                        ? $this->translator->trans('Changes to {title} couldn’t go live', ['title' => InboxItem::about($item->title)], 'quire-admin')
+                        : $this->translator->trans('Scheduled changes to {title} couldn’t go live at {time}', ['title' => InboxItem::about($item->title), 'time' => $pending->publishAt->setTimezone($this->time->timezone())->format('H:i')], 'quire-admin'),
                     url: $this->urls->generate('quire_admin_content_edit', ['type' => $item->type, 'id' => $item->id]),
                     action: $this->translator->trans('Choose', [], 'quire-admin'),
                     at: $pending->publishAt ?? $pending->updatedAt,

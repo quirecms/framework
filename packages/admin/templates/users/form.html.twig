@@ -17,6 +17,20 @@
             <a href="{{ path('quire_admin_audit', {subject_type: 'user', subject: user.id}) }}">{{ 'Changes to the user'|trans({}, 'quire-admin') }}</a>
         </p>
     {% endif %}
+    {% if user and not self and is_granted('quire.users.view_as') %}
+        {% if view_as_refusal is null %}
+            {# Seeing the admin as them, read-only: core's bar on every page stops it. #}
+            <form method="post" action="{{ path('quire_view_as') }}" class="view-as-form">
+                <input type="hidden" name="_token" value="{{ csrf_token('quire_view_as') }}">
+                <input type="hidden" name="user" value="{{ user.id }}">
+                {# Where they'd start: the admin, or the site when they can't open the admin. #}
+                <input type="hidden" name="back" value="{{ view_as_admin ? path('quire_admin_dashboard') : path('quire_home') }}">
+                <button type="submit" class="q-btn q-btn--ghost">{{ (view_as_admin ? 'See the admin as {name}' : 'See the site as {name}')|trans({name: user.displayName|split(' ')|first}, 'quire-admin') }}</button>
+            </form>
+        {% else %}
+            <p class="q-help">{{ view_as_refusal }}</p>
+        {% endif %}
+    {% endif %}
 {% endblock %}
 
 {% block content %}

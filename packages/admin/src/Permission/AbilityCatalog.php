@@ -27,6 +27,9 @@ final readonly class AbilityCatalog
     /** The actions of content, in the grid's order, by ability suffix */
     public const array ACTIONS = ['view', 'view_drafts', 'create', 'edit_own', 'edit_any', 'publish', 'review', 'delete'];
 
+    /** What people do with content, in the order a sentence says it, by the actions that let them */
+    private const array VERBS = ['read' => ['view'], 'write' => ['create', 'edit_own'], 'edit_any' => ['edit_any'], 'review' => ['review'], 'publish' => ['publish'], 'delete' => ['delete']];
+
     /** Content actions that are done in the admin */
     private const array ADMIN_ACTIONS = ['create', 'edit_own', 'edit_any', 'publish', 'review', 'delete'];
 
@@ -63,6 +66,53 @@ final readonly class AbilityCatalog
             'actions' => array_combine(self::ACTIONS, array_map(fn (string $action): string => $this->translator->trans('abilities.action.'.$action, [], 'quire-admin'), self::ACTIONS)),
             'types' => $types,
         ];
+    }
+
+    /**
+     * What a role may do, in a sentence, e.g. "As Editor, they can write, review and publish posts, and
+     * write pages. Also: Use the admin interface." Only what it may do beyond everyone.
+     */
+    public function sentence(string $role): string
+    {
+        $label = $this->permissions->roles()[$role] ?? $role;
+
+        if (Role::ADMIN === $role) {
+            return $this->translator->trans('As {role}, they can do everything.', ['role' => $label], 'quire-admin');
+        }
+
+        $mine = fn (string $ability): bool => $this->permissions->allows([$role], $ability) && !$this->permissions->allows([Role::GUEST], $ability);
+        $byVerbs = [];
+
+        foreach ($this->types->all() as $type) {
+            $verbs = array_keys(array_filter(self::VERBS, fn (array $actions): bool => array_any($actions, fn (string $action): bool => $this->permissions->has(\sprintf('content.%s.%s', $type->id, $action)) && $mine(\sprintf('content.%s.%s', $type->id, $action)))));
+
+            if ([] !== $verbs) {
+                $byVerbs[implode(',', $verbs)][] = $this->translator->trans($type->pluralLabel, [], $type->owner);
+            }
+        }
+
+        $phrases = [];
+
+        foreach ($byVerbs as $verbs => $types) {
+            $phrases[] = $this->translator->trans('{verbs} {types}', [
+                'verbs' => $this->list(array_map(fn (string $verb): string => $this->translator->trans('role.verb.'.$verb, [], 'quire-admin'), explode(',', $verbs))),
+                'types' => $this->list($types),
+            ], 'quire-admin');
+        }
+
+        $others = [];
+
+        foreach ($this->permissions->abilities() as $name => $ability) {
+            if (!$this->isContent($name) && $mine($name)) {
+                $others[] = $this->translator->trans($ability['label'], [], $ability['owner']);
+            }
+        }
+
+        $sentence = [] === $phrases
+            ? $this->translator->trans('As {role}, they can see what everyone sees.', ['role' => $label], 'quire-admin')
+            : $this->translator->trans('As {role}, they can {what}.', ['role' => $label, 'what' => $this->list($phrases)], 'quire-admin');
+
+        return [] === $others ? $sentence : $sentence.' '.$this->translator->trans('Also: {abilities}.', ['abilities' => implode('; ', $others)], 'quire-admin');
     }
 
     /**
@@ -162,5 +212,13 @@ final readonly class AbilityCatalog
         $label = $this->translator->trans($key, [], 'quire-admin');
 
         return $label !== $key ? $label : ucfirst(str_replace(['-', '_'], ' ', $group));
+    }
+
+    /**
+     * @param list<string> $items
+     */
+    private function list(array $items): string
+    {
+        return (string) new \IntlListFormatter($this->translator->getLocale())->format($items);
     }
 }

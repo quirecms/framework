@@ -39,7 +39,8 @@ final readonly class RelativeTime
         $days = (int) $now->setTime(0, 0)->diff($local->setTime(0, 0))->format('%r%a');
 
         return match (true) {
-            $seconds >= 0 && $seconds < 60 => $this->translator->trans('just now', [], 'quire-admin'),
+            // Times stored to the second are rounded, so "now" can be a moment ahead.
+            $seconds > -60 && $seconds < 60 => $this->translator->trans('just now', [], 'quire-admin'),
             $seconds >= 0 && $seconds < 3600 => $this->translator->trans('{count} min ago', ['count' => intdiv($seconds, 60)], 'quire-admin'),
             $seconds >= 0 && 0 === $days => $this->translator->trans('{count} h ago', ['count' => intdiv($seconds, 3600)], 'quire-admin'),
             // Later today, e.g. when something is scheduled.

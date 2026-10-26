@@ -18,7 +18,9 @@ final class ViewAsTest extends AdminTestCase
         $admin = $this->signIn('admin');
         $kim = $this->createUser('Kim Ono', [Role::EDITOR]);
 
-        $this->client->request('POST', '/_quire/view-as', ['_token' => $this->csrfToken('quire_view_as'), 'user' => $kim->id, 'back' => '/admin']);
+        // From Kim's page in the admin.
+        $crawler = $this->client->request('GET', '/admin/users/'.$kim->id);
+        $this->client->submit($crawler->selectButton('See the admin as Kim')->form());
         self::assertResponseRedirects('/admin', 303);
         $this->assertAudited('user.viewed_as', $kim->id);
 
@@ -34,11 +36,18 @@ final class ViewAsTest extends AdminTestCase
         self::assertResponseStatusCodeSame(403);
         self::assertStringContainsString('You\'re seeing the site as Kim Ono, so nothing can be changed.', (string) $this->client->getResponse()->getContent());
 
-        // Stopping is let through, and they're themselves again.
-        $this->client->request('POST', '/_quire/view-as/stop', ['_token' => $this->csrfToken('quire_view_as'), 'back' => '/admin']);
-        self::assertResponseRedirects('/admin', 303);
+        // Every page says so, the site's too, and stopping is let through: they're themselves again.
+        $crawler = $this->client->request('GET', '/');
+        self::assertSelectorTextContains('.quire-view-as', 'You’re seeing this as Kim Ono: nothing can be changed.');
+        $this->client->submit($crawler->selectButton('Stop seeing as Kim Ono')->form());
+        self::assertResponseRedirects('/', 303);
         $this->client->request('GET', '/admin');
         self::assertSelectorTextSame('.q-account .q-menu__label', $admin->displayName);
+        self::assertSelectorNotExists('.quire-view-as');
+
+        // Someone who can't open the admin is seen on the site.
+        $crawler = $this->client->request('GET', '/admin/users/'.$this->createUser('Mia Ruiz', [Role::MEMBER])->id);
+        self::assertSame('/', $crawler->selectButton('See the site as Mia')->form()->getValues()['back'] ?? null);
     }
 
     public function testNobodySeesMoreThanTheyMay(): void

@@ -9,6 +9,7 @@ use Quire\Content\ContentRepository;
 use Quire\Content\ContentWriter;
 use Quire\Testing\AdminTestCase;
 use Quire\User\CreateUser;
+use Quire\User\Invitations;
 use Quire\User\User;
 use Quire\User\UserRepository;
 use Quire\User\UserWriter;
@@ -34,23 +35,64 @@ final class UsersTest extends AdminTestCase
         }
     }
 
-    public function testUsersAreSearchedFilteredAndSorted(): void
+    public function testPeopleByRoleAndStatusWithTheNextStep(): void
     {
         $this->admin = $this->signIn('admin');
         $this->user('Grace Hopper', ['editor']);
         $suspended = $this->user('Alan Turing', ['member']);
         $this->service(UserWriter::class)->suspend($suspended->id);
+        $lin = $this->user('Lin Tao', ['editor']);
+        $this->service(Invitations::class)->invite($lin);
 
         $crawler = $this->client->request('GET', '/admin/users');
-        self::assertSame(['Admin', 'Alan Turing', 'Grace Hopper'], $this->names($crawler));
+        self::assertSame(['Admin', 'Alan Turing', 'Grace Hopper', 'Lin Tao'], $this->names($crawler));
+        self::assertSelectorTextSame('h1', 'Everyone 4');
+        self::assertSame(['Everyone 4', 'Member 1', 'Editor 2', 'Admin 1', 'Invited, not joined 1', 'Suspended 1'], $crawler->filter('.q-views a')->each(static fn (Crawler $a): string => $a->text()));
         self::assertSame('ascending', $crawler->filter('th[aria-sort]')->attr('aria-sort'));
-        self::assertSelectorTextSame('main p.q-meta', '3 users');
+
+        // Each one's status, and the one thing to do about it.
+        $rows = $crawler->filter('tbody tr')->each(static fn (Crawler $tr): array => [$tr->filter('a.people-person__name')->text(), trim((string) preg_replace('/\s+/', ' ', $tr->filter('td')->eq(1)->text())), trim($tr->filter('td.people-next')->text())]);
+        self::assertSame(['Admin', 'Active new', 'Activity (Admin)'], $rows[0]);
+        self::assertSame(['Alan Turing', 'Suspended', 'Let in again (Alan Turing)'], $rows[1]);
+        self::assertSame(['Lin Tao', 'Invited just now', 'Send again (Lin Tao)'], $rows[3]);
+        self::assertSame('not yet', $crawler->filter('tbody tr')->eq(3)->filter('td')->eq(2)->text());
 
         self::assertSame(['Grace Hopper'], $this->names($this->client->request('GET', '/admin/users?q=hopp')));
-        self::assertSame(['Grace Hopper'], $this->names($this->client->request('GET', '/admin/users?role=editor')));
-        self::assertSame(['Alan Turing'], $this->names($this->client->request('GET', '/admin/users?status=suspended')));
-        self::assertSame(['Grace Hopper', 'Alan Turing', 'Admin'], $this->names($this->client->request('GET', '/admin/users?sort=-name')));
-        self::assertSelectorTextContains('.q-tag--err', 'Suspended');
+        self::assertSame(['Grace Hopper', 'Lin Tao'], $this->names($this->client->request('GET', '/admin/users?view=role:editor')));
+        self::assertSame(['Lin Tao'], $this->names($this->client->request('GET', '/admin/users?view=invited')));
+        self::assertSelectorTextSame('h1', 'Invited, not joined 1');
+        self::assertSame(['Alan Turing'], $this->names($this->client->request('GET', '/admin/users?view=suspended')));
+        self::assertSame(['Lin Tao', 'Grace Hopper', 'Alan Turing', 'Admin'], $this->names($this->client->request('GET', '/admin/users?sort=-name')));
+
+        // Letting someone in again, from the list, back to it.
+        $crawler = $this->client->request('GET', '/admin/users?view=suspended');
+        $this->client->submit($crawler->selectButton('Let in again (Alan Turing)')->form());
+        self::assertResponseRedirects('/admin/users?view=suspended', 303);
+        self::assertTrue($this->service(UserRepository::class)->find($suspended->id)?->isActive());
+    }
+
+    public function testInvitingManyPeopleAtOnce(): void
+    {
+        $this->admin = $this->signIn('admin');
+        $this->user('Grace Hopper', ['editor']);
+        $crawler = $this->client->request('GET', '/admin/users');
+
+        self::assertSame('As Editor, they can write, edit, review, publish, and delete Posts and Pages. Also: Use the admin interface.', $crawler->filter('#invite-role option[value=editor]')->attr('data-sentence'));
+        self::assertSame('As Admin, they can do everything.', $crawler->filter('#invite-role option[value=admin]')->attr('data-sentence'));
+        self::assertSelectorTextSame('#invite-sentence', (string) $crawler->filter('#invite-role option[selected]')->attr('data-sentence'), 'Said for the role chosen.');
+
+        $this->client->submit($crawler->filter('.invite-form')->form(['emails' => "ana@example.org, ben@example.org\nnot-an-email grace@example.com", 'role' => 'editor']));
+        self::assertResponseRedirects('/admin/users?view=invited', 303);
+        self::assertEmailCount(3, message: 'Grace is a user already: they\'re invited again.');
+        $ana = $this->service(UserRepository::class)->findByEmail('ana@example.org');
+        self::assertInstanceOf(User::class, $ana);
+        self::assertSame(['editor'], $ana->roles);
+        self::assertSame('ana', $ana->displayName);
+        $this->assertAudited('user.invited', $ana->id);
+
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('.q-notice--success', 'Invited 3 people by email');
+        self::assertSelectorTextContains('.q-notice--error', 'not-an-email: That isn\'t an email.');
     }
 
     public function testNewUsersAreInvitedToChooseTheirPassword(): void

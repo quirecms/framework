@@ -53,6 +53,7 @@ return [
         ->post('/themes', 'quire_admin_themes_use', [ThemesController::class, 'use'])
         ->get('/users', 'quire_admin_users', UsersController::class)
         ->add('/users/new', 'quire_admin_user_new', [UsersController::class, 'create'], ['GET', 'HEAD', 'POST'])
+        ->post('/users/invite', 'quire_admin_users_invite', [UsersController::class, 'inviteMany'])
         ->add('/users/{id}', 'quire_admin_user', [UsersController::class, 'edit'], ['GET', 'HEAD', 'POST'], ['id' => Requirement::UUID])
         ->post('/users/{id}/{action}', 'quire_admin_user_act', [UsersController::class, 'act'], requirements: ['id' => Requirement::UUID, 'action' => 'suspend|activate|invite'])
         ->add('/users/{id}/delete', 'quire_admin_user_delete', [UsersController::class, 'delete'], ['GET', 'HEAD', 'POST'], ['id' => Requirement::UUID])

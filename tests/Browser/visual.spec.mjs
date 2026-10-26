@@ -42,7 +42,8 @@ for (const [name, path] of Object.entries(screens)) {
         await expect(page).toHaveScreenshot(`${name}.png`, {
             fullPage: true,
             // Home says it in words: the time of day, the week and what waits since when.
-            mask: [page.locator('time'), page.locator('.home-head, .home-week, .latest, .inbox__text, .inbox__meta')],
+            mask: [page.locator('time'), page.locator('.home-head, .home-week, .latest, .inbox__text, .inbox__meta, .health')],
+            stylePath: new URL('./screenshot.css', import.meta.url).pathname,
         });
     });
 }

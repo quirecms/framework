@@ -1,0 +1,4 @@
+/* Applied while comparing screenshots: what depends on the machine, not on the page. */
+
+/* Whether a worker runs the scheduled tasks; the advice when none does takes lines of its own. */
+.health__detail { display: none !important; }
