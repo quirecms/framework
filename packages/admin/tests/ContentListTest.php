@@ -33,7 +33,7 @@ final class ContentListTest extends AdminTestCase
         self::assertResponseStatusCodeSame(404);
     }
 
-    public function testViewsByStatusAndTheTrash(): void
+    public function testTabsStatusesAndTheTrash(): void
     {
         $this->post('Draft one');
         $this->post('Published one', publish: true);
@@ -43,10 +43,14 @@ final class ContentListTest extends AdminTestCase
         $this->signIn('editor');
 
         $crawler = $this->client->request('GET', '/admin/content/post');
-        self::assertSame(['All 3', 'Draft 1', 'Published 1', 'Archived 1', 'Trash 1'], $crawler->filter('.q-views a')->each(static fn (Crawler $a): string => $a->text()), 'Views without items are left out.');
+        self::assertSame(['Everything 3', 'Trash 1'], $crawler->filter('.q-views a')->each(static fn (Crawler $a): string => $a->text()), 'Tabs without items are left out.');
+        self::assertSame(['Draft 1', 'In review 0', 'Scheduled 0', 'Published 1', 'Archived 1'], $crawler->filter('.facet')->first()->filter('.facet__option')->each(static fn (Crawler $a): string => $a->text()), 'Where items are, as in their lifecycle.');
         self::assertSame(['Archived one', 'Published one', 'Draft one'], $this->titles($crawler), 'The latest change first.');
 
-        self::assertSame(['Draft one'], $this->titles($this->client->request('GET', '/admin/content/post?view=draft')));
+        self::assertSame(['Draft one'], $this->titles($crawler = $this->client->request('GET', '/admin/content/post?f[status][]=draft')));
+        self::assertSame(['Draft (chosen) 1', 'In review 0', 'Scheduled 0', 'Published 1', 'Archived 1'], $crawler->filter('.facet')->first()->filter('.facet__option')->each(static fn (Crawler $a): string => $a->text()), 'A facet counts without its own filter.');
+        self::assertSame(['Where it is: Draft'], $crawler->filter('.q-chip')->each(static fn (Crawler $a): string => trim(str_replace(['×', '(remove)'], '', $a->text()))), 'Chosen values are chips that take them off.');
+        self::assertSame(['Archived one', 'Draft one'], $this->titles($this->client->request('GET', '/admin/content/post?f[status][]=draft&f[status][]=archived&sort=title')), 'Values of a facet: any of them.');
         self::assertSame(['Trashed one'], $this->titles($crawler = $this->client->request('GET', '/admin/content/post?view=trash')));
         self::assertSame(['Restore', 'Delete permanently'], $this->rowActions($crawler, 0));
         self::assertSame(['Archived one', 'Published one', 'Draft one'], $this->titles($this->client->request('GET', '/admin/content/post?view=nope')), 'An unknown view is "All".');
@@ -95,10 +99,20 @@ final class ContentListTest extends AdminTestCase
 
         $crawler = $this->client->request('GET', '/admin/content/post?sort=title');
         self::assertCount(ContentLists::PER_PAGE, $this->titles($crawler));
-        self::assertSelectorTextSame('.q-pagination span', 'Page 1 of 2');
+        self::assertSelectorTextContains('#content-showing', 'Showing 1–50 of 52');
 
-        $crawler = $this->client->click($crawler->filter('.q-pagination a[rel=next]')->link());
-        self::assertSame(['Post 21', 'Post 22'], $this->titles($crawler), 'The sort is kept.');
+        // As you scroll, the next page's rows are appended.
+        $this->client->request('GET', (string) $crawler->filter('[data-controller=infinite-scroll]')->attr('data-infinite-scroll-url-value'), server: ['HTTP_ACCEPT' => 'text/vnd.turbo-stream.html']);
+        self::assertResponseHeaderSame('Content-Type', 'text/vnd.turbo-stream.html; charset=UTF-8');
+        $stream = (string) $this->client->getResponse()->getContent();
+        self::assertStringContainsString('<turbo-stream action="append" target="content-rows">', $stream);
+        self::assertSame(2, substr_count($stream, 'class="content-list__title"'));
+        self::assertStringContainsString('Showing 1–52 of 52', $stream);
+
+        // Without JavaScript, a link to it.
+        $crawler = $this->client->click($crawler->filter('a[rel=next]')->link());
+        self::assertSame(['Post 51', 'Post 52'], $this->titles($crawler), 'The sort is kept.');
+        self::assertSelectorTextContains('#content-showing', 'Showing 51–52 of 52');
 
         $this->client->request('GET', '/admin/content/post?page=9');
         self::assertResponseStatusCodeSame(404);
@@ -109,12 +123,12 @@ final class ContentListTest extends AdminTestCase
         $draft = $this->post('Draft');
         $this->signIn('editor');
 
-        $crawler = $this->client->request('GET', '/admin/content/post?view=draft&sort=title');
-        self::assertSame(['Publish', 'Move to trash'], $this->rowActions($crawler, 0));
+        $crawler = $this->client->request('GET', '/admin/content/post?f[status][]=draft&sort=title');
+        self::assertSame(['Publish', 'Move to trash'], $this->rowActions($crawler, 0), 'Publishing is the next step; the rest is in the row\'s menu.');
 
         $this->client->submit($crawler->filter(\sprintf('button[value="transition:publish|%s"]', $draft->id))->form());
 
-        self::assertResponseRedirects('/admin/content/post?view=draft&sort=title', 303);
+        self::assertResponseRedirects('/admin/content/post?f%5Bstatus%5D%5B0%5D=draft&sort=title', 303);
         self::assertSame(Status::PUBLISHED, $this->service(ContentRepository::class)->get($draft->id)->status);
 
         $this->client->followRedirect();
@@ -131,7 +145,7 @@ final class ContentListTest extends AdminTestCase
         $crawler = $this->client->request('GET', '/admin/content/post');
         self::assertSame(['', 'transition:publish', 'transition:unpublish', 'transition:archive', 'trash'], $crawler->filter('select[name=action] option')->each(static fn (Crawler $o): string => (string) $o->attr('value')));
 
-        $token = (string) $crawler->filter('main input[name=_token]')->attr('value');
+        $token = (string) $crawler->filter('form.content-list input[name=_token]')->attr('value');
         $this->client->request('POST', '/admin/content/post', ['_token' => $token, 'action' => 'transition:publish', 'ids' => [$one->id, $two->id]]);
         $this->client->followRedirect();
 
@@ -183,7 +197,7 @@ final class ContentListTest extends AdminTestCase
         $this->client->request('GET', '/admin/content/page');
         self::assertResponseStatusCodeSame(403, 'Not pages.');
 
-        $token = (string) $list->filter('main input[name=_token]')->attr('value');
+        $token = (string) $list->filter('form.content-list input[name=_token]')->attr('value');
         $this->client->request('POST', '/admin/content/post', ['_token' => $token, 'action' => 'trash', 'ids' => [$theirs->id, $others->id]]);
         $repository = $this->service(ContentRepository::class);
         self::assertNull($repository->get($theirs->id)->deletedAt);
@@ -219,6 +233,6 @@ final class ContentListTest extends AdminTestCase
      */
     private function rowActions(Crawler $crawler, int $row): array
     {
-        return $crawler->filter('tbody tr')->eq($row)->filter('.content-list__actions button')->each(static fn (Crawler $button): string => $button->filter('.q-sr')->count() > 0 ? trim(str_replace($button->filter('.q-sr')->text(), '', $button->text())) : $button->text());
+        return $crawler->filter('tbody tr[data-content-list-target=row]')->eq($row)->filter('.content-list__next button, .content-list__actions button')->each(static fn (Crawler $button): string => $button->filter('.q-sr')->count() > 0 ? trim(str_replace($button->filter('.q-sr')->text(), '', $button->text())) : $button->text());
     }
 }

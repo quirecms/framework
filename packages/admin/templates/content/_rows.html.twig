@@ -1,0 +1,60 @@
+{#
+    Rows of a content list, for its first page and for the next ones as they're appended. A month's
+    heading comes before its first row.
+    Variables: type, rows, columns.
+#}
+{% for row in rows %}
+    {% set item = row.item %}
+    {% if row.group and row.group.label %}
+        <tr class="content-list__group">
+            <th scope="rowgroup" colspan="{{ columns|length + 3 }}">{{ row.group.label }}{% if row.group.count is not null %} <span class="q-meta">· {{ row.group.count }}</span>{% endif %}</th>
+        </tr>
+    {% endif %}
+    <tr data-content-list-target="row" data-actions="{{ row.actions|keys|join(' ') }}">
+        <td class="content-list__select">
+            <input type="checkbox" name="ids[]" value="{{ item.id }}" id="select-{{ item.id }}" data-content-list-target="item" data-action="click->content-list#update">
+            <label for="select-{{ item.id }}" class="q-sr">{{ 'Select “{title}”'|trans({title: item.title}, 'quire-admin') }}</label>
+        </td>
+        {% for cell in row.cells %}
+            {% if loop.first %}
+                <th scope="row">
+                    <a class="content-list__title" href="{{ path('quire_admin_content_edit', {type: type.id, id: item.id}) }}" data-content-list-target="edit">{{ cell }}</a>
+                    {% for badge in row.badges %}
+                        <span class="q-tag q-tag--{{ badge.kind }}">{{ badge.label }}</span>
+                    {% endfor %}
+                </th>
+            {% else %}
+                <td data-column="{{ columns[loop.index0].id }}">{{ cell }}</td>
+            {% endif %}
+        {% endfor %}
+        <td class="content-list__next">
+            {% if row.next %}
+                {% if row.next.url %}
+                    <a class="q-btn q-btn--sm{% if not row.next.primary %} q-btn--soft{% endif %}" href="{{ row.next.url }}">{{ row.next.label }}<span class="q-sr"> “{{ item.title }}”</span></a>
+                {% else %}
+                    <button type="submit" class="q-btn q-btn--sm{% if not row.next.primary %} q-btn--soft{% endif %}" name="row" value="{{ row.next.action }}|{{ item.id }}">{{ row.next.label }}<span class="q-sr"> “{{ item.title }}”</span></button>
+                {% endif %}
+            {% else %}
+                <span class="q-meta" aria-hidden="true">—</span>
+            {% endif %}
+        </td>
+        <td class="content-list__actions">
+            {% set others = row.actions|filter((label, action) => row.next is null or action != row.next.action) %}
+            {% if others is not empty or item.isPublic %}
+                <details class="q-menu content-list__menu">
+                    <summary class="q-link-btn" aria-label="{{ 'More actions for “{title}”'|trans({title: item.title}, 'quire-admin') }}"><span aria-hidden="true">⋯</span></summary>
+                    <ul class="q-menu__panel q-menu__panel--end">
+                        {% if item.isPublic %}
+                            <li><a href="{{ quire_url(item) }}">{{ 'View on the site'|trans({}, 'quire-admin') }}</a></li>
+                        {% endif %}
+                        {% for action, label in others %}
+                            <li>
+                                <button type="submit" class="{% if action in ['trash', 'purge'] %}q-menu__danger{% endif %}" name="row" value="{{ action }}|{{ item.id }}"{% if action == 'purge' %} data-turbo-confirm="{{ '“{title}” will be deleted permanently and can\'t be restored. Continue?'|trans({title: item.title}, 'quire-admin') }}"{% endif %}>{{ label }}</button>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </details>
+            {% endif %}
+        </td>
+    </tr>
+{% endfor %}

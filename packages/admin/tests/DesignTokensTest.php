@@ -25,7 +25,7 @@ final class DesignTokensTest extends TestCase
             ['accent', 'paper'], ['accent', 'surface'], ['accent-ink', 'accent'], ['accent-strong', 'accent-soft'],
             ['danger', 'surface'], ['danger', 'danger-soft'],
             ['warn', 'warn-soft'], ['warn', 'surface'],
-            ['review', 'review-soft'], ['review', 'surface'],
+            ['review', 'review-soft'], ['review', 'surface'], ['paper', 'review'],
             ['draft-ink', 'surface'], ['scheduled-ink', 'surface'], ['live', 'surface'],
         ] as [$text, $background]) {
             yield $text.' on '.$background => [$text, $background];

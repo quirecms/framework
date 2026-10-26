@@ -7,11 +7,15 @@ namespace Quire\Admin\Twig;
 use Quire\Admin\Content\ContentLists;
 use Quire\Admin\Navigation\AdminMenu;
 use Quire\Admin\Navigation\MenuItem;
+use Quire\Admin\Preferences\Density;
 use Quire\Admin\Preferences\UnderTheHood;
 use Quire\Content\Type\ContentTypeDefinition;
+use Quire\Settings\Settings;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Twig\Attribute\AsTwigFilter;
 use Twig\Attribute\AsTwigFunction;
+use Twig\Markup;
 
 /**
  * Twig functions of the admin's templates.
@@ -24,6 +28,9 @@ final readonly class AdminExtension
         private AdminMenu $menu,
         private ContentLists $contentLists,
         private UnderTheHood $hood,
+        private Density $density,
+        private RelativeTime $time,
+        private Settings $settings,
         private Security $security,
         private UrlGeneratorInterface $urls,
     ) {
@@ -56,5 +63,42 @@ final readonly class AdminExtension
     public function hood(): bool
     {
         return $this->hood->isOn();
+    }
+
+    /**
+     * "comfortable" or "compact", for the page's data-density.
+     */
+    #[AsTwigFunction(name: 'quire_admin_density')]
+    public function density(): string
+    {
+        return $this->density->get();
+    }
+
+    /**
+     * A number as the site's language writes it, e.g. "2,140" or "2.140".
+     */
+    #[AsTwigFilter(name: 'quire_admin_number')]
+    public function number(int|float $number): string
+    {
+        return (string) new \NumberFormatter($this->settings->getString('site.locale'), \NumberFormatter::DECIMAL)->format($number);
+    }
+
+    /**
+     * A date in the site's language, by an ICU pattern, e.g. "LLLL y" for "October 2026"; in the date's
+     * own time zone.
+     */
+    #[AsTwigFilter(name: 'quire_admin_date')]
+    public function date(\DateTimeImmutable $at, string $pattern): string
+    {
+        return (string) new \IntlDateFormatter($this->settings->getString('site.locale'), \IntlDateFormatter::NONE, \IntlDateFormatter::NONE, $at->getTimezone(), null, $pattern)->format($at);
+    }
+
+    /**
+     * A time as people say it, e.g. "2 h ago" or "Tue 09:00", in a <time> with the exact time.
+     */
+    #[AsTwigFilter(name: 'quire_admin_when')]
+    public function when(\DateTimeImmutable $at): Markup
+    {
+        return $this->time->html($at);
     }
 }

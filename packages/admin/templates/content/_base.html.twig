@@ -1,0 +1,34 @@
+{#
+    What the content screens share: the heading with the type's count, the switch between the list, the
+    board ("In motion") and the calendar, the density, and "New". The screens fill "screen".
+    Variables: type, state, can_create, total, modes, density, back.
+#}
+{% extends '@quire_admin/layout.html.twig' %}
+
+{% set plural = type.pluralLabel|trans({}, type.owner) %}
+
+{% block title %}{{ plural }}{% endblock %}
+
+{% block heading %}{{ plural }} <span class="content-head__count">{{ total|quire_admin_number }}</span>{% endblock %}
+
+{% block actions %}
+    <div class="content-head__tools">
+        <nav class="q-seg" aria-label="{{ 'Show as'|trans({}, 'quire-admin') }}">
+            {% for mode in modes %}
+                <a href="{{ mode.url }}"{% if mode.current %} aria-current="page"{% endif %}>{{ ('mode.' ~ mode.id)|trans({}, 'quire-admin') }}</a>
+            {% endfor %}
+        </nav>
+        {% if state.mode == 'list' %}
+            <form class="q-seg content-head__density" method="post" action="{{ path('quire_admin_density') }}" aria-label="{{ 'Density'|trans({}, 'quire-admin') }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_preferences') }}">
+                <input type="hidden" name="back" value="{{ back }}">
+                {% for choice in ['comfortable', 'compact'] %}
+                    <button name="density" value="{{ choice }}" aria-pressed="{{ density == choice ? 'true' : 'false' }}">{{ ('density.' ~ choice)|trans({}, 'quire-admin') }}</button>
+                {% endfor %}
+            </form>
+        {% endif %}
+        {% if can_create %}
+            <a class="q-btn" href="{{ path('quire_admin_content_new', {type: type.id}) }}"><span aria-hidden="true">＋</span> {{ 'New {type}'|trans({type: (type.label|trans({}, type.owner))|lower}, 'quire-admin') }}</a>
+        {% endif %}
+    </div>
+{% endblock %}

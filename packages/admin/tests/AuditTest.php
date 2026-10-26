@@ -35,7 +35,7 @@ final class AuditTest extends AdminTestCase
         // Editors don't run console commands: no command after their actions either.
         $post = $this->post('Mine');
         $crawler = $this->client->request('GET', '/admin/content/post');
-        $this->client->request('POST', '/admin/content/post', ['_token' => (string) $crawler->filter('main input[name=_token]')->attr('value'), 'row' => 'transition:publish|'.$post->id]);
+        $this->client->request('POST', '/admin/content/post', ['_token' => (string) $crawler->filter('form.content-list input[name=_token]')->attr('value'), 'row' => 'transition:publish|'.$post->id]);
         $crawler = $this->client->followRedirect();
         self::assertSelectorExists('.q-notice--success');
         self::assertCount(0, $crawler->filter('.q-command'));
@@ -49,7 +49,7 @@ final class AuditTest extends AdminTestCase
 
         // A bulk action: one request, two entries, and the commands of both shown after it.
         $crawler = $this->client->request('GET', '/admin/content/post');
-        $this->client->request('POST', '/admin/content/post', ['_token' => (string) $crawler->filter('main input[name=_token]')->attr('value'), 'action' => 'transition:publish', 'ids' => [$one->id, $two->id]]);
+        $this->client->request('POST', '/admin/content/post', ['_token' => (string) $crawler->filter('form.content-list input[name=_token]')->attr('value'), 'action' => 'transition:publish', 'ids' => [$one->id, $two->id]]);
         $crawler = $this->client->followRedirect();
         self::assertEqualsCanonicalizing(["bin/console quire:content:transition {$one->id} publish", "bin/console quire:content:transition {$two->id} publish"], explode("\n", $crawler->filter('.q-command__text')->text(normalizeWhitespace: false)));
         self::assertSelectorTextSame('.q-command__label', 'As a command');

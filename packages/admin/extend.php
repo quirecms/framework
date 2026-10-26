@@ -29,7 +29,7 @@ use Symfony\Component\Routing\Requirement\Requirement;
  */
 return [
     new Extend\Services()
-        ->autoload('Quire\\Admin\\', __DIR__.'/src', exclude: [__DIR__.'/src/Extend', __DIR__.'/src/Navigation/MenuItem.php']),
+        ->autoload('Quire\\Admin\\', __DIR__.'/src', exclude: [__DIR__.'/src/Extend', __DIR__.'/src/Navigation/MenuItem.php', __DIR__.'/src/Content/{ListState,NextStep}.php', __DIR__.'/src/Content/Job/ApplyToMatching.php']),
 
     new Extend\Routes(group: 'admin')
         ->get('/', 'quire_admin_dashboard', DashboardController::class)
@@ -69,6 +69,7 @@ return [
         ->post('/extensions/{id}/{action}', 'quire_admin_extension_act', [ExtensionsController::class, 'act'], requirements: ['id' => '[a-z0-9]+(?:-[a-z0-9]+)*', 'action' => 'enable|disable|purge'])
         ->get('/audit', 'quire_admin_audit', AuditController::class)
         ->post('/preferences/hood', 'quire_admin_hood', [PreferencesController::class, 'hood'])
+        ->post('/preferences/density', 'quire_admin_density', [PreferencesController::class, 'density'])
         ->get('/ui', 'quire_admin_ui', UiController::class),
 
     new Extend\Views()

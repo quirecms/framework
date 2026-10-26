@@ -8,6 +8,8 @@ import { signIn } from './sign-in.mjs';
 const screens = {
     home: '/admin',
     posts: '/admin/content/post',
+    // Not the calendar: the demo site is dated relative to when it was made, so its month changes.
+    'posts-in-motion': '/admin/content/post?mode=board',
     'new-post': '/admin/content/post/new',
     people: '/admin/users',
     'role-editor': '/admin/roles/editor',

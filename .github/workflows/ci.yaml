@@ -89,7 +89,7 @@ jobs:
           printf 'correct-horse-42\ncorrect-horse-42\n' | docker compose exec -T php bin/console quire:user:create admin@example.com --role=admin
           playwright=$(jq -r '.dependencies.playwright' tests/Accessibility/package.json)
           docker run --rm --network quire_default -e QUIRE_CHECK_SERVER=php -e QUIRE_CHECK_LOGIN=admin:correct-horse-42 -v "$PWD/tests/Accessibility:/work" -w /work "mcr.microsoft.com/playwright:v${playwright}-noble" \
-            sh -c 'npm ci --no-audit --no-fund && node check.mjs https://quire.localhost /admin /admin/content/post /admin/content/page "/admin/content/post?q=hello" /admin/content/post/new /admin/content/page/new /admin/settings /admin/settings/content /admin/themes /admin/extensions /admin/extensions/quire-admin/purge /admin/users /admin/users/new /admin/roles /admin/roles/member /admin/roles/admin "/admin/access?user=admin&ability=quire.settings.manage" /admin/audit "/admin/audit?area=user." /admin/ui'
+            sh -c 'npm ci --no-audit --no-fund && node check.mjs https://quire.localhost /admin /admin/content/post /admin/content/page "/admin/content/post?q=hello" /admin/content/post/new /admin/content/page/new /admin/settings /admin/settings/content /admin/themes /admin/extensions /admin/extensions/quire-admin/purge /admin/users /admin/users/new /admin/roles /admin/roles/member /admin/roles/admin "/admin/access?user=admin&ability=quire.settings.manage" /admin/audit "/admin/audit?area=user." /admin/ui "/admin/content/post?mode=board" "/admin/content/post?mode=calendar" "/admin/content/post?view=needs-me" "/admin/content/post?f[status][]=draft&f[checks][]=any"'
       - name: Show logs on failure
         if: failure()
         run: docker compose logs
