@@ -120,6 +120,14 @@ final class SettingsFunctionalTest extends WebTestCase
         self::assertSame(0, $import->execute(['file' => $file, '--skip-unknown' => true]));
         self::assertStringContainsString('Left out, as no enabled extension declares them: acme.colour.', $this->flat($import));
         self::assertStringContainsString('Changed 2 settings.', $this->flat($import), 'The language already was "en".');
+
+        // As YAML too, both ways.
+        $export->execute(['prefix' => 'site.', '--format' => 'yaml']);
+        self::assertSame("site.title: Results\n", $export->getDisplay(), 'Only what the site changed.');
+        file_put_contents($file, "site.description: 'Draws and results'\nquire.content.check_levels:\n  core.alt-text: warning\n");
+        self::assertSame(0, $import->execute(['file' => $file]));
+        self::assertSame('Draws and results', $this->setting('site.description'));
+        self::assertSame(['core.alt-text' => 'warning'], $this->setting('quire.content.check_levels'));
         self::assertSame(['Results', 25], [$this->setting('site.title'), $this->setting('quire.content.per_page')]);
         unlink($file);
     }

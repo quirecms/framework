@@ -302,7 +302,8 @@ Declares settings that site admins can change at runtime (see [Settings](setting
 
 ```php
 new Extend\Settings()
-    ->define('acme-reviews.require_approval', 'bool', true, label: 'Require approval', help: 'New reviews stay hidden until a moderator approves them.')
+    ->define('acme-reviews.require_approval', 'bool', true, label: 'Require approval', help: 'New reviews stay hidden until a moderator approves them.',
+        phrase: 'New reviews {value}.', valueLabels: ['on' => 'wait for a moderator', 'off' => 'show right away'])
     ->define('acme-reviews.per_page', 'int', 20, label: 'Reviews per page')
     ->define('acme-reviews.sort', 'enum', 'newest', choices: ['newest', 'oldest'])
     ->define('acme-reviews.api_key', 'string', null, nullable: true, sensitive: true),
@@ -318,6 +319,7 @@ new Extend\Settings()
 | `nullable` | Whether the setting may be empty (`null`) |
 | `sensitive` | Hides the value in listings, e.g. for API keys |
 | `exposed` | Lets templates read it with `quire_setting()`, e.g. a footer text. Sensitive settings can't be exposed. |
+| `phrase`, `valueLabels` | The setting as a sentence, for admin interfaces that show settings as a document: `phrase` says where the value goes with `{value}`, e.g. `'Quantities are shown in {value} units.'`, and `valueLabels` how values read in it, by choice for `enum` settings and `on`/`off` for `bool` ones. Both are translated in your extension's domain. Without them, the setting reads as its label and value. |
 
 Read settings by injecting `Quire\Settings\Settings`:
 
