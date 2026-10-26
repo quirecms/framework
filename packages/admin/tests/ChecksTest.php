@@ -67,7 +67,8 @@ final class ChecksTest extends AdminTestCase
 
         $crawler = $this->client->request('GET', '/admin/content/post/'.$post->id.'/changes/'.$pending->id);
 
-        self::assertSame('No errors, 1 warning.', $crawler->filter('.checks__summary')->text());
+        self::assertSelectorTextContains('.review-bar__detail', '1 check to look at');
+        self::assertStringContainsString('description', $crawler->filter('.review-checks__warning')->text());
     }
 
     /**
