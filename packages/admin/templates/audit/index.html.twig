@@ -1,111 +1,210 @@
 {#
-    The audit log. Variables: entries (entry, summary, subject_url, actor, actor_url, via, details), total,
-    state (area, origin, since, until, actor, subject_type, subject, correlation), areas, origins,
-    narrowed (label, remove_url), page, pages, previous_url, next_url, timezone.
+    Activity: who did what. Variables: groups (by day: date, count, cards of items as AuditEntries presents
+    them, and undo, the IDs to undo together), total, state (q, area, origin, since, until, actor,
+    subject_type, subject, correlation), areas, origins, narrowed (label, remove_url), days (date, count,
+    chosen, url), days_total, days_max, people (by ID: name, count), me, urls, retention, page, pages,
+    previous_url, next_url, back, timezone.
 #}
 {% extends '@quire_admin/layout.html.twig' %}
 
-{% block title %}{{ 'Audit log'|trans({}, 'quire-admin') }}{% endblock %}
+{% set hood = quire_admin_hood() %}
+
+{% block title %}{{ 'Activity'|trans({}, 'quire-admin') }}{% endblock %}
+
+{% block page_head %}
+    <header class="people-head">
+        <div>
+            <p class="people-head__eyebrow">{{ 'Activity'|trans({}, 'quire-admin') }}</p>
+            <h1 class="people-head__title">{{ 'Who did what'|trans({}, 'quire-admin') }}</h1>
+        </div>
+        <p class="people-head__actions">
+            {% if hood %}<a class="q-btn q-btn--ghost" href="{{ urls.export }}" download>{{ 'Export'|trans({}, 'quire-admin') }}</a>{% endif %}
+            {% if urls.mine %}<a class="q-btn q-btn--ghost" href="{{ urls.mine }}" {% if state.actor == me %} aria-current="true"{% endif %}>{{ 'Only mine'|trans({}, 'quire-admin') }}</a>{% endif %}
+        </p>
+    </header>
+{% endblock %}
 
 {% block content %}
-    <form class="q-toolbar" method="get" action="{{ path('quire_admin_audit') }}">
-        {% for name in ['actor', 'subject_type', 'subject', 'correlation'] %}
+<div class="activity">
+    <form class="activity-search" role="search" method="get" action="{{ path('quire_admin_audit') }}">
+        {% for name in ['area', 'origin', 'since', 'until', 'actor', 'subject_type', 'subject', 'correlation'] %}
             {% if state[name] %}<input type="hidden" name="{{ name }}" value="{{ state[name] }}">{% endif %}
         {% endfor %}
-        <label>
-            <span>{{ 'What'|trans({}, 'quire-admin') }}</span>
-            <select name="area">
-                <option value="">{{ 'Everything'|trans({}, 'quire-admin') }}</option>
-                {% for area in areas %}<option value="{{ area }}"{% if state.area == area %} selected{% endif %}>{{ ('audit.area.' ~ area|trim('.', 'right'))|trans({}, 'quire-admin') }}</option>{% endfor %}
-            </select>
-        </label>
-        <label>
-            <span>{{ 'Where'|trans({}, 'quire-admin') }}</span>
-            <select name="origin">
-                <option value="">{{ 'Anywhere'|trans({}, 'quire-admin') }}</option>
-                {% for origin in origins %}<option value="{{ origin }}"{% if state.origin == origin %} selected{% endif %}>{{ ('audit.origin.' ~ origin)|trans({}, 'quire-admin') }}</option>{% endfor %}
-            </select>
-        </label>
-        <label>
-            <span>{{ 'From'|trans({}, 'quire-admin') }}</span>
-            <input type="date" name="since" value="{{ state.since }}">
-        </label>
-        <label>
-            <span>{{ 'To'|trans({}, 'quire-admin') }}</span>
-            <input type="date" name="until" value="{{ state.until }}">
-        </label>
-        <button type="submit" class="q-btn">{{ 'Show'|trans({}, 'quire-admin') }}</button>
+        <label for="activity-q" class="q-sr">{{ 'Search the activity'|trans({}, 'quire-admin') }}</label>
+        <input type="search" id="activity-q" name="q" value="{{ state.q }}" autocomplete="off" placeholder="{{ 'Search: a title, a person, “published”, “settings”…'|trans({}, 'quire-admin') }}">
     </form>
 
-    {% if narrowed %}
-        <ul class="q-chips" aria-label="{{ 'Showing only'|trans({}, 'quire-admin') }}">
-            {% for item in narrowed %}
-                <li>{{ item.label }} <a href="{{ item.remove_url }}">{{ 'Show all'|trans({}, 'quire-admin') }}<span class="q-sr"> ({{ item.label }})</span></a></li>
+    <section class="q-card activity-days" aria-labelledby="days-heading">
+        <h2 id="days-heading" class="q-sr">{{ 'The last 30 days'|trans({}, 'quire-admin') }}</h2>
+        <ol class="activity-days__bars">
+            {% for day in days %}
+                <li>
+                    <a href="{{ day.url }}" class="activity-days__bar{% if day.chosen %} activity-days__bar--chosen{% endif %}" style="--h: {{ (day.count / days_max * 100)|round }}%"{% if day.chosen %} aria-current="true"{% endif %}>
+                        <span class="q-sr">{{ day.date|quire_admin_date('EEE d MMM') }}: {{ '{count, plural, one {# action} other {# actions}}'|trans({count: day.count}, 'quire-admin') }}</span>
+                    </a>
+                </li>
             {% endfor %}
-        </ul>
-    {% endif %}
+        </ol>
+        <p class="activity-days__legend" aria-hidden="true">
+            <span>{{ (days|first).date|quire_admin_date('d MMM') }}</span>
+            <span>{{ 'Last 30 days · {count, plural, one {# action} other {# actions}}'|trans({count: days_total}, 'quire-admin') }}{% if state.since %} · <a href="{{ urls.all_days }}">{{ state.since == state.until ? 'one day chosen'|trans({}, 'quire-admin') : 'some days chosen'|trans({}, 'quire-admin') }}</a>{% endif %}</span>
+            <span>{{ 'today'|trans({}, 'quire-admin') }}</span>
+        </p>
+    </section>
 
-    {% if entries is empty %}
-        <p class="q-empty">{{ total == 0 and not (state|filter(v => v)) ? 'Nothing recorded yet.'|trans({}, 'quire-admin') : 'Nothing matches.'|trans({}, 'quire-admin') }}</p>
-    {% else %}
-        <div class="q-scroll">
-            <table class="q-table audit">
-                <caption class="q-sr">{{ 'Audit log'|trans({}, 'quire-admin') }}, {{ 'page {page} of {pages}'|trans({page: page, pages: pages}, 'quire-admin') }}</caption>
-                <thead>
-                    <tr>
-                        <th scope="col">{{ 'When'|trans({}, 'quire-admin') }}</th>
-                        <th scope="col">{{ 'Who'|trans({}, 'quire-admin') }}</th>
-                        <th scope="col">{{ 'What'|trans({}, 'quire-admin') }}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in entries %}
-                        {% set entry = item.entry %}
-                        <tr>
-                            <td class="audit__when">
-                                <time datetime="{{ entry.lastAt|date('c') }}">{{ entry.lastAt|date('Y-m-d H:i', timezone) }}</time>
-                                {% if entry.repeats > 1 %}
-                                    <span class="q-meta">{{ '{count, plural, other {# times since {time}}}'|trans({count: entry.repeats, time: entry.occurredAt|date('H:i', timezone)}, 'quire-admin') }}</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if item.actor_url %}<a href="{{ item.actor_url }}">{{ item.actor }}</a>{% else %}{{ item.actor }}{% endif %}
-                                {% if item.via %}<span class="q-meta">{{ item.via }}</span>{% endif %}
-                            </td>
-                            <td class="audit__what">
-                                {% if item.subject_url %}<a class="audit__summary" href="{{ item.subject_url }}">{{ item.summary }}</a>{% else %}<span class="audit__summary">{{ item.summary }}</span>{% endif %}
-                                {% if item.details %}
-                                    <dl class="audit__details">
-                                        {% for detail in item.details %}
-                                            <div><dt>{{ detail.label }}</dt><dd>{{ detail.value }}</dd></div>
-                                        {% endfor %}
-                                    </dl>
-                                {% endif %}
-                                <p class="audit__links q-meta">
-                                    {% if entry.actorId and state.actor != entry.actorId %}<a href="{{ path('quire_admin_audit', {actor: entry.actorId}) }}">{{ 'All by {name}'|trans({name: item.actor}, 'quire-admin') }}</a>{% endif %}
-                                    {% if entry.subjectId and state.subject != entry.subjectId %}<a href="{{ path('quire_admin_audit', {subject_type: entry.subjectType, subject: entry.subjectId}) }}">{{ 'All about it'|trans({}, 'quire-admin') }}<span class="q-sr"> ({{ entry.subjectLabel ?? entry.subjectId }})</span></a>{% endif %}
-                                    {% if state.correlation != entry.correlationId %}<a href="{{ path('quire_admin_audit', {correlation: entry.correlationId}) }}">{{ 'Done together'|trans({}, 'quire-admin') }}<span class="q-sr"> ({{ item.summary }})</span></a>{% endif %}
-                                </p>
-                                {% if entry.command and quire_admin_hood() %}
-                                    <details class="audit__command">
-                                        <summary>{{ 'As a command'|trans({}, 'quire-admin') }}<span class="q-sr"> ({{ item.summary }})</span></summary>
-                                        {% include '@quire_admin/_command.html.twig' with {commands: [entry.command], label: false} only %}
-                                    </details>
-                                {% endif %}
-                            </td>
-                        </tr>
+    <div class="activity__layout">
+        <div class="activity__list">
+            {% if narrowed %}
+                <ul class="q-chips" aria-label="{{ 'Showing only'|trans({}, 'quire-admin') }}">
+                    {% for item in narrowed %}
+                        <li>{{ item.label }} <a href="{{ item.remove_url }}">{{ 'Show all'|trans({}, 'quire-admin') }}<span class="q-sr"> ({{ item.label }})</span></a></li>
                     {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        <p class="q-meta">{{ '{count, plural, one {# entry} other {# entries}}'|trans({count: total}, 'quire-admin') }}</p>
-    {% endif %}
+                </ul>
+            {% endif %}
 
-    {% if pages > 1 %}
-        <nav class="q-pagination" aria-label="{{ 'Pages'|trans({}, 'quire-admin') }}">
-            {% if previous_url %}<a href="{{ previous_url }}" rel="prev">{{ 'Newer'|trans({}, 'quire-admin') }}</a>{% endif %}
-            <span>{{ 'Page {page} of {pages}'|trans({page: page, pages: pages}, 'quire-admin') }}</span>
-            {% if next_url %}<a href="{{ next_url }}" rel="next">{{ 'Older'|trans({}, 'quire-admin') }}</a>{% endif %}
-        </nav>
-    {% endif %}
+            {% if groups is empty %}
+                <p class="q-empty">{{ total == 0 and not (state|filter(v => v)) ? 'Nothing recorded yet.'|trans({}, 'quire-admin') : 'Nothing matches.'|trans({}, 'quire-admin') }}</p>
+            {% endif %}
+
+            {% for group in groups %}
+                <section class="activity-day" aria-labelledby="day-{{ loop.index }}">
+                    <h2 class="activity-day__title" id="day-{{ loop.index }}">
+                        {{ group.date|date('Y-m-d', timezone) == 'now'|date('Y-m-d', timezone) ? 'Today'|trans({}, 'quire-admin') : group.date|quire_admin_date('EEEE d MMMM') }}
+                        {%- if group.count is not null %} · {{ '{count, plural, one {# action} other {# actions}}'|trans({count: group.count}, 'quire-admin') }}{% endif %}
+                    </h2>
+                    <ol class="activity-cards">
+                        {% for card in group.cards %}
+                            {{ _self.card(card, state, back, hood, timezone) }}
+                        {% endfor %}
+                    </ol>
+                </section>
+            {% endfor %}
+
+            {% if pages > 1 %}
+                <nav class="q-pagination" aria-label="{{ 'Pages'|trans({}, 'quire-admin') }}">
+                    {% if previous_url %}<a href="{{ previous_url }}" rel="prev">{{ 'Newer'|trans({}, 'quire-admin') }}</a>{% endif %}
+                    <span>{{ 'Page {page} of {pages}'|trans({page: page, pages: pages}, 'quire-admin') }}</span>
+                    {% if next_url %}<a href="{{ next_url }}" rel="next">{{ 'Older'|trans({}, 'quire-admin') }}</a>{% endif %}
+                </nav>
+            {% endif %}
+        </div>
+
+        <aside class="q-card activity-filters" aria-label="{{ 'Filters'|trans({}, 'quire-admin') }}">
+            <nav aria-labelledby="who-heading">
+                <h2 id="who-heading" class="activity-filters__title">{{ 'Who'|trans({}, 'quire-admin') }}</h2>
+                <ul class="activity-chips">
+                    <li><a href="{{ urls.everyone }}"{% if not state.actor and not state.origin %} aria-current="true"{% endif %}>{{ 'Everyone'|trans({}, 'quire-admin') }}</a></li>
+                    {% if urls.me %}<li><a href="{{ urls.me }}"{% if state.actor == me %} aria-current="true"{% endif %}>{{ 'Me'|trans({}, 'quire-admin') }}</a></li>{% endif %}
+                    {% for id, person in people|filter((person, id) => id != me) %}
+                        <li><a href="{{ urls.people[id] }}"{% if state.actor == id %} aria-current="true"{% endif %}>{{ (person.name ?? '?')|split(' ')|first }}</a></li>
+                    {% endfor %}
+                    <li><a href="{{ urls.automatic }}"{% if state.origin == 'job' %} aria-current="true"{% endif %}>{{ 'Automatic'|trans({}, 'quire-admin') }}</a></li>
+                </ul>
+            </nav>
+            <nav aria-labelledby="about-heading">
+                <h2 id="about-heading" class="activity-filters__title">{{ 'About'|trans({}, 'quire-admin') }}</h2>
+                <ul class="activity-chips">
+                    <li><a href="{{ urls.areas[''] }}"{% if not state.area %} aria-current="true"{% endif %}>{{ 'Everything'|trans({}, 'quire-admin') }}</a></li>
+                    {% for area in areas %}
+                        <li><a href="{{ urls.areas[area] }}"{% if state.area == area %} aria-current="true"{% endif %}>{{ ('activity.area.' ~ area|trim('.', 'right'))|trans({}, 'quire-admin') }}</a></li>
+                    {% endfor %}
+                </ul>
+            </nav>
+            <details class="activity-filters__more"{% if state.origin and state.origin != 'job' or (state.since and state.since != state.until) %} open{% endif %}>
+                <summary>{{ 'Where and when'|trans({}, 'quire-admin') }}</summary>
+                <form method="get" action="{{ path('quire_admin_audit') }}" class="activity-filters__form">
+                    {% for name in ['q', 'area', 'actor', 'subject_type', 'subject', 'correlation'] %}
+                        {% if state[name] %}<input type="hidden" name="{{ name }}" value="{{ state[name] }}">{% endif %}
+                    {% endfor %}
+                    <div class="q-field">
+                        <label for="activity-origin">{{ 'Where'|trans({}, 'quire-admin') }}</label>
+                        <select id="activity-origin" name="origin">
+                            <option value="">{{ 'Anywhere'|trans({}, 'quire-admin') }}</option>
+                            {% for origin in origins %}<option value="{{ origin }}"{% if state.origin == origin %} selected{% endif %}>{{ ('audit.origin.' ~ origin)|trans({}, 'quire-admin') }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="q-field">
+                        <label for="activity-since">{{ 'From'|trans({}, 'quire-admin') }}</label>
+                        <input type="date" id="activity-since" name="since" value="{{ state.since }}">
+                    </div>
+                    <div class="q-field">
+                        <label for="activity-until">{{ 'To'|trans({}, 'quire-admin') }}</label>
+                        <input type="date" id="activity-until" name="until" value="{{ state.until }}">
+                    </div>
+                    <button type="submit" class="q-btn q-btn--ghost">{{ 'Show'|trans({}, 'quire-admin') }}</button>
+                </form>
+            </details>
+            <p class="q-help">
+                {{ retention > 0 ? 'Kept for {days, plural, one {# day} other {# days}}.'|trans({days: retention}, 'quire-admin') : 'Kept for good.'|trans({}, 'quire-admin') }}
+                {{ 'Passwords, secrets and new email addresses are never recorded.'|trans({}, 'quire-admin') }}
+            </p>
+        </aside>
+    </div>
+</div>
 {% endblock %}
+
+{# One thing that was done, or several similar ones folded together. #}
+{% macro card(card, state, back, hood, timezone) %}
+    {% set first = card.items|first %}
+    {% set entry = first.entry %}
+    {% set count = card.items|length %}
+    {% set system = entry.actorId is null %}
+    <li class="activity-card">
+        <span class="q-avatar activity-card__avatar{% if system %} activity-card__avatar--system{% endif %}" aria-hidden="true">{{ system ? '⚙' : first.actor|split(' ')|map(word => word|first)|slice(0, 2)|join|upper }}</span>
+        <div class="activity-card__body">
+            {% if count == 1 %}
+                <p class="activity-card__what">{% if first.subject_url %}<a href="{{ first.subject_url }}">{{ first.summary }}</a>{% else %}{{ first.summary }}{% endif %}</p>
+            {% elseif entry.action == 'user.signed_in' %}
+                {% set names = card.items|map(item => item.entry.subjectLabel ?? item.actor)|reduce((all, name) => name in all ? all : all|merge([name]), []) %}
+                <p class="activity-card__what">{{ names|length == 1 ? '{name} signed in {count} times'|trans({name: names|first, count: count}, 'quire-admin') : '{name} and {count, plural, one {# other} other {# others}} signed in'|trans({name: (names|first)|split(' ')|first, count: names|length - 1}, 'quire-admin') }}</p>
+            {% else %}
+                <p class="activity-card__what">{{ '{summary} and {count, plural, one {# more} other {# more}} at once'|trans({summary: first.summary, count: count - 1}, 'quire-admin') }}</p>
+            {% endif %}
+
+            <p class="activity-card__meta">
+                {% if not system %}<a href="{{ path('quire_admin_audit', state|merge({actor: entry.actorId, page: null})|filter(v => v)) }}" class="activity-card__who">{{ first.actor }}</a>{% else %}<span class="activity-card__who">{{ first.actor }}</span>{% endif %}
+                {%- if first.via %} · {{ first.via }}{% endif %}
+                {%- if count > 1 %} · <time datetime="{{ (card.items|last).entry.lastAt|date('c') }}">{{ (card.items|last).entry.lastAt|date('H:i', timezone) }}</time>–<time datetime="{{ entry.lastAt|date('c') }}">{{ entry.lastAt|date('H:i', timezone) }}</time>{% endif %}
+                {%- if entry.repeats > 1 %} · {{ '{count, plural, other {# times}}'|trans({count: entry.repeats}, 'quire-admin') }}{% endif %}
+            </p>
+
+            {% if count > 1 %}
+                <details class="activity-card__all"{% if entry.action != 'user.signed_in' and count <= 5 %} open{% endif %}>
+                    <summary>{{ 'show {count}'|trans({count: count}, 'quire-admin') }}</summary>
+                    <ul>
+                        {% for item in card.items %}
+                            <li>{% if item.subject_url %}<a href="{{ item.subject_url }}">{{ item.summary }}</a>{% else %}{{ item.summary }}{% endif %} <span class="q-meta">{{ item.actor }} · {{ item.entry.lastAt|date('H:i', timezone) }}</span></li>
+                        {% endfor %}
+                    </ul>
+                </details>
+            {% elseif first.details %}
+                <dl class="activity-card__details">
+                    {% for detail in first.details %}<div><dt>{{ detail.label }}</dt><dd>{{ detail.value }}</dd></div>{% endfor %}
+                </dl>
+            {% endif %}
+
+            {% set commands = card.items|map(item => item.entry.command)|filter(command => command) %}
+            {% if hood and commands is not empty %}
+                {% include '@quire_admin/_command.html.twig' with {commands: commands|reverse, label: false} only %}
+            {% endif %}
+
+            {% if hood %}
+                <p class="activity-card__links q-meta">
+                    {% if entry.subjectId and state.subject != entry.subjectId and count == 1 %}<a href="{{ path('quire_admin_audit', {subject_type: entry.subjectType, subject: entry.subjectId}) }}">{{ 'All about it'|trans({}, 'quire-admin') }}<span class="q-sr"> ({{ entry.subjectLabel ?? entry.subjectId }})</span></a>{% endif %}
+                    {% if state.correlation != entry.correlationId %}<a href="{{ path('quire_admin_audit', {correlation: entry.correlationId}) }}">{{ 'Done together'|trans({}, 'quire-admin') }}<span class="q-sr"> ({{ first.summary }})</span></a>{% endif %}
+                </p>
+            {% endif %}
+        </div>
+        <div class="activity-card__side">
+            <time class="activity-card__time" datetime="{{ entry.lastAt|date('c') }}">{{ entry.lastAt|date('H:i', timezone) }}</time>
+            {% if card.undo is not empty %}
+                <form method="post" action="{{ path('quire_admin_audit_undo') }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_audit') }}">
+                    <input type="hidden" name="back" value="{{ back }}">
+                    {% for id in card.undo %}<input type="hidden" name="entries[]" value="{{ id }}">{% endfor %}
+                    <button type="submit" class="q-btn q-btn--ghost q-btn--sm">{{ 'Undo'|trans({}, 'quire-admin') }}<span class="q-sr"> ({{ first.summary }})</span></button>
+                </form>
+            {% endif %}
+        </div>
+    </li>
+{% endmacro %}

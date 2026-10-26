@@ -688,4 +688,65 @@
     @media (max-width: 48rem) {
         .prefs-dialog { width: 100vw; max-width: none; max-height: 100dvh; margin: auto 0 0; padding: var(--q-space-4); border-radius: var(--q-radius-lg, 1rem) var(--q-radius-lg, 1rem) 0 0; }
     }
+
+    /* Activity: who did what, by day, with bars of the last 30 days and filters beside */
+    .activity { display: grid; gap: var(--q-space-4); }
+    .activity-search input { width: 100%; min-height: 3rem; padding-inline: var(--q-space-4); border-radius: var(--q-radius); font-size: 1.0625rem; }
+    .activity-days { display: grid; gap: var(--q-space-2); padding: var(--q-space-4) var(--q-space-5); }
+    .activity-days__bars { display: grid; grid-template-columns: repeat(30, 1fr); gap: 3px; align-items: end; height: 5rem; margin: 0; padding: 0; list-style: none; }
+    .activity-days__bars li { height: 100%; }
+    /* The whole column is the link; the bar is drawn in it. */
+    .activity-days__bar { --bar: color-mix(in srgb, var(--q-accent) 22%, transparent); display: block; height: 100%; border-radius: 3px 3px 0 0; background: linear-gradient(to top, var(--bar) max(4px, var(--h)), transparent 0); }
+    .activity-days__bar:hover, .activity-days__bar:focus-visible { --bar: color-mix(in srgb, var(--q-accent) 55%, transparent); }
+    .activity-days__bar--chosen { --bar: var(--q-accent); }
+    .activity-days__legend { display: flex; justify-content: space-between; gap: var(--q-space-3); margin: 0; color: var(--q-muted); font-size: var(--q-text-sm); }
+    .activity__layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(16rem, 21rem); gap: var(--q-space-5); align-items: start; }
+    .activity__list { display: grid; gap: var(--q-space-5); }
+    .activity-day { display: grid; gap: var(--q-space-3); }
+    .activity-day__title { margin: 0; color: var(--q-muted); font-size: var(--q-text-sm); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+    .activity-cards { display: grid; gap: var(--q-space-3); margin: 0; padding: 0; list-style: none; }
+    .activity-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--q-space-3) var(--q-space-4); padding: var(--q-space-4) var(--q-space-5); border: 1px solid var(--q-line); border-radius: var(--q-radius-lg, 1rem); background: var(--q-surface); }
+    .activity-card__avatar { background: var(--q-accent); }
+    .activity-card__avatar--system { background: var(--q-muted); }
+    .activity-card__body { display: grid; gap: var(--q-space-2); min-width: 0; }
+    .activity-card__body p { margin: 0; }
+    .activity-card__what { font-size: 1.0625rem; }
+    .activity-card__what a { color: var(--q-ink); }
+    .activity-card__meta { color: var(--q-muted); font-size: var(--q-text-sm); }
+    .activity-card__who { color: var(--q-ink); font-weight: 600; }
+    .activity-card__all summary { cursor: pointer; color: var(--q-accent-strong); font-size: var(--q-text-sm); }
+    .activity-card__all ul { margin: var(--q-space-2) 0 0; padding-left: 1.2rem; }
+    .activity-card__details { display: flex; flex-wrap: wrap; gap: var(--q-space-1) var(--q-space-4); margin: 0; font-size: var(--q-text-sm); }
+    .activity-card__details div { display: flex; gap: var(--q-space-1); }
+    .activity-card__details dt { color: var(--q-muted); }
+    .activity-card__details dt::after { content: ":"; }
+    .activity-card__details dd { margin: 0; overflow-wrap: anywhere; }
+    .activity-card__links { display: flex; flex-wrap: wrap; gap: var(--q-space-3); }
+    .activity-card__side { display: grid; gap: var(--q-space-2); justify-items: end; align-content: start; }
+    .activity-card__side form { margin: 0; }
+    .activity-card__time { color: var(--q-muted); font-size: var(--q-text-sm); font-variant-numeric: tabular-nums; }
+    .activity-filters { display: grid; gap: var(--q-space-4); padding: var(--q-space-5); }
+    .activity-filters__title { margin: 0 0 var(--q-space-2); color: var(--q-muted); font-size: var(--q-text-sm); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+    .activity-chips { display: flex; flex-wrap: wrap; gap: var(--q-space-2); margin: 0; padding: 0; list-style: none; }
+    .activity-chips a { display: inline-grid; place-items: center; min-height: var(--q-target); padding: 0.25rem 0.85rem; border: 1px solid var(--q-line); border-radius: var(--q-radius-sm); color: var(--q-ink); text-decoration: none; }
+    .activity-chips a:hover { background: var(--q-paper); }
+    .activity-chips a[aria-current="true"] { border-color: var(--q-ink); background: var(--q-ink); color: var(--q-paper); }
+    .activity-filters__more summary { cursor: pointer; font-weight: 600; }
+    .activity-filters__form { display: grid; gap: var(--q-space-3); margin-top: var(--q-space-3); }
+    .activity-filters .q-help { margin: 0; }
+
+    @media (max-width: 64rem) {
+        .activity__layout { grid-template-columns: minmax(0, 1fr); }
+        .activity-filters { order: -1; }
+    }
+
+    @media (max-width: 48rem) {
+        /* The last 10 days, each wide enough to tap. */
+        .activity-days__bars { grid-template-columns: repeat(10, 1fr); height: 3.5rem; gap: 4px; }
+        .activity-days__bars li:nth-child(-n+20) { display: none; }
+        .activity-days__legend span:first-child { visibility: hidden; }
+        .activity-days__legend span:nth-child(2) { text-align: center; }
+        .activity-card { grid-template-columns: auto minmax(0, 1fr); padding: var(--q-space-3) var(--q-space-4); }
+        .activity-card__side { grid-column: 2; grid-auto-flow: column; justify-content: space-between; justify-items: start; align-items: center; }
+    }
 }
