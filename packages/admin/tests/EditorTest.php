@@ -11,17 +11,12 @@ use Quire\Content\ContentRepository;
 use Quire\Content\ContentWriter;
 use Quire\Content\Status;
 use Quire\Permission\Permissions;
-use Quire\Testing\ExtensionTestCase;
-use Quire\User\CreateUser;
+use Quire\Testing\AdminTestCase;
 use Quire\User\User;
-use Quire\User\UserWriter;
 use Symfony\Component\DomCrawler\Crawler;
 
-final class EditorTest extends ExtensionTestCase
+final class EditorTest extends AdminTestCase
 {
-    #[\Override]
-    protected static array $extensions = ['quire-admin'];
-
     public function testCreatingAnItemWithTheForm(): void
     {
         $editor = $this->signIn('editor');
@@ -187,14 +182,5 @@ final class EditorTest extends ExtensionTestCase
     private function latest(): ?Content
     {
         return $this->service(ContentRepository::class)->query('post')->withoutVisibilityScope()->orderBy('created_at', 'desc')->first();
-    }
-
-    private function signIn(string $role): User
-    {
-        $user = $this->service(UserWriter::class)->create(new CreateUser(ucfirst($role), $role.'@example.com', password: 'correct-horse-42', roles: [$role]));
-        $this->client->request('GET', '/login');
-        $this->client->submitForm('Sign in', ['_username' => $role, '_password' => 'correct-horse-42']);
-
-        return $user;
     }
 }

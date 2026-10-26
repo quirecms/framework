@@ -1,0 +1,7 @@
+services:
+    # bin/console quire:demo:seed: the demo site of the admin's designs, for development.
+    Quire\Testing\Demo\DemoSite:
+        autowire: true
+    Quire\Testing\Demo\SeedDemoCommand:
+        autowire: true
+        autoconfigure: true

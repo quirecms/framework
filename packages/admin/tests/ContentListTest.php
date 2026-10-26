@@ -11,17 +11,12 @@ use Quire\Content\ContentRepository;
 use Quire\Content\ContentWriter;
 use Quire\Content\Status;
 use Quire\Permission\Permissions;
-use Quire\Testing\ExtensionTestCase;
-use Quire\User\CreateUser;
+use Quire\Testing\AdminTestCase;
 use Quire\User\User;
-use Quire\User\UserWriter;
 use Symfony\Component\DomCrawler\Crawler;
 
-final class ContentListTest extends ExtensionTestCase
+final class ContentListTest extends AdminTestCase
 {
-    #[\Override]
-    protected static array $extensions = ['quire-admin'];
-
     public function testEachTypeTheUserMayEditHasAListInTheMenu(): void
     {
         $this->signIn('editor');
@@ -226,14 +221,5 @@ final class ContentListTest extends ExtensionTestCase
     private function rowActions(Crawler $crawler, int $row): array
     {
         return $crawler->filter('tbody tr')->eq($row)->filter('.content-list__actions button')->each(static fn (Crawler $button): string => $button->filter('.visually-hidden')->count() > 0 ? trim(str_replace($button->filter('.visually-hidden')->text(), '', $button->text())) : $button->text());
-    }
-
-    private function signIn(string $role): User
-    {
-        $user = $this->service(UserWriter::class)->create(new CreateUser(ucfirst($role), $role.'@example.com', password: 'correct-horse-42', roles: [$role]));
-        $this->client->request('GET', '/login');
-        $this->client->submitForm('Sign in', ['_username' => $role, '_password' => 'correct-horse-42']);
-
-        return $user;
     }
 }

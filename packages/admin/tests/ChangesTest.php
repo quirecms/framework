@@ -14,21 +14,16 @@ use Quire\Content\Revision\PendingRevisionRepository;
 use Quire\Content\Revision\ReviewState;
 use Quire\Content\Status;
 use Quire\Permission\Permissions;
-use Quire\Testing\ExtensionTestCase;
-use Quire\User\CreateUser;
+use Quire\Testing\AdminTestCase;
 use Quire\User\User;
-use Quire\User\UserWriter;
 use Symfony\Component\DomCrawler\Crawler;
 
 /**
  * Changes to published items: saved as the editor's pending revision, published by hand or at a time,
  * reviewed, merged with what was published meanwhile; and the items' history.
  */
-final class ChangesTest extends ExtensionTestCase
+final class ChangesTest extends AdminTestCase
 {
-    #[\Override]
-    protected static array $extensions = ['quire-admin'];
-
     private const string BODY = "# Opening hours\n\nMonday to Friday, 9 to 5.\n\nClosed on Sundays.\n";
 
     public function testChangesToAPublishedItemWaitUntilTheyArePublished(): void
@@ -270,16 +265,5 @@ final class ChangesTest extends ExtensionTestCase
     private function changedLines(Crawler $crawler): array
     {
         return $crawler->filter('.diff-added .diff-text, .diff-removed .diff-text')->each(static fn (Crawler $td): string => $td->text());
-    }
-
-    private function signIn(string $role): User
-    {
-        $user = $this->service(\Quire\User\UserRepository::class)->findByUsername($role)
-            ?? $this->service(UserWriter::class)->create(new CreateUser(ucfirst($role), $role.'@example.com', password: 'correct-horse-42', roles: [$role]));
-        $this->client->getCookieJar()->clear();
-        $this->client->request('GET', '/login');
-        $this->client->submitForm('Sign in', ['_username' => $role, '_password' => 'correct-horse-42']);
-
-        return $user;
     }
 }

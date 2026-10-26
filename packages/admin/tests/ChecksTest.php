@@ -11,22 +11,17 @@ use Quire\Content\ContentRepository;
 use Quire\Content\ContentWriter;
 use Quire\Content\Revision\PendingRevisionWriter;
 use Quire\Content\Status;
-use Quire\Testing\ExtensionTestCase;
-use Quire\User\CreateUser;
-use Quire\User\UserWriter;
+use Quire\Testing\AdminTestCase;
 use Symfony\Component\DomCrawler\Crawler;
 
 /**
  * The content checks in the admin: shown while writing, and errors block publishing.
  */
-final class ChecksTest extends ExtensionTestCase
+final class ChecksTest extends AdminTestCase
 {
-    #[\Override]
-    protected static array $extensions = ['quire-admin'];
-
     public function testTheEditorShowsWhatTheChecksFind(): void
     {
-        $this->signIn();
+        $this->signIn('editor');
         $post = $this->service(ContentWriter::class)->create(new CreateContent('post', 'Pictures', body: "Intro.\n\n![](/chart.png)\n", excerpt: 'Short.'));
 
         $crawler = $this->client->request('GET', '/admin/content/post/'.$post->id);
@@ -45,7 +40,7 @@ final class ChecksTest extends ExtensionTestCase
     public function testErrorsBlockPublishing(): void
     {
         $this->setSetting(ContentChecker::LEVELS_SETTING, ['core.alt-text' => 'error']);
-        $this->signIn();
+        $this->signIn('editor');
         $crawler = $this->client->request('GET', '/admin/content/post/new');
 
         $this->client->submit($crawler->filter('button[name=intent][value="transition:publish"]')->form(['title' => 'Pictures', 'body' => '![](/chart.png)', 'excerpt' => 'Short.']));
@@ -62,7 +57,7 @@ final class ChecksTest extends ExtensionTestCase
 
     public function testReviewersSeeTheChecksOfTheChanges(): void
     {
-        $this->signIn();
+        $this->signIn('editor');
         $writer = $this->service(ContentWriter::class);
         $post = $writer->create(new CreateContent('post', 'Pictures', body: 'Text.', excerpt: 'Short.'));
         $post = $writer->transition($post->id, $post->version, Status::PUBLISH);
@@ -81,12 +76,5 @@ final class ChecksTest extends ExtensionTestCase
     private function findings(Crawler $crawler): array
     {
         return $crawler->filter('.checks li')->each(static fn (Crawler $li): string => trim((string) preg_replace('/\s+/', ' ', $li->text())));
-    }
-
-    private function signIn(): void
-    {
-        $this->service(UserWriter::class)->create(new CreateUser('Editor', 'editor@example.com', password: 'correct-horse-42', roles: ['editor']));
-        $this->client->request('GET', '/login');
-        $this->client->submitForm('Sign in', ['_username' => 'editor', '_password' => 'correct-horse-42']);
     }
 }

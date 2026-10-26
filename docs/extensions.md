@@ -973,6 +973,36 @@ It extends Symfony's `WebTestCase`, so all its assertions work (`assertResponseI
 | `runJobs()` | Runs the [background jobs](jobs.md) waiting in the queue, as a worker would, and returns how many ran |
 | `assertExtensionRunning($id)` | Fails with the reason if an extension can't run, e.g. a missing requirement |
 | `assertQueryCount($n, $callback)` | Runs the callback and fails if it didn't make exactly `$n` database queries, listing them. Use it to check that a listing doesn't make a query per item. |
+| `signIn($roleOrUser)` / `signOut()` | Signs the browser in: `signIn('editor')` as a user named "Editor" with that role (created if there's none), or `signIn($user)` as that user |
+| `createUser($name, $roles)` | A user with the password `ExtensionTestCase::PASSWORD`, or none with `password: null` |
+| `content($type, $title)` | Content in the state a test needs, through the same writer as the admin: `->body()`, `->fields()`, `->by($user)`, `->parent()`, `->published($at)`, `->scheduled($at)`, `->archived()`, `->trashed()`, then `->create()` |
+| `changes($item)` | Changes to a published item that aren't live yet: `->title()`, `->body()`, `->by($user)`, `->submitted()`, `->approvedBy($user)`, `->changesRequestedBy($user, $why)`, `->scheduled($at)`, then `->create()` |
+| `audited($action)` / `assertAudited($action, $subjectId)` | What the [audit log](audit.md) recorded during this test, whatever earlier tests left |
+
+```php
+public function testEditorsSeeTheirDrafts(): void
+{
+    $editor = $this->signIn('editor');
+    $draft = $this->content('post', 'Mine')->by($editor)->create();
+    $this->content('post', 'Live')->published()->create();
+
+    $this->client->request('GET', '/reviews/drafts');
+
+    self::assertSelectorTextContains('li', 'Mine');
+    $this->assertAudited('content.created', $draft->id);
+}
+```
+
+For pages your extension adds to the [admin](admin.md), extend `Quire\Testing\AdminTestCase` instead. It enables `quire-admin` and adds `formToken($page)` (the CSRF token of a form, for requests built by hand), `assertNotice($type, $text)` and `assertCommandShown($page, $command)`.
+
+**A realistic site:** `bin/console quire:demo:seed` fills an empty site with "Tournament News", the site of the admin's designs. It has people in every role and state, posts in two languages, this week's schedule, changes waiting for review and a month of activity, and it's the same every run. Sign in as `ada` (admin), `grace` or `kim` (editors), with the password `correct-horse-42`. `--full` makes it the size of a real site: 2,140 posts and 312 people. In tests, `$this->service(DemoSite::class)->seed()` does the same. To have the command in your own site's development environment, register it there:
+
+```yaml
+# config/services_dev.yaml
+services:
+    Quire\Testing\Demo\DemoSite: { autowire: true }
+    Quire\Testing\Demo\SeedDemoCommand: { autowire: true, autoconfigure: true }
+```
 
 Set `DATABASE_URL` for your tests, for example in `phpunit.dist.xml`:
 

@@ -8,17 +8,11 @@ use Quire\Audit\AuditLog;
 use Quire\Content\Command\CreateContent;
 use Quire\Content\Content;
 use Quire\Content\ContentWriter;
-use Quire\Testing\ExtensionTestCase;
-use Quire\User\CreateUser;
-use Quire\User\User;
-use Quire\User\UserWriter;
+use Quire\Testing\AdminTestCase;
 use Symfony\Component\DomCrawler\Crawler;
 
-final class AuditTest extends ExtensionTestCase
+final class AuditTest extends AdminTestCase
 {
-    #[\Override]
-    protected static array $extensions = ['quire-admin'];
-
     #[\Override]
     protected function setUp(): void
     {
@@ -113,14 +107,5 @@ final class AuditTest extends ExtensionTestCase
     private function post(string $title): Content
     {
         return $this->service(ContentWriter::class)->create(new CreateContent('post', $title));
-    }
-
-    private function signIn(string $role): User
-    {
-        $user = $this->service(UserWriter::class)->create(new CreateUser(ucfirst($role), $role.'@example.com', password: 'correct-horse-42', roles: [$role]));
-        $this->client->request('GET', '/login');
-        $this->client->submitForm('Sign in', ['_username' => $role, '_password' => 'correct-horse-42']);
-
-        return $user;
     }
 }
