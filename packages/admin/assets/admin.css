@@ -592,4 +592,56 @@
         .first-steps__step { grid-template-columns: auto minmax(0, 1fr); }
         .first-steps__step > .q-btn, .first-steps__done { grid-column: 2; justify-self: start; }
     }
+
+    /* People: who's here, in what role and status, and inviting more */
+    .people-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--q-space-4); margin-bottom: var(--q-space-5); }
+    .people-head__eyebrow { margin: 0; color: var(--q-muted); font-size: var(--q-text-sm); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+    .people-head__title { margin: 0; font: 700 clamp(1.75rem, 3vw, 2.25rem) / 1.15 var(--q-font-display); }
+    .people-head__count { color: var(--q-muted); font: 500 0.6em var(--q-font); }
+    .people-head__actions { display: flex; flex-wrap: wrap; gap: var(--q-space-2); margin: 0; }
+    .people-bar { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--q-space-3); }
+    .people-bar__search { display: flex; gap: var(--q-space-2); margin-bottom: var(--q-space-4); }
+    .people-bar__search input { width: min(18rem, 60vw); }
+    .people { display: grid; grid-template-columns: minmax(0, 1fr) minmax(17rem, 22rem); gap: var(--q-space-5); align-items: start; }
+    .people__list { padding: 0; overflow: hidden; }
+    .people__list > .q-empty { padding: var(--q-space-5); }
+    .people__pages { padding: 0 var(--q-space-4) var(--q-space-4); }
+    .people-table th[scope="row"] { font-weight: 400; }
+    .people-table td, .people-table th { vertical-align: middle; }
+    .people-person { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--q-space-3); align-items: center; }
+    .people-person__avatar { background: var(--q-accent); }
+    .people-person__name { display: block; color: var(--q-ink); font-weight: 600; text-decoration: none; }
+    .people-person__name:hover { text-decoration: underline; }
+    .people-person__email { color: var(--q-muted); font-size: var(--q-text-sm); overflow-wrap: anywhere; }
+    .people-roles { display: flex; flex-wrap: wrap; gap: var(--q-space-1); }
+    .people-status { display: inline-flex; align-items: center; gap: 0.45rem; white-space: nowrap; }
+    .people-status::before { content: ""; width: 0.55rem; height: 0.55rem; border-radius: 50%; background: var(--q-live); }
+    .people-status--invited::before { background: var(--q-scheduled); }
+    .people-status--expired::before { background: var(--q-scheduled); box-shadow: inset 0 0 0 2px var(--q-surface); outline: 2px solid var(--q-scheduled); }
+    .people-status--suspended::before { background: var(--q-danger); }
+    .people-new { margin-left: var(--q-space-1); background: var(--q-accent-soft); color: var(--q-accent-strong); }
+    .people-next { white-space: nowrap; }
+    .people-next form { margin: 0; }
+    .people__invite { display: grid; gap: var(--q-space-3); padding: var(--q-space-5); }
+    .invite-form { display: grid; gap: var(--q-space-3); }
+    .invite-form textarea { width: 100%; }
+    .invite-form .q-help { margin: 0; }
+    .invite-form__send { justify-content: center; min-height: 2.75rem; }
+
+    @media (max-width: 64rem) {
+        .people { grid-template-columns: minmax(0, 1fr); }
+    }
+
+    /* Phones: each person a card, the column's name before each value */
+    @media (max-width: 48rem) {
+        .people-head__actions .q-btn { flex: 1 1 auto; justify-content: center; }
+        .people-bar__search, .people-bar__search input { width: 100%; }
+        .people-table, .people-table tbody, .people-table tr, .people-table th, .people-table td { display: block; }
+        .people-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+        .people-table tr { display: grid; gap: var(--q-space-2); padding: var(--q-space-4); border-bottom: 1px solid var(--q-line); }
+        .people-table th, .people-table td { padding: 0; border: 0; }
+        .people-table td[data-label] { display: flex; flex-wrap: wrap; align-items: center; gap: var(--q-space-2); }
+        .people-table td[data-label]::before { content: attr(data-label); min-width: 6rem; color: var(--q-muted); font-size: var(--q-text-sm); }
+        .people-next:empty { display: none; }
+    }
 }
