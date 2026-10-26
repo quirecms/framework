@@ -114,6 +114,11 @@ public function __invoke(IdentityLinking $event): void
 | `Quire\User\Event\UserLoggingIn` | Before a user signs in, however they sign in. Cancel it to refuse, with a reason shown on the sign-in page. |
 | `Quire\User\Event\UserLoggedIn` | After a user signed in |
 | `Quire\User\Event\UserLoggedOut` | After a user signed out |
+| `Quire\User\Event\UserCreated` | After a user was created, however (see `UserRegistered` for registrations) |
+| `Quire\User\Event\UserUpdated` | After a user's profile, roles, status, password or email confirmation changed; compare `$before` with `$user` |
+| `Quire\User\Event\UserInvited` | After a user was invited by email to choose their password |
+| `Quire\User\Event\UserDeleting` | Before a user is deleted, in its transaction: deal with your data about them |
+| `Quire\User\Event\UserDeleted` | After a user was deleted |
 
 ```php
 #[AsEventListener]

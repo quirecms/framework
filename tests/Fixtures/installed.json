@@ -53,6 +53,20 @@
             }
         },
         {
+            "name": "quire/fixture-recipes",
+            "version": "1.0.0.0",
+            "pretty_version": "1.0.0",
+            "type": "quire-extension",
+            "install-path": "extensions/recipes",
+            "description": "Test extension with a field type, a content type and a setting, and no admin code",
+            "extra": {
+                "quire": {
+                    "id": "quire-fixture-recipes",
+                    "title": "Recipes"
+                }
+            }
+        },
+        {
             "name": "quire/fixture-theme-base",
             "version": "1.0.0.0",
             "pretty_version": "1.0.0",

@@ -319,3 +319,19 @@ application.register('ability-filter', class extends Controller {
         }
     }
 });
+
+// Copies a command to the clipboard. Without JavaScript, or a clipboard, the button stays hidden.
+application.register('copy', class extends Controller {
+    static targets = ['source', 'button', 'status'];
+    static values = { copied: String };
+
+    connect() {
+        this.buttonTarget.hidden = !navigator.clipboard;
+    }
+
+    async copy() {
+        await navigator.clipboard.writeText(this.sourceTarget.textContent);
+        this.statusTarget.textContent = this.copiedValue;
+        setTimeout(() => { this.statusTarget.textContent = ''; }, 3000);
+    }
+});

@@ -170,7 +170,10 @@
             </section>
 
             {% if item %}
-                <p class="editor__links"><a href="{{ path('quire_admin_content_history', {type: type.id, id: item.id}) }}">{{ 'History'|trans({}, 'quire-admin') }}</a></p>
+                <p class="editor__links">
+                    <a href="{{ path('quire_admin_content_history', {type: type.id, id: item.id}) }}">{{ 'History'|trans({}, 'quire-admin') }}</a>
+                    {% if is_granted('quire.audit.view') %}<a href="{{ path('quire_admin_audit', {subject_type: 'content', subject: item.id}) }}">{{ 'Activity'|trans({}, 'quire-admin') }}</a>{% endif %}
+                </p>
             {% endif %}
 
             {% set place = changes ? ' form="place-form"' : '' %}

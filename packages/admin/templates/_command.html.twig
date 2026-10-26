@@ -1,0 +1,11 @@
+{#
+    The console commands that do what was just done, or what an audit entry records. Variables: commands
+    (list of strings), label (whether to say "As a command"; default true). Without JavaScript there's no
+    copy button.
+#}
+<div class="command" data-controller="copy" data-copy-copied-value="{{ 'Copied'|trans({}, 'quire-admin') }}">
+    {% if label ?? true %}<span class="command__label">{{ 'As a command'|trans({}, 'quire-admin') }}</span>{% endif %}
+    <code class="command__text" data-copy-target="source">{{ commands|join("\n") }}</code>
+    <button type="button" class="button button--secondary command__copy" data-copy-target="button" data-action="copy#copy" hidden>{{ 'Copy'|trans({}, 'quire-admin') }}</button>
+    <span class="visually-hidden" role="status" data-copy-target="status"></span>
+</div>

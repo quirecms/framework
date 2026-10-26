@@ -188,6 +188,16 @@ docker compose exec php bin/console quire:jobs:status
 
 See [docs/jobs.md](docs/jobs.md).
 
+## Audit log
+
+Who did what, in the admin, on the command line and in jobs, is in the audit log, with the console command that does the same:
+
+```bash
+docker compose exec php bin/console quire:audit:list --since "-1 day"
+```
+
+See [docs/audit.md](docs/audit.md).
+
 ## Repository layout
 
 | Path | Contents |

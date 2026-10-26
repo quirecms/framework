@@ -96,6 +96,7 @@ Values use the same format as `quire:settings:set`. A setting fixed by an enviro
 | `theme.active` | string | `quire-theme-default` | The site's theme. Change it with `quire:theme:use` (see [themes](themes.md)). |
 | `quire.content.revisions_keep` | int | `50` | How many revisions to keep per content item. Older ones are deleted when a new one is saved. `0` keeps all. |
 | `quire.storage.gc_grace_days` | int | `1` | For how many days the daily clean-up keeps stored files nothing uses (see [storage](storage.md#cleaning-up)) |
+| `quire.audit.retention_days` | int | `365` | For how many days the [audit log](audit.md) keeps entries; `0` keeps them forever |
 | `quire.content.changes_need_approval` | bool | `false` | Whether [pending revisions](content.md#pending-revisions) must be approved by a reviewer before they're published |
 
 Extensions and themes document their own settings. Templates can read the settings marked as exposed, among them `site.title`, `site.description` and `site.locale` (through the `site` variable) and every theme setting.

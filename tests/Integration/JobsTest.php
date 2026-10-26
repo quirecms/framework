@@ -116,7 +116,7 @@ final class JobsTest extends KernelTestCase
 
         // The workers were down for an hour: the last missed occurrence runs, once.
         self::assertSame(['quire.publish-due', 'quire-fixture-hello.tick'], $scheduler->run('web-1', $at('11:07')));
-        self::assertSame(['quire.publish-due', 'quire-fixture-hello.tick'], array_column($this->connection->fetchAllAssociative("SELECT task, to_char(last_due_at AT TIME ZONE 'UTC', 'HH24:MI') AS due, last_run_by FROM quire.job_schedule WHERE task <> 'quire.collect-garbage' ORDER BY task DESC"), 'task'));
+        self::assertSame(['quire.publish-due', 'quire-fixture-hello.tick'], array_column($this->connection->fetchAllAssociative("SELECT task, to_char(last_due_at AT TIME ZONE 'UTC', 'HH24:MI') AS due, last_run_by FROM quire.job_schedule WHERE task NOT IN ('quire.collect-garbage', 'quire.prune-audit-log') ORDER BY task DESC"), 'task'));
         self::assertSame('11:05', $this->connection->fetchOne("SELECT to_char(last_due_at AT TIME ZONE 'UTC', 'HH24:MI') FROM quire.job_schedule WHERE task = 'quire-fixture-hello.tick'"));
 
         self::assertSame(6, JobRunner::run(self::getContainer()), '4 × publishing due content, 2 ticks.');
@@ -291,6 +291,6 @@ final class JobsTest extends KernelTestCase
         self::assertSame(2, JobRunner::run(self::getContainer()));
 
         self::assertSame(Status::PUBLISHED, $this->connection->fetchOne('SELECT status FROM quire.content WHERE id = ?', [$post->id]));
-        self::assertSame(['quire.publish-due', 'quire.collect-garbage', 'quire-fixture-hello.tick'], array_keys(self::getContainer()->get(ScheduledTasks::class)->all()));
+        self::assertSame(['quire.publish-due', 'quire.collect-garbage', 'quire.prune-audit-log', 'quire-fixture-hello.tick'], array_keys(self::getContainer()->get(ScheduledTasks::class)->all()));
     }
 }

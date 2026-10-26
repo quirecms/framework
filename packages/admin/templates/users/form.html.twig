@@ -10,6 +10,15 @@
 
 {% block title %}{{ user ? user.displayName : 'Add a user'|trans({}, 'quire-admin') }}{% endblock %}
 
+{% block actions %}
+    {% if user and is_granted('quire.audit.view') %}
+        <p class="page-header__links">
+            <a href="{{ path('quire_admin_audit', {actor: user.id}) }}">{{ 'What they did'|trans({}, 'quire-admin') }}</a>
+            <a href="{{ path('quire_admin_audit', {subject_type: 'user', subject: user.id}) }}">{{ 'Changes to the user'|trans({}, 'quire-admin') }}</a>
+        </p>
+    {% endif %}
+{% endblock %}
+
 {% block content %}
     {% if errors is not empty %}
         <div class="error-summary" role="alert" tabindex="-1" data-controller="focus">
