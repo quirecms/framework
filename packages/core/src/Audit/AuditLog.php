@@ -36,7 +36,12 @@ final class AuditLog implements ResetInterface
 
     private const string COLUMNS = 'id, occurred_at, last_at, repeats, action, actor_id, actor_name, origin, via, subject_type, subject_id, subject_label, details, command, correlation_id';
 
-    /** @var list<AuditEntry> Entries recorded by this process since the last reset, e.g. during this request */
+    /**
+     * Entries of the current request, command or job, by ID. Only the current one's are kept, so a
+     * long-running command (thousands of actions) doesn't hold them all.
+     *
+     * @var array<string, AuditEntry>
+     */
     private array $recorded = [];
 
     public function __construct(
@@ -138,7 +143,7 @@ final class AuditLog implements ResetInterface
             return null;
         }
 
-        $this->recorded = array_values(array_filter($this->recorded, static fn (AuditEntry $recorded): bool => $recorded->id !== $entry->id));
+        unset($this->recorded[$entry->id]);
 
         return $this->recorded($this->entry($row));
     }
@@ -201,7 +206,15 @@ final class AuditLog implements ResetInterface
 
     private function recorded(AuditEntry $entry): AuditEntry
     {
-        $this->recorded = [...array_values(array_filter($this->recorded, static fn (AuditEntry $recorded): bool => $recorded->id !== $entry->id)), $entry];
+        $first = reset($this->recorded);
+
+        if (false !== $first && $first->correlationId !== $entry->correlationId) {
+            $this->recorded = [];
+        }
+
+        // Moved to the end when a repeated action updated it.
+        unset($this->recorded[$entry->id]);
+        $this->recorded[$entry->id] = $entry;
 
         try {
             $this->dispatcher->dispatch(new AuditEntryRecorded($entry));
