@@ -100,7 +100,7 @@ final class SettingsFunctionalTest extends WebTestCase
         self::assertSame('Tournament "News"', $exported['site.title'] ?? null);
         self::assertArrayNotHasKey('site.locale', $exported, 'Defaults only with --all.');
         $export->execute(['prefix' => 'site.', '--all' => true]);
-        self::assertSame(['site.description', 'site.homepage', 'site.homepage_listing', 'site.homepage_page', 'site.homepage_route', 'site.locale', 'site.timezone', 'site.title'], array_keys($this->json($export)));
+        self::assertSame(['site.description', 'site.homepage', 'site.homepage_listing', 'site.homepage_page', 'site.homepage_route', 'site.locale', 'site.share_image', 'site.timezone', 'site.title'], array_keys($this->json($export)));
 
         $file = tempnam(sys_get_temp_dir(), 'settings');
         $import = $this->command('quire:settings:import');

@@ -26,7 +26,10 @@
     "extra": {
         "quire": {
             "title": "Default",
-            "description": "Accessible, responsive, light and dark. Use it as it is, or as the parent of your own theme."
+            "description": "Accessible, responsive, light and dark. Use it as it is, or as the parent of your own theme.",
+            "theme": {
+                "screenshot": "screenshot.png"
+            }
         },
         "branch-alias": {
             "dev-main": "0.1.x-dev"

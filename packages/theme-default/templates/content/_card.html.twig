@@ -1,0 +1,13 @@
+{#
+    An item in a list: its title, date and excerpt. Lists show each item with it, and the admin shows it
+    alone as a preview, so it uses only item, type, site and theme, never the request. Child themes
+    override just this to change how lists look.
+#}
+<article class="card">
+    <h2><a href="{{ quire_url(item) }}">{{ item.title }}</a></h2>
+    {% if item.publishedAt and type.has('scheduling') and theme.settings.show_dates %}
+        <p class="entry-meta"><time datetime="{{ item.publishedAt|date('c') }}">{{ item.publishedAt|quire_date }}</time></p>
+    {% endif %}
+    {% set excerpt = quire_excerpt(item) %}
+    {% if excerpt %}<p>{{ excerpt }}</p>{% endif %}
+</article>

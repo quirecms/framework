@@ -11,6 +11,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Exception\DriverException;
 use Quire\Backup\BackupFiles;
+use Quire\Backup\BackupLog;
 use Quire\Backup\Backups;
 use Quire\Backup\Internal\PostgresTools;
 use Quire\Backup\Internal\RestoreChecks;
@@ -235,7 +236,7 @@ final class BackupFilesTest extends WebTestCase
             'test',
         );
 
-        return new Backups($container->get(Connection::class), $container->get(PostgresTools::class), $checks, $container->get(AppRebuilderInterface::class), $container->get(ContentRenderer::CACHE_POOL), $disks);
+        return new Backups($container->get(Connection::class), $container->get(PostgresTools::class), $checks, $container->get(AppRebuilderInterface::class), $container->get(ContentRenderer::CACHE_POOL), $disks, $container->get(BackupLog::class));
     }
 
     /**

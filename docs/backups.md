@@ -88,6 +88,8 @@ find /srv/backups -name 'site-*.tar' -mtime +14 -delete
 
 The command fails when the backup does, so the `mv` only keeps complete backups.
 
+Quire remembers the backups it makes, when they finished, how big they were and whether they worked, so admin interfaces can say when the site was last backed up (`Quire\Backup\BackupLog`). Backups made with the database's own tools aren't in it, and restoring a backup brings back the record as it was then.
+
 A backup you've never restored is only a hope: restore one into a test environment now and then (`--dry-run` alone doesn't prove the data is complete).
 
 Unused files are deleted after a grace period (see [cleaning up](storage.md#cleaning-up)). When you keep backups that use a files directory or S3 versions, set `quire.storage.gc_grace_days` at least as long as you keep them, so the files an older database refers to are still there: `bin/console quire:settings:set quire.storage.gc_grace_days 15`.

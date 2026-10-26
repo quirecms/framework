@@ -28,7 +28,9 @@ final class ThemeLintTest extends KernelTestCase
         [$status, $output] = $this->lint('quire-fixture-broken');
 
         self::assertSame(1, $status);
-        self::assertStringContainsString('The theme "quire-fixture-broken" has 3 problems.', $output);
+        self::assertStringContainsString('The theme "quire-fixture-broken" has 4 problems.', $output);
+        self::assertStringContainsString('quire-fixture-broken: templates/content/_card.html.twig uses the request (app.…), but cards are also shown alone, as previews.', preg_replace('/\s+/', ' ', $output) ?? '');
+        self::assertStringContainsString('The theme has no screenshot', preg_replace('/\s+/', ' ', $output) ?? '', 'A warning: it still works.');
         self::assertStringContainsString('quire-fixture-broken: templates/content/single.html.twig: Unexpected "endblock" tag (expecting closing tag for the "if" tag defined near line 4)', $output);
         self::assertStringContainsString('quire-fixture-broken: templates/layout.html.twig: Unknown "acme_unknown_function" function', $output);
         self::assertStringContainsString('The theme doesn\'t render the standard slots ', $output, 'The layout doesn\'t compile, and the content template replaces the built-in one.');
