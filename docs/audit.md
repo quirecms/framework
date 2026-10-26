@@ -6,7 +6,7 @@ Quire keeps a log of who did what, and when: in the admin, on the command line, 
 
 | Area | Actions |
 |------|---------|
-| Content | created, edited, published, scheduled, unpublished, archived (and an extension's transitions), moved to the trash, restored, deleted permanently; changes to published items saved, sent for review, reviewed, scheduled, published, discarded, and scheduled changes that couldn't be published |
+| Content | created, edited, published, scheduled, unpublished, archived (and an extension's transitions), moved to the trash, restored, deleted permanently; changes to published items saved, sent for review, reviewed, commented on (and comments resolved or reopened), scheduled, published, discarded, and scheduled changes that couldn't be published |
 | Users | added, registered, profile changed, roles changed, suspended, activated, password set or removed, invited, deleted, signed in |
 | Roles and permissions | role added, renamed, deleted; abilities granted or revoked, per role |
 | Settings | each setting changed, with its old and new value |

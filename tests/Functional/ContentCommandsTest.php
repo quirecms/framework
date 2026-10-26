@@ -206,6 +206,30 @@ final class ContentCommandsTest extends KernelTestCase
         self::assertSame(ReviewState::Approved, $repository->get($pending->id)->state);
     }
 
+    public function testCommentsFromTheCommandLine(): void
+    {
+        $container = self::getContainer();
+        $writer = $container->get(ContentWriter::class);
+        $post = $writer->create(new CreateContent('post', 'Draw', body: "Groups.\n\nHosts open against Northside.\n"));
+        $post = $writer->transition($post->id, $post->version, 'publish');
+        $pending = $container->get(PendingRevisionWriter::class)->create($post->id);
+        $command = $this->command('quire:content:comments');
+
+        self::assertSame(0, $command->execute(['id' => $post->id, 'pending-revision' => $pending->id]));
+        self::assertStringContainsString('Nobody has commented on these changes.', $this->flat($command));
+
+        self::assertSame(0, $command->execute(['id' => $post->id, 'pending-revision' => $pending->id, '--add' => 'Full name?', '--quote' => 'Northside', '--line' => 3]));
+        $thread = (string) preg_replace('/^.*Added the comment ([0-9a-f-]{36}).*$/s', '$1', $this->flat($command));
+        self::assertSame(0, $command->execute(['id' => $post->id, 'pending-revision' => $pending->id, '--add' => 'Yes: Northside United.', '--reply-to' => $thread]));
+        self::assertSame(1, $command->execute(['id' => $post->id, 'pending-revision' => $pending->id, '--add' => 'Hm.', '--quote' => 'Southside']));
+        self::assertStringContainsString('The quoted text isn\'t in the changes.', $this->flat($command));
+
+        self::assertSame(0, $command->execute(['id' => $post->id, 'pending-revision' => $pending->id, '--resolve' => $thread]));
+        $command->execute(['id' => $post->id, 'pending-revision' => $pending->id]);
+        self::assertStringContainsString($thread.' on “Northside”, line 3 (resolved)', $this->flat($command));
+        self::assertStringContainsString('Yes: Northside United.', $this->flat($command));
+    }
+
     public function testContentChecksFromTheCommandLine(): void
     {
         $container = self::getContainer();

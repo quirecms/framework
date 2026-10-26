@@ -158,6 +158,15 @@ bin/console quire:content:pending <id> --discard <pending-id>
 bin/console quire:content:pending <id> --schedule <pending-id> --at "2026-12-24 09:00 Europe/Berlin"
 ```
 
+**Comments** discuss changes before they're published: their author, reviewers and those who may edit the item write them, and reply to them. A comment can point at text of the changes, e.g. a name in the third paragraph. As the changes are edited, Quire finds that text again near where it was, so the comment moves with it. When the text is gone, the comment is *outdated*, and still shows what it quoted. Whoever started a thread, the changes' author or a reviewer marks it resolved. Comments go with the changes when they're published or discarded; the [audit log](audit.md) keeps that they were made. In code, they're `Quire\Content\Revision\PendingRevisionComments`.
+
+```bash
+bin/console quire:content:comments <id> <pending-id>                                   # the threads, and where they point now
+bin/console quire:content:comments <id> <pending-id> --add "Full name?" --quote "Northside" --line 12 --as kim
+bin/console quire:content:comments <id> <pending-id> --add "Yes, since August." --reply-to <comment-id>
+bin/console quire:content:comments <id> <pending-id> --resolve <comment-id>
+```
+
 **Scheduled changes** are published at their time by the background worker (the task `quire.publish-due`), with the same merging, conflicts and approval as publishing them by hand. When that fails, they stay pending without a time, their `publishProblem` says why, and Quire dispatches `PendingRevisionPublishFailed`, e.g. for an extension that emails their author. `--at none` clears the time.
 
 ### Checks before publishing
