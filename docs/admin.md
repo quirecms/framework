@@ -130,6 +130,10 @@ Every page is plain HTML rendered on the server, and works without JavaScript. [
 
 **Under the hood**, the switch at the top, shows what's behind the admin: the console command that does what you just did, and more as the admin grows. It's on for admins and off for others until each person switches it.
 
+**Your preferences**, in the account menu (or press `?`), are each person's own and follow them to every device: light or dark (or like the system), contrast, text size, density, movement, the language they read the admin in (the site's by default; the admin speaks English and German), and "Under the hood". Each change shows at once. They're [people's preferences](extensions.md#extendpreferences), e.g. `bin/console quire:user:preferences ada quire.language de`.
+
+**The keyboard** works across the admin, as in mail and code hosts: `g` then `h`, `c` or `p` goes home, to content or to people; `n` starts a new post; `j` and `k` move through a list and `x` selects the item; Ctrl+S (⌘S on a Mac) saves and Ctrl+Shift+P publishes in the editor; `?` shows them all. While you type in a field, only saving and publishing work.
+
 The admin's look is **Quire UI**, its own design system: [Open Props](https://open-props.style) scales and Quire's tokens, with light, dark and the system's high-contrast setting, the Inter and Bricolage Grotesque fonts it ships, and no build step. It looks the same whatever the site's theme. To adjust it, add a stylesheet to the group `admin` (see [extensions](extensions.md#extendassets)) and override its tokens, e.g. `:root { --q-accent: #8250df; }`; Quire UI's styles are in cascade layers, so yours win. Its components, with their markup, are at `/admin/ui` (linked from the account menu with "Under the hood" on).
 
 The admin is translated with the site's language (`site.locale`), in the domain `quire-admin`. A site overrides its texts in its own `translations/` directory.

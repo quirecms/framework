@@ -10,7 +10,6 @@ use Quire\Content\Check\ContentChecker;
 use Quire\Content\Field\FieldStorage;
 use Quire\Content\Type\ContentTypeDefinition;
 use Quire\Content\Workflow\ContentWorkflow;
-use Quire\Settings\Settings;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
@@ -33,7 +32,6 @@ final readonly class ContentFacets
         private ContentWorkflow $workflow,
         private ContentChecker $checker,
         private Connection $connection,
-        private Settings $settings,
         private TranslatorInterface $translator,
     ) {
     }
@@ -128,7 +126,7 @@ final readonly class ContentFacets
      */
     private function locales(array $counts): array
     {
-        $display = $this->settings->getString('site.locale');
+        $display = $this->translator->getLocale();
         $options = [];
 
         foreach ($counts as $locale => $count) {

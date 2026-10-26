@@ -644,4 +644,48 @@
         .people-table td[data-label]::before { content: attr(data-label); min-width: 6rem; color: var(--q-muted); font-size: var(--q-text-sm); }
         .people-next:empty { display: none; }
     }
+
+    /* Your preferences: a sheet over the page, and the keyboard */
+    .prefs-dialog { width: min(60rem, calc(100vw - 2rem)); max-height: calc(100dvh - 2rem); padding: var(--q-space-5) var(--q-space-6); border: 1px solid var(--q-line); border-radius: var(--q-radius-lg, 1rem); background: var(--q-surface); color: var(--q-ink); box-shadow: var(--q-shadow); }
+    .prefs-dialog::backdrop { background: rgb(20 18 28 / 0.45); }
+    .prefs-dialog__head { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--q-space-2) var(--q-space-4); padding-bottom: var(--q-space-3); border-bottom: 1px solid var(--q-line); }
+    .prefs-dialog__head h2 { margin: 0; font-size: 1.25rem; }
+    .prefs-dialog__head p { margin: 0 0 0 auto; }
+    .prefs-dialog__head form { margin: 0; }
+    .prefs-page { display: grid; gap: var(--q-space-4); padding: var(--q-space-5); }
+    .prefs { display: grid; gap: var(--q-space-4); }
+    .prefs__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); gap: 0 var(--q-space-6); }
+    .prefs__row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--q-space-2) var(--q-space-4); margin: 0; padding: var(--q-space-4) 0; border: 0; border-bottom: 1px solid var(--q-line); }
+    .prefs__row legend { float: left; padding: 0; font-weight: 600; }
+    .prefs-choices { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--q-line); border-radius: var(--q-radius-sm); overflow: hidden; }
+    .prefs-choice { position: relative; display: inline-grid; }
+    .prefs-choice input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+    .prefs-choice > span { display: grid; place-items: center; min-height: var(--q-target); padding: 0.35rem 0.9rem; }
+    .prefs-choice input:checked + span { background: var(--q-ink); color: var(--q-paper); }
+    .prefs-choice input:focus-visible + span { outline: 3px solid var(--q-focus, var(--q-accent)); outline-offset: -3px; }
+    .prefs-choice + .prefs-choice > span { border-left: 1px solid var(--q-line); }
+    .prefs-choices--text .prefs-choice:nth-child(1) > span { font-size: 0.8rem; }
+    .prefs-choices--text .prefs-choice:nth-child(3) > span { font-size: 1.15rem; }
+    .prefs-choices--text .prefs-choice:nth-child(4) > span { font-size: 1.35rem; }
+    .prefs-choices--text .prefs-choice > span { min-width: 2.75rem; font-weight: 600; }
+    .prefs__switch { display: flex; align-items: center; justify-content: space-between; gap: var(--q-space-4); cursor: pointer; }
+    .prefs__switch > span { display: grid; gap: 0.15rem; }
+    .prefs__switch-title { font-weight: 600; }
+    .prefs__switch input { position: relative; flex: none; width: 3rem; height: 1.6rem; margin: 0; border-radius: 999px; background: var(--q-line); appearance: none; cursor: pointer; transition: background 0.15s; }
+    .prefs__switch input::before { content: ""; position: absolute; top: 0.2rem; left: 0.2rem; width: 1.2rem; height: 1.2rem; border-radius: 50%; background: var(--q-surface); box-shadow: 0 1px 2px rgb(0 0 0 / 0.25); transition: transform 0.15s; }
+    .prefs__switch input:checked { background: var(--q-accent); }
+    .prefs__switch input:checked::before { transform: translateX(1.4rem); }
+    .prefs__switch input:focus-visible { outline: 3px solid var(--q-focus, var(--q-accent)); outline-offset: 2px; }
+    .prefs-keys { padding-top: var(--q-space-4); }
+    .prefs-keys__title { margin: 0 0 var(--q-space-3); font-size: 1.0625rem; }
+    .prefs-keys__list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); gap: var(--q-space-2) var(--q-space-6); margin: 0; }
+    .prefs-keys__list div { display: flex; align-items: center; gap: var(--q-space-3); }
+    .prefs-keys__list dt { display: flex; gap: 0.3rem; min-width: 7rem; }
+    .prefs-keys__list dd { margin: 0; }
+    .prefs-keys kbd { display: inline-grid; place-items: center; min-width: 1.6rem; height: 1.6rem; padding: 0 0.35rem; border: 1px solid var(--q-line); border-bottom-width: 2px; border-radius: 0.35rem; background: var(--q-paper); font: 600 0.75rem var(--q-font-mono); }
+    .prefs-keys .q-help { margin: var(--q-space-3) 0 0; }
+
+    @media (max-width: 48rem) {
+        .prefs-dialog { width: 100vw; max-width: none; max-height: 100dvh; margin: auto 0 0; padding: var(--q-space-4); border-radius: var(--q-radius-lg, 1rem) var(--q-radius-lg, 1rem) 0 0; }
+    }
 }

@@ -9,12 +9,12 @@ use Quire\Admin\Dashboard\Inbox;
 use Quire\Admin\Dashboard\InboxItem;
 use Quire\Admin\Navigation\AdminMenu;
 use Quire\Admin\Navigation\MenuItem;
-use Quire\Admin\Preferences\Density;
+use Quire\Admin\Preferences\AdminPreferences;
 use Quire\Admin\Preferences\UnderTheHood;
 use Quire\Content\Type\ContentTypeDefinition;
-use Quire\Settings\Settings;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 use Twig\Attribute\AsTwigFilter;
 use Twig\Attribute\AsTwigFunction;
 use Twig\Markup;
@@ -30,9 +30,9 @@ final readonly class AdminExtension
         private AdminMenu $menu,
         private ContentLists $contentLists,
         private UnderTheHood $hood,
-        private Density $density,
+        private AdminPreferences $preferences,
+        private TranslatorInterface $translator,
         private RelativeTime $time,
-        private Settings $settings,
         private Security $security,
         private UrlGeneratorInterface $urls,
         private Inbox $inbox,
@@ -89,31 +89,48 @@ final readonly class AdminExtension
     }
 
     /**
-     * "comfortable" or "compact", for the page's data-density.
+     * "comfortable" or "compact", for the content lists' switch.
      */
     #[AsTwigFunction(name: 'quire_admin_density')]
     public function density(): string
     {
-        return $this->density->get();
+        return $this->preferences->get(AdminPreferences::DENSITY);
     }
 
     /**
-     * A number as the site's language writes it, e.g. "2,140" or "2.140".
+     * The person's preferences of the admin: the attributes of <html>, each choice, and the languages.
+     *
+     * @return array{attributes: array<string, string>, values: array<string, string>, languages: array<string, string>, language: ?string}
+     */
+    #[AsTwigFunction(name: 'quire_admin_preferences')]
+    public function preferences(): array
+    {
+        return [
+            'attributes' => $this->preferences->attributes(),
+            // By the form's fields: "theme" => "dark".
+            'values' => array_map($this->preferences->get(...), array_filter(AdminPreferences::FIELDS, static fn (string $name): bool => isset(AdminPreferences::CHOICES[$name]))),
+            'languages' => $this->preferences->languages(),
+            'language' => $this->preferences->language(),
+        ];
+    }
+
+    /**
+     * A number as the admin's language writes it, e.g. "2,140" or "2.140".
      */
     #[AsTwigFilter(name: 'quire_admin_number')]
     public function number(int|float $number): string
     {
-        return (string) new \NumberFormatter($this->settings->getString('site.locale'), \NumberFormatter::DECIMAL)->format($number);
+        return (string) new \NumberFormatter($this->translator->getLocale(), \NumberFormatter::DECIMAL)->format($number);
     }
 
     /**
-     * A date in the site's language, by an ICU pattern, e.g. "LLLL y" for "October 2026"; in the date's
+     * A date in the admin's language, by an ICU pattern, e.g. "LLLL y" for "October 2026"; in the date's
      * own time zone.
      */
     #[AsTwigFilter(name: 'quire_admin_date')]
     public function date(\DateTimeImmutable $at, string $pattern): string
     {
-        return (string) new \IntlDateFormatter($this->settings->getString('site.locale'), \IntlDateFormatter::NONE, \IntlDateFormatter::NONE, $at->getTimezone(), null, $pattern)->format($at);
+        return (string) new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::NONE, \IntlDateFormatter::NONE, $at->getTimezone(), null, $pattern)->format($at);
     }
 
     /**

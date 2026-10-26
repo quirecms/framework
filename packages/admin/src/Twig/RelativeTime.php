@@ -55,7 +55,7 @@ final readonly class RelativeTime
 
     private function format(\DateTimeImmutable $at, string $pattern): string
     {
-        $formatter = new \IntlDateFormatter($this->settings->getString('site.locale'), \IntlDateFormatter::NONE, \IntlDateFormatter::NONE, $at->getTimezone(), null, $pattern);
+        $formatter = new \IntlDateFormatter($this->translator->getLocale(), \IntlDateFormatter::NONE, \IntlDateFormatter::NONE, $at->getTimezone(), null, $pattern);
 
         return (string) $formatter->format($at);
     }

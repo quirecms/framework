@@ -684,3 +684,138 @@ application.register('invite-form', class extends Controller {
         this.sentenceTarget.textContent = this.roleTarget.selectedOptions[0]?.dataset.sentence ?? '';
     }
 });
+
+// The preferences sheet: each change is saved as it's made and shows at once; the language and
+// "Under the hood" change what the server writes, so the page loads again for those.
+application.register('preferences', class extends Controller {
+    static targets = ['form'];
+
+    async save(event) {
+        const form = this.formTarget;
+        const root = document.documentElement;
+        const value = (name) => form.querySelector(`[name="${name}"]:checked`)?.value;
+        const attribute = (name, on) => (on ? root.setAttribute(name, on) : root.removeAttribute(name));
+
+        attribute('data-theme', value('theme') === 'system' ? null : value('theme'));
+        attribute('data-contrast', value('contrast') === 'high' ? 'high' : null);
+        attribute('data-text', value('text') === 'md' ? null : value('text'));
+        attribute('data-density', value('density') === 'compact' ? 'compact' : null);
+        attribute('data-motion', value('motion') === 'reduce' ? 'reduce' : null);
+
+        const response = await fetch(form.action, { method: 'POST', body: new FormData(form), headers: { 'X-Quire-Request': 'fetch' } });
+
+        if (!response.ok) {
+            form.requestSubmit();
+        } else if (event.target.closest('[data-reload]')) {
+            window.Turbo ? window.Turbo.visit(window.location.href, { action: 'replace' }) : window.location.reload();
+        }
+    }
+});
+
+// Keyboard shortcuts, like those of mail and code hosts: "g" then a letter goes somewhere, "j"/"k" move
+// through a list, "x" selects, Ctrl/⌘+S saves and Ctrl/⌘+Shift+P publishes, "?" shows them all.
+application.register('shortcuts', class extends Controller {
+    static targets = ['preferences'];
+    static values = { urls: Object };
+
+    preferences(event) {
+        if (!this.hasPreferencesTarget) {
+            return;
+        }
+
+        event?.preventDefault();
+        this.element.querySelectorAll('details.q-menu[open]').forEach((menu) => menu.removeAttribute('open'));
+        this.preferencesTarget.showModal();
+    }
+
+    key(event) {
+        const command = event.ctrlKey || event.metaKey;
+        const key = event.key.toLowerCase();
+
+        if (command && !event.altKey && (key === 's' || (key === 'p' && event.shiftKey))) {
+            const button = key === 's'
+                ? document.querySelector('button[name=intent][value=save], button[name=intent][value=save_changes]')
+                : document.querySelector('.editor-bar__publish');
+
+            if (button) {
+                event.preventDefault();
+                button.click();
+            }
+
+            return;
+        }
+
+        const typing = event.target.closest?.('input, textarea, select, [contenteditable], .cm-editor');
+
+        if (command || event.altKey || typing || event.defaultPrevented) {
+            return;
+        }
+
+        if (this.pending === 'g') {
+            this.pending = null;
+            const url = { h: this.urlsValue.home, c: this.urlsValue.content, p: this.urlsValue.people }[key];
+
+            if (url) {
+                event.preventDefault();
+                window.Turbo ? window.Turbo.visit(url) : (window.location.href = url);
+            }
+
+            return;
+        }
+
+        switch (event.key) {
+            case 'g':
+                this.pending = 'g';
+                clearTimeout(this.timer);
+                this.timer = setTimeout(() => (this.pending = null), 1500);
+                break;
+            case '?':
+                event.preventDefault();
+                this.preferences();
+                this.preferencesTarget?.querySelector('.prefs-keys')?.scrollIntoView({ block: 'nearest' });
+                break;
+            case 'n':
+                if (this.urlsValue.new) {
+                    event.preventDefault();
+                    window.Turbo ? window.Turbo.visit(this.urlsValue.new) : (window.location.href = this.urlsValue.new);
+                }
+                break;
+            case 'j':
+            case 'k':
+                this.move(event, event.key === 'j' ? 1 : -1);
+                break;
+            case 'x':
+                this.select(event);
+                break;
+        }
+    }
+
+    // The rows of the list on the page: each one's first link.
+    rows() {
+        return [...document.querySelectorAll('main tbody tr')].filter((row) => row.querySelector('a'));
+    }
+
+    move(event, step) {
+        const rows = this.rows();
+
+        if (rows.length === 0) {
+            return;
+        }
+
+        event.preventDefault();
+        const current = rows.findIndex((row) => row.contains(document.activeElement));
+        const next = rows[Math.min(rows.length - 1, Math.max(0, current === -1 ? 0 : current + step))];
+        next.querySelector('a').focus();
+        next.scrollIntoView({ block: 'nearest' });
+    }
+
+    select(event) {
+        const row = this.rows().find((candidate) => candidate.contains(document.activeElement));
+        const box = row?.querySelector('input[type=checkbox]');
+
+        if (box) {
+            event.preventDefault();
+            box.click();
+        }
+    }
+});
