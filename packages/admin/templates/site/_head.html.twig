@@ -2,12 +2,12 @@
     The head of the site's pages: what the page is, and a switch between them. Variables: title, current
     (settings, themes or extensions).
 #}
-<header class="people-head">
+<header class="q-page-head">
     <div>
-        <p class="people-head__eyebrow">{{ 'section.site'|trans({}, 'quire-admin') }}</p>
-        <h1 class="people-head__title">{{ title }}</h1>
+        <p class="q-page-head__eyebrow">{{ 'section.site'|trans({}, 'quire-admin') }}</p>
+        <h1>{{ title }}</h1>
     </div>
-    <nav class="site-switch" aria-label="{{ 'Site'|trans({}, 'quire-admin') }}">
+    <nav class="section-switch" aria-label="{{ 'Site'|trans({}, 'quire-admin') }}">
         {% for page, label in {settings: 'Settings', themes: 'Look', extensions: 'Extensions'} %}
             {% if is_granted({settings: 'quire.settings.manage', themes: 'quire.themes.manage', extensions: 'quire.extensions.manage'}[page]) %}
                 <a href="{{ path('quire_admin_' ~ page) }}"{% if page == current %} aria-current="page"{% endif %}>{{ label|trans({}, 'quire-admin') }}</a>

@@ -80,10 +80,10 @@
                 <div class="q-intent" data-controller="intent" data-intent-url-value="{{ path('quire_admin_find') }}" data-action="keydown@window->intent#shortcut">
                 <form class="q-intent-trigger" method="get" action="{{ path('quire_admin_find') }}" role="search">
                     <label for="intent-q" class="q-sr">{{ 'Find anything, or say what to do'|trans({}, 'quire-admin') }}</label>
-                    <input type="search" id="intent-q" name="q" autocomplete="off" placeholder="{{ 'Find anything, or say what to do'|trans({}, 'quire-admin') }}" data-action="focus->intent#open click->intent#open">
+                    <input type="search" id="intent-q" name="q" autocomplete="off" placeholder="{{ 'Find anything, or say what to do'|trans({}, 'quire-admin') }}" data-action="click->intent#open input->intent#open">
                     <kbd class="q-intent-trigger__keys" aria-hidden="true">Ctrl K</kbd>
                 </form>
-                    <dialog class="intent-dialog" aria-label="{{ 'Find or do'|trans({}, 'quire-admin') }}" data-intent-target="dialog" data-action="close->intent#closed">
+                    <dialog class="intent-dialog" aria-label="{{ 'Find or do'|trans({}, 'quire-admin') }}" data-intent-target="dialog" data-action="click->intent#outside">
                         <div class="intent-dialog__bar">
                             <label for="intent-dialog-q" class="q-sr">{{ 'Find anything, or say what to do'|trans({}, 'quire-admin') }}</label>
                             <input type="search" id="intent-dialog-q" autocomplete="off" spellcheck="false" placeholder="{{ 'Find anything, or say what to do'|trans({}, 'quire-admin') }}" data-intent-target="input" data-action="input->intent#search keydown->intent#key">

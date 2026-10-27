@@ -10,7 +10,8 @@
 
 {% block title %}{{ user ? user.displayName : 'Add a user'|trans({}, 'quire-admin') }}{% endblock %}
 
-{% block actions %}
+{% block page_head %}
+    {% set user_actions %}
     {% if user and is_granted('quire.audit.view') %}
         <p class="q-page-head__links">
             <a href="{{ path('quire_admin_audit', {actor: user.id}) }}">{{ 'What they did'|trans({}, 'quire-admin') }}</a>
@@ -31,6 +32,10 @@
             <p class="q-help">{{ view_as_refusal }}</p>
         {% endif %}
     {% endif %}
+    {% endset %}
+    {% embed '@quire_admin/users/_head.html.twig' with {title: block('title'), current: 'users'} %}
+        {% block actions %}{{ user_actions }}{% endblock %}
+    {% endembed %}
 {% endblock %}
 
 {% block content %}

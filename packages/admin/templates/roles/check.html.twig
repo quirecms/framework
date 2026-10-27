@@ -7,6 +7,8 @@
 
 {% block title %}{{ 'Check access'|trans({}, 'quire-admin') }}{% endblock %}
 
+{% block page_head %}{{ include('@quire_admin/users/_head.html.twig', {title: block('title'), current: 'access'}) }}{% endblock %}
+
 {% block content %}
     <p class="q-help">{{ 'Find out whether someone may do something, and why; or, without a user, which roles may.'|trans({}, 'quire-admin') }}</p>
 

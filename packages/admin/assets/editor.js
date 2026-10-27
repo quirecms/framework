@@ -2,9 +2,10 @@
 // The textarea stays the form's field: the editor writes every change into it, so the form works as it
 // does without JavaScript.
 //
-// It's written as a manuscript: emphasis and links read as they will (their marks show on the line
-// being written), headings and quotes keep their marks muted, images show as a box with their
-// description, and changes to the live text are marked in it when there is one.
+// It's written as a manuscript: emphasis, code and links read as they will, their marks shown only
+// where the cursor is in them (to see and change them there, as Typora and Obsidian do); headings and
+// quotes keep their marks muted; images show as a box with their description; and changes to the live
+// text are marked in it when there is one.
 import { EditorView, keymap, drawSelection, placeholder, Decoration, ViewPlugin, WidgetType } from '@codemirror/view';
 import { EditorSelection } from '@codemirror/state';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
@@ -28,18 +29,60 @@ const highlighting = HighlightStyle.define([
     { tag: tags.monospace, fontFamily: 'var(--q-font-mono)', fontSize: '0.9em' },
 ]);
 
-// Wraps the selection in a marker, or inserts the markers around the cursor.
-const wrap = (before, after = before) => (view) => {
-    view.dispatch(view.state.changeByRange((range) => ({
-        changes: [{ from: range.from, insert: before }, { from: range.to, insert: after }],
-        range: range.empty
-            ? EditorSelection.cursor(range.from + before.length)
-            : EditorSelection.range(range.from + before.length, range.to + before.length),
-    })));
+// The formatted span (e.g. "StrongEmphasis") that a selection is in, if any.
+const enclosing = (state, from, to, name) => {
+    for (const side of [1, -1]) {
+        for (let node = syntaxTree(state).resolveInner(from, side); node; node = node.parent) {
+            if (node.name === name && node.from <= from && node.to >= to) {
+                return node;
+            }
+        }
+    }
+
+    return null;
+};
+
+// What each format is in the syntax tree, and its marks.
+const formats = { bold: ['StrongEmphasis', 'EmphasisMark'], italic: ['Emphasis', 'EmphasisMark'], code: ['InlineCode', 'CodeMark'] };
+
+// Wraps the selection in a marker, or inserts the markers around the cursor. A format toggles: in text
+// that has it already, its marks are taken off.
+const wrap = (before, after = before, format = null) => (view) => {
+    const { state } = view;
+
+    view.dispatch(state.changeByRange((range) => {
+        const node = format ? enclosing(state, range.from, range.to, formats[format][0]) : null;
+        const marks = node ? node.getChildren(formats[format][1]) : [];
+
+        if (marks.length >= 2) {
+            const [first, last] = [marks[0], marks[marks.length - 1]];
+            const changes = state.changes([{ from: first.from, to: first.to }, { from: last.from, to: last.to }]);
+
+            return { changes, range: range.map(changes) };
+        }
+
+        return {
+            changes: [{ from: range.from, insert: before }, { from: range.to, insert: after }],
+            range: range.empty
+                ? EditorSelection.cursor(range.from + before.length)
+                : EditorSelection.range(range.from + before.length, range.to + before.length),
+        };
+    }));
     view.focus();
 
     return true;
 };
+
+/**
+ * The formats the selection is in (bold, italic, code), for the toolbar to show them pressed.
+ *
+ * @returns {Set<string>}
+ */
+export function activeFormats(state) {
+    const { from, to } = state.selection.main;
+
+    return new Set(Object.keys(formats).filter((format) => enclosing(state, from, to, formats[format][0]) !== null));
+}
 
 // Starts each selected line with a prefix, e.g. "## " or "- ".
 const prefix = (marker) => (view) => {
@@ -78,9 +121,9 @@ const image = (view, labels = {}) => {
 };
 
 export const commands = {
-    bold: wrap('**'),
-    italic: wrap('_'),
-    code: wrap('`'),
+    bold: wrap('**', '**', 'bold'),
+    italic: wrap('_', '_', 'italic'),
+    code: wrap('`', '`', 'code'),
     link: wrap('[', '](https://)'),
     heading: prefix('## '),
     list: prefix('- '),
@@ -119,36 +162,35 @@ const muted = Decoration.mark({ class: 'cm-md-mark' });
 
 function manuscript(view) {
     const ranges = [];
-    const active = new Set(view.state.selection.ranges.map((range) => view.state.doc.lineAt(range.head).number));
+    const selection = view.hasFocus ? view.state.selection.ranges : [];
+    // Whether the cursor or the selection is in (or right next to) a span: its marks show there.
+    const touched = (from, to) => selection.some((range) => range.from <= to && range.to >= from);
 
     for (const { from, to } of view.visibleRanges) {
         syntaxTree(view.state).iterate({
             from,
             to,
             enter: (node) => {
-                const line = view.state.doc.lineAt(node.from).number;
-
-                if (active.has(line) && node.name !== 'HeaderMark' && node.name !== 'QuoteMark') {
-                    return;
-                }
-
                 if (node.name === 'Image') {
                     const text = view.state.doc.sliceString(node.from, node.to);
                     const match = /^!\[([^\]]*)\]\(([^)\s]*)/.exec(text);
+                    const oneLine = view.state.doc.lineAt(node.from).number === view.state.doc.lineAt(node.to).number;
 
-                    if (match && view.state.doc.lineAt(node.to).number === line) {
+                    if (match && oneLine && !touched(node.from, node.to)) {
                         ranges.push(Decoration.replace({ widget: new ImageWidget(match[1], match[2], match[1].trim() === '') }).range(node.from, node.to));
                     }
 
                     return false;
                 }
 
-                if (node.name === 'EmphasisMark' || node.name === 'StrikethroughMark' || node.name === 'CodeMark') {
-                    ranges.push(hidden.range(node.from, node.to));
-                } else if (node.name === 'HeaderMark' || node.name === 'QuoteMark' || node.name === 'ListMark') {
+                const parent = node.node.parent;
+
+                if (node.name === 'HeaderMark' || node.name === 'QuoteMark' || node.name === 'ListMark') {
                     ranges.push(muted.range(node.from, node.to));
-                } else if ((node.name === 'URL' || node.name === 'LinkMark') && node.node.parent?.name === 'Link') {
-                    // A link reads as its text: its brackets and address show on the line being written.
+                } else if ((node.name === 'EmphasisMark' || node.name === 'StrikethroughMark' || (node.name === 'CodeMark' && parent?.name === 'InlineCode')) && parent && !touched(parent.from, parent.to)) {
+                    ranges.push(hidden.range(node.from, node.to));
+                } else if ((node.name === 'URL' || node.name === 'LinkMark') && parent?.name === 'Link' && !touched(parent.from, parent.to)) {
+                    // A link reads as its text: its brackets and address show where the cursor is in it.
                     ranges.push(hidden.range(node.from, node.to));
                 }
             },
@@ -164,7 +206,7 @@ const manuscriptPlugin = ViewPlugin.fromClass(class {
     }
 
     update(update) {
-        if (update.docChanged || update.viewportChanged || update.selectionSet) {
+        if (update.docChanged || update.viewportChanged || update.selectionSet || update.focusChanged) {
             this.decorations = manuscript(update.view);
         }
     }

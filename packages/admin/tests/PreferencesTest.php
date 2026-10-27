@@ -67,8 +67,5 @@ final class PreferencesTest extends AdminTestCase
         self::assertFalse($this->service(UserPreferences::class)->get($admin, AdminPreferences::HOOD));
         $crawler = $this->client->followRedirect();
         self::assertNull($crawler->filter('html')->attr('data-hood'));
-
-        $this->client->submit($crawler->filter('.content-head__density')->selectButton('Compact')->form());
-        self::assertSame('compact', $this->service(UserPreferences::class)->get($admin, AdminPreferences::DENSITY));
     }
 }

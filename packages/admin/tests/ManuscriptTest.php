@@ -52,6 +52,22 @@ final class ManuscriptTest extends AdminTestCase
         self::assertSelectorTextSame('.placement__description', 'Groups A to D.');
     }
 
+    public function testANewItemsSlugIsMadeFromItsTitleAsItsWritten(): void
+    {
+        $this->signIn('editor');
+        $crawler = $this->client->request('GET', '/admin/content/post/new');
+        self::assertSame('true', $crawler->filter('[data-controller="content-editor"]')->attr('data-content-editor-slug-from-title-value'));
+        self::assertSame('content-editor#editSlug', $crawler->filter('.editor-sheet__address a')->attr('data-action'), 'Changing it stays on the page, with what was written.');
+
+        $this->client->request('POST', '/admin/content/post/placement', ['_token' => self::formToken($crawler), 'title' => 'Spring Draw: All Groups!', 'slug' => '', 'body' => '']);
+        self::assertSame('spring-draw-all-groups', $this->client->getCrawler()->filter('.placement')->attr('data-slug'));
+        self::assertStringEndsWith('/spring-draw-all-groups', (string) $this->client->getCrawler()->filter('.placement')->attr('data-url'));
+
+        // A slug someone wrote stays theirs.
+        $this->client->request('POST', '/admin/content/post/placement', ['_token' => self::formToken($crawler), 'title' => 'Spring draw', 'slug' => 'draw', 'body' => '']);
+        self::assertSame('draw', $this->client->getCrawler()->filter('.placement')->attr('data-slug'));
+    }
+
     public function testTheChangesAgainstWhatsLiveAndTheVersions(): void
     {
         $member = $this->createUser('Grace', ['member', 'editor']);

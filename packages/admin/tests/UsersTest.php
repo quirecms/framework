@@ -35,6 +35,20 @@ final class UsersTest extends AdminTestCase
         }
     }
 
+    public function testThePeoplePagesShareTheirHead(): void
+    {
+        $this->signIn('admin');
+        foreach (['/admin/users' => 'People', '/admin/users/new' => 'People', '/admin/roles' => 'Roles', '/admin/roles/editor' => 'Roles', '/admin/access' => 'Check access'] as $page => $current) {
+            $crawler = $this->client->request('GET', $page);
+            self::assertResponseIsSuccessful($page);
+            self::assertSame('People', $crawler->filter('.q-page-head__eyebrow')->text(), $page);
+            self::assertSame(['People', 'Roles', 'Check access'], $crawler->filter('.q-page-head .section-switch a')->each(static fn (Crawler $a): string => $a->text()), $page);
+            self::assertSame($current, $crawler->filter('.section-switch a[aria-current=page]')->text(), $page);
+
+            self::assertCount(0, $crawler->filter('.q-tabs'), $page.': one way between them');
+        }
+    }
+
     public function testPeopleByRoleAndStatusWithTheNextStep(): void
     {
         $this->admin = $this->signIn('admin');

@@ -8,9 +8,7 @@
 
 {% block title %}{{ label }}{% endblock %}
 
-{% block actions %}
-    <a class="q-btn q-btn--ghost" href="{{ path('quire_admin_roles') }}">{{ 'All roles'|trans({}, 'quire-admin') }}</a>
-{% endblock %}
+{% block page_head %}{{ include('@quire_admin/users/_head.html.twig', {title: block('title'), current: 'roles'}) }}{% endblock %}
 
 {% block content %}
     <p class="q-meta">

@@ -297,7 +297,9 @@
     }
 
     .q-rail__item svg { width: 1.375rem; height: 1.375rem; }
-    .q-rail__item:hover { background: var(--q-paper); color: var(--q-ink); }
+    .q-rail__item { transition: background-color var(--q-duration) var(--q-ease), color var(--q-duration) var(--q-ease); }
+    .q-rail__item:hover { background: color-mix(in srgb, var(--q-ink) 6%, transparent); color: var(--q-ink); }
+    .q-rail__item:active { background: color-mix(in srgb, var(--q-ink) 11%, transparent); }
     .q-rail__item[aria-current="page"] { background: var(--q-accent-soft); color: var(--q-ink); }
     .q-rail__item[aria-current="page"] svg { color: var(--q-accent); }
     .q-rail__spacer { flex: 1; }
@@ -337,7 +339,8 @@
 
     .q-live-dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--q-live); box-shadow: 0 0 0 3px var(--q-accent-soft); }
 
-    .q-main { padding: var(--q-space-6); max-width: 90rem; }
+    /* As wide as the window: pages that read better narrower (forms, prose) set their own measure. */
+    .q-main { padding: var(--q-space-6); }
     .q-main:focus { outline: none; }
 
     /* --- Menus that open (details/summary): work without JavaScript ---------------- */
@@ -378,8 +381,12 @@
         cursor: pointer;
     }
 
-    .q-menu__panel a:hover, .q-menu__panel button:hover { background: var(--q-paper); }
+    .q-menu__panel a:hover, .q-menu__panel button:hover { background: color-mix(in srgb, var(--q-ink) 6%, transparent); }
+    .q-menu__panel a:active, .q-menu__panel button:active { background: color-mix(in srgb, var(--q-ink) 11%, transparent); }
+    .q-menu__panel a:focus-visible, .q-menu__panel button:focus-visible { outline-offset: -2px; }
     .q-menu__panel .q-menu__danger { color: var(--q-danger); }
+    .q-menu__panel .q-menu__danger:hover { background: var(--q-danger-soft); }
+    .q-menu__panel .q-menu__danger:active { background: color-mix(in oklab, var(--q-danger-soft) 80%, var(--q-danger)); }
     .q-menu__label { padding: var(--q-space-1) var(--q-space-3); color: var(--q-muted); font-size: var(--q-text-sm); }
 
     /* The "New" button in the rail */
@@ -398,11 +405,21 @@
         box-shadow: 0 6px 16px color-mix(in srgb, var(--q-accent) 35%, transparent);
     }
 
+    .q-new { transition: background-color 0.12s var(--q-ease), box-shadow 0.12s var(--q-ease), transform 0.12s var(--q-ease); }
+    .q-new:hover { background: color-mix(in oklab, var(--q-accent) 86%, var(--q-ink)); box-shadow: 0 8px 20px color-mix(in srgb, var(--q-accent) 45%, transparent); }
+    .q-new:active, .q-menu[open] > .q-new { background: color-mix(in oklab, var(--q-accent) 74%, var(--q-ink)); box-shadow: none; transform: translateY(1px); }
     .q-new b { font-size: 1.375rem; font-weight: 500; }
 
     /* --- Page heading and section tabs -------------------------------------------- */
     .q-page-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: var(--q-space-4); margin-bottom: var(--q-space-5); }
-    .q-page-head__eyebrow { margin-bottom: var(--q-space-1); color: var(--q-muted); font-size: var(--q-text-sm); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+    .q-page-head__eyebrow { margin: 0 0 var(--q-space-1); color: var(--q-muted); font-size: var(--q-text-sm); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+    .q-page-head h1 { margin: 0; font: 700 clamp(1.75rem, 3vw, 2.25rem) / 1.15 var(--q-font-display); }
+    .q-page-head__count { color: var(--q-muted); font: 500 0.6em var(--q-font); font-variant-numeric: tabular-nums; }
+    /* On phones, the page's buttons share the width. */
+    @media (max-width: 48rem) {
+        .q-page-head__actions > .q-btn { flex: 1 1 auto; }
+    }
+
     .q-page-head__actions, .q-page-head__links { display: flex; flex-wrap: wrap; align-items: center; gap: var(--q-space-2) var(--q-space-4); margin: 0; }
 
     .q-tabs ul, .q-views ul { display: flex; flex-wrap: wrap; gap: var(--q-space-1); margin: 0; padding: 0; list-style: none; }
@@ -450,7 +467,8 @@
         white-space: nowrap;
     }
 
-    .q-chip:hover { border-color: var(--q-muted); }
+    .q-chip:hover { border-color: var(--q-muted); background: var(--q-surface); }
+    .q-chip:active { background: color-mix(in srgb, var(--q-ink) 8%, transparent); }
 
     /* What's selected in a list, and what to do with it */
     .q-selection {
@@ -517,30 +535,97 @@
     .q-section > h2 { margin-bottom: var(--q-space-3); }
 
     /* --- Buttons ------------------------------------------------------------------- */
+    /*
+     * Every variant sets the same few properties (--_bg, --_ink, --_line and their :hover and :active
+     * shades), so the states behave alike everywhere: a hover darkens (lightens, in dark) and lifts a
+     * little, a press sinks, the keyboard's focus is a ring that doesn't move anything, and a disabled
+     * button doesn't respond. Combinations, e.g. ghost + danger, set them too.
+     */
     .q-btn {
+        --_bg: var(--q-accent);
+        --_ink: var(--q-accent-ink);
+        --_line: var(--q-accent);
+        --_hover-bg: color-mix(in oklab, var(--_bg) 86%, var(--q-ink));
+        --_hover-line: var(--_hover-bg);
+        --_active-bg: color-mix(in oklab, var(--_bg) 74%, var(--q-ink));
+        --_ring: var(--q-focus);
+        --_lift: 0 1px 2px rgb(31 26 46 / 0.08), 0 3px 10px color-mix(in srgb, var(--_bg) 30%, transparent);
+
         display: inline-flex;
         align-items: center;
         justify-content: center;
         gap: var(--q-space-2);
         min-height: 2.5rem;
         padding: var(--q-space-1) var(--q-space-4);
-        border: 1px solid var(--q-accent);
+        border: 1px solid var(--_line);
         border-radius: var(--q-radius-sm);
-        background: var(--q-accent);
-        color: var(--q-accent-ink);
+        background: var(--_bg);
+        color: var(--_ink);
         font: inherit;
         font-weight: 600;
         white-space: nowrap;
         text-decoration: none;
         cursor: pointer;
-        transition: background var(--q-duration) var(--q-ease), border-color var(--q-duration) var(--q-ease);
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        transition-property: background-color, border-color, color, box-shadow, transform;
+        transition-duration: 0.12s;
+        transition-timing-function: var(--q-ease);
     }
 
-    .q-btn:hover { background: color-mix(in srgb, var(--q-accent) 88%, var(--q-ink)); }
-    .q-btn--ghost { background: transparent; border-color: var(--q-line); color: var(--q-ink); }
-    .q-btn--ghost:hover { background: var(--q-surface); border-color: var(--q-accent); }
-    .q-btn--soft { background: var(--q-accent-soft); border-color: transparent; color: var(--q-accent-strong); }
-    .q-btn--danger { background: var(--q-danger); border-color: var(--q-danger); color: var(--q-surface); }
+    .q-btn:hover { background: var(--_hover-bg); border-color: var(--_hover-line); box-shadow: var(--_lift); }
+    .q-btn:active { background: var(--_active-bg); border-color: var(--_active-bg); box-shadow: none; transform: translateY(1px); }
+    .q-btn:focus-visible { outline: 2px solid var(--_ring); outline-offset: 2px; box-shadow: 0 0 0 5px color-mix(in srgb, var(--_ring) 18%, transparent); }
+
+    .q-btn:disabled, .q-btn[aria-disabled="true"], fieldset:disabled button.q-btn {
+        opacity: 0.5;
+        box-shadow: none;
+        transform: none;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    /* Pressed (a toggle that's on), e.g. focus mode */
+    .q-btn[aria-pressed="true"] { --_bg: var(--q-ink); --_ink: var(--q-paper); --_line: var(--q-ink); }
+
+    .q-btn--ghost {
+        --_bg: transparent;
+        --_ink: var(--q-ink);
+        --_line: var(--q-line);
+        --_hover-bg: color-mix(in srgb, var(--q-ink) 6%, transparent);
+        --_hover-line: color-mix(in srgb, var(--q-ink) 35%, var(--q-line));
+        --_active-bg: color-mix(in srgb, var(--q-ink) 11%, transparent);
+        --_lift: none;
+    }
+
+    .q-btn--soft {
+        --_bg: var(--q-accent-soft);
+        --_ink: var(--q-accent-strong);
+        --_line: transparent;
+        --_hover-bg: color-mix(in oklab, var(--q-accent-soft) 82%, var(--q-accent));
+        --_active-bg: color-mix(in oklab, var(--q-accent-soft) 68%, var(--q-accent));
+        --_lift: none;
+    }
+
+    .q-btn--danger {
+        --_bg: var(--q-danger);
+        --_ink: var(--q-surface);
+        --_line: var(--q-danger);
+        --_ring: var(--q-danger);
+    }
+
+    /* Quiet, until it's about to be used: then it says it's destructive. */
+    .q-btn--ghost.q-btn--danger {
+        --_bg: transparent;
+        --_ink: var(--q-danger);
+        --_line: color-mix(in srgb, var(--q-danger) 40%, var(--q-line));
+        --_hover-bg: var(--q-danger-soft);
+        --_hover-line: var(--q-danger);
+        --_active-bg: color-mix(in oklab, var(--q-danger-soft) 80%, var(--q-danger));
+    }
+
+    .q-btn--ghost.q-btn--danger:active { border-color: var(--q-danger); }
+
     .q-btn--sm { min-height: 2rem; padding: 0 var(--q-space-3); font-size: var(--q-text-sm); }
 
     /* A button that looks like a link, e.g. a row's actions. Targets are at least 24px (WCAG 2.5.8). */
@@ -557,10 +642,19 @@
         cursor: pointer;
     }
 
+    .q-link-btn { transition: color var(--q-duration) var(--q-ease), text-decoration-color var(--q-duration) var(--q-ease); }
+    .q-link-btn:hover { color: var(--q-accent-strong); text-decoration-thickness: 2px; }
+    .q-link-btn:active { opacity: 0.75; }
     .q-link-btn--danger { color: var(--q-danger); }
+    .q-link-btn--danger:hover { color: color-mix(in oklab, var(--q-danger) 80%, var(--q-ink)); }
 
     .q-seg { display: inline-flex; overflow: hidden; border: 1px solid var(--q-line); border-radius: var(--q-radius-sm); background: var(--q-surface); }
     .q-seg > * { min-height: 2.25rem; padding: var(--q-space-1) var(--q-space-3); border: 0; background: none; color: var(--q-ink); font: inherit; font-size: var(--q-text-sm); text-decoration: none; display: inline-flex; align-items: center; }
+    .q-seg > * { cursor: pointer; transition: background-color var(--q-duration) var(--q-ease), color var(--q-duration) var(--q-ease); }
+    .q-seg > * + * { border-left: 1px solid var(--q-line); }
+    .q-seg > :hover { background: color-mix(in srgb, var(--q-ink) 6%, transparent); }
+    .q-seg > :active { background: color-mix(in srgb, var(--q-ink) 11%, transparent); }
+    .q-seg > :focus-visible { outline-offset: -3px; }
     .q-seg > [aria-pressed="true"], .q-seg > [aria-current="page"] { background: var(--q-ink); color: var(--q-paper); }
 
     /* --- Notices and the command behind an action -------------------------------- */
@@ -762,6 +856,9 @@
         cursor: pointer;
     }
 
+    .q-switch { transition: border-color var(--q-duration) var(--q-ease), background-color var(--q-duration) var(--q-ease); }
+    .q-switch:hover { border-color: color-mix(in srgb, var(--q-ink) 35%, var(--q-line)); }
+    .q-switch:active .q-switch__track::after { width: calc(1.25rem - 2px); }
     .q-switch__track { position: relative; width: 2.25rem; height: 1.25rem; border-radius: 1rem; background: var(--q-line); transition: background var(--q-duration) var(--q-ease); }
     .q-switch__track::after { content: ""; position: absolute; top: 3px; left: 3px; width: calc(1.25rem - 6px); height: calc(1.25rem - 6px); border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgb(0 0 0 / 0.25); transition: left var(--q-duration) var(--q-ease); }
     .q-switch[aria-pressed="true"] .q-switch__track { background: var(--q-ink); }

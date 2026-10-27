@@ -1,0 +1,21 @@
+{#
+    The head of the People pages, the same on each: what the page is, a switch between people, roles and
+    checking access, and the page's own actions (the "actions" block, when embedded). Variables: title,
+    count (optional), current (users, roles or access: the one the page is under).
+#}
+<header class="q-page-head">
+    <div>
+        <p class="q-page-head__eyebrow">{{ 'section.users'|trans({}, 'quire-admin') }}</p>
+        <h1>{{ title }}{% if count is defined and count is not null %} <span class="q-page-head__count">{{ count|quire_admin_number }}</span>{% endif %}</h1>
+    </div>
+    <div class="q-page-head__actions">
+        {% block actions %}{% endblock %}
+        <nav class="section-switch" aria-label="{{ 'section.users'|trans({}, 'quire-admin') }}">
+            {% for page, entry in {users: ['section.users', 'quire.users.manage'], roles: ['Roles', 'quire.permissions.manage'], access: ['Check access', 'quire.permissions.manage']} %}
+                {% if is_granted(entry[1]) %}
+                    <a href="{{ path(page == 'access' ? 'quire_admin_access' : 'quire_admin_' ~ page) }}"{% if page == current %} aria-current="page"{% endif %}>{{ entry[0]|trans({}, 'quire-admin') }}</a>
+                {% endif %}
+            {% endfor %}
+        </nav>
+    </div>
+</header>

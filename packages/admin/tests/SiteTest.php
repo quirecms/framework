@@ -44,7 +44,7 @@ final class SiteTest extends AdminTestCase
         $crawler = $this->client->request('GET', '/admin/settings');
 
         self::assertSelectorTextSame('h1', 'Settings');
-        self::assertSame('page', $crawler->filter('.site-switch a')->first()->attr('aria-current'));
+        self::assertSame('page', $crawler->filter('.section-switch a')->first()->attr('aria-current'));
         $site = $crawler->filter('.settings-doc__part')->first();
         $text = $this->readable($site->filter('.settings-doc__text'));
         self::assertSame('This site is called Tournament News. It\'s described as not set. It\'s written in English. It\'s in the UTC time zone. Its homepage shows a list of content. The homepage\'s list is of post. When a page without an image of its own is shared, it shows not set.', $text, 'In the order it reads best; the homepage\'s page only when it shows one.');

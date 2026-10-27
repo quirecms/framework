@@ -1,9 +1,10 @@
 {#
     Where an item will appear: its card in lists, as the site's theme draws it (in a sandboxed frame,
     with the theme's stylesheets and no scripts), in search results, and when shared.
-    Variables: placement (card, title, site, description, url, breadcrumb, image, domain).
+    Variables: placement (card, title, site, description, url, slug, breadcrumb, image, domain).
+    The editor takes the address and the slug from the data attributes when this comes again as it's written.
 #}
-<div class="placement">
+<div class="placement" data-url="{{ placement.url|replace({'https://': '', 'http://': ''}) }}" data-slug="{{ placement.slug }}">
     <h3 class="placement__label">{{ 'In lists'|trans({}, 'quire-admin') }}</h3>
     <iframe class="placement__card" sandbox="" srcdoc="{{ placement.card }}" title="{{ 'The item in lists, as the site shows it'|trans({}, 'quire-admin') }}" loading="lazy"></iframe>
 

@@ -6,9 +6,7 @@
 
 {% block title %}{{ 'Roles'|trans({}, 'quire-admin') }}{% endblock %}
 
-{% block actions %}
-    <a class="q-btn q-btn--ghost" href="{{ path('quire_admin_access') }}">{{ 'Check access'|trans({}, 'quire-admin') }}</a>
-{% endblock %}
+{% block page_head %}{{ include('@quire_admin/users/_head.html.twig', {title: block('title'), current: 'roles'}) }}{% endblock %}
 
 {% block content %}
     <p class="q-help">{{ 'A role is what a group of users may do. Users can have several roles; each adds to what they may do.'|trans({}, 'quire-admin') }}</p>

@@ -234,7 +234,7 @@ final readonly class ContentEditController
     /**
      * @param array<string, mixed> $values
      *
-     * @return array{card: string, title: string, site: string, description: ?string, url: string, breadcrumb: list<string>, image: ?string, domain: string}
+     * @return array{card: string, title: string, site: string, description: ?string, url: string, slug: string, breadcrumb: list<string>, image: ?string, domain: string}
      */
     private function placement(ContentTypeDefinition $type, ?Content $item, array $values): array
     {
@@ -259,6 +259,8 @@ final readonly class ContentEditController
             'site' => $tags->siteName ?? $this->settings->getString('site.title'),
             'description' => $tags?->description,
             'url' => $url,
+            // The slug saving would give it: for a new item, made from the title until one is written.
+            'slug' => $preview->slug,
             // As search engines show where a page is: the site, then the path without the page itself.
             'breadcrumb' => [$host, ...\array_slice($segments, 0, -1)],
             'image' => $tags?->imageUrl,
