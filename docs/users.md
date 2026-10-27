@@ -16,6 +16,12 @@ Without a terminal, e.g. in a deployment script, pass the admin's email; a stron
 bin/console quire:install --no-interaction --admin-email=ada@example.com --title="Ada's notes"
 ```
 
+Or email the admin a link to choose their own password, so no password is ever shown or passed around (this needs a [mailer](docker.md#environment-variables), `MAILER_DSN`; the link works once, for seven days):
+
+```bash
+bin/console quire:install --no-interaction --admin-email=ada@example.com --title="Ada's notes" --invite
+```
+
 Once the site has an admin, the installer changes nothing.
 
 ## Managing users

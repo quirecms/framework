@@ -1,0 +1,28 @@
+# Behind a reverse proxy: another web server or a load balancer holds the site's domain and its
+# certificate, and passes requests on over plain HTTP. Add this file to COMPOSE_FILE in prod.env:
+#
+#     COMPOSE_FILE=compose.yaml:compose.prod.yaml:compose.proxy.yaml
+#
+# See https://github.com/quirecms/framework/blob/main/docs/docker.md#behind-a-reverse-proxy
+services:
+  php:
+    environment:
+      # Plain HTTP for the site's domain: the proxy has its certificate.
+      SERVER_NAME: http://${SERVER_NAME:?Set SERVER_NAME, the site's domain, in prod.env}, php:80
+      # The address visitors use, for links in emails and from the command line
+      DEFAULT_URI: ${DEFAULT_URI:-https://${SERVER_NAME}}
+      # Whose X-Forwarded-For, -Proto and -Port headers to believe: proxies on private networks (Docker's,
+      # this machine's) by default, or a list of addresses and ranges.
+      SYMFONY_TRUSTED_PROXIES: ${SYMFONY_TRUSTED_PROXIES:-private_ranges}
+    # Only the proxy reaches the site: on this machine's loopback by default (a proxy on the same
+    # machine). For a proxy elsewhere, set HTTP_HOST_IP, and let only it through the firewall.
+    ports: !override
+      - name: http
+        target: 80
+        host_ip: ${HTTP_HOST_IP:-127.0.0.1}
+        published: ${HTTP_PORT:-8080}
+        protocol: tcp
+
+  worker:
+    environment:
+      DEFAULT_URI: ${DEFAULT_URI:-https://${SERVER_NAME}}

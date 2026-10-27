@@ -18,7 +18,9 @@ Quire runs on [FrankenPHP](https://frankenphp.dev) (a PHP application server bui
 |------|----------|
 | `compose.yaml` | Base configuration shared by every environment |
 | `compose.override.yaml` | Development. Docker Compose loads it automatically. |
-| `compose.prod.yaml` | Production. Pass it explicitly with `-f`. |
+| `compose.prod.yaml` | Production, with `prod.env` (see [production](#production)) |
+| `compose.proxy.yaml` | Production behind a reverse proxy (see [below](#behind-a-reverse-proxy)) |
+| `prod.env.dist` | The template of `prod.env`, a site's production settings and secrets |
 | `Dockerfile` | One file with three targets: `frankenphp_dev`, `frankenphp_prod_builder` and `frankenphp_prod` |
 | `frankenphp/Caddyfile` | Web server configuration |
 | `frankenphp/conf.d/` | PHP settings: shared, dev-only and prod-only |
@@ -103,6 +105,52 @@ Caddy adds these headers to every response, unless Quire set its own (for exampl
 
 The `Server` header is removed. To change one, set it in your own Caddy directives (`CADDY_SERVER_EXTRA_DIRECTIVES`), or in a response, for a page of your own. HSTS covers only the site's own domain, not its subdomains. To go further (`includeSubDomains`, `preload`), make sure every subdomain has HTTPS first, since browsers remember it.
 
+### Behind a reverse proxy
+
+When another web server or a load balancer holds the site's domain and its certificate, for example nginx or Apache already serving other sites on the machine, the site runs behind it: plain HTTP inside, on a port only the proxy reaches. Add `compose.proxy.yaml` in `prod.env`:
+
+```bash
+COMPOSE_FILE=compose.yaml:compose.prod.yaml:compose.proxy.yaml
+SERVER_NAME=example.com
+```
+
+The site then:
+
+- **Listens on `127.0.0.1:8080`** of the machine, over HTTP only: no certificate of its own, and ports 80 and 443 stay the proxy's. `HTTP_PORT` changes the port; `HTTP_HOST_IP` the address, for a proxy on another machine (then let only the proxy through the firewall).
+- **Believes the proxy about the visitor:** their address and that they came over HTTPS (`X-Forwarded-For`, `-Proto` and `-Port`), from proxies on private networks: this machine, Docker's networks. So links, redirects and cookies use HTTPS, and sign-in cookies are `secure`. When `HTTP_HOST_IP` lets other machines in, set `SYMFONY_TRUSTED_PROXIES` to the proxy's own address instead, or anyone who can reach the port could claim to be the proxy.
+- **Uses `https://` + `SERVER_NAME` for links in emails** and from the command line; set `DEFAULT_URI` when visitors use another address, e.g. one with a port.
+
+The proxy passes the requests on with their `Host` header and the forwarded headers. For example:
+
+```nginx
+# nginx
+location / {
+    proxy_pass http://127.0.0.1:8080;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-Port $server_port;
+}
+```
+
+```apache
+# Apache (mod_proxy, mod_headers), in the site's <VirtualHost *:443>
+ProxyPreserveHost On
+ProxyPass / http://127.0.0.1:8080/
+ProxyPassReverse / http://127.0.0.1:8080/
+RequestHeader set X-Forwarded-Proto "https"
+RequestHeader set X-Forwarded-Port "443"
+```
+
+```caddyfile
+# Caddy: sets the forwarded headers itself
+example.com {
+    reverse_proxy 127.0.0.1:8080
+}
+```
+
+The [security headers](#security-headers) still come from the site, through the proxy. HTTP/3 is the proxy's to offer.
+
 ### Persistent data
 
 Keep these volumes:
@@ -132,6 +180,8 @@ For the same set of extensions everywhere, set by your deployment instead of at 
 | `MAILER_DSN` | `null://null` (Mailpit in development) | Where emails go, e.g. `smtp://user:pass@smtp.example.com:587`. Needed for registration and password reset. |
 | `DEFAULT_URI` | `https://$SERVER_NAME:$HTTPS_PORT` | The site's address, used for links in emails and from the command line |
 | `XDEBUG_MODE` | `off` | Xdebug mode (development only) |
+| `SYMFONY_TRUSTED_PROXIES` | none (`private_ranges` with `compose.proxy.yaml`) | Proxies whose `X-Forwarded-*` headers to believe: addresses, ranges, or `private_ranges` (see [behind a reverse proxy](#behind-a-reverse-proxy)) |
+| `HTTP_HOST_IP` | `127.0.0.1` (with `compose.proxy.yaml`) | The machine's address the site listens on behind a proxy |
 | `QUIRE_HSTS_MAX_AGE` | `31536000` (`0` in development) | How long browsers keep to HTTPS for the site, in seconds (see [security headers](#security-headers)) |
 | `CADDY_SERVER_EXTRA_DIRECTIVES` | none | Caddy directives added to the site's, e.g. headers of your own |
 | `QUIRE_JOBS_DSN` | `quire://` (PostgreSQL) | Where [background jobs](jobs.md) wait for workers; `sync://` runs them at once, without a worker |
@@ -152,6 +202,36 @@ Example response:
 ```json
 {"status":"ok","checks":{"cache":{"status":"ok"},"database":{"status":"ok"}}}
 ```
+
+## Tools that manage sites
+
+A server that runs several sites, such as [Quire Server](https://quirecms.com) (planned), finds and manages them through a small, versioned contract (`Quire\Runtime\ServerContract`, currently version 1):
+
+- **Labels** on the `php` container: `com.quirecms.site=true` and `com.quirecms.contract=1`, so a site already running on a machine can be found.
+- **`bin/console quire:about --format=json`**: the site's Quire, PHP and Symfony versions, title, language, time zone, address, whether it's installed (has an admin), its extensions and theme, its migrations (run and pending) and its health checks, with the contract's version. Parts that need the database are `null` when it can't be reached. Without `--format`, the same for people.
+- **`bin/console quire:install --no-interaction --admin-email=… --invite`**: a new site, its first admin invited by email.
+- **`compose.proxy.yaml`**: the site behind the server's own front door ([behind a reverse proxy](#behind-a-reverse-proxy)).
+
+```bash
+docker compose --env-file prod.env exec -T php bin/console quire:about --format=json
+```
+
+```json
+{
+    "contract": 1,
+    "quire": {"version": "v0.1.0", "reference": "744b987…"},
+    "php": "8.5.12",
+    "symfony": "8.1.9",
+    "environment": "prod",
+    "site": {"title": "Tournament News", "locale": "en", "timezone": "Europe/Skopje", "url": "https://example.com", "installed": true},
+    "extensions": [{"id": "quire-admin", "package": "quire/admin", "version": "v0.1.0", "type": "extension", "status": "enabled"}],
+    "theme": "quire-theme-default",
+    "migrations": {"executed": 19, "pending": 0},
+    "health": {"status": "ok", "checks": {"cache": {"status": "ok"}, "database": {"status": "ok"}, "extensions": {"status": "ok"}}}
+}
+```
+
+A change that such tools must know about raises the contract's version; additions they can ignore don't.
 
 ## Differences from dunglas/symfony-docker
 

@@ -14,6 +14,7 @@ use Quire\Extension\State\PinnedExtensionStateStore;
 use Quire\Install\Console\InstallCommand;
 use Quire\Settings\Settings;
 use Quire\User\CreateUser;
+use Quire\User\Invitations;
 use Quire\User\User;
 use Quire\User\UserRepository;
 use Quire\User\UserWriter;
@@ -259,6 +260,21 @@ final class UserCommandsTest extends KernelTestCase
         $this->assertPassword('ada', $match[1]);
     }
 
+    public function testTheInstallerCanInviteTheFirstAdminInsteadOfSettingAPassword(): void
+    {
+        $runs = [];
+        $installer = $this->installer($runs);
+
+        self::assertSame(0, $installer->execute(['--admin-email' => 'ada@example.com', '--title' => 'Ada\'s notes', '--invite' => true], ['interactive' => false]), $installer->getDisplay());
+        $output = $this->flat($installer->getDisplay());
+        self::assertStringContainsString('Quire is installed. Ada (ada@example.com) is the admin.', $output);
+        self::assertStringContainsString('Invited ada@example.com by email to choose a password', $output);
+        self::assertStringNotContainsString('password is:', $output, 'No password is shown or passed around.');
+        self::assertEmailCount(1);
+        self::assertEmailAddressContains(self::getMailerMessage() ?? throw new \LogicException('No email.'), 'To', 'ada@example.com');
+        self::assertNull(self::getContainer()->get(UserRepository::class)->findByEmail('ada@example.com')?->passwordHash, 'They choose it from the link.');
+    }
+
     /**
      * @param array<string, mixed> $input
      * @param list<string>         $answers Typed answers; without them, the command runs without a terminal
@@ -317,6 +333,7 @@ final class UserCommandsTest extends KernelTestCase
             new ExtensionManager(new InstalledExtensions($container->getParameter('quire.composer.installed_json')), $state, new EventDispatcher()),
             $container->get(UserWriter::class),
             $container->get(Settings::class),
+            $container->get(Invitations::class),
             '/app',
             'test',
             '/admin',

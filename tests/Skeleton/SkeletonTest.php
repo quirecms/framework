@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Tests\Skeleton;
 
 use PHPUnit\Framework\TestCase;
+use Quire\Runtime\ServerContract;
 use Symfony\Component\Finder\Finder;
+use Symfony\Component\Yaml\Yaml;
 
 /**
  * The starter project in skeleton/ (quire/skeleton) is the application of this repository without what
@@ -34,7 +36,7 @@ final class SkeletonTest extends TestCase
     private const array APPLICATION_DIRECTORIES = ['assets', 'bin', 'config', 'frankenphp', 'migrations', 'public', 'src', 'templates', 'translations'];
     private const array APPLICATION_FILES = [
         '.dockerignore', '.editorconfig', '.env', '.env.dev', '.env.test', '.gitattributes', '.gitignore',
-        'Dockerfile', 'compose.override.yaml', 'compose.prod.yaml', 'compose.yaml', 'extend.php', 'importmap.php', 'prod.env.dist',
+        'Dockerfile', 'compose.override.yaml', 'compose.prod.yaml', 'compose.proxy.yaml', 'compose.yaml', 'extend.php', 'importmap.php', 'prod.env.dist',
     ];
 
     private const string ROOT = __DIR__.'/../..';
@@ -101,6 +103,15 @@ final class SkeletonTest extends TestCase
         self::assertIsArray($development);
 
         self::assertSame(array_diff_key($application, $development), $this->json(self::SKELETON.'/symfony.lock'));
+    }
+
+    public function testSitesSayWhichServerContractTheyKeep(): void
+    {
+        /** @var array{services: array{php: array{labels: array<string, string>}}} $compose */
+        $compose = Yaml::parseFile(self::SKELETON.'/compose.yaml');
+
+        self::assertSame('true', $compose['services']['php']['labels']['com.quirecms.site']);
+        self::assertSame((string) ServerContract::VERSION, $compose['services']['php']['labels']['com.quirecms.contract'], 'The label and quire:about agree.');
     }
 
     public function testNewSitesGetTheirOwnSecret(): void

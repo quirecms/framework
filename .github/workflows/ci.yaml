@@ -198,6 +198,18 @@ jobs:
         run: test "$(docker compose --env-file prod.env exec -T php id -u)" != "0"
       - name: Check the app can write to its storage volume
         run: docker compose --env-file prod.env exec -T php sh -c 'touch storage/public/.check storage/private/.check && rm storage/public/.check storage/private/.check'
+      - name: Check the server contract's report
+        run: docker compose --env-file prod.env exec -T php bin/console quire:about --format=json | jq -e '.contract == 1 and .health.status == "ok" and .migrations.pending == 0'
+      # Behind a reverse proxy (compose.proxy.yaml): plain HTTP on this machine's loopback only, and
+      # HTTPS as the proxy says it was.
+      - name: Check the site behind a reverse proxy
+        run: |
+          sed -i 's/^COMPOSE_FILE=.*/COMPOSE_FILE=compose.yaml:compose.prod.yaml:compose.proxy.yaml/' prod.env
+          docker compose --env-file prod.env up -d --wait --no-build
+          test "$(docker compose --env-file prod.env port php 80)" = "127.0.0.1:8080"
+          ! docker compose --env-file prod.env port php 443
+          curl --fail --silent --output /dev/null -H 'Host: quire.localhost' http://127.0.0.1:8080/_quire/health
+          curl --silent --dump-header - --output /dev/null -H 'Host: quire.localhost' -H 'X-Forwarded-Proto: https' http://127.0.0.1:8080/login | grep -qi '^set-cookie: .*; secure'
       - name: Show logs on failure
         if: failure()
         run: docker compose --env-file prod.env logs
