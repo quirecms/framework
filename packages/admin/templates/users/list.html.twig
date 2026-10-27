@@ -9,20 +9,12 @@
 {% block title %}{{ 'People'|trans({}, 'quire-admin') }}{% endblock %}
 
 {% block page_head %}
-    <header class="people-head">
-        <div>
-            <p class="people-head__eyebrow">{{ 'People'|trans({}, 'quire-admin') }}</p>
-            <h1 class="people-head__title">{{ current.label }} <span class="people-head__count">{{ current.count }}</span></h1>
-        </div>
-        <p class="people-head__actions">
-            {% if is_granted('quire.permissions.manage') %}
-                <a class="q-btn q-btn--ghost" href="{{ path('quire_admin_roles') }}">{{ 'Roles'|trans({}, 'quire-admin') }}</a>
-                <a class="q-btn q-btn--ghost" href="{{ path('quire_admin_access') }}">{{ 'Check access'|trans({}, 'quire-admin') }}</a>
-            {% endif %}
+    {% embed '@quire_admin/users/_head.html.twig' with {title: current.label, count: current.count, current: 'users'} %}
+        {% block actions %}
             {% if invitation_problem is null %}<a class="q-btn" href="#invite-emails">{{ 'Invite people'|trans({}, 'quire-admin') }}</a>{% endif %}
             <a class="q-btn q-btn--ghost" href="{{ path('quire_admin_user_new') }}">{{ 'Add a user'|trans({}, 'quire-admin') }}</a>
-        </p>
-    </header>
+        {% endblock %}
+    {% endembed %}
 {% endblock %}
 
 {% block content %}

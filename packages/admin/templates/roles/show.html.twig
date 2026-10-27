@@ -8,9 +8,7 @@
 
 {% block title %}{{ label }}{% endblock %}
 
-{% block actions %}
-    <a class="q-btn q-btn--ghost" href="{{ path('quire_admin_roles') }}">{{ 'All roles'|trans({}, 'quire-admin') }}</a>
-{% endblock %}
+{% block page_head %}{{ include('@quire_admin/users/_head.html.twig', {title: block('title'), current: 'roles'}) }}{% endblock %}
 
 {% block content %}
     <p class="q-meta">
@@ -98,15 +96,15 @@
     </form>
 
     {% if site_role %}
-        <section class="q-card">
+        <section class="q-card q-section">
             <h2 class="q-card__title">{{ 'This role'|trans({}, 'quire-admin') }}</h2>
-            <form method="post" action="{{ path('quire_admin_role_rename', {role: role}) }}" class="q-inline">
+            <form method="post" action="{{ path('quire_admin_role_rename', {role: role}) }}" class="q-form-row role-rename">
                 <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_roles') }}">
                 <div class="q-field">
                     <label for="role-label">{{ 'Name'|trans({}, 'quire-admin') }}</label>
                     <input type="text" id="role-label" name="label" value="{{ label }}" required maxlength="50">
                 </div>
-                <div class="editor__buttons"><button type="submit" class="q-btn q-btn--ghost">{{ 'Rename'|trans({}, 'quire-admin') }}</button></div>
+                <div class="q-form-row__actions"><button type="submit" class="q-btn q-btn--ghost">{{ 'Rename'|trans({}, 'quire-admin') }}</button></div>
             </form>
             <a class="q-link-btn q-link-btn--danger" href="{{ path('quire_admin_role_delete', {role: role}) }}">{{ 'Delete this role'|trans({}, 'quire-admin') }}</a>
         </section>

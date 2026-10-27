@@ -117,3 +117,81 @@ test('preferences change as they are chosen, and stay', async ({ page }) => {
     await dialog.getByText('Like my system').first().click();
     await expect(page.locator('html')).not.toHaveAttribute('data-theme', /./);
 });
+
+test('menus and the intent bar close as they are expected to, and stay closed', async ({ page }) => {
+    await page.goto('/admin/content/post', { waitUntil: 'networkidle' });
+
+    // A row's menu: a click elsewhere closes it, and so does Esc, giving the focus back to its button.
+    const menu = page.locator('.content-list__menu').first();
+    await menu.locator('summary').click();
+    await expect(menu).toHaveAttribute('open', '');
+    await page.locator('h1').click();
+    await expect(menu).not.toHaveAttribute('open', '');
+    await menu.locator('summary').click();
+    await page.keyboard.press('Escape');
+    await expect(menu).not.toHaveAttribute('open', '');
+    await expect(menu.locator('summary')).toBeFocused();
+
+    // The last row's menu isn't cut off by the table's frame: what's at its last entry is that entry.
+    const last = page.locator('.content-list__menu').last();
+    await last.locator('summary').click();
+    const entry = last.locator('.q-menu__panel li').last();
+    await expect(entry).toBeVisible();
+    const box = await entry.boundingBox();
+    expect(await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.closest('.q-menu__panel') !== null, [box.x + box.width / 2, box.y + box.height / 2])).toBe(true);
+    await page.keyboard.press('Escape');
+
+    // The intent bar: Esc and a click beside it close it, and it doesn't open again by itself.
+    const dialog = page.locator('.intent-dialog');
+    await page.locator('#intent-q').click();
+    await expect(dialog).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await page.waitForTimeout(300);
+    await expect(dialog).toBeHidden();
+
+    await page.locator('#intent-q').click();
+    await expect(dialog).toBeVisible();
+    await page.mouse.click(5, 5);
+    await expect(dialog).toBeHidden();
+    await page.waitForTimeout(300);
+    await expect(dialog).toBeHidden();
+});
+
+test('a new post: its slug follows the title, changing it keeps what is written, and bold toggles', async ({ page }) => {
+    await page.goto('/admin/content/post/new', { waitUntil: 'networkidle' });
+    await page.locator('#title').fill('Spring Draw: All Groups');
+    await expect(page.locator('#slug')).toHaveValue('spring-draw-all-groups');
+    await expect(page.locator('.editor-sheet__address')).toContainText('spring-draw-all-groups');
+
+    // Bold reads as bold: its marks show only while the cursor is in it, and B again takes it off.
+    await page.locator('.cm-content').click();
+    await page.keyboard.type('Groups are ');
+    await page.keyboard.press('Control+b');
+    await page.keyboard.type('drawn');
+    const bold = page.getByRole('button', { name: 'Bold' });
+    await expect(bold).toHaveAttribute('aria-pressed', 'true');
+    await page.keyboard.press('End');
+    await page.keyboard.type(' today.');
+    await expect(page.locator('.cm-content')).toHaveText('Groups are drawn today.');
+    await expect(page.locator('#body')).toHaveValue('Groups are **drawn** today.');
+    for (let step = 0; step < 10; step++) {
+        await page.keyboard.press('ArrowLeft');
+    }
+    await expect(bold).toHaveAttribute('aria-pressed', 'true');
+    await bold.click();
+    await expect(page.locator('#body')).toHaveValue('Groups are drawn today.');
+
+    // "change": to the slug, with the title and text still there.
+    await page.locator('.editor-sheet__address a').click();
+    await expect(page.locator('#slug')).toBeFocused();
+    await expect(page).toHaveURL(/\/new$/);
+    await expect(page.locator('#title')).toHaveValue('Spring Draw: All Groups');
+    await expect(page.locator('#body')).toHaveValue('Groups are drawn today.');
+
+    // Once written by hand, the slug stays.
+    await page.locator('#slug').fill('draw');
+    await page.locator('#title').fill('Spring draw, again');
+    await page.waitForTimeout(1500);
+    await expect(page.locator('#slug')).toHaveValue('draw');
+});

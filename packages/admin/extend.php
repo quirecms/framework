@@ -79,7 +79,6 @@ return [
         ->post('/audit/undo', 'quire_admin_audit_undo', [AuditController::class, 'undo'])
         ->add('/preferences', 'quire_admin_preferences', PreferencesController::class, ['GET', 'HEAD', 'POST'])
         ->post('/preferences/hood', 'quire_admin_hood', [PreferencesController::class, 'hood'])
-        ->post('/preferences/density', 'quire_admin_density', [PreferencesController::class, 'density'])
         ->get('/find', 'quire_admin_find', IntentController::class)
         ->post('/find', 'quire_admin_intent', [IntentController::class, 'do'])
         ->get('/ui', 'quire_admin_ui', UiController::class),

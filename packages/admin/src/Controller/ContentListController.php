@@ -11,7 +11,6 @@ use Quire\Admin\Content\ContentLists;
 use Quire\Admin\Content\Job\ApplyToMatching;
 use Quire\Admin\Content\ListState;
 use Quire\Admin\Content\NextSteps;
-use Quire\Admin\Preferences\AdminPreferences;
 use Quire\Admin\Preferences\UnderTheHood;
 use Quire\Admin\Twig\RelativeTime;
 use Quire\Content\Check\CheckReport;
@@ -73,7 +72,6 @@ final readonly class ContentListController
         private CurrentUser $users,
         private MessageBusInterface $bus,
         private UnderTheHood $hood,
-        private AdminPreferences $preferences,
         private RelativeTime $time,
     ) {
     }
@@ -89,8 +87,6 @@ final readonly class ContentListController
             'can_create' => $this->security->isGranted(ContentLists::ability($definition, 'create')),
             'total' => $this->lists->query($definition)->count(),
             'modes' => array_map(fn (string $mode): array => ['id' => $mode, 'url' => $this->url($definition, $state->with(page: 1, mode: $mode)), 'current' => $mode === $state->mode], ListState::MODES),
-            'density' => $this->preferences->get(AdminPreferences::DENSITY),
-            'back' => $request->getRequestUri(),
         ];
 
         if ('board' === $state->mode) {

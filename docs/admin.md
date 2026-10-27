@@ -18,7 +18,7 @@ What each user can do in the admin follows their other abilities: someone who ma
 
 ## Find or do anything
 
-The box at the top of every page (or Ctrl+K, ⌘K on a Mac) finds what you type among what you may open: content by its text, people by name, username or email, settings by their name, and the admin's pages. Choose with the arrow keys and Enter.
+The box at the top of every page (or Ctrl+K, ⌘K on a Mac) finds what you type among what you may open: content by its text, people by name, username or email, settings by their name, and the admin's pages. Choose with the arrow keys and Enter; Esc or a click beside it closes it.
 
 It also understands what to do, in your words, and shows the plan before anything happens:
 
@@ -57,7 +57,6 @@ Every content type has a list, under "Content" in the menu, for those who may ed
 - **Sorting** by title, by the dates (grouped by month, with how many items each month has), and by fields declared `sortable`; choosing a column's heading again reverses it. The latest change comes first otherwise.
 - **Acting on several items:** select them (with ⇧ for a range), and the selection bar says what each action would apply to. *Select all … that match* takes the action on everything the filters find; more than 100 items are done in the background, as you, and the [audit log](audit.md) shows each one.
 - **More as you scroll:** 50 items at a time.
-- **Comfortable or compact** rows, remembered on the device.
 
 *In motion* shows the same content as a board: drafts, changes in review, what's scheduled, and what went live this week, the latest of each with how many there are. The *Calendar* shows a month of what was published and what's scheduled, and changes scheduled to be published, in the site's time zone; on phones, the days with something.
 
@@ -65,10 +64,10 @@ The list's address keeps its tab, filters, search, sort and page (e.g. `/admin/c
 
 ## Editing
 
-Choosing an item in a list opens it in the editor; "New" in a list starts one. The editor is a manuscript: the title and the text, as they read, with the item's details beside them. The details come from the content type: the summary (excerpt), the item's address and author, its parent for pages, and the type's fields, grouped and ordered as the type declares them (`group`, `order`), with their labels and help.
+Choosing an item in a list opens it in the editor; "New" in a list starts one. The editor is a manuscript: the title and the text, as they read, with the item's details beside them. The details come from the content type: the summary (excerpt), the item's address and author, its parent for pages, and the type's fields, grouped and ordered as the type declares them (`group`, `order`), with their labels and help. A new item's address (its slug) follows its title until you write one; "change", beside the address under the title, goes to it.
 
 - **The bar at the top** says where the item is (a draft, scheduled, live, live with your changes waiting) and when it was saved, and has what to do next: save, ask for a review, and publish. Publishing opens what the checks found first, and the choice of publishing now or at a time.
-- **The text is Markdown, written as it reads:** emphasis and links show as they will (their marks appear on the line you're writing), headings and quotes keep their marks, and images show as a box with their description. Type `/` at the start of a line for a heading, an image, a link, a list, a quote or a separator; the toolbar, above the text while you write, and shortcuts (Ctrl+B, Ctrl+I, Ctrl+K) do the same. "Preview" renders it as the site shows it, shortcodes included.
+- **The text is Markdown, written as it reads:** emphasis, code and links show as they will (their marks appear only where the cursor is in them), headings and quotes keep their marks, and images show as a box with their description. Type `/` at the start of a line for a heading, an image, a link, a list, a quote or a separator; the toolbar, above the text while you write, and shortcuts (Ctrl+B, Ctrl+I, Ctrl+K) do the same. Bold, italic and code show as pressed where the cursor is in them; pressing them again takes the formatting off. "Preview" renders it as the site shows it, shortcodes included.
 - **Notes in the margin,** beside their lines: what the checks found, and comments on your changes, which you can reply to and resolve.
 - **Where it will appear,** beside the text, updated as you write: the item in lists (the site theme's card, see [themes](themes.md)), in search results, and when shared.
 - **Its versions,** along a line above the text, the live one marked: each opens in History, to compare and restore.

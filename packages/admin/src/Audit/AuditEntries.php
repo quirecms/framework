@@ -25,7 +25,7 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 final class AuditEntries implements ResetInterface
 {
     /** Details the sentence or the links say already */
-    private const array HIDDEN_DETAILS = ['type', 'locale', 'status', 'pending_revision', 'version', 'firewall', 'transition', 'sensitive', 'verdict'];
+    private const array HIDDEN_DETAILS = ['type', 'locale', 'status', 'pending_revision', 'version', 'firewall', 'transition', 'sensitive', 'verdict', 'comment', 'reply_to', 'on'];
 
     /** Details in this order; others after them, by name (PostgreSQL keeps JSON objects' keys in an order of its own) */
     private const array DETAIL_ORDER = ['changed', 'from', 'to', 'added', 'removed', 'granted', 'revoked', 'roles', 'at', 'reason', 'reassigned_to'];
@@ -84,10 +84,13 @@ final class AuditEntries implements ResetInterface
             };
         }
 
-        $summary = $this->translator->trans($key, $parameters, 'quire-admin');
+        // An extension's action it doesn't describe. (Asked without the details: a translator's fallback puts
+        // them into the key itself, e.g. a detail "on" into "audit.content…".)
+        if ($this->translator->trans($key, [], 'quire-admin') === $key) {
+            return null === $entry->subjectType ? $entry->action : \sprintf('%s: %s', $entry->action, $parameters['subject']);
+        }
 
-        // An extension's action it doesn't describe.
-        return $summary === $key ? (null === $entry->subjectType ? $entry->action : \sprintf('%s: %s', $entry->action, $parameters['subject'])) : $summary;
+        return $this->translator->trans($key, $parameters, 'quire-admin');
     }
 
     /**

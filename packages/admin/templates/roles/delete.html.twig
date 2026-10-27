@@ -3,6 +3,8 @@
 
 {% block title %}{{ 'Delete the role “{role}”?'|trans({role: label}, 'quire-admin') }}{% endblock %}
 
+{% block page_head %}{{ include('@quire_admin/users/_head.html.twig', {title: block('title'), current: 'roles'}) }}{% endblock %}
+
 {% block content %}
     {% if not site_role %}
         <p class="q-notice q-notice--error">{{ 'Only roles added on this site can be deleted; this one comes with Quire or an extension.'|trans({}, 'quire-admin') }}</p>

@@ -19,7 +19,7 @@ use Twig\Environment;
 
 /**
  * A person's own preferences of the admin: the sheet of them (a page of its own without JavaScript),
- * and the switches for "Under the hood" and density on other pages. With JavaScript, the sheet saves
+ * and the "Under the hood" switch on other pages. With JavaScript, the sheet saves
  * each change as it's made and gets "204 No Content" back; otherwise the page it came from opens again.
  *
  * @internal
@@ -59,13 +59,6 @@ final readonly class PreferencesController
     public function hood(Request $request): RedirectResponse
     {
         $this->userPreferences->set($this->userId($request), AdminPreferences::HOOD, !$this->hood->isOn());
-
-        return $this->back($request);
-    }
-
-    public function density(Request $request): RedirectResponse
-    {
-        $this->preferences->save($this->userId($request), ['density' => $request->request->getString('density')]);
 
         return $this->back($request);
     }

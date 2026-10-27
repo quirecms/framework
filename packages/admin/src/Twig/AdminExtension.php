@@ -89,15 +89,6 @@ final readonly class AdminExtension
     }
 
     /**
-     * "comfortable" or "compact", for the content lists' switch.
-     */
-    #[AsTwigFunction(name: 'quire_admin_density')]
-    public function density(): string
-    {
-        return $this->preferences->get(AdminPreferences::DENSITY);
-    }
-
-    /**
      * The person's preferences of the admin: the attributes of <html>, each choice, and the languages.
      *
      * @return array{attributes: array<string, string>, values: array<string, string>, languages: array<string, string>, language: ?string}

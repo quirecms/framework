@@ -12,12 +12,12 @@
 {% block title %}{{ 'Activity'|trans({}, 'quire-admin') }}{% endblock %}
 
 {% block page_head %}
-    <header class="people-head">
+    <header class="q-page-head">
         <div>
-            <p class="people-head__eyebrow">{{ 'Activity'|trans({}, 'quire-admin') }}</p>
-            <h1 class="people-head__title">{{ 'Who did what'|trans({}, 'quire-admin') }}</h1>
+            <p class="q-page-head__eyebrow">{{ 'Activity'|trans({}, 'quire-admin') }}</p>
+            <h1>{{ 'Who did what'|trans({}, 'quire-admin') }}</h1>
         </div>
-        <p class="people-head__actions">
+        <p class="q-page-head__actions">
             {% if hood %}<a class="q-btn q-btn--ghost" href="{{ urls.export }}" download>{{ 'Export'|trans({}, 'quire-admin') }}</a>{% endif %}
             {% if urls.mine %}<a class="q-btn q-btn--ghost" href="{{ urls.mine }}" {% if state.actor == me %} aria-current="true"{% endif %}>{{ 'Only mine'|trans({}, 'quire-admin') }}</a>{% endif %}
         </p>

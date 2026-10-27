@@ -6,6 +6,8 @@
 
 {% block title %}{{ 'Delete {name}?'|trans({name: user.displayName}, 'quire-admin') }}{% endblock %}
 
+{% block page_head %}{{ include('@quire_admin/users/_head.html.twig', {title: block('title'), current: 'users'}) }}{% endblock %}
+
 {% block content %}
     {% if error %}<p class="q-notice q-notice--error" role="alert">{{ error }}</p>{% endif %}
     <p>{{ 'Deleting {name} can\'t be undone. Suspending keeps them, without letting them sign in.'|trans({name: user.displayName}, 'quire-admin') }}</p>

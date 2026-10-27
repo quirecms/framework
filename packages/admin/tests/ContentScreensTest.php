@@ -14,7 +14,7 @@ use Symfony\Component\DomCrawler\Crawler;
 
 /**
  * The content screens: tabs of what needs whom, facets, next steps, acting on everything that matches,
- * the board, the calendar and the density.
+ * the board and the calendar.
  */
 final class ContentScreensTest extends AdminTestCase
 {
@@ -125,17 +125,20 @@ final class ContentScreensTest extends AdminTestCase
         self::assertSelectorExists('.content-calendar__day[aria-current=date]');
     }
 
-    public function testDensityIsRemembered(): void
+    public function testTheHeadIsTheSameForEachWayOfShowing(): void
     {
         $this->signIn('editor');
-        $crawler = $this->client->request('GET', '/admin/content/post');
-        self::assertSelectorNotExists('html[data-density]');
+        $heads = [];
 
-        $this->client->submit($crawler->filter('.content-head__density button[value=compact]')->form());
-        $crawler = $this->client->followRedirect();
+        foreach (['list', 'board', 'calendar'] as $mode) {
+            $crawler = $this->client->request('GET', '/admin/content/post?mode='.$mode);
+            $heads[$mode] = $crawler->filter('.content-head__tools > *')->each(static fn (Crawler $tool): string => $tool->nodeName().'.'.$tool->attr('class'));
+        }
 
-        self::assertSelectorExists('html[data-density=compact]');
-        self::assertSame('true', $crawler->filter('.content-head__density button[value=compact]')->attr('aria-pressed'));
+        // Nothing moves when switching: the density is one of the person's preferences, not a switch here.
+        self::assertSame($heads['list'], $heads['board']);
+        self::assertSame($heads['list'], $heads['calendar']);
+        self::assertSame(['nav.q-seg', 'a.q-btn'], $heads['list']);
     }
 
     public function testTimesAreSaidAsPeopleSayThem(): void

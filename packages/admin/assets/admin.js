@@ -31,6 +31,91 @@ window.QuireAdmin = {
 
 window.QuireAdmin.controllers.push(...pending);
 
+// Menus (details.q-menu) close as menus do: on a click or the focus elsewhere, and on Esc, which gives
+// the focus back to their button. Without JavaScript, they close with their button.
+const closeMenus = (except = null) => {
+    document.querySelectorAll('details.q-menu[open]').forEach((menu) => {
+        if (!menu.contains(except)) {
+            menu.open = false;
+        }
+    });
+};
+
+document.addEventListener('click', (event) => closeMenus(event.target));
+document.addEventListener('focusin', (event) => closeMenus(event.target));
+document.addEventListener('keydown', (event) => {
+    const menu = event.key === 'Escape' ? document.activeElement?.closest('details.q-menu[open]') ?? document.querySelector('details.q-menu[open]') : null;
+
+    if (menu) {
+        event.preventDefault();
+        menu.open = false;
+        menu.querySelector('summary')?.focus();
+    }
+});
+// Turbo keeps a copy of the page to show on "Back": with its menus closed.
+document.addEventListener('turbo:before-cache', () => closeMenus());
+
+// A menu inside something that scrolls (a table's frame) would be cut off by it: its panel is placed
+// over the page instead (position: fixed), below its button, or above when there's no room below
+// (the bars at the top, and at the bottom on phones, taken away).
+const clipped = (element) => {
+    for (let parent = element.parentElement; parent && parent !== document.body; parent = parent.parentElement) {
+        if (getComputedStyle(parent).overflowX !== 'visible' || getComputedStyle(parent).overflowY !== 'visible') {
+            return true;
+        }
+    }
+
+    return false;
+};
+
+const placeMenu = (menu) => {
+    const panel = menu.querySelector('.q-menu__panel');
+
+    if (!panel || !menu.open || !clipped(menu)) {
+        return;
+    }
+
+    const button = menu.querySelector('summary').getBoundingClientRect();
+    const gap = 4;
+    panel.style.position = 'fixed';
+    panel.style.margin = '0';
+    panel.style.right = 'auto';
+    panel.style.bottom = 'auto';
+    const { width, height } = panel.getBoundingClientRect();
+    // The top bar sticks to the top; on phones the menu is a bar fixed at the bottom.
+    const edge = (selector, position, side, fallback) => {
+        const bar = document.querySelector(selector);
+
+        return bar && getComputedStyle(bar).position === position && bar.getClientRects().length > 0 ? bar.getBoundingClientRect()[side] : fallback;
+    };
+    const top = Math.max(0, edge('.q-topbar', 'sticky', 'bottom', 0));
+    const bottom = Math.min(window.innerHeight, edge('.q-rail', 'fixed', 'top', window.innerHeight));
+    const below = button.bottom + gap + height <= bottom || button.top - gap - height < top;
+    const left = panel.classList.contains('q-menu__panel--end') ? button.right - width : button.left;
+    panel.style.top = `${below ? button.bottom + gap : button.top - gap - height}px`;
+    panel.style.left = `${Math.max(gap, Math.min(left, window.innerWidth - width - gap))}px`;
+};
+
+document.addEventListener('toggle', (event) => {
+    const menu = event.target;
+
+    if (!(menu instanceof HTMLDetailsElement) || !menu.classList.contains('q-menu')) {
+        return;
+    }
+
+    const panel = menu.querySelector('.q-menu__panel');
+
+    if (menu.open) {
+        placeMenu(menu);
+    } else if (panel) {
+        ['position', 'margin', 'top', 'left', 'right', 'bottom'].forEach((property) => panel.style.removeProperty(property));
+    }
+}, true);
+
+const placeMenus = () => document.querySelectorAll('details.q-menu[open]').forEach(placeMenu);
+window.addEventListener('scroll', placeMenus, { capture: true, passive: true });
+window.addEventListener('resize', placeMenus);
+
 // Content lists. Without JavaScript, the selection bar is a menu of actions and an "Apply" button.
 // With it, the bar shows when something is selected, says how many items each action applies to, and
 // offers every item that matches; keys select (x, ⇧x for a range), move (j, k) and edit (e).
@@ -234,7 +319,7 @@ application.register('markdown-editor', class extends Controller {
     static buttons = [['heading', 'H'], ['bold', 'B'], ['italic', 'I'], ['link', '🔗'], ['image', '▣'], ['list', '•'], ['quote', '❝'], ['code', '<>']];
 
     async connect() {
-        const { createEditor, commands } = await import('./editor.js');
+        const { createEditor, commands, activeFormats } = await import('./editor.js');
 
         if (!this.element.isConnected) {
             return;
@@ -244,7 +329,13 @@ application.register('markdown-editor', class extends Controller {
             placeholder: this.placeholderValue,
             original: this.hasOriginalValue ? this.originalValue : null,
             labels: this.labelsValue,
-            onUpdate: (update) => this.dispatch('update', { detail: { view: this.view, update } }),
+            onUpdate: (update) => {
+                if (update.selectionSet || update.docChanged) {
+                    this.pressed(activeFormats(update.state));
+                }
+
+                this.dispatch('update', { detail: { view: this.view, update } });
+            },
         });
         this.toolbar = document.createElement('div');
         this.toolbar.className = 'markdown-toolbar';
@@ -261,6 +352,13 @@ application.register('markdown-editor', class extends Controller {
             // Pressing a button mustn't take the focus (and the phone's keyboard) from the text.
             button.addEventListener('pointerdown', (event) => event.preventDefault());
             button.addEventListener('click', () => commands[command](this.view, this.labelsValue));
+
+            // Formats show whether the text at the cursor has them; pressing one again takes it off.
+            if (['bold', 'italic', 'code'].includes(command)) {
+                button.dataset.format = command;
+                button.setAttribute('aria-pressed', 'false');
+            }
+
             this.toolbar.append(button);
         }
 
@@ -269,6 +367,10 @@ application.register('markdown-editor', class extends Controller {
         window.visualViewport?.addEventListener('resize', this.keyboard);
         window.visualViewport?.addEventListener('scroll', this.keyboard);
         this.dispatch('ready', { detail: { view: this.view } });
+    }
+
+    pressed(formats) {
+        this.toolbar?.querySelectorAll('[data-format]').forEach((button) => button.setAttribute('aria-pressed', String(formats.has(button.dataset.format))));
     }
 
     keyboard = () => {
@@ -396,12 +498,13 @@ application.register('manuscript', class extends Controller {
 });
 
 // The editor: checks, where the item will appear and the preview, as it's written; autosave of changes
-// to published items; focus mode.
+// to published items; focus mode; a new item's slug, made from its title.
 application.register('content-editor', class extends Controller {
-    static targets = ['form', 'body', 'preview', 'previewBody', 'previewButton', 'id', 'pendingVersion', 'status', 'checks', 'badge', 'placement', 'focusButton', 'stepButton'];
+    static targets = ['form', 'body', 'preview', 'previewBody', 'previewButton', 'id', 'pendingVersion', 'status', 'checks', 'badge', 'placement', 'focusButton', 'stepButton', 'slug', 'address'];
 
     // autosave: changes to a published item are saved as the editor types (as a pending revision).
-    static values = { previewUrl: String, checkUrl: String, placementUrl: String, autosave: Boolean, saved: String, unsaved: String, conflict: String, toCheck: String };
+    // slugFromTitle: a new item's slug follows its title (as the server makes it) until one is written.
+    static values = { previewUrl: String, checkUrl: String, placementUrl: String, autosave: Boolean, saved: String, unsaved: String, conflict: String, toCheck: String, slugFromTitle: Boolean };
 
     get form() {
         return this.hasFormTarget ? this.formTarget : this.element;
@@ -437,6 +540,34 @@ application.register('content-editor', class extends Controller {
 
         // On phones, writing and the rest are two steps (see admin.css); without JavaScript, one page.
         this.element.classList.toggle('has-steps', this.hasStepButtonTarget);
+
+        // Written by hand already (e.g. the form came back with an error): it stays.
+        if (this.hasSlugTarget && this.slugTarget.value !== '') {
+            this.slugFromTitleValue = false;
+        }
+    }
+
+    // "change" beside the address: to the slug, where it's changed, on the same page. (A link to "#slug"
+    // without JavaScript.) On phones, the slug is in the second step.
+    editSlug(event) {
+        if (!this.hasSlugTarget) {
+            return;
+        }
+
+        event.preventDefault();
+
+        if (this.slugTarget.offsetParent === null && this.element.classList.contains('has-steps') && !this.element.classList.contains('is-details')) {
+            this.step();
+        }
+
+        this.slugTarget.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+        this.slugTarget.focus({ preventScroll: true });
+        this.slugTarget.select();
+    }
+
+    // Once someone writes the slug, it's theirs: the title doesn't change it any more.
+    slugWritten() {
+        this.slugFromTitleValue = false;
     }
 
     // From writing to what else there is to say and do (details, checks, publishing), and back.
@@ -507,6 +638,16 @@ application.register('content-editor', class extends Controller {
 
         if (placement?.ok) {
             this.placementTarget.innerHTML = await placement.text();
+            const { url, slug } = this.placementTarget.querySelector('.placement')?.dataset ?? {};
+
+            if (this.hasAddressTarget && url) {
+                this.addressTarget.textContent = url;
+            }
+
+            if (this.slugFromTitleValue && this.hasSlugTarget && slug !== undefined && document.activeElement !== this.slugTarget) {
+                // Nothing to make it from yet: empty, as the server would make it on saving.
+                this.slugTarget.value = this.form.querySelector('[name="title"]')?.value.trim() ? slug : '';
+            }
         }
     }
 
@@ -858,6 +999,8 @@ application.register('intent', class extends Controller {
         }
     }
 
+    // From a click on the search box at the top, or typing in it; not on its focus, which the dialog
+    // gives back to it when it closes (Esc, a click outside): that would open it again at once.
     open(event) {
         if (this.dialogTarget.open) {
             return;
@@ -865,14 +1008,25 @@ application.register('intent', class extends Controller {
 
         const trigger = event?.target instanceof HTMLInputElement ? event.target : null;
         this.dialogTarget.showModal();
-        this.inputTarget.value = trigger?.value ?? this.inputTarget.value;
+
+        if (trigger) {
+            this.inputTarget.value = trigger.value;
+            trigger.value = '';
+        }
+
         this.inputTarget.focus();
         this.inputTarget.select();
         this.search();
     }
 
-    closed() {
-        this.element.querySelector('.q-intent-trigger input')?.blur();
+    // A click on the backdrop closes the dialog, as Esc does.
+    outside(event) {
+        const box = this.dialogTarget.getBoundingClientRect();
+        const inside = event.clientX >= box.left && event.clientX <= box.right && event.clientY >= box.top && event.clientY <= box.bottom;
+
+        if (event.target === this.dialogTarget && !inside) {
+            this.dialogTarget.close();
+        }
     }
 
     search() {
@@ -899,7 +1053,6 @@ application.register('intent', class extends Controller {
 
     key(event) {
         const choices = this.choices();
-
 
         if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
             event.preventDefault();

@@ -39,6 +39,7 @@
           data-content-editor-preview-url-value="{{ path('quire_admin_content_preview', {type: type.id}) }}"
           data-content-editor-check-url-value="{{ path('quire_admin_content_check', {type: type.id}) }}"
           data-content-editor-placement-url-value="{{ path('quire_admin_content_placement', {type: type.id}) }}"
+          {% if not item %}data-content-editor-slug-from-title-value="true"{% endif %}
           data-content-editor-to-check-value="{{ '{count} to check'|trans({count: '{count}'}, 'quire-admin') }}"
           {% if changes %}data-content-editor-autosave-value="true" data-content-editor-saved-value="{{ 'saved {time}'|trans({time: '{time}'}, 'quire-admin') }}" data-content-editor-unsaved-value="{{ 'Not saved: {problem}'|trans({}, 'quire-admin') }}" data-content-editor-conflict-value="{{ 'Not saved: your changes were saved elsewhere meanwhile, e.g. in another tab. Save to see them.'|trans({}, 'quire-admin') }}"{% endif %}>
     <div class="editor-bar q-card">
@@ -220,7 +221,8 @@
                     <p class="editor-sheet__address">
                         <span class="q-sr">{{ 'Address'|trans({}, 'quire-admin') }}: </span>
                         <span data-content-editor-target="address">{{ placement.url|replace({'https://': '', 'http://': ''}) }}</span>
-                        <a href="#slug" class="q-link-btn">{{ 'change'|trans({}, 'quire-admin') }}</a>
+                        {#- Goes to the slug, without leaving the page (and what's written on it). -#}
+                        <a href="#slug" class="q-link-btn" data-turbo="false" data-action="content-editor#editSlug">{{ 'change'|trans({}, 'quire-admin') }}</a>
                     </p>
                 {% endif %}
             </div>
@@ -316,7 +318,7 @@
                     <div class="q-field">
                         {{ _self.field('slug', 'Slug'|trans({}, 'quire-admin'), errors.slug ?? null) }}
                         <p class="q-help" id="slug-help">{{ 'The last part of its address. Left empty, it\'s made from the title.'|trans({}, 'quire-admin') }}</p>
-                        <input type="text" id="slug" name="slug"{{ place|raw }} value="{{ values.slug }}" aria-describedby="slug-help{{ errors.slug is defined ? ' slug-error' }}"{% if errors.slug is defined %} aria-invalid="true"{% endif %}>
+                        <input type="text" id="slug" name="slug"{{ place|raw }} value="{{ values.slug }}" data-content-editor-target="slug"{% if not item %} data-action="input->content-editor#slugWritten"{% endif %} aria-describedby="slug-help{{ errors.slug is defined ? ' slug-error' }}"{% if errors.slug is defined %} aria-invalid="true"{% endif %}>
                     </div>
 
                     {% if authors is not empty %}

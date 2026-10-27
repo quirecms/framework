@@ -9,6 +9,8 @@ use Quire\Content\Command\CreateContent;
 use Quire\Content\Content;
 use Quire\Content\ContentRepository;
 use Quire\Content\ContentWriter;
+use Quire\Content\Revision\CommentAnchor;
+use Quire\Content\Revision\PendingRevisionComments;
 use Quire\Content\Status;
 use Quire\Testing\AdminTestCase;
 use Symfony\Component\DomCrawler\Crawler;
@@ -85,6 +87,22 @@ final class AuditTest extends AdminTestCase
         self::assertSame(['Published “One” and 1 more at once'], $crawler->filter('.activity-card__what')->each(static fn (Crawler $node): string => $node->text()), 'In the words the admin says it.');
         $crawler = $this->client->request('GET', '/admin/audit?q=two');
         self::assertSame(['Published “Two”', 'Created “Two”'], $crawler->filter('.activity-card__what')->each(static fn (Crawler $node): string => $node->text()), 'And what it\'s about.');
+    }
+
+    public function testCommentsOnChangesAreSaidInWords(): void
+    {
+        $admin = $this->signIn('admin');
+        $post = $this->content('post', 'Spring draw')->body('Hosts open on Friday.')->published()->create();
+        $pending = $this->changes($post)->by($admin)->body('Hosts open on Saturday.')->create();
+        $comments = $this->service(PendingRevisionComments::class);
+        $comment = $comments->add($pending->id, 'Which day?', $admin->id, new CommentAnchor('body', 'Saturday', 1));
+        $comments->resolve($comment->id, $admin->id);
+
+        $crawler = $this->client->request('GET', '/admin/audit');
+        $said = $crawler->filter('.activity-card__what')->each(static fn (Crawler $what): string => $what->text());
+
+        self::assertContains('Commented on changes to “Spring draw”', $said, 'Not its key, with the detail "on" put into it.');
+        self::assertContains('Resolved a comment on changes to “Spring draw”', $said);
     }
 
     public function testUndoingFromTheActivity(): void
