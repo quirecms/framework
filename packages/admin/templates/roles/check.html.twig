@@ -10,26 +10,28 @@
 {% block page_head %}{{ include('@quire_admin/users/_head.html.twig', {title: block('title'), current: 'access'}) }}{% endblock %}
 
 {% block content %}
-    <p class="q-help">{{ 'Find out whether someone may do something, and why; or, without a user, which roles may.'|trans({}, 'quire-admin') }}</p>
-
-    <form method="get" action="{{ path('quire_admin_access') }}" class="q-toolbar" role="search">
-        <label>
-            <span>{{ 'User'|trans({}, 'quire-admin') }}</span>
-            <input type="text" name="user" value="{{ reference }}" autocomplete="off" spellcheck="false" placeholder="{{ 'username or email'|trans({}, 'quire-admin') }}">
-        </label>
-        <label>
-            <span>{{ 'Ability'|trans({}, 'quire-admin') }}</span>
-            <select name="ability">
-                <option value="">{{ 'Choose'|trans({}, 'quire-admin') }}</option>
-                {% for group, choices in abilities %}
-                    <optgroup label="{{ group }}">
-                        {% for name, label in choices %}<option value="{{ name }}"{% if name == ability %} selected{% endif %}>{{ label }}</option>{% endfor %}
-                    </optgroup>
-                {% endfor %}
-            </select>
-        </label>
-        <button type="submit" class="q-btn">{{ 'Check'|trans({}, 'quire-admin') }}</button>
-    </form>
+<div class="q-stack">
+    <section class="q-card">
+        <p class="q-help">{{ 'Find out whether someone may do something, and why; or, without a user, which roles may.'|trans({}, 'quire-admin') }}</p>
+        <form method="get" action="{{ path('quire_admin_access') }}" class="q-form-row access-form" role="search">
+            <div class="q-field">
+                <label for="access-user">{{ 'User'|trans({}, 'quire-admin') }}</label>
+                <input type="text" id="access-user" name="user" value="{{ reference }}" autocomplete="off" spellcheck="false" placeholder="{{ 'username or email'|trans({}, 'quire-admin') }}">
+            </div>
+            <div class="q-field">
+                <label for="access-ability">{{ 'Ability'|trans({}, 'quire-admin') }}</label>
+                <select id="access-ability" name="ability">
+                    <option value="">{{ 'Choose'|trans({}, 'quire-admin') }}</option>
+                    {% for group, choices in abilities %}
+                        <optgroup label="{{ group }}">
+                            {% for name, label in choices %}<option value="{{ name }}"{% if name == ability %} selected{% endif %}>{{ label }}</option>{% endfor %}
+                        </optgroup>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="q-form-row__actions"><button type="submit" class="q-btn">{{ 'Check'|trans({}, 'quire-admin') }}</button></div>
+        </form>
+    </section>
 
     {% if not_found %}<p class="q-notice q-notice--error" role="alert">{{ 'No user with the username or email “{user}”.'|trans({user: reference}, 'quire-admin') }}</p>{% endif %}
 
@@ -58,4 +60,5 @@
             {% endif %}
         </section>
     {% endif %}
+</div>
 {% endblock %}

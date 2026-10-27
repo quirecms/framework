@@ -831,6 +831,15 @@
     .q-error-summary ul { margin: 0; padding-left: var(--q-space-6); }
     .q-error-summary a { color: var(--q-danger); }
 
+    /* A page's blocks one under the other, with room between them (cards, tables, forms). */
+    .q-stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--q-space-5); }
+    .q-stack > .q-help { margin-bottom: calc(-1 * var(--q-space-3)); }
+
+    /* Fields side by side, aligned at their labels, whatever help is under them; the buttons (in
+       .q-form-row__actions) in line with the inputs. On narrow screens, one under the other. */
+    .q-form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); gap: var(--q-space-3) var(--q-space-4); align-items: start; }
+    .q-form-row__actions { display: flex; flex-wrap: wrap; gap: var(--q-space-2); padding-top: calc(1lh + var(--q-space-1)); }
+
     .q-inline { display: flex; flex-wrap: wrap; align-items: end; gap: var(--q-space-3); }
 
     .q-choices { display: grid; gap: var(--q-space-2); margin: 0; padding: 0; list-style: none; }

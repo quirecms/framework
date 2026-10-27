@@ -55,6 +55,67 @@ document.addEventListener('keydown', (event) => {
 // Turbo keeps a copy of the page to show on "Back": with its menus closed.
 document.addEventListener('turbo:before-cache', () => closeMenus());
 
+// A menu inside something that scrolls (a table's frame) would be cut off by it: its panel is placed
+// over the page instead (position: fixed), below its button, or above when there's no room below
+// (the bars at the top, and at the bottom on phones, taken away).
+const clipped = (element) => {
+    for (let parent = element.parentElement; parent && parent !== document.body; parent = parent.parentElement) {
+        if (getComputedStyle(parent).overflowX !== 'visible' || getComputedStyle(parent).overflowY !== 'visible') {
+            return true;
+        }
+    }
+
+    return false;
+};
+
+const placeMenu = (menu) => {
+    const panel = menu.querySelector('.q-menu__panel');
+
+    if (!panel || !menu.open || !clipped(menu)) {
+        return;
+    }
+
+    const button = menu.querySelector('summary').getBoundingClientRect();
+    const gap = 4;
+    panel.style.position = 'fixed';
+    panel.style.margin = '0';
+    panel.style.right = 'auto';
+    panel.style.bottom = 'auto';
+    const { width, height } = panel.getBoundingClientRect();
+    // The top bar sticks to the top; on phones the menu is a bar fixed at the bottom.
+    const edge = (selector, position, side, fallback) => {
+        const bar = document.querySelector(selector);
+
+        return bar && getComputedStyle(bar).position === position && bar.getClientRects().length > 0 ? bar.getBoundingClientRect()[side] : fallback;
+    };
+    const top = Math.max(0, edge('.q-topbar', 'sticky', 'bottom', 0));
+    const bottom = Math.min(window.innerHeight, edge('.q-rail', 'fixed', 'top', window.innerHeight));
+    const below = button.bottom + gap + height <= bottom || button.top - gap - height < top;
+    const left = panel.classList.contains('q-menu__panel--end') ? button.right - width : button.left;
+    panel.style.top = `${below ? button.bottom + gap : button.top - gap - height}px`;
+    panel.style.left = `${Math.max(gap, Math.min(left, window.innerWidth - width - gap))}px`;
+};
+
+document.addEventListener('toggle', (event) => {
+    const menu = event.target;
+
+    if (!(menu instanceof HTMLDetailsElement) || !menu.classList.contains('q-menu')) {
+        return;
+    }
+
+    const panel = menu.querySelector('.q-menu__panel');
+
+    if (menu.open) {
+        placeMenu(menu);
+    } else if (panel) {
+        ['position', 'margin', 'top', 'left', 'right', 'bottom'].forEach((property) => panel.style.removeProperty(property));
+    }
+}, true);
+
+const placeMenus = () => document.querySelectorAll('details.q-menu[open]').forEach(placeMenu);
+window.addEventListener('scroll', placeMenus, { capture: true, passive: true });
+window.addEventListener('resize', placeMenus);
+
 // Content lists. Without JavaScript, the selection bar is a menu of actions and an "Apply" button.
 // With it, the bar shows when something is selected, says how many items each action applies to, and
 // offers every item that matches; keys select (x, ⇧x for a range), move (j, k) and edit (e).

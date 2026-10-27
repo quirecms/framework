@@ -407,6 +407,12 @@
     .ability__everyone { display: block; color: var(--q-muted); font-size: 0.75rem; }
     .q-choices .ability__everyone { display: inline; }
     .access-result ul { margin: 0; }
+    .access-form { margin-top: var(--q-space-3); }
+    .role-rename { max-width: 36rem; margin-bottom: var(--q-space-3); }
+    /* The ability's name is long: it takes two columns where there's room. */
+    @media (min-width: 48rem) {
+        .access-form { grid-template-columns: minmax(12rem, 1fr) minmax(16rem, 2fr) auto; }
+    }
 
     /* --- Activity ------------------------------------------------------------------ */
     .audit td { vertical-align: top; }

@@ -9,6 +9,7 @@
 {% block page_head %}{{ include('@quire_admin/users/_head.html.twig', {title: block('title'), current: 'roles'}) }}{% endblock %}
 
 {% block content %}
+<div class="q-stack">
     <p class="q-help">{{ 'A role is what a group of users may do. Users can have several roles; each adds to what they may do.'|trans({}, 'quire-admin') }}</p>
 
     <div class="q-scroll">
@@ -46,7 +47,7 @@
 
     <section class="q-card">
         <h2 class="q-card__title">{{ 'Add a role'|trans({}, 'quire-admin') }}</h2>
-        <form method="post" action="{{ path('quire_admin_roles_create') }}" class="q-inline">
+        <form method="post" action="{{ path('quire_admin_roles_create') }}" class="q-form-row">
             <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_roles') }}">
             <div class="q-field">
                 <label for="role-label">{{ 'Name'|trans({}, 'quire-admin') }}</label>
@@ -64,7 +65,8 @@
                     {% for role in roles|filter(role => role.name not in ['guest', 'admin']) %}<option value="{{ role.name }}">{{ role.label }}</option>{% endfor %}
                 </select>
             </div>
-            <div class="editor__buttons"><button type="submit" class="q-btn">{{ 'Add the role'|trans({}, 'quire-admin') }}</button></div>
+            <div class="q-form-row__actions"><button type="submit" class="q-btn">{{ 'Add the role'|trans({}, 'quire-admin') }}</button></div>
         </form>
     </section>
+</div>
 {% endblock %}

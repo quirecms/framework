@@ -132,6 +132,15 @@ test('menus and the intent bar close as they are expected to, and stay closed', 
     await expect(menu).not.toHaveAttribute('open', '');
     await expect(menu.locator('summary')).toBeFocused();
 
+    // The last row's menu isn't cut off by the table's frame: what's at its last entry is that entry.
+    const last = page.locator('.content-list__menu').last();
+    await last.locator('summary').click();
+    const entry = last.locator('.q-menu__panel li').last();
+    await expect(entry).toBeVisible();
+    const box = await entry.boundingBox();
+    expect(await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.closest('.q-menu__panel') !== null, [box.x + box.width / 2, box.y + box.height / 2])).toBe(true);
+    await page.keyboard.press('Escape');
+
     // The intent bar: Esc and a click beside it close it, and it doesn't open again by itself.
     const dialog = page.locator('.intent-dialog');
     await page.locator('#intent-q').click();
