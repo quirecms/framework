@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Quire\Admin\Controller;
 
+use Quire\Extension\Contributions;
 use Quire\Extension\Exception\DependencyException;
 use Quire\Extension\Exception\ExtensionStateException;
 use Quire\Extension\Exception\UnknownExtensionException;
+use Quire\Extension\ExtensionContributions;
 use Quire\Extension\ExtensionManager;
 use Quire\Extension\ExtensionManifest;
 use Quire\Extension\ExtensionSwitcher;
@@ -48,14 +50,49 @@ final readonly class ExtensionsController
         private CsrfTokenManagerInterface $csrf,
         private TranslatorInterface $translator,
         private Environment $twig,
+        private ExtensionContributions $contributions,
     ) {
+    }
+
+    /**
+     * What an extension adds, as people say it: "2 content types", "3 settings", "admin pages"….
+     *
+     * @return list<string>
+     */
+    private function adds(Contributions $contributions): array
+    {
+        $counts = [
+            'content types' => \count($contributions->contentTypes),
+            'fields' => \count($contributions->fields),
+            'field types' => \count($contributions->fieldTypes),
+            'settings' => \count($contributions->settings),
+            'preferences' => \count($contributions->preferences),
+            'roles' => \count($contributions->roles),
+            'abilities' => \count($contributions->abilities),
+            'site pages' => $contributions->routes['site'] ?? 0,
+            'admin pages' => $contributions->routes['admin'] ?? 0,
+            'checks' => \count($contributions->checks),
+            'actions' => \count($contributions->actions),
+            'scheduled tasks' => \count($contributions->scheduled),
+        ];
+        $adds = [];
+
+        foreach (array_filter($counts, static fn (int $count): bool => $count > 0) as $what => $count) {
+            $adds[] = $this->translator->trans('adds.'.str_replace(' ', '_', $what), ['count' => $count], 'quire-admin');
+        }
+
+        if ($contributions->migrations) {
+            $adds[] = $this->translator->trans('data of its own', [], 'quire-admin');
+        }
+
+        return $adds;
     }
 
     public function __invoke(): Response
     {
         $this->assertAllowed();
         $resolved = $this->extensions->resolve();
-        $extensions = array_map(static fn (ExtensionManifest $manifest): array => [
+        $extensions = array_map(fn (ExtensionManifest $manifest): array => [
             'manifest' => $manifest,
             'status' => match (true) {
                 $resolved->isRunning($manifest->id) => 'enabled',
@@ -63,6 +100,8 @@ final readonly class ExtensionsController
                 default => 'disabled',
             },
             'problem' => $resolved->broken[$manifest->id] ?? null,
+            // What it adds is known from what runs.
+            'adds' => $resolved->isRunning($manifest->id) ? $this->adds($this->contributions->of($manifest->id)) : [],
         ], array_values($this->installed->all()));
 
         usort($extensions, static fn (array $a, array $b): int => $a['manifest']->title <=> $b['manifest']->title);

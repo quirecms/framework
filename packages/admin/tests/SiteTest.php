@@ -36,10 +36,55 @@ final class SiteTest extends AdminTestCase
         self::assertCount(0, $crawler->filter('nav a[href="/admin/settings"]'), 'Not in the menu either.');
     }
 
+    public function testTheSettingsReadAsADocument(): void
+    {
+        $this->signIn('admin');
+        $this->settings()->set('site.title', 'Tournament News');
+        $this->settings()->set('quire.content.changes_need_approval', true);
+        $crawler = $this->client->request('GET', '/admin/settings');
+
+        self::assertSelectorTextSame('h1', 'Settings');
+        self::assertSame('page', $crawler->filter('.site-switch a')->first()->attr('aria-current'));
+        $site = $crawler->filter('.settings-doc__part')->first();
+        $text = $this->readable($site->filter('.settings-doc__text'));
+        self::assertSame('This site is called Tournament News. It\'s described as not set. It\'s written in English. It\'s in the UTC time zone. Its homepage shows a list of content. The homepage\'s list is of post. When a page without an image of its own is shared, it shows not set.', $text, 'In the order it reads best; the homepage\'s page only when it shows one.');
+        self::assertStringStartsWith('Changes to live content need a reviewer\'s approval before they go live. Checks of content before it\'s published: each at its default level.', $this->readable($crawler->filter('.settings-doc__text')->eq(1)));
+        self::assertCount(2, $crawler->filter('.settings-doc__value--changed'), 'What differs from the defaults stands out.');
+        self::assertSame(['Site title: Quire → Tournament News', 'Approve changes: off → on'], $crawler->filter('.settings-changed div')->each(fn (Crawler $d): string => $d->filter('dt')->text().': '.$this->readable($d->filter('dd'))));
+
+        // Each value opens its own small form, and comes back to the document.
+        $edit = $crawler->filter('#edit-setting-site-title');
+        self::assertSame('edit-setting-site-title', $crawler->filter('button[popovertarget="edit-setting-site-title"]')->attr('popovertarget'));
+        $this->client->submit($edit->selectButton('Save')->form(['settings[site.title]' => 'Spring Cup']));
+        self::assertResponseRedirects('/admin/settings', 303);
+        self::assertSame('Spring Cup', $this->settings()->get('site.title'));
+        self::assertTrue($this->settings()->get('quire.content.changes_need_approval'), 'Only that setting.');
+
+        // Into a file and back, after looking at every difference.
+        $this->client->request('GET', '/admin/settings/export');
+        $file = (string) $this->client->getResponse()->getContent();
+        self::assertSame("quire.content.changes_need_approval: true\nsite.title: 'Spring Cup'\n", $file);
+        $this->settings()->set('site.title', 'Other');
+        $crawler = $this->client->request('GET', '/admin/settings');
+        $this->client->request('POST', '/admin/settings/import', ['_token' => (string) $crawler->filter('.settings-move__import input[name=_token]')->attr('value'), 'content' => $file."acme.unknown: 1\n"]);
+        self::assertSelectorTextSame('caption', '1 setting would change');
+        self::assertSame(['Site title site.title', 'Other', 'Spring Cup'], $this->client->getCrawler()->filter('tbody tr')->first()->filter('th, td')->each(static fn (Crawler $cell): string => $cell->text()));
+        self::assertSelectorTextContains('.q-help', 'acme.unknown');
+        self::assertSame('Other', $this->settings()->get('site.title'), 'Not yet.');
+        $this->client->submit($this->client->getCrawler()->selectButton('Change them')->form());
+        self::assertSame('Spring Cup', $this->settings()->get('site.title'));
+
+        // Back to the defaults, all at once.
+        $crawler = $this->client->followRedirect();
+        self::assertSelectorTextSame('.q-notice--success', '1 setting changed.');
+        $this->client->submit($crawler->selectButton('Back to the defaults…')->form());
+        self::assertSame(['Quire', false], [$this->settings()->get('site.title'), $this->settings()->get('quire.content.changes_need_approval')]);
+    }
+
     public function testSettingsAreChangedAGroupAtATime(): void
     {
         $this->signIn('admin');
-        $crawler = $this->client->request('GET', '/admin/settings');
+        $crawler = $this->client->request('GET', '/admin/settings/site');
 
         self::assertSame(['Site', 'Content', 'Addresses', 'Users', 'Storage'], $crawler->filter('.q-views a')->each(static fn (Crawler $a): string => $a->text()));
         self::assertSame('page', $crawler->filter('.q-views a')->first()->attr('aria-current'));
@@ -106,7 +151,7 @@ final class SiteTest extends AdminTestCase
 
         self::assertResponseIsSuccessful();
         self::assertStringContainsString('The theme is pinned in configuration', $crawler->filter('.q-notice--warning')->text());
-        self::assertSame('Quire\'s built-in templates in use', $crawler->filter('.q-card__title')->last()->text());
+        self::assertSame('Quire\'s built-in templates in use', $crawler->filter('.look__title')->last()->text());
         self::assertCount(0, $crawler->filter('form[action="/admin/themes"]'));
 
         // The settings' form has the token the site's pages share.
@@ -122,7 +167,8 @@ final class SiteTest extends AdminTestCase
         $this->signIn('admin');
 
         $crawler = $this->client->request('GET', '/admin/extensions');
-        self::assertSame('Enabled', $crawler->filter('tr:contains("quire-admin") .q-tag')->text());
+        self::assertSame('Enabled', $crawler->filter('.extension-card:contains("quire-admin") .q-tag')->text());
+        self::assertStringContainsString('admin pages', $crawler->filter('.extension-card:contains("quire-admin") .extension-card__adds')->text(), 'What it adds.');
 
         $crawler = $this->client->click($crawler->selectLink('Disable Admin')->link());
         self::assertSelectorTextSame('h1', 'Disable “Admin”?');
@@ -232,5 +278,24 @@ final class SiteTest extends AdminTestCase
         $container->set(ExtensionSwitcher::class, new ExtensionSwitcher($manager, $purges, $rebuilds));
 
         return [$state, $rebuilds, $purges];
+    }
+
+    /**
+     * The text as it's seen: without what's only for screen readers.
+     */
+    private function readable(Crawler $node): string
+    {
+        $element = $node->getNode(0)?->cloneNode(true);
+        \assert($element instanceof \DOMElement);
+
+        $hidden = new \DOMXPath($element->ownerDocument ?? new \DOMDocument())->query('.//*[contains(concat(" ", @class, " "), " q-sr ")]', $element);
+
+        foreach (false === $hidden ? [] : iterator_to_array($hidden) as $node) {
+            if ($node instanceof \DOMNode) {
+                $node->parentNode?->removeChild($node);
+            }
+        }
+
+        return trim((string) preg_replace('/\s+/', ' ', $element->textContent));
     }
 }

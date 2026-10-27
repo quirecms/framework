@@ -1,0 +1,101 @@
+{#
+    The site's settings as a document: each group a paragraph, each setting a sentence whose value opens
+    a small form (a popover, so no script is needed). Variables: document (groups of sentences, see
+    SettingsForm::document()), changed (label, from, to, key), exported (the changes, as YAML), back.
+#}
+{% extends '@quire_admin/layout.html.twig' %}
+
+{% block title %}{{ 'Settings'|trans({}, 'quire-admin') }}{% endblock %}
+
+{% block page_head %}{{ include('@quire_admin/site/_head.html.twig', {title: 'Settings'|trans({}, 'quire-admin'), current: 'settings'}) }}{% endblock %}
+
+{% block content %}
+<div class="settings-doc__layout">
+    <article class="q-card settings-doc">
+        {% for part in document %}
+            <section class="settings-doc__part" aria-labelledby="part-{{ part.group }}">
+                <h2 id="part-{{ part.group }}" class="settings-doc__title">
+                    {{ part.label }}
+                    {% if part.owner %}<span class="q-meta"> · {{ 'from {owner}'|trans({owner: part.owner}, 'quire-admin') }}</span>{% endif %}
+                    <a class="settings-doc__form-link q-meta" href="{{ path('quire_admin_settings', {group: part.group}) }}">{{ 'as a form'|trans({}, 'quire-admin') }}<span class="q-sr"> ({{ part.label }})</span></a>
+                </h2>
+                <p class="settings-doc__text">
+                    {% for sentence in part.sentences %}
+                        {% set entry = sentence.entry %}
+                        {% set id = 'edit-' ~ sentence.control %}
+                        {{- sentence.before -}}
+                        {%- if entry.environment -%}
+                            <span class="settings-doc__value settings-doc__value--locked" title="{{ 'Set by the environment variable {name}'|trans({name: entry.environment}, 'quire-admin') }}"><span aria-hidden="true">🔒 </span>{{ sentence.shown }}<span class="q-sr"> ({{ 'set by the environment'|trans({}, 'quire-admin') }})</span></span>
+                        {%- else -%}
+                            <button type="button" class="settings-doc__value{% if sentence.changed %} settings-doc__value--changed{% endif %}" popovertarget="{{ id }}">{{ sentence.shown }}<span class="q-sr"> — {{ 'change {setting}'|trans({setting: entry.label}, 'quire-admin') }}</span></button>
+                        {%- endif -%}
+                        {{- sentence.after }}
+                    {% endfor %}
+                </p>
+                {% for sentence in part.sentences|filter(sentence => not sentence.entry.environment) %}
+                    {% set entry = sentence.entry %}
+                    {% set id = 'edit-' ~ sentence.control %}
+                    <div class="settings-doc__edit" id="{{ id }}" popover>
+                        <form method="post" action="{{ path('quire_admin_settings_save', {group: part.group}) }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_site') }}">
+                            <input type="hidden" name="back" value="{{ back }}">
+                            {% if entry.fieldset %}
+                                <fieldset class="q-field"><legend>{{ entry.label }}</legend>{{ entry.html }}</fieldset>
+                            {% else %}
+                                <div class="q-field">
+                                    <label for="{{ sentence.control }}" class="settings-doc__label">{{ entry.label }}</label>
+                                    {% if entry.help %}<p class="q-help">{{ entry.help }}</p>{% endif %}
+                                    {{ entry.html }}
+                                </div>
+                            {% endif %}
+                            <p class="settings-doc__actions">
+                                <button type="submit" class="q-btn q-btn--sm">{{ 'Save'|trans({}, 'quire-admin') }}</button>
+                                {% if sentence.changed %}<button type="submit" class="q-btn q-btn--ghost q-btn--sm" name="default" value="{{ entry.definition.key }}">{{ 'Back to the default ({value})'|trans({value: sentence.default}, 'quire-admin') }}</button>{% endif %}
+                                <button type="button" class="q-btn q-btn--ghost q-btn--sm" popovertarget="{{ id }}" popovertargetaction="hide">{{ 'Cancel'|trans({}, 'quire-admin') }}</button>
+                            </p>
+                        </form>
+                    </div>
+                {% endfor %}
+            </section>
+        {% endfor %}
+        <p class="settings-doc__note">{{ 'Choose any underlined value to change it. Values set by the server’s environment show a lock.'|trans({}, 'quire-admin') }}</p>
+    </article>
+
+    <aside class="settings-doc__aside">
+        <section class="q-card home-card" aria-labelledby="changed-heading">
+            <h2 id="changed-heading" class="home-card__title">{{ 'Changed from the defaults · {count}'|trans({count: changed|length}, 'quire-admin') }}</h2>
+            {% if changed is empty %}
+                <p class="q-empty">{{ 'Everything is as it comes.'|trans({}, 'quire-admin') }}</p>
+            {% else %}
+                <dl class="settings-changed">
+                    {% for item in changed %}
+                        <div><dt>{{ item.label }}</dt><dd>{{ item.from }} <span aria-hidden="true">→</span><span class="q-sr">{{ 'now'|trans({}, 'quire-admin') }}</span> {{ item.to }}</dd></div>
+                    {% endfor %}
+                </dl>
+                <form method="post" action="{{ path('quire_admin_settings_defaults') }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_site') }}">
+                    <button type="submit" class="q-link-btn" data-turbo-confirm="{{ 'Put these {count} settings back to their defaults?'|trans({count: changed|length}, 'quire-admin') }}">{{ 'Back to the defaults…'|trans({}, 'quire-admin') }}</button>
+                </form>
+            {% endif %}
+        </section>
+
+        <section class="q-card home-card" aria-labelledby="move-heading">
+            <h2 id="move-heading" class="home-card__title">{{ 'Move settings between sites'|trans({}, 'quire-admin') }}</h2>
+            <p>{{ 'Download them as a file, e.g. to keep with your code, or bring another site’s in. You see every difference before anything changes.'|trans({}, 'quire-admin') }}</p>
+            <div class="settings-move">
+                <a class="q-btn q-btn--ghost" href="{{ path('quire_admin_settings_export') }}" download>{{ 'Download'|trans({}, 'quire-admin') }}</a>
+                <form method="post" action="{{ path('quire_admin_settings_import') }}" enctype="multipart/form-data" class="settings-move__import">
+                    <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_site') }}">
+                    <label for="settings-file" class="q-sr">{{ 'A settings file'|trans({}, 'quire-admin') }}</label>
+                    <input type="file" id="settings-file" name="file" accept=".yaml,.yml,.json,application/yaml,application/json" required>
+                    <button type="submit" class="q-btn q-btn--ghost">{{ 'Bring in a file…'|trans({}, 'quire-admin') }}</button>
+                </form>
+            </div>
+            {% if quire_admin_hood() %}
+                <pre class="settings-move__yaml" tabindex="0" aria-label="{{ 'The changes, as a file'|trans({}, 'quire-admin') }}"><code># settings.yaml ({{ 'changed values'|trans({}, 'quire-admin') }})
+{{ exported }}</code></pre>
+            {% endif %}
+        </section>
+    </aside>
+</div>
+{% endblock %}

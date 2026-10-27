@@ -28,6 +28,8 @@ final class ContentCommandsTest extends KernelTestCase
     {
         self::getContainer()->get(Connection::class)->executeStatement('DELETE FROM quire.content WHERE parent_id IS NOT NULL');
         self::getContainer()->get(Connection::class)->executeStatement('DELETE FROM quire.content');
+        // And the jobs the commands queued, e.g. rechecking what links to an item: they'd pile up for other tests.
+        self::getContainer()->get(Connection::class)->executeStatement("DELETE FROM quire.job WHERE queue_name = 'default'");
         self::getContainer()->get(Connection::class)->executeStatement('DELETE FROM quire.app_user');
         self::getContainer()->get(Connection::class)->executeStatement('DELETE FROM quire.setting WHERE name = ?', [ContentChecker::LEVELS_SETTING]);
         self::getContainer()->get(Settings::class)->reset();
