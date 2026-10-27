@@ -29,8 +29,12 @@ export default defineConfig({
         launchOptions: { args: server ? [`--host-resolver-rules=MAP ${new URL(base).hostname} ${server}`] : [] },
     },
     projects: [
-        { name: 'light', use: { viewport: { width: 1280, height: 900 }, colorScheme: 'light' } },
-        { name: 'dark', use: { viewport: { width: 1280, height: 900 }, colorScheme: 'dark' } },
-        { name: 'phone', use: { viewport: { width: 390, height: 844 }, colorScheme: 'light', isMobile: true, hasTouch: true } },
+        { name: 'light', testIgnore: /flows/, use: { viewport: { width: 1280, height: 900 }, colorScheme: 'light' } },
+        { name: 'dark', testIgnore: /flows/, use: { viewport: { width: 1280, height: 900 }, colorScheme: 'dark' } },
+        { name: 'phone', testIgnore: /flows/, use: { viewport: { width: 390, height: 844 }, colorScheme: 'light', isMobile: true, hasTouch: true } },
+        // The flows change the demo site, so they run after the screenshots were compared with it. Run them
+        // again on a fresh demo site.
+        { name: 'flows', testMatch: /(^|\/)flows\.spec\.mjs$/, dependencies: ['light', 'dark', 'phone'], use: { viewport: { width: 1280, height: 900 }, colorScheme: 'light' } },
+        { name: 'phone-flows', testMatch: /phone-flows\.spec\.mjs/, dependencies: ['flows'], use: { viewport: { width: 390, height: 844 }, colorScheme: 'light', isMobile: true, hasTouch: true } },
     ],
 });

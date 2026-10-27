@@ -361,6 +361,8 @@ $content->query('post')->withoutVisibilityScope();            // drafts, archive
 $content->query('post')->withoutVisibilityScope()->onlyTrashed(); // the trash
 ```
 
+By ID, `find($id)` and `get($id)` return an item whatever its status, and `findMany($ids)` returns many in one query, by ID (unknown IDs are left out): use it for a list of things that each name an item, instead of a query per row.
+
 Templates can't opt out: `withoutVisibilityScope()`, `withTrashed()` and raw SQL aren't available in them.
 
 ### Filtering and sorting

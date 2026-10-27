@@ -56,7 +56,7 @@ bin/console quire:audit:undo 0192b6a0-…            # the entry's ID, from quir
 bin/console quire:audit:undo 0192b6a0-… --dry-run  # only says how
 ```
 
-Undoing takes the ability of the action that undoes it, and it's recorded like that action. In code, `Quire\Audit\AuditUndo` says how an entry would be undone (`plan()`), whether the signed-in person may (`canUndo()`), and does it (`undo()`).
+Undoing takes the ability of the action that undoes it, and it's recorded like that action. In code, `Quire\Audit\AuditUndo` says how an entry would be undone (`plan()`), whether the signed-in person may (`canUndo()`, or `undoable()` for a page of entries at once), and does it (`undo()`). `AuditLog::latestAbout()` finds the latest entry about each of many subjects in one query.
 
 `Quire\Audit\AuditLog` also counts entries per day (`countByDay()`, in a time zone) and per action (`countByAction()`), and `AuditQuery` finds them by text in the subject's label, the actor's name or the action.
 

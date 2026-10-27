@@ -30,7 +30,7 @@
 {# Keyboard shortcuts, and opening the preferences (see admin.js). #}
 {% set creatable = quire_admin_new() %}
 {% set content_url = (menu.content ?? [])|first.url ?? null %}
-<body class="q-admin" data-controller="shortcuts" data-action="keydown@window->shortcuts#key"
+<body class="q-admin {% block body_class %}{% endblock %}" data-controller="shortcuts" data-action="keydown@window->shortcuts#key"
       data-shortcuts-urls-value="{{ {home: path('quire_admin_dashboard'), content: content_url, people: is_granted('quire.users.manage') ? path('quire_admin_users') : null, new: (creatable|first).url ?? null}|json_encode }}">
     <svg width="0" height="0" style="position:absolute" aria-hidden="true">
         <symbol id="q-icon-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7v9H4z"/><path d="M10 20v-5h4v5"/></symbol>

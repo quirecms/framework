@@ -231,7 +231,7 @@ application.register('markdown-editor', class extends Controller {
     // live text, which changes are shown against; placeholder: what an empty manuscript says.
     static values = { label: String, labels: Object, placeholder: String, original: String };
 
-    static buttons = [['bold', 'B'], ['italic', 'I'], ['heading', 'H'], ['link', '🔗'], ['list', '•'], ['quote', '❝'], ['code', '<>']];
+    static buttons = [['heading', 'H'], ['bold', 'B'], ['italic', 'I'], ['link', '🔗'], ['image', '▣'], ['list', '•'], ['quote', '❝'], ['code', '<>']];
 
     async connect() {
         const { createEditor, commands } = await import('./editor.js');
@@ -258,16 +258,30 @@ application.register('markdown-editor', class extends Controller {
             button.textContent = text;
             button.title = label;
             button.setAttribute('aria-label', label);
-            button.addEventListener('click', () => commands[command](this.view));
+            // Pressing a button mustn't take the focus (and the phone's keyboard) from the text.
+            button.addEventListener('pointerdown', (event) => event.preventDefault());
+            button.addEventListener('click', () => commands[command](this.view, this.labelsValue));
             this.toolbar.append(button);
         }
 
         this.element.prepend(this.toolbar);
+        // On phones the toolbar sits on the keyboard: how much of the window the keyboard covers.
+        window.visualViewport?.addEventListener('resize', this.keyboard);
+        window.visualViewport?.addEventListener('scroll', this.keyboard);
         this.dispatch('ready', { detail: { view: this.view } });
     }
 
+    keyboard = () => {
+        const viewport = window.visualViewport;
+        const covered = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
+        document.documentElement.style.setProperty('--q-keyboard', `${covered}px`);
+    };
+
     disconnect() {
         // Turbo keeps a copy of the page: leave it as it was without the editor.
+        window.visualViewport?.removeEventListener('resize', this.keyboard);
+        window.visualViewport?.removeEventListener('scroll', this.keyboard);
+        document.documentElement.style.removeProperty('--q-keyboard');
         this.toolbar?.remove();
         this.view?.destroy();
         this.view?.dom.remove();
@@ -384,7 +398,7 @@ application.register('manuscript', class extends Controller {
 // The editor: checks, where the item will appear and the preview, as it's written; autosave of changes
 // to published items; focus mode.
 application.register('content-editor', class extends Controller {
-    static targets = ['form', 'body', 'preview', 'previewBody', 'previewButton', 'id', 'pendingVersion', 'status', 'checks', 'badge', 'placement', 'focusButton'];
+    static targets = ['form', 'body', 'preview', 'previewBody', 'previewButton', 'id', 'pendingVersion', 'status', 'checks', 'badge', 'placement', 'focusButton', 'stepButton'];
 
     // autosave: changes to a published item are saved as the editor types (as a pending revision).
     static values = { previewUrl: String, checkUrl: String, placementUrl: String, autosave: Boolean, saved: String, unsaved: String, conflict: String, toCheck: String };
@@ -420,6 +434,17 @@ application.register('content-editor', class extends Controller {
             this.focusButtonTarget.hidden = false;
             this.setFocus(this.stored('quire-admin-focus') === '1');
         }
+
+        // On phones, writing and the rest are two steps (see admin.css); without JavaScript, one page.
+        this.element.classList.toggle('has-steps', this.hasStepButtonTarget);
+    }
+
+    // From writing to what else there is to say and do (details, checks, publishing), and back.
+    step() {
+        const details = this.element.classList.toggle('is-details');
+        const button = this.stepButtonTarget;
+        button.textContent = details ? button.dataset.back : button.dataset.next;
+        window.scrollTo(0, 0);
     }
 
     disconnect() {

@@ -272,6 +272,41 @@
         .editor-aside { position: static; }
     }
 
+    /* "Next" is for phones only. */
+    .editor-bar__step { display: none; }
+
+    /*
+     * Phones: a task of its own (writing, reviewing), without the top bar and the menu. Writing is a
+     * sheet with the formatting on the keyboard; "Next" leads to the rest: checks, where it appears,
+     * details, saving and publishing.
+     */
+    @media (max-width: 48rem) {
+        .q-admin--task { --q-rail-height: 0px; }
+        .q-admin--task .q-topbar, .q-admin--task .q-rail { display: none; }
+        .q-admin--task .q-main { padding: 0 0 var(--q-space-8, 4rem); }
+        .q-admin--task .editor-page { gap: 0; }
+
+        .editor-bar { position: sticky; top: 0; z-index: 20; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--q-space-2) var(--q-space-3); border-width: 0 0 1px; border-radius: 0; box-shadow: none; }
+        .editor-bar .q-thread { display: none; }
+        .editor-bar__headline { overflow: hidden; font-size: var(--q-text-sm); text-overflow: ellipsis; white-space: nowrap; }
+        .editor-bar__detail { display: none; }
+        .editor-bar__actions { grid-column: 1 / -1; }
+        .editor-page.has-steps .editor-bar__step { display: inline-flex; }
+        .editor-page.has-steps:not(.is-details) :is(.editor-bar__actions, .editor-versions, .editor__side) { display: none; }
+        .editor-page.has-steps.is-details .editor__main { display: none; }
+        .editor-page.has-steps.is-details .editor__side { padding: var(--q-space-4); }
+        .editor-sheet { min-height: calc(100dvh - 4rem); border: 0; border-radius: 0; box-shadow: none; }
+        .editor-sheet__title { font-size: 1.75rem; }
+
+        /* The formatting sits on the keyboard (its height comes from the markdown-editor controller). */
+        .editor-sheet .markdown-toolbar { position: fixed; inset: auto 0 var(--q-keyboard, 0px) 0; z-index: 40; display: none; justify-content: space-between; margin: 0; padding: var(--q-space-2) var(--q-space-3); border: 0; border-top: 1px solid var(--q-line); border-radius: 0; background: var(--q-surface); opacity: 1; }
+        .editor-sheet .markdown-field:focus-within .markdown-toolbar { display: flex; }
+        .editor-sheet .markdown-toolbar button { min-width: 2.75rem; min-height: 2.75rem; background: var(--q-paper); }
+
+        .q-admin--task .review-bar { position: sticky; top: 0; z-index: 20; border-width: 0 0 1px; border-radius: 0; box-shadow: none; }
+        .q-admin--task .review > :not(.review-bar) { margin-inline: var(--q-space-4); }
+    }
+
     .markdown-toolbar {
         display: flex;
         flex-wrap: wrap;
@@ -818,8 +853,9 @@
     .intent-dialog__keys { display: flex; flex-wrap: wrap; align-items: center; gap: var(--q-space-2); margin: 0; padding: var(--q-space-2) var(--q-space-5); border-top: 1px solid var(--q-line); color: var(--q-muted); font-size: var(--q-text-sm); }
     .intent-dialog__keys span { margin-left: auto; }
     .intent-dialog__keys kbd, .intent-command kbd { padding: 0 0.35rem; border: 1px solid var(--q-line); border-radius: 0.3rem; font: 600 0.75rem var(--q-font-mono); }
-    .intent-results { display: grid; gap: var(--q-space-4); }
-    .intent-plan { display: grid; gap: var(--q-space-3); }
+    /* Narrow screens: the command scrolls in its own box, the page doesn't. */
+    .intent-results { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--q-space-4); }
+    .intent-plan { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--q-space-3); }
     .intent-parts { display: flex; flex-wrap: wrap; gap: var(--q-space-2); margin: 0; }
     .intent-part { display: inline-flex; align-items: center; gap: var(--q-space-2); padding: 0.45rem 0.9rem; border-radius: var(--q-radius-sm); background: var(--q-paper); font-weight: 600; }
     .intent-part--verb { background: var(--q-ink); color: var(--q-paper); }
@@ -839,9 +875,9 @@
     .intent-found__item:hover, .intent-found__item:focus-visible { background: var(--q-paper); }
     .intent-found__label { font-weight: 600; }
     .intent-hint { margin: 0; color: var(--q-muted); }
-    .intent-page { display: grid; gap: var(--q-space-4); padding: var(--q-space-5); }
+    .intent-page { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--q-space-4); padding: var(--q-space-5); }
     .intent-page__form { display: flex; gap: var(--q-space-2); }
-    .intent-page__form input { flex: 1; }
+    .intent-page__form input { flex: 1; min-width: 0; }
 
     @media (max-width: 48rem) {
         .q-topbar { flex-wrap: wrap; }

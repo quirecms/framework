@@ -46,22 +46,23 @@ final readonly class ChangesInbox implements InboxProviderInterface
 
     public function items(): iterable
     {
-        foreach ($this->pending->awaitingReview(self::LIMIT) as $pending) {
-            $item = $this->item($pending);
+        $user = $this->users->get();
+        $awaiting = $this->pending->awaitingReview(self::LIMIT);
+        $own = $user instanceof \Quire\User\User ? $this->pending->byAuthor($user->id, self::LIMIT) : [];
+        // The items and the authors of all at once, not one by one.
+        $items = $this->content->findMany(array_map(static fn (PendingRevision $pending): string => $pending->contentId, [...$awaiting, ...$own]));
+        $names = $this->changes->names(array_map(static fn (PendingRevision $pending): ?string => $pending->authorId, $awaiting));
+
+        foreach ($awaiting as $pending) {
+            $item = $this->item($pending, $items);
 
             if ($item instanceof Content && $this->changes->mayReview($this->types->get($item->type)) && !$this->changes->isOwn($pending)) {
-                yield $this->toReview($pending, $item);
+                yield $this->toReview($pending, $item, null === $pending->authorId ? null : $names[$pending->authorId]);
             }
         }
 
-        $user = $this->users->get();
-
-        if (!$user instanceof \Quire\User\User) {
-            return;
-        }
-
-        foreach ($this->pending->byAuthor($user->id, self::LIMIT) as $pending) {
-            $item = $this->item($pending);
+        foreach ($own as $pending) {
+            $item = $this->item($pending, $items);
 
             if (!$item instanceof Content) {
                 continue;
@@ -107,9 +108,8 @@ final readonly class ChangesInbox implements InboxProviderInterface
         }
     }
 
-    private function toReview(PendingRevision $pending, Content $item): InboxItem
+    private function toReview(PendingRevision $pending, Content $item, ?string $name): InboxItem
     {
-        $name = null !== $pending->authorId ? $this->changes->names([$pending->authorId])[$pending->authorId] : null;
         $lines = \count(array_filter($pending->diff()->bodyLines, static fn (DiffLine $line): bool => DiffLine::SAME !== $line->operation));
         $clean = $this->pending->merge($pending, $item)->isClean();
 
@@ -135,10 +135,12 @@ final readonly class ChangesInbox implements InboxProviderInterface
 
     /**
      * The item the changes are to, when the user may open it.
+     *
+     * @param array<string, Content> $items
      */
-    private function item(PendingRevision $pending): ?Content
+    private function item(PendingRevision $pending, array $items): ?Content
     {
-        $item = $this->content->find($pending->contentId);
+        $item = $items[$pending->contentId] ?? null;
 
         return $item instanceof Content && $this->types->has($item->type) && $this->lists->canList($this->types->get($item->type)) ? $item : null;
     }

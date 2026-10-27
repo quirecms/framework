@@ -14,6 +14,9 @@
 
 {% block page_head %}{% endblock %}
 
+{# On phones, a task of its own: without the top bar and the menu. #}
+{% block body_class %}q-admin--task{% endblock %}
+
 {% block content %}
 <div class="review">
     <header class="review-bar q-card">
