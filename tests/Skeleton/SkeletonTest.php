@@ -34,7 +34,7 @@ final class SkeletonTest extends TestCase
     private const array APPLICATION_DIRECTORIES = ['assets', 'bin', 'config', 'frankenphp', 'migrations', 'public', 'src', 'templates', 'translations'];
     private const array APPLICATION_FILES = [
         '.dockerignore', '.editorconfig', '.env', '.env.dev', '.env.test', '.gitattributes', '.gitignore',
-        'Dockerfile', 'compose.override.yaml', 'compose.prod.yaml', 'compose.yaml', 'extend.php', 'importmap.php',
+        'Dockerfile', 'compose.override.yaml', 'compose.prod.yaml', 'compose.yaml', 'extend.php', 'importmap.php', 'prod.env.dist',
     ];
 
     private const string ROOT = __DIR__.'/../..';

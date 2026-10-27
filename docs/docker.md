@@ -58,14 +58,26 @@ docker compose run --rm --no-deps --entrypoint sh php -c "chown -R $(id -u):$(id
 
 The production image contains only the code. All data lives in PostgreSQL, so the app container can be replaced at any time.
 
-```bash
-export APP_SECRET="$(openssl rand -hex 16)"
-export POSTGRES_PASSWORD="$(openssl rand -hex 16)"
-export SERVER_NAME=example.com
+The site's production settings and secrets live in one file, `prod.env`, next to `compose.yaml`. Create it once from the template, with new secrets:
 
-docker compose -f compose.yaml -f compose.prod.yaml build --pull
-docker compose -f compose.yaml -f compose.prod.yaml up --wait
+```bash
+cp prod.env.dist prod.env
+chmod 600 prod.env
+sed -i "s/^APP_SECRET=.*/APP_SECRET=$(openssl rand -hex 32)/; s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=$(openssl rand -hex 24)/" prod.env
 ```
+
+Then set the site's domain (`SERVER_NAME`) and, to send emails, `MAILER_DSN` in it, and start the site:
+
+```bash
+docker compose --env-file prod.env build --pull
+docker compose --env-file prod.env up --wait
+```
+
+Every later command takes the same `--env-file prod.env`, e.g. `docker compose --env-file prod.env exec php bin/console quire:backup - > site.tar`. The file also tells Compose to use `compose.prod.yaml` (`COMPOSE_FILE`), so there's no `-f` to repeat.
+
+- **Kept out of Git and the image.** `prod.env` is in `.gitignore` and `.dockerignore`. Keep a copy somewhere safe, e.g. a password manager: the site's backups don't contain it.
+- **Nothing missing goes unnoticed.** Without `SERVER_NAME`, `APP_SECRET` or `POSTGRES_PASSWORD`, Compose stops with a message saying which one to set, instead of starting the site with a development default. (Exported shell variables still work, and win over the file, but they're gone after you sign out, which is why the file is the way to go.)
+- **Keep the secrets.** Changing `APP_SECRET` signs everyone out. `POSTGRES_PASSWORD` is only read when the database is created: to change it later, change it in PostgreSQL too (`ALTER USER app PASSWORD '…'`).
 
 When `SERVER_NAME` is a public domain, Caddy obtains a TLS certificate automatically. The domain's DNS must point at the server, and ports 80 and 443 must be reachable.
 
@@ -75,6 +87,21 @@ The production image:
 - has OPcache preloading enabled and doesn't re-check PHP files for changes;
 - runs pending database migrations when it starts;
 - compiles the assets (CSS, JavaScript, images) of the site, its extensions and its theme into `public/assets/` when it's built, and again when it starts and whenever extensions or the theme change. Caddy serves them with a one-year `immutable` cache header, since every file has its version in its name.
+
+### Security headers
+
+Caddy adds these headers to every response, unless Quire set its own (for example, private pages can't be shown in a frame at all):
+
+| Header | Value | What it does |
+|--------|-------|--------------|
+| `Strict-Transport-Security` | `max-age=31536000` | Browsers use only HTTPS for the site for a year (`QUIRE_HSTS_MAX_AGE`; `0` in development) |
+| `X-Content-Type-Options` | `nosniff` | Browsers don't guess a file's type, e.g. run an uploaded text file as a script |
+| `X-Frame-Options` | `SAMEORIGIN` | Other sites can't show the site in a frame (against clickjacking) |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` | Other sites see only the site's address, not the page a visitor came from |
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=(), payment=(), usb=()` | Pages can't ask for the camera, microphone, location, payments or USB |
+| `Cross-Origin-Opener-Policy` | `same-origin` | Windows the site opens on other sites can't reach back into it |
+
+The `Server` header is removed. To change one, set it in your own Caddy directives (`CADDY_SERVER_EXTRA_DIRECTIVES`), or in a response, for a page of your own. HSTS covers only the site's own domain, not its subdomains. To go further (`includeSubDomains`, `preload`), make sure every subdomain has HTTPS first, since browsers remember it.
 
 ### Persistent data
 
@@ -97,14 +124,16 @@ For the same set of extensions everywhere, set by your deployment instead of at 
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `SERVER_NAME` | `quire.localhost` | Domain(s) Caddy serves. Always set it in production. |
+| `SERVER_NAME` | `quire.localhost` | Domain(s) Caddy serves. Required in production (`prod.env`). |
 | `HTTP_PORT` / `HTTPS_PORT` / `HTTP3_PORT` | `80` / `443` / `443` | Ports published on the host |
-| `APP_SECRET` | none (required in prod) | Symfony's application secret |
-| `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` | `app` / `app` / `!ChangeMe!` | Database credentials. **Always change the password in production.** |
+| `APP_SECRET` | none (required in production) | Symfony's application secret |
+| `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` | `app` / `app` / `!ChangeMe!` | Database credentials. The password is required in production (`prod.env`). |
 | `POSTGRES_VERSION` | `18` | PostgreSQL major version |
 | `MAILER_DSN` | `null://null` (Mailpit in development) | Where emails go, e.g. `smtp://user:pass@smtp.example.com:587`. Needed for registration and password reset. |
 | `DEFAULT_URI` | `https://$SERVER_NAME:$HTTPS_PORT` | The site's address, used for links in emails and from the command line |
 | `XDEBUG_MODE` | `off` | Xdebug mode (development only) |
+| `QUIRE_HSTS_MAX_AGE` | `31536000` (`0` in development) | How long browsers keep to HTTPS for the site, in seconds (see [security headers](#security-headers)) |
+| `CADDY_SERVER_EXTRA_DIRECTIVES` | none | Caddy directives added to the site's, e.g. headers of your own |
 | `QUIRE_JOBS_DSN` | `quire://` (PostgreSQL) | Where [background jobs](jobs.md) wait for workers; `sync://` runs them at once, without a worker |
 | `QUIRE_SKIP_MIGRATIONS` | `0` | `1` makes the entrypoint skip migrations, for containers started next to the one that runs them (the `worker` service) |
 | `QUIRE_FRANKENPHP_ADMIN_URL` | `http://localhost:2019` | Where Quire reaches FrankenPHP's admin API to restart PHP workers after extensions change |

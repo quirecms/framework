@@ -20,6 +20,21 @@ If you have PHP 8.5 and Composer on your machine, `composer create-project quire
 
 Open <https://quire.localhost> and accept the locally generated TLS certificate. The admin interface is at <https://quire.localhost/admin>. To use another name, set `SERVER_NAME`, e.g. `SERVER_NAME=mysite.localhost docker compose up --wait`. If ports 80 or 443 are taken, choose others: `HTTP_PORT=8080 HTTPS_PORT=8443 HTTP3_PORT=8443 docker compose up --wait`.
 
+## Run it in production
+
+On a server with Docker, whose domain's DNS points at it:
+
+```bash
+cp prod.env.dist prod.env && chmod 600 prod.env
+sed -i "s/^APP_SECRET=.*/APP_SECRET=$(openssl rand -hex 32)/; s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=$(openssl rand -hex 24)/" prod.env
+# set SERVER_NAME (the domain) and MAILER_DSN in prod.env, then:
+docker compose --env-file prod.env build --pull
+docker compose --env-file prod.env up --wait
+docker compose --env-file prod.env exec php bin/console quire:install
+```
+
+`prod.env` holds the site's secrets: Git and the Docker image never include it, so keep a copy somewhere safe. Caddy obtains the TLS certificate and adds security headers. See [Docker in production](https://github.com/quirecms/framework/blob/main/docs/docker.md#production).
+
 ## What's here
 
 | Path | Contents |
@@ -30,6 +45,7 @@ Open <https://quire.localhost> and accept the locally generated TLS certificate.
 | `config/` | Symfony and Quire configuration; `config/packages/quire.yaml` for Quire's |
 | `src/` | Your own PHP code, in the namespace `App\` |
 | `Dockerfile`, `compose*.yaml`, `frankenphp/` | The Docker setup, for development and production |
+| `prod.env.dist` | The template of `prod.env`, the production settings and secrets |
 
 Content, users and settings are kept in PostgreSQL, and uploaded files on the `storage_data` volume, not in this directory: keep it in Git, and back up the site with `bin/console quire:backup`.
 

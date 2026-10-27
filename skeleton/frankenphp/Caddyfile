@@ -18,6 +18,19 @@
 	root /app/public
 	encode zstd br gzip
 
+	# Security headers on every response. "?" sets one only when the response has none, so Quire's own
+	# stricter ones win (e.g. private pages can't be framed at all). HSTS tells browsers to use HTTPS for
+	# a year; development sets QUIRE_HSTS_MAX_AGE=0. See docs/docker.md, "Security headers".
+	header {
+		?Strict-Transport-Security "max-age={$QUIRE_HSTS_MAX_AGE:31536000}"
+		?X-Content-Type-Options "nosniff"
+		?X-Frame-Options "SAMEORIGIN"
+		?Referrer-Policy "strict-origin-when-cross-origin"
+		?Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+		?Cross-Origin-Opener-Policy "same-origin"
+		-Server
+	}
+
 	{$CADDY_SERVER_EXTRA_DIRECTIVES}
 
 	# Compiled assets have a version in their file name, so browsers can keep them for good. (The JSON

@@ -1,4 +1,5 @@
 **/*.log
+prod.env
 **/*.md
 **/*.php~
 **/*.dist.php

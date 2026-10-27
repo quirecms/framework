@@ -17,6 +17,8 @@ services:
       #- /app/vendor
     environment:
       FRANKENPHP_WORKER_CONFIG: watch
+      # Browsers mustn't remember to require HTTPS for a development address.
+      QUIRE_HSTS_MAX_AGE: 0
       # See https://xdebug.org/docs/all_settings#mode
       XDEBUG_MODE: "${XDEBUG_MODE:-off}"
       APP_ENV: "${APP_ENV:-dev}"
