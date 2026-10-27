@@ -31,18 +31,23 @@ docker compose exec -u "$(id -u):$(id -g)" -e HOME=/tmp php composer test
 
 ## Repository layout
 
-This is a monorepo. Develop everything here, even code that's published as separate packages: each directory of `packages/`, and `skeleton/`, is copied to a read-only repository of its own (e.g. [quirecms/core](https://github.com/quirecms/core)), which Composer installs it from. Pull requests opened there are closed with a pointer to this repository.
+This is a monorepo. Develop everything here, even code that's published as separate packages: each directory of `packages/` is copied to a read-only repository of its own (e.g. [quirecms/core](https://github.com/quirecms/core)), which Composer installs it from, and the starter project is built from the application into [quirecms/skeleton](https://github.com/quirecms/skeleton). Pull requests opened there are closed with a pointer to this repository.
 
 | Path | Contents |
 |------|----------|
 | `packages/core/` | `quire/core`, the engine |
 | `packages/…` | First-party extensions, themes and tools (more to come) |
-| `skeleton/` | `quire/skeleton`, the starter project of new sites |
-| `config/`, `src/`, `templates/`, `public/`, `tests/` | The application used to run and test the packages |
+| `skeleton/` | What only `quire/skeleton`, the starter project of new sites, has: its README, its `composer.json` |
+| `config/`, `src/`, `templates/`, `public/`, `tests/` | The application used to run and test the packages, and that new sites start from |
 
 The application installs the packages from `packages/` through Composer path repositories, so your changes apply immediately.
 
-The application is the skeleton plus what Quire's own tests and tools need, so a change to one of its files, such as `config/packages/security.yaml` or the `Dockerfile`, goes into `skeleton/` too. A test (`tests/Skeleton/SkeletonTest.php`) fails when they drift apart, and lists the few files that differ on purpose. Configuration only the tests need goes into `config/packages/test/`. CI creates a site from the skeleton with the packages of your branch and checks that it runs.
+The starter project `quire/skeleton` is built from the application (`.github/skeleton.sh`): its files exist once, here, so a change to one of them, such as `config/packages/security.yaml` or the `Dockerfile`, reaches new sites by itself. What only Quire's own development needs stays out of it:
+
+- files only the tests and tools need: `tests/`, `.env.test`, `config/packages/test/`, `config/services_dev.yaml` and `config/services_test.yaml` (listed in `.github/skeleton.sh`);
+- lines of shared files between `# >>> development only` and `# <<< development only`, e.g. the S3 service of `compose.override.yaml`. A line `# skeleton: <line>` becomes `<line>` in the skeleton (e.g. its empty `APP_SECRET`).
+
+Build it to see what new sites get: `.github/skeleton.sh /tmp/skeleton`. A test (`tests/Skeleton/SkeletonTest.php`) builds it and fails when a file of the application wouldn't reach new sites, or something of the development would. CI creates a site from it with the packages of your branch and checks that it runs; publishing commits it to quirecms/skeleton.
 
 ## Making changes
 

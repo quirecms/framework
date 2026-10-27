@@ -107,12 +107,15 @@ jobs:
         uses: actions/checkout@v7
         with:
           persist-credentials: false
+      # The skeleton is built from the application, as it's published (.github/skeleton.sh).
+      - name: Build the skeleton
+        run: .github/skeleton.sh "$RUNNER_TEMP/skeleton"
       - name: Validate composer.json
-        run: docker run --rm -v "$PWD/skeleton:/app" -w /app composer:2 validate --strict --no-check-publish
+        run: docker run --rm -v "$RUNNER_TEMP/skeleton:/app" -w /app composer:2 validate --strict --no-check-publish
       - name: Create a site from the skeleton, as its README says, with the packages of this commit
         run: |
-          docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/repo:ro" -v "$RUNNER_TEMP:/work" -w /work composer:2 \
-            create-project --no-install --repository='{"type": "path", "url": "/repo/skeleton", "options": {"symlink": false, "versions": {"quire/skeleton": "0.1.x-dev"}}}' \
+          docker run --rm -u "$(id -u):$(id -g)" -v "$RUNNER_TEMP/skeleton:/skeleton:ro" -v "$RUNNER_TEMP:/work" -w /work composer:2 \
+            create-project --no-install --repository='{"type": "path", "url": "/skeleton", "options": {"symlink": false, "versions": {"quire/skeleton": "0.1.x-dev"}}}' \
             quire/skeleton site 0.1.x-dev
           # Instead of Packagist, the site installs the packages from a copy of packages/ inside it, which
           # its container sees. They're development versions of the next release.
