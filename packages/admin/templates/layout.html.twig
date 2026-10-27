@@ -76,6 +76,22 @@
         <div class="q-canvas">
             <header class="q-topbar">
                 <div class="q-topbar__site"><span class="q-live-dot" aria-hidden="true"></span>{{ site.title }} <a href="{{ path('quire_home') }}">{{ 'view site'|trans({}, 'quire-admin') }} ↗</a></div>
+                {# The intent bar: a search form without JavaScript; with it, a dialog (Ctrl/⌘+K) that understands as you type. #}
+                <div class="q-intent" data-controller="intent" data-intent-url-value="{{ path('quire_admin_find') }}" data-action="keydown@window->intent#shortcut">
+                <form class="q-intent-trigger" method="get" action="{{ path('quire_admin_find') }}" role="search">
+                    <label for="intent-q" class="q-sr">{{ 'Find anything, or say what to do'|trans({}, 'quire-admin') }}</label>
+                    <input type="search" id="intent-q" name="q" autocomplete="off" placeholder="{{ 'Find anything, or say what to do'|trans({}, 'quire-admin') }}" data-action="focus->intent#open click->intent#open">
+                    <kbd class="q-intent-trigger__keys" aria-hidden="true">Ctrl K</kbd>
+                </form>
+                    <dialog class="intent-dialog" aria-label="{{ 'Find or do'|trans({}, 'quire-admin') }}" data-intent-target="dialog" data-action="close->intent#closed">
+                        <div class="intent-dialog__bar">
+                            <label for="intent-dialog-q" class="q-sr">{{ 'Find anything, or say what to do'|trans({}, 'quire-admin') }}</label>
+                            <input type="search" id="intent-dialog-q" autocomplete="off" spellcheck="false" placeholder="{{ 'Find anything, or say what to do'|trans({}, 'quire-admin') }}" data-intent-target="input" data-action="input->intent#search keydown->intent#key">
+                        </div>
+                        <div class="intent-dialog__body" data-intent-target="body" aria-live="polite">{{ include('@quire_admin/intent/_results.html.twig', {q: '', intent: null, found: []}) }}</div>
+                        <p class="intent-dialog__keys" aria-hidden="true"><kbd>↵</kbd> {{ 'do it or open'|trans({}, 'quire-admin') }} <kbd>↑</kbd><kbd>↓</kbd> {{ 'choose'|trans({}, 'quire-admin') }} <kbd>esc</kbd> {{ 'close'|trans({}, 'quire-admin') }} <span>{{ 'Understands what the admin can do, in your words'|trans({}, 'quire-admin') }}</span></p>
+                    </dialog>
+                </div>
                 <div class="q-topbar__end">
                     <form method="post" action="{{ path('quire_admin_hood') }}">
                         <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_preferences') }}">

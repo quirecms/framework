@@ -25,12 +25,21 @@ const screens = {
         await page.waitForURL(/\/changes\/[0-9a-f-]{36}$/);
         await page.waitForLoadState('networkidle');
     },
+    // The intent bar, opened with Ctrl+K, with a plan for what's typed.
+    intent: async (page) => {
+        await page.goto('/admin/content/post', { waitUntil: 'networkidle' });
+        await page.keyboard.press('Control+k');
+        await page.locator('#intent-dialog-q').fill('unpublish about');
+        await page.locator('.intent-plan').waitFor();
+    },
     people: '/admin/users',
     'role-editor': '/admin/roles/editor',
     settings: '/admin/settings/site',
     extensions: '/admin/extensions',
     components: '/admin/ui',
 };
+
+const dialogs = ['intent'];
 
 test.beforeEach(async ({ page }) => signIn(page));
 
@@ -40,7 +49,8 @@ for (const [name, path] of Object.entries(screens)) {
         await page.evaluate(() => document.fonts.ready);
 
         await expect(page).toHaveScreenshot(`${name}.png`, {
-            fullPage: true,
+            // A dialog covers what's on screen, not the whole page.
+            fullPage: !dialogs.includes(name),
             // Home says it in words: the time of day, the week and what waits since when.
             mask: [page.locator('time'), page.locator('.home-head, .home-week, .latest, .inbox__text, .inbox__meta, .health')],
             stylePath: new URL('./screenshot.css', import.meta.url).pathname,

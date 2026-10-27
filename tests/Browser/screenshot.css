@@ -2,3 +2,6 @@
 
 /* Whether a worker runs the scheduled tasks; the advice when none does takes lines of its own. */
 .health__detail { display: none !important; }
+
+/* Commands name items by their ID, which changes with each demo site; masks don't reach a modal dialog. */
+.intent-command { color: transparent !important; }

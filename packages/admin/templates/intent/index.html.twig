@@ -1,0 +1,15 @@
+{# The intent bar as a page of its own, e.g. without JavaScript. Variables: q, intent, found. #}
+{% extends '@quire_admin/layout.html.twig' %}
+
+{% block title %}{{ q ? '“{q}”'|trans({q: q}, 'quire-admin') : 'Find or do'|trans({}, 'quire-admin') }}{% endblock %}
+
+{% block content %}
+    <section class="q-card intent-page">
+        <form method="get" action="{{ path('quire_admin_find') }}" role="search" class="intent-page__form">
+            <label for="intent-page-q" class="q-sr">{{ 'Find anything, or say what to do'|trans({}, 'quire-admin') }}</label>
+            <input type="search" id="intent-page-q" name="q" value="{{ q }}" autocomplete="off" placeholder="{{ 'Find anything, or say what to do'|trans({}, 'quire-admin') }}">
+            <button type="submit" class="q-btn">{{ 'Go'|trans({}, 'quire-admin') }}</button>
+        </form>
+        {{ include('@quire_admin/intent/_results.html.twig') }}
+    </section>
+{% endblock %}

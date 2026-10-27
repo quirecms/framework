@@ -64,7 +64,7 @@ final class ContentListTest extends AdminTestCase
         $this->signIn('editor');
 
         self::assertSame(['Markdown editor', 'Gardening'], $this->titles($crawler = $this->client->request('GET', '/admin/content/post?q=mar')), 'Best matches first: the title weighs most.');
-        self::assertSame('mar', $crawler->filter('input[name=q]')->attr('value'));
+        self::assertSame('mar', $crawler->filter('main input[name=q]')->attr('value'));
         self::assertSame([], $this->titles($crawler = $this->client->request('GET', '/admin/content/post?q=zzz')));
         self::assertSelectorTextSame('.q-empty', 'Nothing matches.');
     }
