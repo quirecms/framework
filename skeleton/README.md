@@ -56,4 +56,4 @@ Content, users and settings are kept in PostgreSQL, and uploaded files on the `s
 - [Content](https://github.com/quirecms/framework/blob/main/docs/content.md), [users](https://github.com/quirecms/framework/blob/main/docs/users.md), [permissions](https://github.com/quirecms/framework/blob/main/docs/permissions.md) and [settings](https://github.com/quirecms/framework/blob/main/docs/settings.md)
 - [Docker, in development and production](https://github.com/quirecms/framework/blob/main/docs/docker.md), [storage](https://github.com/quirecms/framework/blob/main/docs/storage.md), [backups](https://github.com/quirecms/framework/blob/main/docs/backups.md) and [background jobs](https://github.com/quirecms/framework/blob/main/docs/jobs.md)
 
-Quire is developed at [quirecms/framework](https://github.com/quirecms/framework); report issues there. This repository is a read-only copy of its `skeleton/` directory.
+Quire is developed at [quirecms/framework](https://github.com/quirecms/framework); report issues there. This repository is built from the application there, and is read-only.

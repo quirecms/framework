@@ -20,10 +20,11 @@ final class PackagesTest extends TestCase
         $directories = array_map(static fn (string $file): string => 'packages/'.basename(\dirname($file)), $this->glob('packages/*/composer.json'));
         $directories[] = 'skeleton';
 
-        $expected = array_map(static fn (string $path): array => ['path' => $path, 'repository' => 'quirecms/'.basename($path)], $directories);
+        // The skeleton is built from the application (.github/skeleton.sh), the packages copied as they are.
+        $expected = array_map(static fn (string $path): array => ['path' => $path, 'repository' => 'quirecms/'.basename($path), ...('skeleton' === $path ? ['build' => '.github/skeleton.sh'] : [])], $directories);
         usort($expected, static fn (array $a, array $b): int => $a['path'] <=> $b['path']);
 
-        self::assertSame($expected, $this->json('.github/split.json'), 'Every directory of packages/ and the skeleton must be listed in .github/split.json, in order, with the repository named after it.');
+        self::assertSame($expected, $this->json('.github/split.json'), 'Every directory of packages/ and the skeleton must be listed in .github/split.json, in order, with the repository named after it (the skeleton built).');
 
         foreach ($directories as $directory) {
             self::assertSame('quire/'.basename($directory), $this->json($directory.'/composer.json')['name'] ?? null);
@@ -62,7 +63,8 @@ final class PackagesTest extends TestCase
             self::assertSame(['dev-main' => $version], $extra['branch-alias'] ?? null, \sprintf('%s must alias its main branch to %s.', $file, $version));
         }
 
-        foreach ([...$files, 'skeleton/composer.json', 'composer.json'] as $file) {
+        // (The skeleton requires what the application requires: it's built from it, see SkeletonTest.)
+        foreach ([...$files, 'composer.json'] as $file) {
             $composer = $this->json($file);
 
             foreach (['require', 'require-dev'] as $key) {

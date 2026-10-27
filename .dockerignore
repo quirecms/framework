@@ -27,8 +27,10 @@ docs/
 assets/vendor/
 public/bundles/
 tests/
+# >>> development only: the tests of the packages, and the skeleton's own files
 packages/*/tests/
 skeleton/
+# <<< development only
 storage/
 var/
 vendor/

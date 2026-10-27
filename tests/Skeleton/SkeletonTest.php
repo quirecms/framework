@@ -6,95 +6,99 @@ namespace App\Tests\Skeleton;
 
 use PHPUnit\Framework\TestCase;
 use Quire\Runtime\ServerContract;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Finder\Finder;
+use Symfony\Component\Process\Process;
 use Symfony\Component\Yaml\Yaml;
 
 /**
- * The starter project in skeleton/ (quire/skeleton) is the application of this repository without what
- * only Quire's own development needs. Its files must stay the same as the application's, so that what
- * runs and is tested here is what new sites get.
+ * The starter project quire/skeleton is built from the application of this repository
+ * (.github/skeleton.sh): its files exist once, here, so what runs and is tested here is what new sites
+ * get. These tests build it and check what it has, and what it must not have of the development.
  */
 final class SkeletonTest extends TestCase
 {
-    /** Files only the skeleton has */
-    private const array SKELETON_ONLY = ['.github/workflows/close-pull-request.yaml', 'composer.json', 'README.md', 'symfony.lock'];
+    private const string ROOT = __DIR__.'/../..';
 
-    /** Files that differ on purpose, with what the application has in addition */
-    private const array DIFFERENT = [
-        '.dockerignore' => 'the tests of the packages, and the skeleton',
-        '.env.dev' => 'a fixed secret; new sites get their own when they are created',
-        '.gitignore' => 'the files of PHPUnit and PHP-CS-Fixer',
-        'Dockerfile' => 'the packages, which it installs from path repositories',
-        'compose.override.yaml' => 'an S3 service for the tests of storage disks',
-        'compose.yaml' => 'a fixed project name; sites are named after their directory',
+    /** What's at the root of this repository only for Quire's own development (never in the skeleton) */
+    private const array DEVELOPMENT = [
+        '.env.test', '.github', '.php-cs-fixer.dist.php', 'CONTRIBUTING.md', 'LICENSE', 'README.md', 'SECURITY.md',
+        'composer.json', 'composer.lock', 'docs', 'packages', 'phpstan.dist.neon', 'phpunit.dist.xml', 'rector.php',
+        'skeleton', 'symfony.lock', 'tests',
     ];
 
-    /** Files only the application has: those of the tests and of the development tools */
+    /** The application's files only the development needs */
     private const array APPLICATION_ONLY = ['.env.test', 'bin/phpunit', 'config/packages/test/quire.yaml', 'config/services_dev.yaml', 'config/services_test.yaml'];
 
-    /** The parts of this repository that make up the application */
-    private const array APPLICATION_DIRECTORIES = ['assets', 'bin', 'config', 'frankenphp', 'migrations', 'public', 'src', 'templates', 'translations'];
-    private const array APPLICATION_FILES = [
-        '.dockerignore', '.editorconfig', '.env', '.env.dev', '.env.test', '.gitattributes', '.gitignore',
-        'Dockerfile', 'compose.override.yaml', 'compose.prod.yaml', 'compose.proxy.yaml', 'compose.yaml', 'extend.php', 'importmap.php', 'prod.env.dist',
-    ];
+    private static string $skeleton;
 
-    private const string ROOT = __DIR__.'/../..';
-    private const string SKELETON = self::ROOT.'/skeleton';
-
-    public function testTheSkeletonsFilesAreTheApplicationsUnlessTheyDifferOnPurpose(): void
+    #[\Override]
+    public static function setUpBeforeClass(): void
     {
-        foreach ($this->files(self::SKELETON, ['.']) as $path) {
-            if (\in_array($path, self::SKELETON_ONLY, true)) {
-                continue;
-            }
-
-            self::assertFileExists(self::ROOT.'/'.$path, \sprintf('skeleton/%s has no counterpart in the application: add it there, or list it as a file only the skeleton has.', $path));
-
-            if (\array_key_exists($path, self::DIFFERENT)) {
-                self::assertFileNotEquals(self::ROOT.'/'.$path, self::SKELETON.'/'.$path, \sprintf('%s is now the same in the skeleton: remove it from the files that differ.', $path));
-
-                continue;
-            }
-
-            self::assertFileEquals(self::ROOT.'/'.$path, self::SKELETON.'/'.$path, \sprintf('skeleton/%s differs from the application\'s: change both, or list it as a file that differs.', $path));
-        }
+        self::$skeleton = sys_get_temp_dir().'/quire-skeleton-'.bin2hex(random_bytes(6));
+        new Process(['bash', self::ROOT.'/.github/skeleton.sh', self::$skeleton])->mustRun();
     }
 
-    public function testTheSkeletonHasEveryFileOfTheApplication(): void
+    #[\Override]
+    public static function tearDownAfterClass(): void
+    {
+        new Filesystem()->remove(self::$skeleton);
+    }
+
+    public function testEveryFileOfTheApplicationIsInTheSkeleton(): void
     {
         $missing = [];
 
-        foreach ($this->files(self::ROOT, self::APPLICATION_DIRECTORIES) as $path) {
-            if (!\in_array($path, self::APPLICATION_ONLY, true) && !is_file(self::SKELETON.'/'.$path)) {
+        foreach ($this->tracked() as $path) {
+            $top = explode('/', $path)[0];
+
+            if (\in_array($top, self::DEVELOPMENT, true) || \in_array($path, self::APPLICATION_ONLY, true)) {
+                continue;
+            }
+
+            if (!is_file(self::$skeleton.'/'.$path)) {
                 $missing[] = $path;
             }
         }
 
-        foreach (self::APPLICATION_FILES as $path) {
-            if (!\in_array($path, self::APPLICATION_ONLY, true) && !is_file(self::SKELETON.'/'.$path)) {
-                $missing[] = $path;
-            }
+        self::assertSame([], $missing, 'New sites wouldn\'t get these files of the application: add them to .github/skeleton.sh, or list them as development only here (and there).');
+    }
+
+    public function testNothingOfTheDevelopmentIsInTheSkeleton(): void
+    {
+        foreach (self::APPLICATION_ONLY as $path) {
+            self::assertFileDoesNotExist(self::$skeleton.'/'.$path);
         }
 
-        self::assertSame([], $missing, 'The skeleton lacks these files of the application: copy them, or list them as files only the application has.');
+        foreach ($this->files(self::$skeleton) as $path) {
+            $content = (string) file_get_contents(self::$skeleton.'/'.$path);
+            self::assertStringNotContainsString('development only', $content, $path.' has a "development only" marker left.');
+            self::assertStringNotContainsString('@application', 'composer.json' === $path ? $content : '', 'composer.json has a value it didn\'t get from the application.');
+        }
+
+        self::assertStringNotContainsString('packages/', (string) file_get_contents(self::$skeleton.'/Dockerfile'), 'New sites install Quire from Packagist, not from path repositories.');
+        self::assertArrayNotHasKey('name', $this->compose('compose.yaml'), 'Sites are named after their directory.');
+        self::assertArrayNotHasKey('s3', $this->services('compose.override.yaml'), 'The S3 service is for the tests of the packages.');
+        self::assertDirectoryDoesNotExist(self::$skeleton.'/tests');
     }
 
     public function testTheSkeletonRequiresWhatTheApplicationRequires(): void
     {
         $application = $this->json(self::ROOT.'/composer.json');
-        $skeleton = $this->json(self::SKELETON.'/composer.json');
+        $skeleton = $this->json(self::$skeleton.'/composer.json');
+
+        self::assertSame('quire/skeleton', $skeleton['name']);
+        self::assertSame('project', $skeleton['type']);
 
         foreach (['require', 'replace', 'conflict', 'extra'] as $key) {
-            self::assertSame($application[$key] ?? null, $skeleton[$key] ?? null, \sprintf('"%s" of skeleton/composer.json differs from the application\'s.', $key));
+            self::assertSame($application[$key] ?? null, $skeleton[$key] ?? null, $key);
         }
 
-        self::assertIsArray($application['scripts'] ?? null);
-        self::assertIsArray($skeleton['scripts'] ?? null);
-        self::assertSame($application['scripts']['auto-scripts'] ?? null, $skeleton['scripts']['auto-scripts'] ?? null, 'The skeleton runs other scripts after installing than the application.');
+        self::assertArrayNotHasKey('require-dev', $skeleton);
+        self::assertArrayNotHasKey('repositories', $skeleton, 'New sites install Quire from Packagist.');
     }
 
-    public function testTheSkeletonsRecipesAreTheApplications(): void
+    public function testTheSkeletonsRecipesAreTheApplicationsButThoseOfDevelopmentTools(): void
     {
         // Symfony Flex installs the recipes of packages that symfony.lock doesn't list, which would add
         // or change files of new sites. So it must list the recipes the application has, as they are.
@@ -102,13 +106,13 @@ final class SkeletonTest extends TestCase
         $development = $this->json(self::ROOT.'/composer.json')['require-dev'] ?? null;
         self::assertIsArray($development);
 
-        self::assertSame(array_diff_key($application, $development), $this->json(self::SKELETON.'/symfony.lock'));
+        self::assertSame(array_diff_key($application, $development), $this->json(self::$skeleton.'/symfony.lock'));
     }
 
     public function testSitesSayWhichServerContractTheyKeep(): void
     {
         /** @var array{services: array{php: array{labels: array<string, string>}}} $compose */
-        $compose = Yaml::parseFile(self::SKELETON.'/compose.yaml');
+        $compose = $this->compose('compose.yaml');
 
         self::assertSame('true', $compose['services']['php']['labels']['com.quirecms.site']);
         self::assertSame((string) ServerContract::VERSION, $compose['services']['php']['labels']['com.quirecms.contract'], 'The label and quire:about agree.');
@@ -116,36 +120,66 @@ final class SkeletonTest extends TestCase
 
     public function testNewSitesGetTheirOwnSecret(): void
     {
-        self::assertStringContainsString("APP_SECRET=\n", (string) file_get_contents(self::SKELETON.'/.env.dev'));
+        self::assertStringContainsString("\nAPP_SECRET=\n", (string) file_get_contents(self::$skeleton.'/.env.dev'));
+        self::assertStringNotContainsString('d2ddca55', (string) file_get_contents(self::$skeleton.'/.env.dev'), 'Not the development\'s secret.');
 
-        $scripts = $this->json(self::SKELETON.'/composer.json')['scripts'] ?? null;
+        $scripts = $this->json(self::$skeleton.'/composer.json')['scripts'] ?? null;
         self::assertIsArray($scripts);
         self::assertStringContainsString('random_bytes', json_encode($scripts['post-create-project-cmd'] ?? null, \JSON_THROW_ON_ERROR));
     }
 
-    /**
-     * @param list<string> $directories
-     *
-     * @return list<string> Paths of the files in those directories that Git doesn't ignore, relative to $root
-     */
-    private function files(string $root, array $directories): array
+    public function testItsCommandsStayExecutable(): void
     {
-        $finder = new Finder()
-            ->files()
-            ->in(array_map(static fn (string $directory): string => $root.'/'.$directory, $directories))
-            ->ignoreDotFiles(false)
-            ->ignoreVCSIgnored(true);
+        self::assertTrue(is_executable(self::$skeleton.'/bin/console'));
+    }
 
-        $root = (string) realpath($root);
+    /**
+     * @return list<string> The files Git has, relative to the root
+     */
+    private function tracked(): array
+    {
+        $process = new Process(['git', 'ls-files', '-z'], self::ROOT);
+        $process->mustRun();
+
+        return array_values(array_filter(explode("\0", $process->getOutput()), static fn (string $path): bool => '' !== $path));
+    }
+
+    /**
+     * @return list<string> The files under a directory, relative to it
+     */
+    private function files(string $root): array
+    {
         $paths = [];
 
-        foreach ($finder as $file) {
-            $paths[] = substr((string) $file->getRealPath(), \strlen($root) + 1);
+        foreach (new Finder()->files()->in($root)->ignoreDotFiles(false) as $file) {
+            $paths[] = $file->getRelativePathname();
         }
 
         sort($paths);
 
         return $paths;
+    }
+
+    /**
+     * @return array<mixed> A Compose file of the skeleton
+     */
+    private function compose(string $file): array
+    {
+        $compose = Yaml::parseFile(self::$skeleton.'/'.$file);
+        self::assertIsArray($compose);
+
+        return $compose;
+    }
+
+    /**
+     * @return array<mixed> Its services
+     */
+    private function services(string $file): array
+    {
+        $services = $this->compose($file)['services'] ?? null;
+        self::assertIsArray($services);
+
+        return $services;
     }
 
     /**
