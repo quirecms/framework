@@ -152,6 +152,22 @@ jobs:
           persist-credentials: false
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
+      # As docs/docker.md says, with throwaway secrets and the domain of the checks below.
+      - name: Create prod.env
+        run: |
+          cp prod.env.dist prod.env
+          chmod 600 prod.env
+          sed -i "s/^SERVER_NAME=.*/SERVER_NAME=quire.localhost/; s/^APP_SECRET=.*/APP_SECRET=$(openssl rand -hex 32)/; s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=$(openssl rand -hex 24)/" prod.env
+          for name in APP_SECRET POSTGRES_PASSWORD; do echo "::add-mask::$(sed -n "s/^${name}=//p" prod.env)"; done
+      - name: Check Compose refuses to start without the secrets
+        run: |
+          if docker compose -f compose.yaml -f compose.prod.yaml config > /dev/null 2> refused.txt; then
+            echo "compose.prod.yaml started without SERVER_NAME, APP_SECRET and POSTGRES_PASSWORD"; exit 1
+          fi
+          grep -q 'in prod.env' refused.txt
+      # Bake reads compose.prod.yaml's variables from the environment, not from an env file.
+      - name: Give the build the settings of prod.env
+        run: grep -E '^(SERVER_NAME|APP_SECRET|POSTGRES_PASSWORD)=' prod.env >> "${GITHUB_ENV}"
       - name: Build prod image
         uses: docker/bake-action@v7
         with:
@@ -165,23 +181,23 @@ jobs:
             *.cache-from=type=gha,scope=prod-${{ github.ref }}
             *.cache-from=type=gha,scope=prod-refs/heads/main
             *.cache-to=type=gha,scope=prod-${{ github.ref }},mode=max
-      - name: Generate throwaway secrets
-        run: |
-          for name in APP_SECRET POSTGRES_PASSWORD; do
-            value="$(openssl rand -hex 16)"
-            echo "::add-mask::${value}"
-            echo "${name}=${value}" >> "${GITHUB_ENV}"
-          done
       - name: Start services
-        run: docker compose -f compose.yaml -f compose.prod.yaml up --wait --no-build
+        run: docker compose --env-file prod.env up --wait --no-build
       - name: Check HTTPS reachability
         run: curl -v --insecure --fail-with-body https://quire.localhost
       - name: Check health endpoint
         run: curl -v --insecure --fail-with-body https://quire.localhost/_quire/health
+      - name: Check the security headers
+        run: |
+          headers="$(curl --silent --insecure --head https://quire.localhost)"
+          for header in 'strict-transport-security: max-age=31536000' 'x-content-type-options: nosniff' 'x-frame-options: SAMEORIGIN' 'referrer-policy: strict-origin-when-cross-origin'; do
+            grep -qi "^${header}" <<< "${headers}" || { echo "Missing: ${header}"; echo "${headers}"; exit 1; }
+          done
+          ! grep -qi '^server:' <<< "${headers}"
       - name: Check the app runs as a non-root user
-        run: test "$(docker compose -f compose.yaml -f compose.prod.yaml exec -T php id -u)" != "0"
+        run: test "$(docker compose --env-file prod.env exec -T php id -u)" != "0"
       - name: Check the app can write to its storage volume
-        run: docker compose -f compose.yaml -f compose.prod.yaml exec -T php sh -c 'touch storage/public/.check storage/private/.check && rm storage/public/.check storage/private/.check'
+        run: docker compose --env-file prod.env exec -T php sh -c 'touch storage/public/.check storage/private/.check && rm storage/public/.check storage/private/.check'
       - name: Show logs on failure
         if: failure()
-        run: docker compose -f compose.yaml -f compose.prod.yaml logs
+        run: docker compose --env-file prod.env logs
