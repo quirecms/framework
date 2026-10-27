@@ -205,7 +205,7 @@ Example response:
 
 ## Tools that manage sites
 
-A server that runs several sites, such as [Quire Server](https://quirecms.com) (planned), finds and manages them through a small, versioned contract (`Quire\Runtime\ServerContract`, currently version 1):
+A server that runs several sites, such as [Quire Server](https://github.com/quirecms/server), finds and manages them through a small, versioned contract (`Quire\Runtime\ServerContract`, currently version 1):
 
 - **Labels** on the `php` container: `com.quirecms.site=true` and `com.quirecms.contract=1`, so a site already running on a machine can be found.
 - **`bin/console quire:about --format=json`**: the site's Quire, PHP and Symfony versions, title, language, time zone, address, whether it's installed (has an admin), its extensions and theme, its migrations (run and pending) and its health checks, with the contract's version. Parts that need the database are `null` when it can't be reached. Without `--format`, the same for people.
@@ -232,6 +232,10 @@ docker compose --env-file prod.env exec -T php bin/console quire:about --format=
 ```
 
 A change that such tools must know about raises the contract's version; additions they can ignore don't.
+
+### More sites on the same machine
+
+A site set up as above holds ports 80 and 443, so it's the only one on its machine. For more, install [Quire Server](https://github.com/quirecms/server) (early): its front door holds those ports and the sites' certificates, and it adopts this site. Keep the site's folder in `/srv/quire/sites/<name>` (e.g. `/srv/quire/sites/blog`) from the start, and the installer finds it. Adopting it backs it up, keeps its database and data, and changes two lines of its `prod.env` (the file as it was is kept as `prod.env.before-server`).
 
 ## Differences from dunglas/symfony-docker
 
