@@ -1,0 +1,85 @@
+---
+name: Release
+
+# A version tag (v1.2.3) on main makes a GitHub release, with its notes from docs/releases/<version>.md
+# and Quire's release feed: feed.json, every release up to this one (notes, security fixes, upgrade
+# notes, requirements, the skeleton's files), signed with Sigstore (keyless: the signature says this
+# workflow made it, for this tag). Tools that update sites (Quire Server) check the signature before
+# reading it. (The packages themselves reach Packagist through the Split workflow, from the same tag.)
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Release
+    if: github.repository == 'quirecms/framework'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write   # the GitHub release
+      id-token: write   # Sigstore's keyless signing: this workflow's identity
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: The version, from a tag on main, with its release notes
+        id: version
+        run: |
+          version=${GITHUB_REF_NAME#v}
+          echo "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$' || { echo "::error::$GITHUB_REF_NAME isn't a version."; exit 1; }
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main || { echo "::error::$GITHUB_REF_NAME isn't on main."; exit 1; }
+          [ -f "docs/releases/$version.md" ] || { echo "::error::There are no release notes for $version: docs/releases/$version.md."; exit 1; }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.5'
+          tools: composer
+          coverage: none
+
+      # Only what the feed's script reads (symfony/yaml): no package's scripts or plugins run.
+      - name: Install the dependencies
+        run: composer install --no-dev --no-scripts --no-plugins --no-progress --no-interaction --ignore-platform-req='ext-*'
+
+      - name: Build the feed
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          mkdir dist
+          # This version's skeleton, as the Split workflow publishes it; earlier ones, as published
+          .github/skeleton.sh "$RUNNER_TEMP/skeleton"
+          git clone --quiet https://github.com/quirecms/skeleton.git "$RUNNER_TEMP/published"
+          php .github/feed.php --version="$VERSION" --skeleton="$RUNNER_TEMP/skeleton" --published="$RUNNER_TEMP/published" > dist/feed.json
+          php .github/feed.php --version="$VERSION" --release-notes > "$RUNNER_TEMP/notes.md"
+          jq '.releases[0] | {version, date, security, requires, changed: .skeleton.changed}' dist/feed.json
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        with:
+          cosign-release: v3.1.4
+
+      - name: Sign the feed
+        run: cosign sign-blob --yes --bundle dist/feed.json.sigstore.json dist/feed.json
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          prerelease=()
+          if [[ "$VERSION" == *-* ]]; then prerelease=(--prerelease); fi
+          gh release create "$GITHUB_REF_NAME" dist/* --verify-tag --title "Quire $VERSION" --notes-file "$RUNNER_TEMP/notes.md" "${prerelease[@]}"

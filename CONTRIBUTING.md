@@ -101,6 +101,23 @@ A maintainer will review it. We may ask for changes. Please push new commits ins
 
 All packages are released together, with the same version, from a tag of this repository: tagging a commit of `main` with `v0.1.0` gives that version to every package. The workflow "Split" copies `main` and each tag to the packages' repositories (`.github/split.json` lists them; `.github/split.sh main` shows what it would push, without pushing).
 
+Every release has its notes in `docs/releases/<version>.md`, written before it's tagged (the release fails without them). They start with a header that tools read:
+
+```markdown
+---
+security:                      # the advisories this release fixes; [] for none
+  - id: GHSA-2c3f-4g5h-6j7m    # or a CVE
+    severity: high             # low, moderate, high or critical
+    package: quire/core
+    summary: A draft could be read by its link.
+upgrade: |                     # what to do when updating to it; null for nothing
+  Run `bin/console quire:…` after updating.
+---
+What changed, for the people who run sites.
+```
+
+The workflow "Release" then publishes the GitHub release with them, and Quire's release feed, `feed.json`: every release up to this one, with its notes, security fixes, upgrade notes, requirements and the skeleton's files, signed with Sigstore by that workflow for that tag. Quire Server reads it to know what to update, and which updates are urgent. `php .github/feed.php --version=0.1.2 --release-notes` shows a release's text; the tests check every notes file.
+
 Between releases, the packages develop the next version, `0.1.x-dev`: their `main` branches are aliased to it, and they require each other in it (`^0.1`). To start the next minor version, change both in every `composer.json`, and the versions of the path repository in the root one; a test checks that they agree. A new package goes into `.github/split.json`, with its repository, and gets the `LICENSE`, `.gitattributes` and `.github/workflows/close-pull-request.yaml` the others have.
 
 ## License
