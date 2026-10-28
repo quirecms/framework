@@ -252,7 +252,7 @@ cosign verify ghcr.io/quirecms/runtime:8.5 \
   --certificate-oidc-issuer=https://token.actions.githubusercontent.com
 ```
 
-[Quire Server](https://github.com/quirecms/server) checks it before building a site, and builds on the digest it checked (the `RUNTIME_BUILDER` and `RUNTIME` build arguments name the images).
+[Quire Server](https://github.com/quirecms/server) checks it before building a site, and builds on the digest it checked (the `RUNTIME_BUILDER` and `RUNTIME` build arguments name the images). Every night it also builds its sites again on a newer build, when there is one, so its fixes don't wait for the site's next update.
 
 **Another PHP extension** goes in the `###> recipes ###` block of the `Dockerfile`, e.g. `RUN install-php-extensions gmp`: it's built on the builder and copied into the production image with the libraries it needs.
 
