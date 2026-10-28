@@ -21,7 +21,7 @@ Quire runs on [FrankenPHP](https://frankenphp.dev) (a PHP application server bui
 | `compose.prod.yaml` | Production, with `prod.env` (see [production](#production)) |
 | `compose.proxy.yaml` | Production behind a reverse proxy (see [below](#behind-a-reverse-proxy)) |
 | `prod.env.dist` | The template of `prod.env`, a site's production settings and secrets |
-| `Dockerfile` | One file with three targets: `frankenphp_dev`, `frankenphp_prod_builder` and `frankenphp_prod` |
+| `Dockerfile` | One file with three targets: `frankenphp_dev`, `frankenphp_prod_builder` and `frankenphp_prod`, built on [Quire's runtime images](#the-runtime-images) |
 | `frankenphp/Caddyfile` | Web server configuration |
 | `frankenphp/conf.d/` | PHP settings: shared, dev-only and prod-only |
 | `frankenphp/docker-entrypoint.sh` | Installs dependencies if needed, waits for the database, runs migrations (unless `QUIRE_SKIP_MIGRATIONS=1`) |
@@ -237,8 +237,28 @@ A change that such tools must know about raises the contract's version; addition
 
 A site set up as above holds ports 80 and 443, so it's the only one on its machine. For more, install [Quire Server](https://github.com/quirecms/server) (early): its front door holds those ports and the sites' certificates, and it adopts this site. Keep the site's folder in `/srv/quire/sites/<name>` (e.g. `/srv/quire/sites/blog`) from the start, and the installer finds it. Adopting it backs it up, keeps its database and data, and changes two lines of its `prod.env` (the file as it was is kept as `prod.env.before-server`).
 
+### The runtime images
+
+The site's `Dockerfile` builds on Quire's runtime images, so a site doesn't compile PHP's extensions itself, and every site on a machine shares the same layers:
+
+- **`ghcr.io/quirecms/runtime:8.5-builder`**: FrankenPHP's PHP 8.5 with Quire's extensions (`apcu`, `intl`, `opcache`, `pdo_pgsql`, `zip`), Composer, the PostgreSQL client tools and PHP's production settings. The site installs its packages and compiles its assets on it; development runs on it, with Xdebug added.
+- **`ghcr.io/quirecms/runtime:8.5`**: Debian slim with FrankenPHP, PHP, the same extensions, `pg_dump` and `pg_restore`, and nothing else. The production image is this, with the site.
+
+They're rebuilt every week from PHP's, FrankenPHP's and Debian's latest images, so **rebuilding a site (`build --pull`) brings their security fixes**, without a Quire release. Each build is signed with Sigstore by Quire's workflow (`runtime.yaml` in quirecms/framework), and also tagged with its date (`8.5-20261102`), to build on exactly that one. Check a signature with:
+
+```bash
+cosign verify ghcr.io/quirecms/runtime:8.5 \
+  --certificate-identity=https://github.com/quirecms/framework/.github/workflows/runtime.yaml@refs/heads/main \
+  --certificate-oidc-issuer=https://token.actions.githubusercontent.com
+```
+
+[Quire Server](https://github.com/quirecms/server) checks it before building a site, and builds on the digest it checked (the `RUNTIME_BUILDER` and `RUNTIME` build arguments name the images).
+
+**Another PHP extension** goes in the `###> recipes ###` block of the `Dockerfile`, e.g. `RUN install-php-extensions gmp`: it's built on the builder and copied into the production image with the libraries it needs.
+
 ## Differences from dunglas/symfony-docker
 
+- **The images build on Quire's runtime images** ([above](#the-runtime-images)) instead of `dunglas/frankenphp` directly.
 - **Mercure and Vulcain are removed** from the Caddy configuration. Quire doesn't use them in core, and leaving them out keeps the default setup smaller.
 - **`packages/` is copied before `composer install`** in the production build, because Quire's packages are installed from Composer path repositories.
 - **PostgreSQL 18** is the default, and its volume is mounted at `/var/lib/postgresql`, where PostgreSQL 18+ images keep their data.

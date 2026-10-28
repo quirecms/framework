@@ -32,9 +32,11 @@ jobs:
           pull: true
           load: true
           source: .
+          # On the runtime images of this commit (runtime/), not the published ones
           files: |
             compose.yaml
             compose.override.yaml
+            .github/runtime.hcl
           set: |
             *.cache-from=type=gha,scope=dev-${{ github.ref }}
             *.cache-from=type=gha,scope=dev-refs/heads/main
@@ -125,10 +127,15 @@ jobs:
             "$RUNNER_TEMP/site/composer.json" > composer.json.site && mv composer.json.site "$RUNNER_TEMP/site/composer.json"
       - name: Check the site has its own secret
         run: grep -Eq '^APP_SECRET=[0-9a-f]{32}$' "$RUNNER_TEMP/site/.env.dev"
+      # The runtime images of this commit, under the names the site's Dockerfile builds FROM
+      - name: Build the runtime images
+        run: |
+          docker build --pull --target builder -t ghcr.io/quirecms/runtime:8.5-builder runtime
+          docker build --target runtime -t ghcr.io/quirecms/runtime:8.5 runtime
       - name: Start the site
         working-directory: ${{ runner.temp }}/site
         run: |
-          docker compose build --pull
+          docker compose build
           docker compose up --wait
       - name: Install the site
         working-directory: ${{ runner.temp }}/site
@@ -177,9 +184,11 @@ jobs:
           pull: true
           load: true
           source: .
+          # On the runtime images of this commit (runtime/), not the published ones
           files: |
             compose.yaml
             compose.prod.yaml
+            .github/runtime.hcl
           set: |
             *.cache-from=type=gha,scope=prod-${{ github.ref }}
             *.cache-from=type=gha,scope=prod-refs/heads/main

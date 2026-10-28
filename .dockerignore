@@ -27,8 +27,9 @@ docs/
 assets/vendor/
 public/bundles/
 tests/
-# >>> development only: the tests of the packages, and the skeleton's own files
+# >>> development only: the tests of the packages, the skeleton's own files, the runtime images' Dockerfile
 packages/*/tests/
+runtime/
 skeleton/
 # <<< development only
 storage/
