@@ -63,7 +63,7 @@ jobs:
             sh -c 'npm ci --no-audit --no-fund && npx playwright test'
       - name: Keep the screenshots that differ
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: screenshots
           path: tests/Browser/test-results/
