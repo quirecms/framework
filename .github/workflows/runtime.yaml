@@ -1,0 +1,96 @@
+---
+name: Runtime
+
+# Quire's runtime images (runtime/Dockerfile), which sites build FROM: ghcr.io/quirecms/runtime:8.5-builder
+# and :8.5, for x86_64 and arm64, with their SBOM and build provenance, signed with Sigstore (keyless:
+# the signature says this workflow made them, from main). Rebuilt every week, so PHP's, FrankenPHP's
+# and Debian's security fixes reach sites at their next build, and whenever runtime/ changes. Each
+# build also keeps a dated tag (8.5-20261028, 8.5-builder-20261028).
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'runtime/**'
+      - '.github/workflows/runtime.yaml'
+  schedule:
+    - cron: '41 2 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  runtime:
+    name: Runtime (${{ matrix.image }})
+    if: github.repository == 'quirecms/framework'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      packages: write   # the images on ghcr.io
+      id-token: write   # Sigstore's keyless signing: this workflow's identity
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: builder
+            tag: '8.5-builder'
+          - image: runtime
+            tag: '8.5'
+    env:
+      IMAGE: ghcr.io/quirecms/runtime
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: The date of this build
+        id: date
+        run: echo "date=$(date -u +%Y%m%d)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU (arm64)
+        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Sign in to ghcr.io
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # The upstream images' current tags, pulled fresh: their security fixes are the point.
+      - name: Build and push the image
+        id: build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: runtime
+          target: ${{ matrix.image }}
+          platforms: linux/amd64,linux/arm64
+          pull: true
+          no-cache: true
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:${{ matrix.tag }}
+            ${{ env.IMAGE }}:${{ matrix.tag }}-${{ steps.date.outputs.date }}
+          labels: |
+            org.opencontainers.image.title=Quire runtime (${{ matrix.image }})
+            org.opencontainers.image.description=PHP with Quire's extensions, FrankenPHP and the PostgreSQL tools, which Quire sites build on.
+            org.opencontainers.image.source=https://github.com/quirecms/framework
+            org.opencontainers.image.licenses=MIT
+            org.opencontainers.image.vendor=YorvoLabs
+          provenance: mode=max
+          sbom: true
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        with:
+          cosign-release: v3.1.4
+
+      - name: Sign the image
+        run: cosign sign --yes "$IMAGE@${{ steps.build.outputs.digest }}"

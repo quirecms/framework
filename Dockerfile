@@ -1,60 +1,24 @@
 #syntax=docker/dockerfile:1
 
-# Versions
-FROM dunglas/frankenphp:1-php8.5 AS frankenphp_upstream
-
-# The different stages of this Dockerfile are meant to be built into separate images
+# The site's images, built on Quire's runtime images (ghcr.io/quirecms/runtime: PHP with Quire's
+# extensions, FrankenPHP, the PostgreSQL tools), which are rebuilt every week with PHP's and Debian's
+# security fixes and signed: a site gets them at its next build. Quire Server checks their signature
+# and passes the digests it checked (RUNTIME_BUILDER, RUNTIME).
+#
+# The different stages are meant to be built into separate images
 # https://docs.docker.com/build/building/multi-stage/#stop-at-a-specific-build-stage
 # https://docs.docker.com/reference/compose-file/build/#target
+ARG RUNTIME_BUILDER=ghcr.io/quirecms/runtime:8.5-builder
+ARG RUNTIME=ghcr.io/quirecms/runtime:8.5
 
-
-# Base FrankenPHP image
-FROM frankenphp_upstream AS frankenphp_base
+# Base FrankenPHP image: the runtime's builder with the site's PHP settings, Caddyfile and entry point
+FROM ${RUNTIME_BUILDER} AS frankenphp_base
 
 SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
 
 WORKDIR /app
 
-# persistent deps
-# hadolint ignore=DL3008
-RUN <<-EOF
-	apt-get update
-	apt-get install -y --no-install-recommends \
-		file \
-		git
-	install-php-extensions \
-		@composer \
-		apcu \
-		intl \
-		opcache \
-		zip
-	rm -rf /var/lib/apt/lists/*
-EOF
-
-# PostgreSQL client tools for quire:backup and quire:restore (pg_dump must be at least the server's
-# version, so they come from the PostgreSQL project's repository, not Debian's)
-ARG POSTGRES_CLIENT_VERSION=18
-# hadolint ignore=DL3008
-RUN <<-EOF
-	apt-get update
-	apt-get install -y --no-install-recommends ca-certificates curl
-	curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc -o /usr/share/keyrings/postgresql.asc
-	. /etc/os-release
-	echo "deb [signed-by=/usr/share/keyrings/postgresql.asc] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" > /etc/apt/sources.list.d/pgdg.list
-	apt-get update
-	apt-get install -y --no-install-recommends "postgresql-client-${POSTGRES_CLIENT_VERSION}"
-	rm -rf /var/lib/apt/lists/*
-EOF
-
-# https://getcomposer.org/doc/03-cli.md#composer-allow-superuser
-ENV COMPOSER_ALLOW_SUPERUSER=1
-
-ENV PHP_INI_SCAN_DIR=":$PHP_INI_DIR/app.conf.d"
-
 ###> recipes ###
-###> doctrine/doctrine-bundle ###
-RUN install-php-extensions pdo_pgsql
-###< doctrine/doctrine-bundle ###
 ###< recipes ###
 
 COPY --link frankenphp/conf.d/10-app.ini $PHP_INI_DIR/app.conf.d/
@@ -75,7 +39,7 @@ ENV FRANKENPHP_WORKER_CONFIG=watch
 
 # dev dependencies
 RUN <<-EOF
-	mv "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini"
+	cp "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini"
 	install-php-extensions xdebug
 	useradd -m -s /bin/bash nonroot
 	git config --system --add safe.directory /app
@@ -89,8 +53,6 @@ CMD [ "frankenphp", "run", "--config", "/etc/frankenphp/Caddyfile", "--watch" ]
 FROM frankenphp_base AS frankenphp_prod_builder
 
 ENV APP_ENV=prod
-
-RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
 COPY --link frankenphp/conf.d/20-app.prod.ini $PHP_INI_DIR/app.conf.d/
 
@@ -118,59 +80,27 @@ RUN <<-EOF
 	sync
 EOF
 
-# Collect shared libraries needed by FrankenPHP and PHP extensions
-# hadolint ignore=DL3008,SC3054,DL4006
+# The shared libraries of extensions the site added (recipes above): the runtime has its own already.
+# hadolint ignore=SC3054
 RUN <<-'EOF'
-	apt-get update
-	apt-get install -y --no-install-recommends libtree
 	mkdir -p /tmp/libs
-	BINARIES=(frankenphp php file)
-	for target in $(printf '%s\n' "${BINARIES[@]}" | xargs -I{} which {}) \
-		/usr/lib/postgresql/*/bin/pg_dump /usr/lib/postgresql/*/bin/pg_restore \
-		$(find "$(php -r 'echo ini_get("extension_dir");')" -maxdepth 2 -name "*.so"); do
+	for target in $(find "$(php -r 'echo ini_get("extension_dir");')" -maxdepth 2 -name "*.so"); do
 		libtree -pv "$target" 2>/dev/null | grep -oP '(?:── )\K/\S+(?= \[)' | while IFS= read -r lib; do
-			[ -f "$lib" ] && cp -n "$lib" /tmp/libs/
+			if [ -f "$lib" ] && [ ! -f "/opt/quire-runtime/lib/$(basename "$lib")" ]; then cp -n "$lib" /tmp/libs/; fi
 		done
 	done
-	rm -rf /var/lib/apt/lists/*
 EOF
 
-# Prod FrankenPHP image
-FROM debian:13-slim AS frankenphp_prod
+# Prod FrankenPHP image: the slim runtime, with the site
+FROM ${RUNTIME} AS frankenphp_prod
 
-SHELL ["/bin/bash", "-euxo", "pipefail", "-c"]
+USER root
 
-ENV APP_ENV=prod
-ENV PHP_INI_SCAN_DIR=":/usr/local/etc/php/app.conf.d"
-
-COPY --from=frankenphp_prod_builder /usr/local/bin/frankenphp /usr/local/bin/frankenphp
-COPY --from=frankenphp_prod_builder /usr/local/bin/php /usr/local/bin/php
-COPY --from=frankenphp_prod_builder /usr/local/bin/docker-php-entrypoint /usr/local/bin/docker-php-entrypoint
 COPY --from=frankenphp_prod_builder /usr/local/lib/php/extensions /usr/local/lib/php/extensions
-COPY --from=frankenphp_prod_builder /tmp/libs /usr/lib
-
 COPY --from=frankenphp_prod_builder /usr/local/etc/php/conf.d /usr/local/etc/php/conf.d
-COPY --from=frankenphp_prod_builder /usr/local/etc/php/php.ini /usr/local/etc/php/php.ini
 COPY --from=frankenphp_prod_builder /usr/local/etc/php/app.conf.d /usr/local/etc/php/app.conf.d
-
+COPY --from=frankenphp_prod_builder /tmp/libs /usr/lib
 COPY --from=frankenphp_prod_builder /etc/frankenphp/Caddyfile /etc/frankenphp/Caddyfile
-
-# CA certificates for TLS, file/libmagic for Symfony MIME type detection
-COPY --from=frankenphp_prod_builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-COPY --from=frankenphp_prod_builder /etc/ssl/openssl.cnf /etc/ssl/openssl.cnf
-COPY --from=frankenphp_prod_builder /usr/bin/file /usr/bin/file
-COPY --from=frankenphp_prod_builder /usr/lib/file/magic.mgc /usr/lib/file/magic.mgc
-# PostgreSQL client tools for quire:backup and quire:restore
-COPY --from=frankenphp_prod_builder /usr/lib/postgresql/*/bin/pg_dump /usr/lib/postgresql/*/bin/pg_restore /usr/local/bin/
-
-ENV  OPENSSL_CONF=/etc/ssl/openssl.cnf XDG_CONFIG_HOME=/config XDG_DATA_HOME=/data SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
-
-RUN <<-EOF
-	mkdir -p /data/caddy /config/caddy
-	chown -R www-data:www-data /data /config
-	# Remove setuid/setgid bits
-	find / -perm /6000 -type f -exec chmod a-s {} + 2>/dev/null || true
-EOF
 
 COPY --link --exclude=var --exclude=public/assets --from=frankenphp_prod_builder /app /app
 # Writable at runtime: var/, and the compiled assets, which are rebuilt when extensions or the theme

@@ -24,7 +24,7 @@ final class SkeletonTest extends TestCase
     private const array DEVELOPMENT = [
         '.env.test', '.github', '.php-cs-fixer.dist.php', 'CONTRIBUTING.md', 'LICENSE', 'README.md', 'SECURITY.md',
         'composer.json', 'composer.lock', 'docs', 'packages', 'phpstan.dist.neon', 'phpunit.dist.xml', 'rector.php',
-        'skeleton', 'symfony.lock', 'tests',
+        'runtime', 'skeleton', 'symfony.lock', 'tests',
     ];
 
     /** The application's files only the development needs */
