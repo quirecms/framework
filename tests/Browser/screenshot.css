@@ -5,3 +5,29 @@
 
 /* Commands name items by their ID, which changes with each demo site; masks don't reach a modal dialog. */
 .intent-command { color: transparent !important; }
+
+/*
+ * Masks hide what changes with the time ("2 days ago", the greeting, a weekday's name, a count), but a
+ * mask is the size of what it hides: a longer text wraps, and the page around it moves. So what changes
+ * with the time takes the same room whatever it says.
+ */
+time {
+    display: inline-block !important;
+    width: 4.5em !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    vertical-align: bottom !important;
+}
+
+.home-head__title,
+.home-head__summary,
+.inbox__text,
+.inbox__meta,
+.latest__what,
+.latest .q-meta,
+.week__title,
+.week__when {
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    text-overflow: clip !important;
+}
