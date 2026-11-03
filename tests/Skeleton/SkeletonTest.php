@@ -118,6 +118,17 @@ final class SkeletonTest extends TestCase
         self::assertSame((string) ServerContract::VERSION, $compose['services']['php']['labels']['com.quirecms.contract'], 'The label and quire:about agree.');
     }
 
+    public function testEveryServiceComesBackAfterARebootOrACrash(): void
+    {
+        /** @var array{services: array<string, array<string, mixed>>} $compose */
+        $compose = $this->compose('compose.yaml');
+
+        foreach ($compose['services'] as $name => $service) {
+            self::assertSame('unless-stopped', $service['restart'] ?? null, $name.' restarts by itself: a site without its database answers nothing.');
+        }
+        self::assertArrayHasKey('database', $compose['services']);
+    }
+
     public function testNewSitesGetTheirOwnSecret(): void
     {
         self::assertStringContainsString("\nAPP_SECRET=\n", (string) file_get_contents(self::$skeleton.'/.env.dev'));
