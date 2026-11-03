@@ -18,7 +18,7 @@ concurrency:
 jobs:
   qa:
     name: Quality checks and tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -103,7 +103,7 @@ jobs:
 
   skeleton:
     name: Starter project
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -154,7 +154,7 @@ jobs:
 
   prod:
     name: Production image
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
