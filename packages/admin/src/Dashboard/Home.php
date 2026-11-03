@@ -39,6 +39,14 @@ final readonly class Home
     /** Points on the week's thread at most */
     private const int WEEK_POINTS = 14;
 
+    /**
+     * The share of the week a point's label may take (the stylesheet holds it to this, "18cqw"), with its
+     * offset from the dot: a label goes where it has this room, above the line or below it.
+     */
+    private const float LABEL = 20.0;
+
+    private const float LABEL_OFFSET = 2.0;
+
     private const int LATEST = 5;
 
     /** Audit actions left out of "Latest" */
@@ -121,9 +129,11 @@ final readonly class Home
 
     /**
      * This week, Monday to Sunday where the site is: what went live, what's scheduled, and changes
-     * scheduled, each at its time.
+     * scheduled, each at its time. A label goes above the line where it has room, else below; where it
+     * has none either side, it's folded into the label before it ("+2", to the calendar), and shown
+     * only where the week is a list (phones).
      *
-     * @return array{days: list<array{label: string, today: bool}>, now: float, points: list<array{x: float, title: string, when: string, kind: string, url: string, note: ?string, below: bool}>}
+     * @return array{days: list<array{label: string, today: bool}>, now: float, points: list<array{x: float, title: string, when: string, kind: string, url: string, note: ?string, below: bool, end: bool, folded: bool, more: int, more_url: ?string}>}
      */
     public function week(\DateTimeImmutable $now): array
     {
@@ -144,6 +154,7 @@ final readonly class Home
                     'at' => $item->publishedAt ?? $now,
                     'title' => $item->title,
                     'kind' => Status::SCHEDULED === $item->status ? 'scheduled' : 'happened',
+                    'type' => $type->id,
                     'url' => $this->urls->generate('quire_admin_content_edit', ['type' => $type->id, 'id' => $item->id]),
                     'note' => $found > 0 ? $this->translator->trans('{count} to check', ['count' => $found], 'quire-admin') : null,
                 ];
@@ -162,6 +173,7 @@ final readonly class Home
                     'at' => $changes->publishAt,
                     'title' => $item->title,
                     'kind' => $review ? 'review' : 'scheduled',
+                    'type' => $item->type,
                     'url' => $this->urls->generate('quire_admin_content_changes', ['type' => $item->type, 'id' => $item->id, 'pending' => $changes->id]),
                     'note' => $review ? $this->translator->trans('waiting for review', [], 'quire-admin') : $this->translator->trans('changes', [], 'quire-admin'),
                 ];
@@ -171,18 +183,46 @@ final readonly class Home
         usort($points, static fn (array $a, array $b): int => $a['at'] <=> $b['at']);
         $week = [];
 
-        foreach (\array_slice($points, 0, self::WEEK_POINTS) as $index => $point) {
+        // What each side of the line holds already: the stretches its labels take, in % of the week
+        $taken = [[], []];
+        $host = null;
+        // What's folded into each label, by its point's index: how many, and where they are
+        $more = [];
+
+        foreach (\array_slice($points, 0, self::WEEK_POINTS) as $point) {
+            $x = round(100 * ($point['at']->getTimestamp() - $start->getTimestamp()) / $span, 2);
+            // Labels near the week's end grow leftwards, from their dot
+            $leftwards = $x > 100 - self::LABEL - self::LABEL_OFFSET;
+            $stretch = $leftwards ? [$x - self::LABEL, $x + self::LABEL_OFFSET] : [$x - self::LABEL_OFFSET, $x + self::LABEL];
+            $side = array_find([0, 1], static fn (int $candidate): bool => [] === array_filter($taken[$candidate], static fn (array $other): bool => $stretch[0] < $other[1] && $other[0] < $stretch[1]));
+            $folded = null === $side;
+
+            if (null !== $side) {
+                $taken[$side][] = $stretch;
+            } elseif (null !== $host) {
+                // The first point always has room, so a folded one always has a label before it
+                $more[$host] ??= [0, $this->urls->generate('quire_admin_content', ['type' => $point['type'], 'mode' => 'calendar', 'month' => $point['at']->setTimezone($timezone)->format('Y-m')])];
+                ++$more[$host][0];
+            }
+
             $week[] = [
-                'x' => round(100 * ($point['at']->getTimestamp() - $start->getTimestamp()) / $span, 2),
+                'x' => $x,
                 'title' => $point['title'],
                 'when' => $this->format($point['at']->setTimezone($timezone), $point['at']->setTimezone($timezone)->format('Y-m-d') === $now->setTimezone($timezone)->format('Y-m-d') ? 'HH:mm' : 'EEE HH:mm'),
                 'kind' => $point['kind'],
                 'url' => $point['url'],
                 'note' => $point['note'],
-                // Labels take turns above and below the line, so neighbours don't cover each other.
-                'below' => 1 === $index % 2,
+                'below' => 1 === $side,
+                'end' => $leftwards,
+                'folded' => $folded,
             ];
+
+            if (null !== $side) {
+                $host = array_key_last($week);
+            }
         }
+
+        $week = array_map(static fn (int $index, array $point): array => [...$point, 'more' => $more[$index][0] ?? 0, 'more_url' => $more[$index][1] ?? null], array_keys($week), $week);
 
         $days = [];
 

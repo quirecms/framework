@@ -51,8 +51,9 @@ for (const [name, path] of Object.entries(screens)) {
         await expect(page).toHaveScreenshot(`${name}.png`, {
             // A dialog covers what's on screen, not the whole page.
             fullPage: !dialogs.includes(name),
-            // Home says it in words: the time of day, the week and what waits since when.
-            mask: [page.locator('time'), page.locator('.home-head, .home-week, .latest, .inbox__text, .inbox__meta, .health')],
+            // Home says it in words: the time of day, the week and what waits since when. Lists name
+            // their months, which the demo site's posts are in (DemoCalendar keeps their shape).
+            mask: [page.locator('time'), page.locator('.home-head, .home-week, .latest, .inbox__text, .inbox__meta, .health, .content-list__group')],
             stylePath: new URL('./screenshot.css', import.meta.url).pathname,
         });
     });

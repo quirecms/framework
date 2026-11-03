@@ -31,3 +31,14 @@ time {
     white-space: nowrap !important;
     text-overflow: clip !important;
 }
+
+/*
+ * On a phone, Home's week lists what happened and what's scheduled in it: how many things depends on
+ * the weekday. It's masked, so it takes the same room whatever the day.
+ */
+@media (max-width: 48rem) {
+    .home-week .week {
+        height: 16rem !important;
+        overflow: hidden !important;
+    }
+}

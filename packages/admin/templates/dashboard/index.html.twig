@@ -52,11 +52,16 @@
                 {% else %}
                     <ol class="week__points">
                         {% for point in week.points %}
-                            <li class="week__point week__point--{{ point.kind }}{% if point.below %} week__point--below{% endif %}{% if point.x > 72 %} week__point--end{% endif %}" style="--x: {{ point.x }}%">
-                                <a href="{{ point.url }}">
-                                    <span class="week__title">{{ point.title }}</span>
-                                    <span class="week__when"><span class="q-sr">{{ ('week.' ~ point.kind)|trans({}, 'quire-admin') }} </span>{{ point.when }}{% if point.note %} · {{ point.note }}{% endif %}</span>
-                                </a>
+                            <li class="week__point week__point--{{ point.kind }}{% if point.below %} week__point--below{% endif %}{% if point.end %} week__point--end{% endif %}{% if point.folded %} week__point--folded{% endif %}" style="--x: {{ point.x }}%">
+                                <div class="week__label">
+                                    <a class="week__link" href="{{ point.url }}">
+                                        <span class="week__title">{{ point.title }}</span>
+                                        <span class="week__when"><span class="q-sr">{{ ('week.' ~ point.kind)|trans({}, 'quire-admin') }} </span>{{ point.when }}{% if point.note %} · {{ point.note }}{% endif %}</span>
+                                    </a>
+                                    {% if point.more > 0 %}
+                                        <a class="week__more" href="{{ point.more_url }}"><span aria-hidden="true">+{{ point.more }}</span><span class="q-sr">{{ '{count} more near it, in the calendar'|trans({count: point.more}, 'quire-admin') }}</span></a>
+                                    {% endif %}
+                                </div>
                             </li>
                         {% endfor %}
                     </ol>

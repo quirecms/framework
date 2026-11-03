@@ -46,12 +46,35 @@ final class DashboardTest extends AdminTestCase
 
         // The week: what went live, and what will.
         $points = $crawler->filter('.week__point')->each(static fn (Crawler $point): string => $point->attr('class').' '.$point->filter('.week__title')->text());
-        self::assertContains('week__point week__point--happened Spring draw', $points);
+        self::assertNotEmpty(array_filter($points, static fn (string $point): bool => str_contains($point, '--happened') && str_ends_with($point, 'Spring draw')));
         self::assertNotEmpty(array_filter($points, static fn (string $point): bool => str_contains($point, '--scheduled') && str_ends_with($point, 'Ticket sales')));
 
         self::assertNotContains('Ada Lovelace signed in', $crawler->filter('.latest__what')->each(static fn (Crawler $what): string => $what->text()), 'Latest leaves out signing in.');
         $health = $crawler->filter('.health__sign')->each(static fn (Crawler $sign): string => $sign->text());
         self::assertSame(['Online', 'No backups yet'], [$health[0], $health[2]], 'Background tasks depend on whether a worker runs.');
+    }
+
+    public function testLabelsTheWeekHasNoRoomForAreFoldedIntoTheOneBefore(): void
+    {
+        $this->signIn($this->createUser('Ada Lovelace', ['admin']));
+        $now = new \DateTimeImmutable();
+
+        foreach (['Draw', 'Recap', 'Ceremony', 'Venues'] as $title) {
+            $this->content('post', $title)->body('Text.')->excerpt($title.'.')->published($now)->create();
+        }
+
+        $crawler = $this->client->request('GET', '/admin');
+        $points = $crawler->filter('.week__point');
+
+        // At the same time: one label above the line, one below it, and no room for the others
+        self::assertCount(4, $points, 'Every point keeps its dot, and its line on phones.');
+        self::assertCount(1, $crawler->filter('.week__point--below'));
+        self::assertCount(2, $crawler->filter('.week__point--folded'));
+        self::assertCount(1, $crawler->filter('.week__more'), 'Only the label before them says there are more.');
+        self::assertSame('+2', $crawler->filter('.week__more [aria-hidden]')->text());
+        self::assertSame('2 more near it, in the calendar', $crawler->filter('.week__more .q-sr')->text());
+        self::assertSame('/admin/content/post?mode=calendar&month='.$now->setTimezone(new \DateTimeZone('UTC'))->format('Y-m'), $crawler->filter('.week__more')->attr('href'));
+        self::assertCount(1, $crawler->filter('.week__point--below .week__more'), 'The label folded into is the last one placed.');
     }
 
     public function testANewSiteStartsWithItsFirstSteps(): void

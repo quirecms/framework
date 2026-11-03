@@ -541,20 +541,26 @@
     .home-week { display: grid; gap: var(--q-space-2); padding: var(--q-space-5); }
     .home-week__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--q-space-2); }
     .home-week__head p { margin: 0; }
-    .week { --line: 5.5rem; position: relative; height: 11rem; margin: 0 var(--q-space-2); }
+    /* Labels are held to a share of the week's width (Home::LABEL), so they're placed where they fit */
+    .week { --line: 5.5rem; position: relative; height: 11rem; margin: 0 var(--q-space-2); container-type: inline-size; }
     .week__line { position: absolute; inset: calc(var(--line) - 2px) 0 auto; height: 5px; border-radius: 3px;
         background: linear-gradient(to right, var(--q-live) var(--now), transparent var(--now)), repeating-linear-gradient(to right, var(--q-scheduled) 0 1rem, transparent 1rem 1.6rem); }
     .week__now { position: absolute; left: var(--now); bottom: -0.9rem; height: 2.6rem; padding-left: 0.3rem; border-left: 2px solid var(--q-ink); font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.06em; line-height: 1; text-transform: uppercase; }
     .week__points { position: absolute; inset: 0; margin: 0; padding: 0; list-style: none; }
     .week__point { position: absolute; top: var(--line); left: var(--x); width: 0; height: 0; }
-    .week__point a { position: absolute; left: -0.8rem; bottom: 1.1rem; display: grid; width: max-content; max-width: 12rem; color: var(--q-ink); text-decoration: none; }
+    .week__label { position: absolute; left: -0.8rem; bottom: 1.1rem; display: flex; align-items: flex-end; gap: var(--q-space-1); width: max-content; max-width: min(12rem, 18cqw); }
+    .week__link { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; color: var(--q-ink); text-decoration: none; }
+    /* What's folded into a label where the week has no room for its own: "+2", to the calendar */
+    .week__more { display: inline-grid; flex: none; place-items: center; min-width: 1.5rem; height: 1.5rem; padding: 0 0.375rem; box-sizing: border-box; border: 1px solid var(--q-line); border-radius: 0.75rem; color: var(--q-ink); font-size: var(--q-text-sm); font-weight: 600; text-decoration: none; }
+    .week__more:hover, .week__more:focus-visible { border-color: var(--q-ink); }
+    .week__point--folded .week__label { display: none; }
     /* The dot: decoration, the link is its label */
     .week__point::before { content: ""; position: absolute; left: -0.8rem; top: -0.8rem; width: 1.6rem; height: 1.6rem; box-sizing: border-box; border-radius: 50%; }
-    .week__point--below a { top: 1.1rem; bottom: auto; }
-    .week__point--end a { left: auto; right: -0.8rem; text-align: right; }
-    .week__point a:hover .week__title, .week__point a:focus-visible .week__title { text-decoration: underline; }
+    .week__point--below .week__label { top: 1.1rem; bottom: auto; align-items: flex-start; }
+    .week__point--end .week__label { left: auto; right: -0.8rem; text-align: right; }
+    .week__link:hover .week__title, .week__link:focus-visible .week__title { text-decoration: underline; }
     .week__title { overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
-    .week__when { color: var(--q-muted); font-size: var(--q-text-sm); white-space: nowrap; }
+    .week__when { overflow: hidden; color: var(--q-muted); font-size: var(--q-text-sm); text-overflow: ellipsis; white-space: nowrap; }
     .week__point--happened::before { border: 3px solid var(--q-live); background: radial-gradient(circle, var(--q-live) 0 45%, var(--q-surface) 46%); }
     .week__point--scheduled::before { border: 3px solid var(--q-scheduled); background: var(--q-surface); }
     .week__point--review::before { border: 3px solid var(--q-review); background: radial-gradient(circle, var(--q-review) 0 45%, var(--q-surface) 46%); }
@@ -628,7 +634,10 @@
         .week__points { position: relative; display: grid; gap: var(--q-space-2); padding-top: 7rem; }
         .week__point { position: static; width: auto; height: auto; }
         .week__point::before { left: calc(var(--x) - 0.8rem); top: calc(var(--line) - 0.8rem); }
-        .week__point a, .week__point--below a, .week__point--end a { position: static; display: flex; flex-wrap: wrap; gap: 0 var(--q-space-2); width: auto; max-width: none; min-height: 1.5rem; text-align: left; }
+        .week__label, .week__point--below .week__label, .week__point--end .week__label, .week__point--folded .week__label { position: static; display: block; width: auto; max-width: none; text-align: left; }
+        .week__link { display: flex; flex-wrap: wrap; gap: 0 var(--q-space-2); min-height: 1.5rem; }
+        /* Every point has its line here: nothing is folded */
+        .week__more { display: none; }
         .week__days { inset: 4.25rem 0 auto; }
         .week__days li { padding-left: var(--q-space-1); font-size: 0.75rem; }
         .week__empty { position: static; padding-top: 7rem; }
