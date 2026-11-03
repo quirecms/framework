@@ -23,7 +23,7 @@ jobs:
   release:
     name: Release
     if: github.repository == 'quirecms/framework'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 20
     permissions:
       contents: write   # the GitHub release

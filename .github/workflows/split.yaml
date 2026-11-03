@@ -25,7 +25,7 @@ jobs:
     if: github.repository == 'quirecms/framework'
     # Holds the GitHub App's credentials, which only main and version tags can use.
     environment: split
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
