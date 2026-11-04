@@ -3,7 +3,7 @@ name: Release
 
 # A version tag (v1.2.3) on main makes a GitHub release, with its notes from docs/releases/<version>.md
 # and Quire's release feed: feed.json, every release up to this one (notes, security fixes, upgrade
-# notes, requirements, the skeleton's files), signed with Sigstore (keyless: the signature says this
+# notes, requirements, the skeleton's files, each package's commit), signed with Sigstore (keyless: the signature says this
 # workflow made it, for this tag). Tools that update sites (Quire Server) check the signature before
 # reading it. (The packages themselves reach Packagist through the Split workflow, from the same tag.)
 on:
@@ -63,9 +63,12 @@ jobs:
           # This version's skeleton, as the Split workflow publishes it; earlier ones, as published
           .github/skeleton.sh "$RUNNER_TEMP/skeleton"
           git clone --quiet https://github.com/quirecms/skeleton.git "$RUNNER_TEMP/published"
-          php .github/feed.php --version="$VERSION" --skeleton="$RUNNER_TEMP/skeleton" --published="$RUNNER_TEMP/published" > dist/feed.json
+          # Each package's commit in its repository, as the Split workflow pushes it (the same history
+          # always gives the same commits: this computes them without pushing)
+          .github/split.sh "$GITHUB_REF" > "$RUNNER_TEMP/split.txt"
+          php .github/feed.php --version="$VERSION" --skeleton="$RUNNER_TEMP/skeleton" --published="$RUNNER_TEMP/published" --packages="$RUNNER_TEMP/split.txt" > dist/feed.json
           php .github/feed.php --version="$VERSION" --release-notes > "$RUNNER_TEMP/notes.md"
-          jq '.releases[0] | {version, date, security, requires, changed: .skeleton.changed}' dist/feed.json
+          jq '.releases[0] | {version, date, security, requires, changed: .skeleton.changed, packages}' dist/feed.json
 
       - name: Install cosign
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2

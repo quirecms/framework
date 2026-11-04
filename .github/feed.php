@@ -5,18 +5,23 @@
  * docs/releases/<version>.md and its tag, for tools that update sites (Quire Server, a site's own
  * updater). The release workflow signs it and publishes it with the release.
  *
- *   php .github/feed.php --version=0.1.2 --skeleton=<dir> --published=<dir> [--root=<dir>]
+ *   php .github/feed.php --version=0.1.2 --skeleton=<dir> --published=<dir> --packages=<file> [--root=<dir>]
  *   php .github/feed.php --version=0.1.2 --release-notes [--root=<dir>]   (the GitHub release's text)
  *
  * --skeleton   this version's skeleton, as .github/skeleton.sh builds it
  * --published  a clone of quirecms/skeleton, with its tags: earlier versions' skeletons
+ * --packages   what .github/split.sh <tag> says (each package's commit in its repository) for this
+ *              version; earlier versions' are their tags in those repositories (SPLIT_REMOTE replaces
+ *              https://github.com, as for split.sh)
  * --root       the framework's checkout (this one by default), with every release's tag
  *
  * Each release says: its date, notes, upgrade notes, the security advisories it fixes, what it
  * requires (PHP, PostgreSQL's major version, the server contract) and its skeleton's files by
  * SHA-256 (what a site got from the skeleton, to tell the files it never edited), with those that
- * changed since the release before. The output depends only on its inputs: building it again gives
- * the same file.
+ * changed since the release before; and each package's commit in the repository Composer installs it
+ * from (the skeleton's files are its proof), so that a tool can check that what Composer got is what was released (a tag moved there, or
+ * other code served for it, doesn't match). The output depends only on its inputs: building it again
+ * gives the same file.
  */
 
 declare(strict_types=1);
@@ -208,7 +213,113 @@ function changed(array $before, array $after): array
     return $paths;
 }
 
-$options = getopt('', ['version:', 'skeleton:', 'published:', 'root:', 'release-notes']);
+/**
+ * The packages as .github/split.json lists them: each one's Composer name and repository. Not the
+ * skeleton (a built entry): its commit is made on top of its repository's main at the time, so it's
+ * vouched for by its files (each release's "skeleton").
+ *
+ * @return array<string, string> Repository => Composer name
+ */
+function packages(): array
+{
+    $split = json_decode((string) file_get_contents(__DIR__.'/split.json'), true, 4, JSON_THROW_ON_ERROR);
+    $packages = [];
+
+    foreach (is_array($split) ? $split : [] as $entry) {
+        if (!is_array($entry) || !is_string($entry['path'] ?? null) || !is_string($entry['repository'] ?? null)) {
+            fail('.github/split.json isn\'t a list of paths and repositories.');
+        }
+
+        if (isset($entry['build'])) {
+            continue;
+        }
+
+        $composer = json_decode((string) file_get_contents(dirname(__DIR__).'/'.$entry['path'].'/composer.json'), true, 16, JSON_THROW_ON_ERROR);
+        $packages[$entry['repository']] = is_array($composer) && is_string($composer['name'] ?? null) ? $composer['name'] : fail($entry['path'].' has no Composer name.');
+    }
+
+    ksort($packages, SORT_STRING);
+
+    return $packages;
+}
+
+/**
+ * Each package's commit for this version, from .github/split.sh's output ("<path> at <commit>:
+ * <repository> <split commit>"): all of them, or none.
+ *
+ * @param array<string, string> $packages Repository => name
+ *
+ * @return array<string, string> Name => commit
+ */
+function split(string $file, array $packages): array
+{
+    $commits = [];
+
+    foreach (explode("\n", trim((string) file_get_contents($file))) as $line) {
+        if (1 !== preg_match('#^(\S+) at [0-9a-f]{40}: (\S+) ([0-9a-f]{40})$#', $line, $match)) {
+            fail('--packages: "'.$line.'" isn\'t a line of .github/split.sh\'s, for a package of .github/split.json.');
+        }
+
+        // The skeleton's line: it's vouched for by its files
+        if ('skeleton' === $match[1]) {
+            continue;
+        }
+
+        if (!isset($packages[$match[2]])) {
+            fail('--packages: "'.$line.'" isn\'t a line of .github/split.sh\'s, for a package of .github/split.json.');
+        }
+
+        $match = [1 => $match[2], 2 => $match[3]];
+
+        $commits[$packages[$match[1]]] = $match[2];
+    }
+
+    if (count($commits) !== count($packages)) {
+        fail('--packages: .github/split.sh\'s output lacks '.implode(', ', array_diff($packages, array_keys($commits))).'.');
+    }
+
+    ksort($commits, SORT_STRING);
+
+    return $commits;
+}
+
+/**
+ * An earlier version's commit of each package: its tag in the package's repository, as it is now
+ * (trusted as found; from this release on, each feed says its own).
+ *
+ * @param array<string, string>                $packages Repository => name
+ * @param array<string, array<string, string>> $tags     Read so far: repository => tag => commit
+ *
+ * @return array<string, string> Name => commit (a package without that tag is left out)
+ */
+function tagged(string $version, array $packages, array &$tags, string $root): array
+{
+    $remote = getenv('SPLIT_REMOTE') ?: 'https://github.com';
+    $commits = [];
+
+    foreach ($packages as $repository => $name) {
+        if (!isset($tags[$repository])) {
+            $tags[$repository] = [];
+
+            // Annotated tags' commits (the "^{}" lines) over the tags' own objects
+            foreach (explode("\n", trim(run(['git', 'ls-remote', '--tags', $remote.'/'.$repository.'.git'], $root))) as $line) {
+                if (1 === preg_match('#^([0-9a-f]{40})\trefs/tags/(v[^\^\s]+)(\^\{\})?$#', $line, $match) && ('' !== ($match[3] ?? '') || !isset($tags[$repository][$match[2]]))) {
+                    $tags[$repository][$match[2]] = $match[1];
+                }
+            }
+        }
+
+        if (isset($tags[$repository]['v'.$version])) {
+            $commits[$name] = $tags[$repository]['v'.$version];
+        }
+    }
+
+    ksort($commits, SORT_STRING);
+
+    return $commits;
+}
+
+$options = getopt('', ['version:', 'skeleton:', 'published:', 'packages:', 'root:', 'release-notes']);
 $version = is_string($options['version'] ?? null) ? $options['version'] : fail('--version is needed.');
 $root = is_string($options['root'] ?? null) ? $options['root'] : dirname(__DIR__);
 
@@ -235,6 +346,9 @@ if (isset($options['release-notes'])) {
 
 $skeleton = is_string($options['skeleton'] ?? null) && is_dir($options['skeleton']) ? rtrim($options['skeleton'], '/') : fail('--skeleton must be the built skeleton\'s folder.');
 $repository = is_string($options['published'] ?? null) && is_dir($options['published']) ? $options['published'] : fail('--published must be a clone of quirecms/skeleton.');
+$packages = packages();
+$current = is_string($options['packages'] ?? null) && is_file($options['packages']) ? split($options['packages'], $packages) : fail('--packages must be .github/split.sh\'s output for this version.');
+$tags = [];
 
 // Every release up to this one, oldest first
 $versions = [];
@@ -285,6 +399,7 @@ foreach ($versions as $release) {
             'files' => $files,
             'changed' => null === $before ? null : changed($before, $files),
         ],
+        'packages' => $release === $version ? $current : tagged($release, $packages, $tags, $root),
     ];
     $before = $files;
 }

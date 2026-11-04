@@ -21,6 +21,11 @@ final class FeedTest extends TestCase
     private string $repository;
     private string $published;
     private string $skeleton;
+    private string $split;
+    private string $remote;
+
+    /** @var array<string, string> Each package's commit of 0.1.0, in its repository (theme-default had none then) */
+    private array $tagged = [];
 
     #[\Override]
     protected function setUp(): void
@@ -64,6 +69,26 @@ final class FeedTest extends TestCase
         $this->git($this->published, ['init', '-q', '-b', 'main']);
         $this->commit($this->published, 'v0.1.0', '2026-10-01T12:00:00+00:00');
         $this->files($this->skeleton, ['Dockerfile' => 'FROM 0.1.1', 'compose.yaml' => 'same', 'new.txt' => 'added', 'bin/console' => '#!/usr/bin/env php']);
+
+        // The packages' repositories (SPLIT_REMOTE), with 0.1.0's tags; and what split.sh says of 0.1.1
+        $this->remote = $this->tmp.'/remote';
+        $this->split = $this->tmp.'/split.txt';
+        $lines = [];
+
+        foreach (['admin' => 'quire/admin', 'core' => 'quire/core', 'skeleton' => 'quire/skeleton', 'testing' => 'quire/testing', 'theme-default' => 'quire/theme-default'] as $repository => $name) {
+            $directory = $this->remote.'/quirecms/'.$repository.'.git';
+            $this->files($directory, ['README.md' => $repository]);
+            $this->git($directory, ['init', '-q', '-b', 'main']);
+
+            if ('theme-default' !== $repository) {
+                $this->commit($directory, 'v0.1.0', '2026-10-01T12:00:00+00:00');
+                $this->tagged[$name] = trim(new Process(['git', 'rev-parse', 'v0.1.0^{commit}'], $directory)->mustRun()->getOutput());
+            }
+
+            $lines[] = \sprintf('%s at %s: quirecms/%s %s', 'skeleton' === $repository ? 'skeleton' : 'packages/'.$repository, str_repeat('a', 40), $repository, hash('sha1', $name));
+        }
+
+        $this->files($this->tmp, ['split.txt' => implode("\n", $lines)."\n"]);
     }
 
     #[\Override]
@@ -99,6 +124,29 @@ final class FeedTest extends TestCase
         self::assertNull($first['skeleton']['changed']);
         self::assertSame(['Dockerfile', 'bin/console', 'compose.yaml', 'new.txt'], array_keys($latest['skeleton']['files']));
         self::assertSame(['Dockerfile', 'bin/console', 'new.txt', 'old.txt'], $latest['skeleton']['changed'], 'Added, changed and removed; not the one that stayed.');
+    }
+
+    public function testItSaysEachPackagesCommitInItsRepository(): void
+    {
+        [$latest, $first] = $this->feed()['releases'];
+
+        self::assertSame(['quire/admin' => hash('sha1', 'quire/admin'), 'quire/core' => hash('sha1', 'quire/core'), 'quire/testing' => hash('sha1', 'quire/testing'), 'quire/theme-default' => hash('sha1', 'quire/theme-default')], $latest['packages'], 'This version\'s, as the split makes them; not the skeleton\'s (its files vouch for it).');
+        unset($this->tagged['quire/skeleton']);
+        ksort($this->tagged);
+        self::assertSame($this->tagged, $first['packages'], 'Earlier ones\' from their tags (annotated: the commit, not the tag); one without the tag is left out.');
+    }
+
+    public function testEveryPackagesCommitIsNeeded(): void
+    {
+        // admin, core and the skeleton
+        $this->files($this->tmp, ['split.txt' => implode("\n", \array_slice(explode("\n", (string) file_get_contents($this->split)), 0, 3))."\n"]);
+        $this->refused('lacks quire/testing, quire/theme-default');
+    }
+
+    public function testALineThatIsntTheSplitsIsRefused(): void
+    {
+        $this->files($this->tmp, ['split.txt' => "packages/core at main: quirecms/core v0.1.1\n"]);
+        $this->refused('isn\'t a line of .github/split.sh\'s');
     }
 
     public function testBuildingItAgainGivesTheSameFile(): void
@@ -182,11 +230,11 @@ final class FeedTest extends TestCase
     }
 
     /**
-     * @return array{schema: int, name: string, repository: string, releases: list<array{version: string, date: string, security: list<array<string, string>>, notes: string, upgrade: ?string, requires: array{php: string, postgresql: ?int, server_contract: ?int}, skeleton: array{files: array<string, string>, changed: ?list<string>}}>}
+     * @return array{schema: int, name: string, repository: string, releases: list<array{version: string, date: string, security: list<array<string, string>>, notes: string, upgrade: ?string, requires: array{php: string, postgresql: ?int, server_contract: ?int}, skeleton: array{files: array<string, string>, changed: ?list<string>}, packages: array<string, string>}>}
      */
     private function feed(): array
     {
-        /** @var array{schema: int, name: string, repository: string, releases: list<array{version: string, date: string, security: list<array<string, string>>, notes: string, upgrade: ?string, requires: array{php: string, postgresql: ?int, server_contract: ?int}, skeleton: array{files: array<string, string>, changed: ?list<string>}}>} $feed The feed's shape (the tests check its values) */
+        /** @var array{schema: int, name: string, repository: string, releases: list<array{version: string, date: string, security: list<array<string, string>>, notes: string, upgrade: ?string, requires: array{php: string, postgresql: ?int, server_contract: ?int}, skeleton: array{files: array<string, string>, changed: ?list<string>}, packages: array<string, string>}>} $feed The feed's shape (the tests check its values) */
         $feed = json_decode($this->build()->getOutput(), true, flags: \JSON_THROW_ON_ERROR);
 
         return $feed;
@@ -212,7 +260,7 @@ final class FeedTest extends TestCase
 
     private function process(string $version): Process
     {
-        return new Process(['php', self::ROOT.'/.github/feed.php', '--version='.$version, '--skeleton='.$this->skeleton, '--published='.$this->published, '--root='.$this->repository]);
+        return new Process(['php', self::ROOT.'/.github/feed.php', '--version='.$version, '--skeleton='.$this->skeleton, '--published='.$this->published, '--packages='.$this->split, '--root='.$this->repository], null, ['SPLIT_REMOTE' => $this->remote]);
     }
 
     /**
