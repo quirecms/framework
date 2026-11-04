@@ -45,6 +45,8 @@ jobs:
         run: docker compose up --wait --no-build
       - name: Validate composer.json
         run: docker compose exec -T php composer validate --strict --no-check-publish
+      - name: Check the locked packages against the security advisories
+        run: docker compose exec -T php composer audit --locked
       - name: Warm up the dev container (needed by PHPStan's Symfony extension)
         run: docker compose exec -T php bin/console cache:warmup
       - name: Run quality checks and tests
