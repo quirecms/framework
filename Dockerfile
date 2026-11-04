@@ -77,7 +77,6 @@ RUN <<-EOF
 	fi
 	chmod +x bin/console
 	chmod -R g=u var
-	sync
 EOF
 
 # The shared libraries of extensions the site added (recipes above): the runtime has its own already.
