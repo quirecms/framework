@@ -9,10 +9,10 @@
     textarea, and the notes a list under it.
 
     Variables: type, item (null when new), version, values, errors, fields (by group: field, label,
-    control, html, error), transitions, can_save, authors, parents, preview, conflict, checks, timezone,
-    placement, scrubber (count, versions), live_body, threads, thread_names, and for published items,
-    changes: the user's pending revision (pending, version, state, can_publish, may_publish, approval,
-    merge_conflicts) and others' (others, names).
+    control, html, error), transitions, can_save, authors, parents, preview, conflict, stale, checks,
+    timezone, placement, scrubber (count, versions), live_body, threads, thread_names, and for published
+    items, changes: the user's pending revision (pending, version, state, can_publish, may_publish,
+    approval, merge_conflicts, live_changed, earlier) and others' (others, names).
 #}
 {% extends '@quire_admin/layout.html.twig' %}
 {% import '@quire_admin/_ui.html.twig' as ui %}
@@ -41,7 +41,7 @@
           data-content-editor-placement-url-value="{{ path('quire_admin_content_placement', {type: type.id}) }}"
           {% if not item %}data-content-editor-slug-from-title-value="true"{% endif %}
           data-content-editor-to-check-value="{{ '{count} to check'|trans({count: '{count}'}, 'quire-admin') }}"
-          {% if changes %}data-content-editor-autosave-value="true" data-content-editor-saved-value="{{ 'saved {time}'|trans({time: '{time}'}, 'quire-admin') }}" data-content-editor-unsaved-value="{{ 'Not saved: {problem}'|trans({}, 'quire-admin') }}" data-content-editor-conflict-value="{{ 'Not saved: your changes were saved elsewhere meanwhile, e.g. in another tab. Save to see them.'|trans({}, 'quire-admin') }}"{% endif %}>
+          {% if changes %}data-content-editor-autosave-value="true" data-content-editor-saved-value="{{ 'saved {time}'|trans({time: '{time}'}, 'quire-admin') }}" data-content-editor-unsaved-value="{{ 'Not saved: {problem}'|trans({}, 'quire-admin') }}" data-content-editor-conflict-value="{{ 'Not saved: your changes were saved elsewhere meanwhile, e.g. in another tab. Save to see them.'|trans({}, 'quire-admin') }}" data-content-editor-live-changed-value="{{ 'saved {time}. Someone published changes since you opened this: they\'re kept, and yours are combined with them when you publish.'|trans({time: '{time}'}, 'quire-admin') }}"{% endif %}>
     <div class="editor-bar q-card">
         <a class="editor-bar__back" href="{{ path('quire_admin_content', {type: type.id}) }}"><span aria-hidden="true">←</span> {{ plural }}</a>
         {{ ui.thread(pending and pending.state.value == 'in_review' ? 'review' : stage, true) }}
@@ -54,6 +54,8 @@
                     {{ 'In the trash'|trans({}, 'quire-admin') }}
                 {%- elseif changes and pending -%}
                     {{ 'Live · your changes aren\'t live yet'|trans({}, 'quire-admin') }}
+                {%- elseif item.status == 'published' and changes and changes.live_changed -%}
+                    {{ 'Live · published again since you opened it'|trans({}, 'quire-admin') }}
                 {%- elseif item.status == 'published' -%}
                     {{ 'Live · what you see is what visitors see'|trans({}, 'quire-admin') }}
                 {%- elseif item.status == 'scheduled' and item.publishedAt -%}
@@ -159,6 +161,15 @@
             <p>{{ 'Someone saved this item after you opened it. What you entered is below and isn\'t saved. Save again to replace their changes with yours, or open the item in a new tab to see theirs first.'|trans({}, 'quire-admin') }}</p>
             <p><a href="{{ path('quire_admin_content_edit', {type: type.id, id: item.id}) }}" target="_blank">{{ 'Open the saved item in a new tab'|trans({}, 'quire-admin') }}</a></p>
         </div>
+    {% endif %}
+
+    {% if stale %}
+        <div class="q-notice q-notice--warning" role="alert">
+            <p>{{ 'This item was published again after you opened it, and the version you opened is no longer kept, so what changed can\'t be combined with your text. What you entered is below and isn\'t saved. Save again to make it your changes to the live version, or open the item in a new tab to see what\'s live first.'|trans({}, 'quire-admin') }}</p>
+            <p><a href="{{ path('quire_admin_content_edit', {type: type.id, id: item.id}) }}" target="_blank">{{ 'Open the saved item in a new tab'|trans({}, 'quire-admin') }}</a></p>
+        </div>
+    {% elseif changes and changes.live_changed and not changes.merge_conflicts and not conflict %}
+        <p class="q-notice" role="status">{{ 'Someone published changes since you opened this. They\'re kept: yours are combined with them when you publish.'|trans({}, 'quire-admin') }}</p>
     {% endif %}
 
     {% if changes and changes.merge_conflicts %}
@@ -327,7 +338,7 @@
                             <select id="author_id" name="author_id"{{ place|raw }}{{ _self.described('author_id', errors.author_id ?? null) }}>
                                 <option value="">—</option>
                                 {% for author in authors %}
-                                    <option value="{{ author.id }}"{% if author.id == values.author_id %} selected{% endif %}>{{ author.label }}</option>
+                                    <option value="{{ author.id }}"{% if author.id == (values.author_id ?? item.authorId ?? null) %} selected{% endif %}>{{ author.label }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -352,6 +363,21 @@
                         <button type="submit" form="place-form" class="q-btn q-btn--ghost">{{ 'Save address and place'|trans({}, 'quire-admin') }}</button>
                     {% endif %}
                 </fieldset>
+
+                {% if changes and changes.earlier is not empty %}
+                    <div class="editor-panel__group">
+                        <h3>{{ 'Your earlier changes'|trans({}, 'quire-admin') }}</h3>
+                        <p class="q-meta">{{ 'Saved before these, and not shown here: open them to compare, publish or discard them.'|trans({}, 'quire-admin') }}</p>
+                        <ul class="q-list">
+                            {% for earlier in changes.earlier %}
+                                <li>
+                                    <a href="{{ path('quire_admin_content_changes', {type: type.id, id: item.id, pending: earlier.id}) }}">{{ 'Changes of {when}'|trans({when: earlier.updatedAt|quire_admin_when}, 'quire-admin')|raw }}</a>
+                                    <span class="q-meta">{{ ('changes.' ~ earlier.state.value)|trans({}, 'quire-admin') }}</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
 
                 {% if changes and changes.others is not empty %}
                     <div class="editor-panel__group">

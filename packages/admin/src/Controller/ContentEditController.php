@@ -358,14 +358,22 @@ final readonly class ContentEditController
     private function saveChanges(Request $request, ContentTypeDefinition $type, Content $item, array $values, array $errors, string $intent): Response
     {
         $own = $this->changes->own($item);
-        // Empty until the user has changes.
+        // The version of the user's changes the editor has: empty when it was opened before they had any.
         $sent = $request->request->getString('pending_version');
-        $opened = ctype_digit($sent) ? (int) $sent : ($own->version ?? 0);
+        $pendingVersion = ctype_digit($sent) ? (int) $sent : null;
+        // The item's version the editor was opened at: its text is based on that one (D-41).
+        $opened = $request->request->getInt('version', $item->version);
         $session = $request->getSession();
         \assert($session instanceof FlashBagAwareSessionInterface);
 
+        // Changes the editor never showed (saved in another tab after it was opened) are only replaced
+        // knowingly: the conflict page says so, and its form has them.
+        if ($own instanceof PendingRevision && $pendingVersion !== $own->version) {
+            return $this->page($type, $item, $values, [], status: Response::HTTP_CONFLICT, conflict: true, version: $opened, pending: $own);
+        }
+
         if ('preview' === $intent) {
-            return $this->page($type, $item, $values, $errors, preview: $this->preview(\is_string($values['body'] ?? null) ? $values['body'] : '', $item), pending: $own, pendingVersion: $opened);
+            return $this->page($type, $item, $values, $errors, preview: $this->preview(\is_string($values['body'] ?? null) ? $values['body'] : '', $item), version: $opened, pending: $own, pendingVersion: $pendingVersion);
         }
 
         if ('discard' === $intent) {
@@ -378,23 +386,35 @@ final readonly class ContentEditController
         }
 
         if ([] !== $errors) {
-            return $this->page($type, $item, $values, $errors, status: Response::HTTP_UNPROCESSABLE_ENTITY, pending: $own, pendingVersion: $opened);
+            return $this->page($type, $item, $values, $errors, status: Response::HTTP_UNPROCESSABLE_ENTITY, version: $opened, pending: $own, pendingVersion: $pendingVersion);
         }
 
         try {
-            $pending = $own ?? $this->pendingWriter->create($item->id, $this->users->get()?->id);
+            // The user's first save: their changes start from the version the editor was opened at, so
+            // what was published since is kept when they're published, not taken back (C-1). Also when
+            // the changes this editor saved before were published or discarded elsewhere meanwhile.
+            $pending = $own ?? $this->pendingWriter->create($item->id, $this->users->get()?->id, baseVersion: $opened);
             /** @var array{title: string, slug: string, body: string, excerpt: ?string, parent_id: ?string, position: ?int, author_id?: ?string, fields: array<string, mixed>} $values */
-            $command = $this->form->pendingUpdate($type, $pending, $own instanceof PendingRevision ? $opened : $pending->version, $values);
+            $command = $this->form->pendingUpdate($type, $pending, $pending->version, $values);
             $pending = $command->isEmpty() ? $pending : $this->pendingWriter->update($command);
         } catch (PendingRevisionConflictException) {
-            // Saved elsewhere, e.g. in another tab: saving again replaces that, knowingly.
-            return $this->page($type, $item, $values, [], status: Response::HTTP_CONFLICT, conflict: true, pending: $own);
+            // Saved elsewhere at the same moment, e.g. in another tab: saving again replaces that, knowingly.
+            return $this->page($type, $item, $values, [], status: Response::HTTP_CONFLICT, conflict: true, version: $opened, pending: $this->changes->own($item));
+        } catch (ContentConflictException) {
+            // The version the editor was opened at isn't kept any more: what changed since can't be told
+            // apart from the user's own changes. Saving again starts from the live version, knowingly.
+            return $this->page($type, $item, $values, [], status: Response::HTTP_CONFLICT, pending: $own, stale: true);
         } catch (InvalidContentException $e) {
-            return $this->page($type, $item, $values, $e->violations, status: Response::HTTP_UNPROCESSABLE_ENTITY, pending: $own, pendingVersion: $opened);
+            return $this->page($type, $item, $values, $e->violations, status: Response::HTTP_UNPROCESSABLE_ENTITY, version: $opened, pending: $own, pendingVersion: $pendingVersion);
         }
 
         if ('autosave' === $intent) {
-            return new JsonResponse(['pending_version' => $pending->version, 'saved_at' => $pending->updatedAt->setTimezone($this->timezone())->format('H:i')]);
+            return new JsonResponse([
+                'pending_version' => $pending->version,
+                'saved_at' => $pending->updatedAt->setTimezone($this->timezone())->format('H:i'),
+                // Published since the changes started: kept, and the editor says so (VERIFY-NEW-04).
+                'live_changed' => $this->changes->liveChanged($item, $pending),
+            ]);
         }
 
         $actor = $this->users->get()?->id;
@@ -549,7 +569,7 @@ final readonly class ContentEditController
      * @param array<string, string>      $errors
      * @param array<string, string>|null $mergeConflicts Why publishing the changes conflicted, by property
      */
-    private function page(ContentTypeDefinition $type, ?Content $item, array $values, array $errors, int $status = Response::HTTP_OK, ?string $preview = null, bool $conflict = false, ?int $version = null, ?PendingRevision $pending = null, ?int $pendingVersion = null, ?array $mergeConflicts = null): Response
+    private function page(ContentTypeDefinition $type, ?Content $item, array $values, array $errors, int $status = Response::HTTP_OK, ?string $preview = null, bool $conflict = false, ?int $version = null, ?PendingRevision $pending = null, ?int $pendingVersion = null, ?array $mergeConflicts = null, bool $stale = false): Response
     {
         $fields = [];
 
@@ -585,6 +605,7 @@ final readonly class ContentEditController
             'parents' => $type->has('hierarchical') ? $this->parents($type, $item) : [],
             'preview' => $preview,
             'conflict' => $conflict,
+            'stale' => $stale,
             'checks' => $this->checks($type, $item, $values),
             'placement' => $this->placement($type, $item, $values),
             'scrubber' => $item instanceof Content ? $this->scrubber($item) : null,
@@ -601,6 +622,9 @@ final readonly class ContentEditController
                 'may_publish' => $this->changes->mayPublish($type),
                 'approval' => $this->changes->approvalRequired(),
                 'merge_conflicts' => $mergeConflicts,
+                // Published since the user's changes started, or since this editor was opened
+                'live_changed' => $pending instanceof PendingRevision ? $this->changes->liveChanged($item, $pending) : ($version ?? $item->version) !== $item->version,
+                'earlier' => $this->changes->earlier($item),
                 'others' => $others,
                 'names' => $this->changes->names([$pending?->scheduledBy, ...array_map(static fn (PendingRevision $other): ?string => $other->authorId, $others)]),
             ] : null,

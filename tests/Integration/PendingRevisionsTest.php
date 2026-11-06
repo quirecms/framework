@@ -275,6 +275,101 @@ final class PendingRevisionsTest extends KernelTestCase
         self::assertSame("<p>Newer</p>\n", $renderer->body($this->repository->preview($pending)), 'Each save previews anew.');
     }
 
+    public function testChangesStartFromTheVersionTheirAuthorSaw(): void
+    {
+        // Bob opens the item; Alice publishes a fix to the second line meanwhile (C-1).
+        $post = $this->published();
+        $opened = $post->version;
+        $this->writer->update(new UpdateContent($post->id, $post->version)->body(str_replace('9 to 5', '9 to 6', self::BODY)));
+
+        // Bob's editor still has the text he opened: he changes its last line.
+        $bob = $this->pending->create($post->id, baseVersion: $opened);
+        self::assertSame([$opened, self::BODY], [$bob->baseVersion, $bob->base->body], 'Based on what he saw, not on what\'s live.');
+        $bob = $this->pending->update(new UpdatePendingRevision($bob->id, $bob->version)->body(str_replace('Sundays.', 'Sundays and holidays.', self::BODY)));
+
+        $after = $this->writer->publishPendingRevision($bob->id, $bob->version);
+        self::assertSame("# Opening hours\n\nMonday to Friday, 9 to 6.\n\nClosed on Sundays and holidays.\n", $after->body, 'Alice\'s fix is kept, not taken back.');
+
+        // The same line changed on both sides is a conflict, not an undo.
+        $opened = $after->version;
+        $this->writer->update(new UpdateContent($post->id, $after->version)->body(str_replace('9 to 6', '10 to 6', $after->body)));
+        $carol = $this->pending->create($post->id, baseVersion: $opened);
+        $carol = $this->pending->update(new UpdatePendingRevision($carol->id, $carol->version)->body(str_replace('9 to 6', '8 to 6', $after->body)));
+
+        try {
+            $this->writer->publishPendingRevision($carol->id, $carol->version);
+            self::fail('Both changed the same line.');
+        } catch (MergeConflictException $e) {
+            self::assertSame(['body'], array_keys($e->conflicts));
+        }
+    }
+
+    public function testAVersionThatIsntKeptAnyMoreIsNeverGuessed(): void
+    {
+        self::getContainer()->get(Settings::class)->set('quire.content.revisions_keep', 1);
+        $post = $this->published();
+        $this->writer->update(new UpdateContent($post->id, $post->version)->title('Changed'));
+
+        try {
+            $this->pending->create($post->id, baseVersion: $post->version);
+            self::fail('Its revision was pruned: what changed since can\'t be told.');
+        } catch (ContentConflictException $e) {
+            self::assertSame([$post->version, $post->version + 1], [$e->expectedVersion, $e->currentVersion]);
+        }
+
+        try {
+            $this->pending->create($post->id, baseVersion: $post->version + 5);
+            self::fail('A version the item never had.');
+        } catch (ContentConflictException) {
+        }
+
+        self::assertSame([], $this->repository->forContent($post->id), 'Nothing started.');
+        self::assertSame('Changed', $this->pending->create($post->id, baseVersion: $post->version + 1)->base->title, 'The current one needs no revision.');
+    }
+
+    public function testAnAuthorHasOneSetOfChangesUnlessAWorkflowWantsSeveral(): void
+    {
+        $ada = $this->user('ada');
+        $post = $this->published();
+        $first = $this->pending->create($post->id, $ada->id);
+
+        try {
+            $this->pending->create($post->id, $ada->id);
+            self::fail('Ada has changes to the item already, e.g. saved in another tab.');
+        } catch (PendingRevisionConflictException $e) {
+            self::assertSame([$first->id, 0, $first->version], [$e->id, $e->expectedVersion, $e->currentVersion]);
+        }
+
+        self::assertCount(1, $this->repository->forContent($post->id, $ada->id));
+        $this->pending->create($post->id, $this->user('bob')->id);
+        $this->pending->create($post->id, $ada->id, onlyOne: false);
+        $adas = array_filter($this->repository->forContent($post->id), static fn (PendingRevision $pending): bool => $pending->authorId === $ada->id);
+        self::assertCount(2, $adas, 'Several only when asked for.');
+    }
+
+    public function testRestoringARevisionIntoChangesThatExist(): void
+    {
+        $ada = $this->user('ada');
+        $post = $this->published();
+        $first = $this->revisions($post)[0];
+        $live = $this->writer->update(new UpdateContent($post->id, $post->version)->title('Changed'));
+        $pending = $this->pending->create($post->id, $ada->id);
+        $pending = $this->pending->update(new UpdatePendingRevision($pending->id, $pending->version)->body('Work in progress.'));
+
+        $restored = $this->pending->restoreRevision($pending->id, $pending->version, $first->id, 'Back to the first');
+        self::assertSame([$pending->id, 'Hours', self::BODY, 'Back to the first', $live->version], [$restored->id, $restored->proposed->title, $restored->proposed->body, $restored->message, $restored->baseVersion], 'Her one set of changes, still based where it was.');
+        self::assertCount(1, $this->repository->forContent($post->id, $ada->id));
+
+        try {
+            $this->pending->restoreRevision($pending->id, $pending->version, $first->id);
+            self::fail('Saved since the version she saw.');
+        } catch (PendingRevisionConflictException) {
+        }
+
+        $this->expectException(InvalidContentException::class);
+        $this->pending->restoreRevision($restored->id, $restored->version, $this->revisions($this->published())[0]->id);
+    }
+
     public function testStartingFromARevisionAndDiscarding(): void
     {
         $post = $this->published();

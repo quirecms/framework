@@ -504,7 +504,7 @@ application.register('content-editor', class extends Controller {
 
     // autosave: changes to a published item are saved as the editor types (as a pending revision).
     // slugFromTitle: a new item's slug follows its title (as the server makes it) until one is written.
-    static values = { previewUrl: String, checkUrl: String, placementUrl: String, autosave: Boolean, saved: String, unsaved: String, conflict: String, toCheck: String, slugFromTitle: Boolean };
+    static values = { previewUrl: String, checkUrl: String, placementUrl: String, autosave: Boolean, saved: String, unsaved: String, conflict: String, liveChanged: String, toCheck: String, slugFromTitle: Boolean };
 
     get form() {
         return this.hasFormTarget ? this.formTarget : this.element;
@@ -672,7 +672,8 @@ application.register('content-editor', class extends Controller {
                 this.pendingVersionTarget.value = saved.pending_version;
 
                 if (this.hasStatusTarget) {
-                    this.statusTarget.textContent = this.savedValue.replace('{time}', saved.saved_at);
+                    // Published since the changes started: kept, and said in the live region (D-41)
+                    this.statusTarget.textContent = (saved.live_changed && this.liveChangedValue ? this.liveChangedValue : this.savedValue).replace('{time}', saved.saved_at);
                 }
             } else if (this.hasStatusTarget) {
                 this.statusTarget.textContent = response.status === 409 ? this.conflictValue : this.unsavedValue.replace('{problem}', `HTTP ${response.status}`);

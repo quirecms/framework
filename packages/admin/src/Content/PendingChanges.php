@@ -6,9 +6,11 @@ namespace Quire\Admin\Content;
 
 use Quire\Content\Content;
 use Quire\Content\ContentWriter;
+use Quire\Content\Revision\Diff;
 use Quire\Content\Revision\PendingRevision;
 use Quire\Content\Revision\PendingRevisionRepository;
 use Quire\Content\Revision\ReviewState;
+use Quire\Content\Revision\Snapshot;
 use Quire\Content\Status;
 use Quire\Content\Type\ContentTypeDefinition;
 use Quire\Settings\Settings;
@@ -55,6 +57,28 @@ final readonly class PendingChanges
         $user = $this->users->get();
 
         return $user instanceof \Quire\User\User ? $this->repository->forContent($item->id, $user->id)[0] ?? null : (null);
+    }
+
+    /**
+     * The current user's other changes to the item, older than those the editor shows: from before an
+     * author could have only one set (D-41), to open or discard.
+     *
+     * @return list<PendingRevision>
+     */
+    public function earlier(Content $item): array
+    {
+        $user = $this->users->get();
+
+        return $user instanceof \Quire\User\User ? \array_slice($this->repository->forContent($item->id, $user->id), 1) : [];
+    }
+
+    /**
+     * Whether the item's text or fields were published anew since the changes started: they're kept
+     * when the changes are published, merged with them.
+     */
+    public function liveChanged(Content $item, PendingRevision $pending): bool
+    {
+        return $item->version !== $pending->baseVersion && [] !== Diff::between($pending->base, Snapshot::of($item))->changes;
     }
 
     /**

@@ -216,6 +216,8 @@ final readonly class ContentChangesController
             'entries' => $entries,
             'names' => $this->changes->names([...array_map(static fn (Revision $revision): ?string => $revision->authorId, $revisions), ...array_map(static fn (Revision $revision): ?string => $revision->approvedBy, $revisions)]),
             'changes' => $this->changes->applies($item),
+            // A restore replaces the user's changes rather than adding a second set (M-05)
+            'own' => $this->changes->applies($item) ? $this->changes->own($item) : null,
             'timezone' => $this->settings->getString('site.timezone'),
         ]));
     }
@@ -232,15 +234,29 @@ final readonly class ContentChangesController
             throw new NotFoundHttpException('The item has no such revision.');
         }
 
+        // The item's version, and the user's changes, as the history page showed them (M-04, M-05)
+        $seen = $request->request->getInt('version', $item->version);
+        $sent = $request->request->getString('pending_version');
+        $message = $this->translator->trans('Restore the version of {date}', ['date' => $revision->createdAt->setTimezone($this->timezone())->format('Y-m-d H:i')], 'quire-admin');
+
         try {
             if ($this->changes->applies($item)) {
                 // A published item: the old version becomes the user's changes, to look at and publish.
-                $this->pendingWriter->create($item->id, $this->users->get()?->id, $this->translator->trans('Restore the version of {date}', ['date' => $revision->createdAt->setTimezone($this->timezone())->format('Y-m-d H:i')], 'quire-admin'), $revision->id);
-                $flash->add('success', $this->translator->trans('The old version is in your changes now. Publish them to restore it.', [], 'quire-admin'));
+                $own = $this->changes->own($item);
+
+                if ($own instanceof PendingRevision) {
+                    $this->pendingWriter->restoreRevision($own->id, ctype_digit($sent) ? (int) $sent : 0, $revision->id, $message);
+                    $flash->add('success', $this->translator->trans('Your changes are the old version now. Publish them to restore it.', [], 'quire-admin'));
+                } else {
+                    $this->pendingWriter->create($item->id, $this->users->get()?->id, $message, $revision->id, baseVersion: $seen);
+                    $flash->add('success', $this->translator->trans('The old version is in your changes now. Publish them to restore it.', [], 'quire-admin'));
+                }
             } else {
-                $this->writer->restoreRevision($item->id, $revision->id, $item->version, $this->users->get()?->id);
+                $this->writer->restoreRevision($item->id, $revision->id, $seen, $this->users->get()?->id);
                 $flash->add('success', $this->translator->trans('The old version is restored.', [], 'quire-admin'));
             }
+        } catch (PendingRevisionConflictException) {
+            $flash->add('error', $this->translator->trans('Your changes were saved while you looked at the history, e.g. in another tab. Look at them, then try again.', [], 'quire-admin'));
         } catch (ContentConflictException) {
             $flash->add('error', $this->translator->trans('The item was saved while you looked at its history. Try again.', [], 'quire-admin'));
         } catch (InvalidContentException $e) {
