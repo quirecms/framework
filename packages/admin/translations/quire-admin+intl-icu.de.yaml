@@ -956,3 +956,15 @@
 "find.settings": "Einstellungen"
 "find.pages": "Seiten"
 "Back to the text": "Zurück zum Text"
+'saved {time}': 'gespeichert {time}'
+'saved {time}. Someone published changes since you opened this: they''re kept, and yours are combined with them when you publish.': 'gespeichert {time}. Jemand hat seit dem Öffnen Änderungen veröffentlicht: Sie bleiben erhalten, und deine werden beim Veröffentlichen mit ihnen zusammengeführt.'
+'Live · published again since you opened it': 'Live · seit dem Öffnen erneut veröffentlicht'
+'Someone published changes since you opened this. They''re kept: yours are combined with them when you publish.': 'Jemand hat seit dem Öffnen Änderungen veröffentlicht. Sie bleiben erhalten: Deine werden beim Veröffentlichen mit ihnen zusammengeführt.'
+'This item was published again after you opened it, and the version you opened is no longer kept, so what changed can''t be combined with your text. What you entered is below and isn''t saved. Save again to make it your changes to the live version, or open the item in a new tab to see what''s live first.': 'Dieser Eintrag wurde nach dem Öffnen erneut veröffentlicht, und die geöffnete Fassung ist nicht mehr gespeichert, deshalb lässt sich das Geänderte nicht mit deinem Text zusammenführen. Deine Eingaben stehen unten und sind nicht gespeichert. Speichere erneut, um sie zu deinen Änderungen an der Live-Fassung zu machen, oder öffne den Eintrag in einem neuen Tab, um zuerst zu sehen, was live ist.'
+'Your earlier changes': 'Deine früheren Änderungen'
+'Saved before these, and not shown here: open them to compare, publish or discard them.': 'Vor diesen gespeichert und hier nicht angezeigt: Öffne sie, um sie zu vergleichen, zu veröffentlichen oder zu verwerfen.'
+'Changes of {when}': 'Änderungen von {when}'
+'Your changes are the old version now. Publish them to restore it.': 'Deine Änderungen sind jetzt die alte Fassung. Veröffentliche sie, um sie wiederherzustellen.'
+'Your changes were saved while you looked at the history, e.g. in another tab. Look at them, then try again.': 'Deine Änderungen wurden gespeichert, während du den Verlauf angesehen hast, z. B. in einem anderen Tab. Sieh sie dir an und versuche es dann erneut.'
+'Replace your changes with this version? What you changed is replaced.': 'Deine Änderungen durch diese Fassung ersetzen? Was du geändert hast, wird ersetzt.'
+'Replace your changes with this version': 'Deine Änderungen durch diese Fassung ersetzen'

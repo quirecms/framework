@@ -1,7 +1,7 @@
 {#
     An item's revisions, newest first, each with what it changed. Restoring one makes it the item again:
     right away for drafts, and as the user's changes, to publish, for published items.
-    Variables: type, item, entries (revision, diff, current), names, changes, timezone.
+    Variables: type, item, entries (revision, diff, current), names, changes, own (the user's changes, or null), timezone.
 #}
 {% extends '@quire_admin/layout.html.twig' %}
 
@@ -42,8 +42,10 @@
                     <form method="post" action="{{ path('quire_admin_content_restore', {type: type.id, id: item.id}) }}">
                         <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_content_editor') }}">
                         <input type="hidden" name="revision" value="{{ revision.id }}">
-                        <button type="submit" class="q-btn q-btn--ghost">
-                            {{ changes ? 'Restore as your changes'|trans({}, 'quire-admin') : 'Restore this version'|trans({}, 'quire-admin') }}<span class="q-sr"> ({{ revision.createdAt|date('Y-m-d H:i', timezone) }})</span>
+                        <input type="hidden" name="version" value="{{ item.version }}">
+                        {% if own %}<input type="hidden" name="pending_version" value="{{ own.version }}">{% endif %}
+                        <button type="submit" class="q-btn q-btn--ghost"{% if own %} data-turbo-confirm="{{ 'Replace your changes with this version? What you changed is replaced.'|trans({}, 'quire-admin') }}"{% endif %}>
+                            {{ own ? 'Replace your changes with this version'|trans({}, 'quire-admin') : (changes ? 'Restore as your changes'|trans({}, 'quire-admin') : 'Restore this version'|trans({}, 'quire-admin')) }}<span class="q-sr"> ({{ revision.createdAt|date('Y-m-d H:i', timezone) }})</span>
                         </button>
                     </form>
                 {% endif %}

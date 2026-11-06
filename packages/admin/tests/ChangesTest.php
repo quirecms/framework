@@ -217,6 +217,158 @@ final class ChangesTest extends AdminTestCase
         self::assertSame('Renamed', $this->live($published)->title);
     }
 
+    public function testAnEditorOpenedBeforeSomeonePublishedKeepsWhatTheyPublished(): void
+    {
+        // Bob opens the item; Alice publishes a fix to its second line meanwhile (C-1).
+        $this->signIn('editor');
+        $post = $this->published();
+        $form = $this->button($this->client->request('GET', $this->editor($post)), 'save');
+        $this->service(ContentWriter::class)->update(new UpdateContent($post->id, $post->version)->body(str_replace('9 to 5', '9 to 6', self::BODY)));
+
+        // Bob changes the last line in his tab, as it autosaves.
+        $this->client->request('POST', $form->getUri(), ['intent' => 'autosave', 'body' => str_replace('Sundays.', 'Sundays and holidays.', self::BODY)] + $form->getPhpValues(), server: ['HTTP_ACCEPT' => 'application/json']);
+        $saved = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertIsArray($saved);
+        self::assertTrue($saved['live_changed'] ?? null, 'His editor says so.');
+
+        $crawler = $this->client->request('GET', $this->editor($post));
+        self::assertSelectorTextContains('.q-notice[role=status]', 'Someone published changes since you opened this. They\'re kept');
+        $this->client->submit($this->button($crawler, 'publish_changes'));
+
+        self::assertSame("# Opening hours\n\nMonday to Friday, 9 to 6.\n\nClosed on Sundays and holidays.\n", $this->live($post)->body, 'Alice\'s fix is kept, not taken back.');
+    }
+
+    public function testAnEditorOpenedAtAVersionThatIsntKeptAnyMoreSaysSo(): void
+    {
+        $this->setSetting('quire.content.revisions_keep', 1);
+        $this->signIn('editor');
+        $post = $this->published();
+        $form = $this->button($this->client->request('GET', $this->editor($post)), 'save');
+        $this->service(ContentWriter::class)->update(new UpdateContent($post->id, $post->version)->title('Theirs'));
+
+        $crawler = $this->client->submit($form, ['body' => 'Mine.']);
+        self::assertResponseStatusCodeSame(409);
+        self::assertSelectorTextContains('.q-notice--warning', 'the version you opened is no longer kept');
+        self::assertSame([], $this->pendingOf($post), 'Nothing saved.');
+
+        // Saving again makes it changes to the live version, knowingly.
+        $this->client->submit($this->button($crawler, 'save'));
+        self::assertResponseRedirects();
+        self::assertSame(['Theirs', 'Mine.'], [$this->pendingOf($post)[0]->base->title, $this->pendingOf($post)[0]->proposed->body]);
+    }
+
+    public function testTwoTabsOfOneEditorNeverReplaceEachOtherUnknowingly(): void
+    {
+        $this->signIn('editor');
+        $post = $this->published();
+        $first = $this->button($this->client->request('GET', $this->editor($post)), 'save');
+        $second = $this->button($this->client->request('GET', $this->editor($post)), 'save');
+        $autosave = function (\Symfony\Component\DomCrawler\Form $tab, array $values): void {
+            $this->client->request('POST', $tab->getUri(), ['intent' => 'autosave'] + $values + $tab->getPhpValues(), server: ['HTTP_ACCEPT' => 'application/json']);
+        };
+
+        $autosave($first, ['title' => 'From the first tab']);
+        self::assertResponseIsSuccessful();
+
+        // The second tab was opened before those changes: it doesn't replace them (H-9).
+        $autosave($second, ['title' => 'From the second tab']);
+        self::assertResponseStatusCodeSame(409);
+        self::assertSame('From the first tab', $this->pendingOf($post)[0]->proposed->title);
+
+        // Saved by hand, the conflict page says so, and saving again replaces them knowingly.
+        $crawler = $this->client->submit($second, ['title' => 'From the second tab']);
+        self::assertResponseStatusCodeSame(409);
+        self::assertSelectorTextContains('.q-notice--warning', 'Someone saved this item after you opened it.');
+        $this->client->submit($this->button($crawler, 'save'));
+        self::assertResponseRedirects();
+        self::assertSame(['From the second tab'], array_map(static fn (PendingRevision $pending): string => $pending->proposed->title, $this->pendingOf($post)));
+    }
+
+    public function testATabWhoseChangesWerePublishedElsewhereKeepsWhatWasPublished(): void
+    {
+        $this->signIn('editor');
+        $post = $this->published();
+        $first = $this->button($this->client->request('GET', $this->editor($post)), 'save');
+        $this->client->request('POST', $first->getUri(), ['intent' => 'autosave', 'title' => 'Opening times'] + $first->getPhpValues(), server: ['HTTP_ACCEPT' => 'application/json']);
+        $saved = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertIsArray($saved);
+        self::assertIsInt($saved['pending_version'] ?? null);
+
+        // A second tab changes the last line and publishes the changes, the first tab's included.
+        $crawler = $this->client->request('GET', $this->editor($post));
+        $this->client->submit($this->button($crawler, 'publish_changes'), ['body' => str_replace('Sundays.', 'Sundays and holidays.', self::BODY)]);
+        self::assertSame([], $this->pendingOf($post));
+
+        // The first tab types on: its text doesn't have the second tab's line, which stays.
+        $this->client->submit($first, ['title' => 'Opening times', 'pending_version' => (string) $saved['pending_version'], 'body' => str_replace('9 to 5', '9 to 6', self::BODY)]);
+        $this->client->submit($this->button($this->client->followRedirect(), 'publish_changes'));
+
+        self::assertSame(['Opening times', "# Opening hours\n\nMonday to Friday, 9 to 6.\n\nClosed on Sundays and holidays.\n"], [$this->live($post)->title, $this->live($post)->body]);
+    }
+
+    public function testRestoringFromAHistoryThatIsOutOfDate(): void
+    {
+        $this->signIn('editor');
+        $writer = $this->service(ContentWriter::class);
+        $draft = $writer->create(new CreateContent('post', 'First title'));
+        $draft = $writer->update(new UpdateContent($draft->id, $draft->version)->title('Second title'));
+        $crawler = $this->client->request('GET', '/admin/content/post/'.$draft->id.'/history');
+
+        // Someone saves the draft while the history is open (M-04).
+        $writer->update(new UpdateContent($draft->id, $draft->version)->title('Newer title'));
+        $this->client->submit($crawler->selectButton('Restore this version')->form());
+        $this->client->followRedirect();
+
+        self::assertSelectorTextSame('.q-notice--error', 'The item was saved while you looked at its history. Try again.');
+        self::assertSame('Newer title', $this->live($draft)->title);
+    }
+
+    public function testRestoringAVersionReplacesTheUsersChangesKnowingly(): void
+    {
+        $this->signIn('editor');
+        $writer = $this->service(ContentWriter::class);
+        $post = $this->published();
+        $post = $writer->update(new UpdateContent($post->id, $post->version)->title('Renamed'));
+        $crawler = $this->client->request('GET', $this->editor($post));
+        $this->client->submit($this->button($crawler, 'save'), ['body' => 'Work in progress.']);
+
+        // With changes of their own, a restore replaces them: one set of changes, not two (M-05).
+        $crawler = $this->client->request('GET', '/admin/content/post/'.$post->id.'/history');
+        $restore = $crawler->selectButton('Replace your changes with this version');
+        self::assertStringContainsString('What you changed is replaced.', (string) $restore->attr('data-turbo-confirm'));
+        $this->client->submit($restore->form());
+        $this->client->followRedirect();
+
+        self::assertSelectorTextSame('.q-notice--success', 'Your changes are the old version now. Publish them to restore it.');
+        self::assertSame([['Hours', self::BODY]], array_map(static fn (PendingRevision $pending): array => [$pending->proposed->title, $pending->proposed->body], $this->pendingOf($post)));
+
+        // From a history page opened before the changes were saved again: told, not replaced.
+        $crawler = $this->client->request('GET', '/admin/content/post/'.$post->id.'/history');
+        $form = $crawler->selectButton('Replace your changes with this version')->form();
+        $editor = $this->client->request('GET', $this->editor($post));
+        $this->client->submit($this->button($editor, 'save'), ['title' => 'Saved meanwhile']);
+        $this->client->submit($form);
+        $this->client->followRedirect();
+
+        self::assertSelectorTextContains('.q-notice--error', 'Your changes were saved while you looked at the history');
+        self::assertSame('Saved meanwhile', $this->pendingOf($post)[0]->proposed->title);
+    }
+
+    public function testEarlierChangesOfTheUserAreShownToOpenOrDiscard(): void
+    {
+        $user = $this->signIn('editor');
+        $post = $this->published();
+        $pending = $this->service(\Quire\Content\Revision\PendingRevisionWriter::class);
+        // Two sets, as a restore or simultaneous saves made them before D-41
+        $earlier = $pending->create($post->id, $user->id, 'Earlier', onlyOne: false);
+        $pending->create($post->id, $user->id, 'Latest', onlyOne: false);
+
+        $crawler = $this->client->request('GET', $this->editor($post));
+        $links = $crawler->filter('.editor-panel__group')->reduce(static fn (Crawler $group): bool => str_contains($group->text(), 'Your earlier changes'))->filter('a');
+        self::assertCount(1, $links);
+        self::assertStringEndsWith('/changes/'.$earlier->id, (string) $links->attr('href'));
+    }
+
     public function testTheAddressOfAPublishedItemChangesRightAway(): void
     {
         $this->signIn('editor');

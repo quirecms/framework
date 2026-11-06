@@ -958,3 +958,15 @@
 "find.settings": "Settings"
 "find.pages": "Pages"
 "Back to the text": "Back to the text"
+'saved {time}': 'saved {time}'
+'saved {time}. Someone published changes since you opened this: they''re kept, and yours are combined with them when you publish.': 'saved {time}. Someone published changes since you opened this: they''re kept, and yours are combined with them when you publish.'
+'Live · published again since you opened it': 'Live · published again since you opened it'
+'Someone published changes since you opened this. They''re kept: yours are combined with them when you publish.': 'Someone published changes since you opened this. They''re kept: yours are combined with them when you publish.'
+'This item was published again after you opened it, and the version you opened is no longer kept, so what changed can''t be combined with your text. What you entered is below and isn''t saved. Save again to make it your changes to the live version, or open the item in a new tab to see what''s live first.': 'This item was published again after you opened it, and the version you opened is no longer kept, so what changed can''t be combined with your text. What you entered is below and isn''t saved. Save again to make it your changes to the live version, or open the item in a new tab to see what''s live first.'
+'Your earlier changes': 'Your earlier changes'
+'Saved before these, and not shown here: open them to compare, publish or discard them.': 'Saved before these, and not shown here: open them to compare, publish or discard them.'
+'Changes of {when}': 'Changes of {when}'
+'Your changes are the old version now. Publish them to restore it.': 'Your changes are the old version now. Publish them to restore it.'
+'Your changes were saved while you looked at the history, e.g. in another tab. Look at them, then try again.': 'Your changes were saved while you looked at the history, e.g. in another tab. Look at them, then try again.'
+'Replace your changes with this version? What you changed is replaced.': 'Replace your changes with this version? What you changed is replaced.'
+'Replace your changes with this version': 'Replace your changes with this version'
