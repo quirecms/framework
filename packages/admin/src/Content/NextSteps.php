@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Quire\Admin\Content;
 
+use Quire\Content\Action\ContentAccess;
 use Quire\Content\Check\CheckReport;
 use Quire\Content\Content;
 use Quire\Content\Revision\ReviewState;
 use Quire\Content\Status;
 use Quire\Content\Type\ContentTypeDefinition;
-use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
@@ -29,7 +29,7 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 final readonly class NextSteps
 {
     public function __construct(
-        private Security $security,
+        private ContentAccess $access,
         private UrlGeneratorInterface $urls,
         private TranslatorInterface $translator,
     ) {
@@ -49,7 +49,7 @@ final readonly class NextSteps
         $edit = $this->urls->generate('quire_admin_content_edit', ['type' => $type->id, 'id' => $item->id]);
         $review = $item->attributes['review_pending_id'] ?? null;
 
-        if (\is_string($review) && $this->security->isGranted(ContentLists::ability($type, 'review'))) {
+        if (\is_string($review) && $this->access->mayReview($item)) {
             return new NextStep($this->translator->trans('Review changes', [], 'quire-admin'), $this->urls->generate('quire_admin_content_changes', ['type' => $type->id, 'id' => $item->id, 'pending' => $review]), primary: true);
         }
 

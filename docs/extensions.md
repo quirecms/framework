@@ -867,7 +867,7 @@ final readonly class LocationWidget implements FieldWidgetInterface
 
 Fields can also name one of core's widgets, e.g. `field('summary', 'text', widget: 'markdown')` for a Markdown editor. A widget nothing provides falls back to a text box.
 
-An action decides who may take it, in `isAvailable($item)` (e.g. with `Security::isGranted()`): the list offers it only there. When `apply($item)` throws a `ContentActionException`, its message is shown for that item; other exceptions are logged, and the editor sees that something went wrong.
+An action changes the item, so the list offers it only on items the user may edit (`ContentAccess::mayEdit()`, which asks rules about the item), and there only when `isAvailable($item)` says so: check the action's own abilities there, e.g. with `Security::isGranted()`, passing the item. When `apply($item)` throws a `ContentActionException`, its message is shown for that item; other exceptions are logged, and the editor sees that something went wrong.
 
 When the admin isn't enabled, `Admin` does nothing, so you don't need to require it. If it may not be installed at all, wrap it in `Extend\Conditional`. Stylesheets and scripts for admin pages go in the group `admin` of [`Extend\Assets`](#extendassets). Scripts can register [Stimulus](https://stimulus.hotwired.dev) controllers on `window.QuireAdmin`, whether they load before or after the admin's: give a function that receives Stimulus's `Controller` class and returns your controller.
 

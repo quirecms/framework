@@ -8,6 +8,7 @@ use Quire\Admin\Content\ContentLists;
 use Quire\Admin\Content\Form\ContentForm;
 use Quire\Admin\Content\PendingChanges;
 use Quire\Admin\Twig\RelativeTime;
+use Quire\Content\Action\ContentAccess;
 use Quire\Content\Check\CheckReport;
 use Quire\Content\Check\ContentChecker;
 use Quire\Content\Command\UpdatePendingRevision;
@@ -84,6 +85,7 @@ final readonly class ContentEditController
         private ContentForm $form,
         private Formatter $formatter,
         private Security $security,
+        private ContentAccess $access,
         private CurrentUser $users,
         private UserRepository $userRepository,
         private Settings $settings,
@@ -164,7 +166,7 @@ final readonly class ContentEditController
             return $this->page($definition, $item, $values, $errors, preview: $this->preview($values['body'], $item), version: $opened);
         }
 
-        if (!$this->maySave($definition, $item)) {
+        if (!$this->changes->maySave($item)) {
             throw new AccessDeniedHttpException($this->translator->trans('Changes to this item go live, which you may not do.', [], 'quire-admin'));
         }
 
@@ -421,10 +423,10 @@ final readonly class ContentEditController
 
         try {
             $message = match ($intent) {
-                'publish_changes' => $this->publishChanges($type, $pending, $actor),
+                'publish_changes' => $this->publishChanges($item, $pending, $actor),
                 'submit' => $this->submitChanges($pending, $actor),
-                'schedule_changes' => $this->scheduleChanges($type, $pending, $this->publishAt($request), $actor),
-                'unschedule_changes' => $this->scheduleChanges($type, $pending, null, $actor),
+                'schedule_changes' => $this->scheduleChanges($item, $pending, $this->publishAt($request), $actor),
+                'unschedule_changes' => $this->scheduleChanges($item, $pending, null, $actor),
                 'keep_mine' => $this->keepMine($item, $pending),
                 default => $this->translator->trans('Your changes are saved. Visitors see them once they\'re published.', [], 'quire-admin'),
             };
@@ -450,9 +452,9 @@ final readonly class ContentEditController
      * @throws MergeConflictException
      * @throws InvalidContentException
      */
-    private function publishChanges(ContentTypeDefinition $type, PendingRevision $pending, ?string $actor): string
+    private function publishChanges(Content $item, PendingRevision $pending, ?string $actor): string
     {
-        $can = $this->changes->canPublish($type, $pending);
+        $can = $this->changes->canPublish($item, $pending);
 
         if (true !== $can) {
             throw new AccessDeniedHttpException($can);
@@ -470,9 +472,9 @@ final readonly class ContentEditController
         return $this->translator->trans('Your changes are waiting for a review.', [], 'quire-admin');
     }
 
-    private function scheduleChanges(ContentTypeDefinition $type, PendingRevision $pending, ?\DateTimeImmutable $at, ?string $actor): string
+    private function scheduleChanges(Content $item, PendingRevision $pending, ?\DateTimeImmutable $at, ?string $actor): string
     {
-        if (!$this->changes->mayPublish($type)) {
+        if (!$this->changes->mayPublish($item)) {
             throw new AccessDeniedHttpException($this->translator->trans('Publishing takes the right to publish; ask someone who has it.', [], 'quire-admin'));
         }
 
@@ -586,7 +588,8 @@ final readonly class ContentEditController
             }
         }
 
-        $editAny = $this->security->isGranted(ContentLists::ability($type, 'edit_any'));
+        // Choosing the author is editing any item: for this one when it exists
+        $editAny = $item instanceof Content ? $this->access->may($type->id, 'edit_any', $item) : $this->access->may($type->id, 'edit_any');
         $changes = $item instanceof Content && $this->changes->applies($item);
         $threads = $pending instanceof PendingRevision ? $this->comments->threads($pending) : [];
         $others = $changes ? $this->changes->others($item) : [];
@@ -600,7 +603,7 @@ final readonly class ContentEditController
             'fields' => $fields,
             'transitions' => $item instanceof Content ? $this->transitions($type, $item) : $this->newTransitions($type),
             // Changes to a published item only need the right to edit it: they're published separately.
-            'can_save' => !$item instanceof Content || $changes || $this->maySave($type, $item),
+            'can_save' => !$item instanceof Content || $changes || $this->changes->maySave($item),
             'authors' => $type->has('author') && $editAny ? $this->authors(\is_string($values['author_id'] ?? null) ? $values['author_id'] : null) : [],
             'parents' => $type->has('hierarchical') ? $this->parents($type, $item) : [],
             'preview' => $preview,
@@ -618,8 +621,8 @@ final readonly class ContentEditController
                 'pending' => $pending,
                 'version' => $pendingVersion ?? $pending?->version,
                 'state' => $pending instanceof PendingRevision ? $this->changes->stateLabel($pending->state) : null,
-                'can_publish' => $pending instanceof PendingRevision ? $this->changes->canPublish($type, $pending) : $this->changes->mayPublish($type),
-                'may_publish' => $this->changes->mayPublish($type),
+                'can_publish' => $pending instanceof PendingRevision ? $this->changes->canPublish($item, $pending) : $this->changes->mayPublish($item),
+                'may_publish' => $this->changes->mayPublish($item),
                 'approval' => $this->changes->approvalRequired(),
                 'merge_conflicts' => $mergeConflicts,
                 // Published since the user's changes started, or since this editor was opened
@@ -641,7 +644,7 @@ final readonly class ContentEditController
         $actions = array_filter($this->lists->actions($type, $item), static fn (string $action): bool => str_starts_with($action, 'transition:'), \ARRAY_FILTER_USE_KEY);
 
         // Scheduling needs a date, which the editor asks for.
-        if (Status::DRAFT === $item->status && $type->has('scheduling') && $this->security->isGranted(ContentLists::ability($type, 'publish'))) {
+        if (Status::DRAFT === $item->status && $type->has('scheduling') && $this->access->mayPublish($item)) {
             $actions['transition:'.Status::SCHEDULE] = $this->translator->trans('transition.schedule', [], 'quire-admin');
         }
 
@@ -663,15 +666,6 @@ final readonly class ContentEditController
         );
 
         return $this->transitions($type, $draft);
-    }
-
-    /**
-     * Saving changes what visitors see when the item is published or scheduled.
-     */
-    private function maySave(ContentTypeDefinition $type, Content $item): bool
-    {
-        return !\in_array($item->status, [Status::PUBLISHED, Status::SCHEDULED], true)
-            || $this->security->isGranted(ContentLists::ability($type, 'publish'));
     }
 
     /**
@@ -745,9 +739,8 @@ final readonly class ContentEditController
             throw new NotFoundHttpException(\sprintf('There\'s no %s with the ID "%s" that you may edit.', strtolower($type->label), $id));
         }
 
-        $editAny = $this->security->isGranted(ContentLists::ability($type, 'edit_any'));
-
-        if (!$editAny && !$this->security->isGranted(ContentLists::ability($type, 'edit_own'), $item)) {
+        // Rules decide on the item too (D-42): e.g. nobody edits a locked one
+        if (!$this->access->mayEdit($item)) {
             throw new AccessDeniedHttpException(\sprintf('You may not edit this %s.', strtolower($type->label)));
         }
 

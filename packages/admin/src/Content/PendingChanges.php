@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Quire\Admin\Content;
 
+use Quire\Content\Action\ContentAccess;
 use Quire\Content\Content;
 use Quire\Content\ContentWriter;
 use Quire\Content\Revision\Diff;
@@ -16,7 +17,6 @@ use Quire\Content\Type\ContentTypeDefinition;
 use Quire\Settings\Settings;
 use Quire\User\CurrentUser;
 use Quire\User\UserRepository;
-use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
@@ -33,7 +33,7 @@ final readonly class PendingChanges
 {
     public function __construct(
         private PendingRevisionRepository $repository,
-        private Security $security,
+        private ContentAccess $access,
         private CurrentUser $users,
         private UserRepository $userRepository,
         private Settings $settings,
@@ -103,9 +103,30 @@ final readonly class PendingChanges
         return $this->settings->getBool(ContentWriter::APPROVAL_SETTING);
     }
 
-    public function mayPublish(ContentTypeDefinition $type): bool
+    /**
+     * Whether they may publish changes to the item (D-42: the item is passed, so rules decide on it).
+     */
+    public function mayPublish(Content $item): bool
     {
-        return $this->security->isGranted(ContentLists::ability($type, 'publish'));
+        return $this->access->mayPublish($item);
+    }
+
+    /**
+     * Whether saving the item straight away, rather than as changes, is theirs: it changes what visitors
+     * see, or will see, once it's published or scheduled, so that takes the right to publish. The same
+     * for the editor's save and the history's restore (M-02).
+     */
+    public function maySave(Content $item): bool
+    {
+        return !\in_array($item->status, [Status::PUBLISHED, Status::SCHEDULED], true) || $this->mayPublish($item);
+    }
+
+    /**
+     * For a new item, before it exists: what roles and rules say for the type.
+     */
+    public function mayPublishType(ContentTypeDefinition $type): bool
+    {
+        return $this->access->may($type->id, 'publish');
     }
 
     /**
@@ -113,28 +134,28 @@ final readonly class PendingChanges
      *
      * @return true|string
      */
-    public function canPublish(ContentTypeDefinition $type, PendingRevision $pending): bool|string
+    public function canPublish(Content $item, PendingRevision $pending): bool|string
     {
         return match (true) {
-            !$this->mayPublish($type) => $this->translator->trans('Publishing takes the right to publish; ask someone who has it.', [], 'quire-admin'),
+            !$this->mayPublish($item) => $this->translator->trans('Publishing takes the right to publish; ask someone who has it.', [], 'quire-admin'),
             $this->approvalRequired() && ReviewState::Approved !== $pending->state => $this->translator->trans('The site asks for changes to be approved by a reviewer before they\'re published.', [], 'quire-admin'),
             default => true,
         };
     }
 
-    public function mayReview(ContentTypeDefinition $type): bool
+    public function mayReview(Content $item): bool
     {
-        return $this->security->isGranted(ContentLists::ability($type, 'review'));
+        return $this->access->mayReview($item);
     }
 
-    public function mayApprove(ContentTypeDefinition $type, PendingRevision $pending): bool
+    public function mayApprove(Content $item, PendingRevision $pending): bool
     {
-        return $this->mayReview($type) && !$this->isOwn($pending);
+        return $this->mayReview($item) && !$this->isOwn($pending);
     }
 
-    public function mayDiscard(ContentTypeDefinition $type, PendingRevision $pending): bool
+    public function mayDiscard(Content $item, PendingRevision $pending): bool
     {
-        return $this->isOwn($pending) || $this->mayPublish($type);
+        return $this->isOwn($pending) || $this->mayPublish($item);
     }
 
     public function stateLabel(ReviewState $state): string

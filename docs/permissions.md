@@ -107,7 +107,7 @@ $access->for($kim)->allows('content.post.edit_own', $post);
 
 ## Seeing the site as someone else
 
-Admins can see the site and the admin as another user does, to check what they can do: each page then shows what that user would see, and nothing can be changed, not even what they may change; forms answer "403 Forbidden". It takes the ability `quire.users.view_as` (admins by default), and only works for users who may do nothing the viewer may not, so it never shows more than the viewer could see anyway. It's recorded in the audit log.
+Admins can see the site and the admin as another user does, to check what they can do: each page then shows what that user would see, and nothing can be changed, not even what they may change; forms answer "403 Forbidden". It takes the ability `quire.users.view_as` (admins by default), and only works for users who may do nothing the viewer may not, what rules give them included, so it never shows more than the viewer could see anyway. That's checked on every request, not only at the start: if the user is given more meanwhile, or the viewer loses the ability, it ends, and the next page says why. It's recorded in the audit log.
 
 The admin offers it on a user's page. Forms start and stop it by posting to the routes `quire_view_as` (with `user`, the user's ID) and `quire_view_as_stop`, with a CSRF token for `quire_view_as` and, optionally, `back`, the page to go back to. In code, `Quire\Permission\ViewAs` tells whom the site is seen as (`target()`) and by whom (`viewer()`); a route with the default `_quire_view_as_allowed: true` is let through while it's on. Each request runs as the user, but the session keeps the viewer's own sign-in: stopping, or a problem, always leaves them as themselves.
 
@@ -145,7 +145,9 @@ final class BannedReviewersRule implements AbilityRuleInterface
 }
 ```
 
-It returns `true` to grant, `false` to refuse, or `null` to leave it to roles and other rules. A refusal wins over everything, admins included. Rules are asked about every ability, so return `null` quickly for those they aren't about. `$user` is the user the firewall signed in: a Quire user, or the application's own when Quire uses its users (see [users](users.md#users-of-the-application-quire-is-installed-in)).
+It returns `true` to grant, `false` to refuse, or `null` to leave it to roles and other rules. A refusal wins over everything, admins included.
+
+For content, `$subject` is the item whenever there is one: editing, publishing, reviewing, deleting, restoring and every list and bulk action ask about the item, in core's actions and in the admin alike, so a rule such as "nobody edits a locked item" holds everywhere. Questions about a type, such as "may they open its list?" or "may they create one?", have no subject. Extensions ask the same way with `Quire\Content\Action\ContentAccess` (`mayEdit($item)`, `mayPublish($item)`, `mayReview($item)`, `mayDelete($item)`, `may($type, $verb, $item)`). Rules are asked about every ability, so return `null` quickly for those they aren't about. `$user` is the user the firewall signed in: a Quire user, or the application's own when Quire uses its users (see [users](users.md#users-of-the-application-quire-is-installed-in)).
 
 Plain Symfony voters work too, e.g. one registered by a host application. With Symfony's default strategy, any voter that grants an ability grants it; Quire's own refusals are decided in one vote, so a rule's refusal stays a refusal only among Quire's rules. Use the `unanimous` strategy if any voter's refusal should win.
 

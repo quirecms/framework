@@ -56,7 +56,7 @@ final readonly class ChangesInbox implements InboxProviderInterface
         foreach ($awaiting as $pending) {
             $item = $this->item($pending, $items);
 
-            if ($item instanceof Content && $this->changes->mayReview($this->types->get($item->type)) && !$this->changes->isOwn($pending)) {
+            if ($item instanceof Content && $this->changes->mayReview($item) && !$this->changes->isOwn($pending)) {
                 yield $this->toReview($pending, $item, null === $pending->authorId ? null : $names[$pending->authorId]);
             }
         }
