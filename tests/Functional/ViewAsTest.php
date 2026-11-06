@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
+use Quire\Permission\Permissions;
+use Quire\Permission\SiteRoles;
 use Quire\Permission\ViewAs;
 use Quire\Testing\AdminTestCase;
+use Quire\Testing\TestInstallation;
 use Quire\User\Role;
 
 /**
@@ -13,6 +16,15 @@ use Quire\User\Role;
  */
 final class ViewAsTest extends AdminTestCase
 {
+    /** With the fixture extension, whose rule gives the user "helper" an ability their roles don't */
+    #[\Override]
+    protected static array $extensions = ['quire-admin', 'quire-fixture-hello'];
+
+    protected static function installedJson(): string
+    {
+        return TestInstallation::projectDir().'/tests/Fixtures/installed.json';
+    }
+
     public function testAnAdminSeesTheAdminAsAnEditorWithoutChangingAnything(): void
     {
         $admin = $this->signIn('admin');
@@ -62,11 +74,43 @@ final class ViewAsTest extends AdminTestCase
 
         self::assertSame(403, $viewAs($boss->id, $this->csrfToken('quire_view_as')), 'Editors don\'t have the ability.');
 
-        $this->service(\Quire\Permission\Permissions::class)->grant(Role::EDITOR, [ViewAs::ABILITY]);
+        $this->service(Permissions::class)->grant(Role::EDITOR, [ViewAs::ABILITY]);
         self::assertSame(403, $viewAs($boss->id, $this->csrfToken('quire_view_as')), 'Admins may do more than editors.');
         self::assertStringContainsString('They may do what you may not', (string) $this->client->getResponse()->getContent());
         self::assertSame(403, $viewAs($editor->id, $this->csrfToken('quire_view_as')), 'Themselves.');
         self::assertSame(403, $viewAs($this->createUser('Member', [Role::MEMBER])->id, 'wrong'), 'Without the form\'s token.');
         self::assertSame(303, $viewAs($this->createUser('Mia', [Role::MEMBER])->id, $this->csrfToken('quire_view_as')), 'A member, who may do less.');
+    }
+
+    public function testWhatARuleGivesCountsToo(): void
+    {
+        // AUTHZ-05: by roles, the viewer covers the target; a rule gives the target more
+        $this->service(SiteRoles::class)->create('watcher', 'Watcher');
+        $this->service(Permissions::class)->grant('watcher', ['quire.admin.access', ViewAs::ABILITY]);
+        $helper = $this->createUser('Helper', [Role::MEMBER], username: 'helper');
+        $this->signIn($this->createUser('Wes', [Role::MEMBER, 'watcher']));
+
+        $this->client->request('POST', '/_quire/view-as', ['_token' => $this->csrfToken('quire_view_as'), 'user' => $helper->id]);
+        self::assertResponseStatusCodeSame(403);
+        self::assertStringContainsString('They may do what you may not ("Moderate greetings")', (string) $this->client->getResponse()->getContent());
+    }
+
+    public function testItEndsWhenTheTargetIsGivenMoreMeanwhile(): void
+    {
+        // M-01: checked on every request, not only at the start
+        $editor = $this->signIn('editor');
+        $this->service(Permissions::class)->grant(Role::EDITOR, [ViewAs::ABILITY]);
+        $mia = $this->createUser('Mia Ruiz', [Role::MEMBER]);
+        $this->client->request('POST', '/_quire/view-as', ['_token' => $this->csrfToken('quire_view_as'), 'user' => $mia->id]);
+        self::assertResponseRedirects();
+        $this->client->request('GET', '/');
+        self::assertSelectorTextContains('.quire-view-as', 'You’re seeing this as Mia Ruiz');
+
+        // Mia becomes an admin: the next page is the editor's own, and says why
+        $this->service(\Quire\User\UserWriter::class)->setRoles($mia->id, [Role::ADMIN]);
+        $this->client->request('GET', '/admin');
+        self::assertSelectorNotExists('.quire-view-as');
+        self::assertSelectorTextSame('.q-account .q-menu__label', $editor->displayName);
+        self::assertAnySelectorTextContains('.q-notice--warning', 'You no longer see the site as Mia Ruiz: They may do what you may not');
     }
 }

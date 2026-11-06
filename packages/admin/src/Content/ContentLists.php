@@ -9,6 +9,7 @@ use Quire\Action\Actions;
 use Quire\Action\Exception\ActionDeniedException;
 use Quire\Admin\Extend\Admin;
 use Quire\Admin\Twig\RelativeTime;
+use Quire\Content\Action\ContentAccess;
 use Quire\Content\Check\ContentChecker;
 use Quire\Content\Check\Level;
 use Quire\Content\Content;
@@ -65,6 +66,7 @@ final readonly class ContentLists
         private Actions $actions,
         private ContentWorkflow $workflow,
         private Security $security,
+        private ContentAccess $access,
         private CurrentUser $users,
         private ContentChecker $checker,
         private RelativeTime $time,
@@ -401,7 +403,7 @@ final readonly class ContentLists
         $actions = [];
 
         if ($item->deletedAt instanceof \DateTimeImmutable) {
-            if ($this->security->isGranted(self::ability($type, 'delete'))) {
+            if ($this->access->mayDelete($item)) {
                 $actions['restore'] = $this->translator->trans('Restore', [], 'quire-admin');
                 $actions['purge'] = $this->translator->trans('Delete permanently', [], 'quire-admin');
             }
@@ -410,7 +412,7 @@ final readonly class ContentLists
         }
 
         foreach ($this->workflow->enabledTransitions($item) as $transition) {
-            if (!\in_array($transition, self::NOT_IN_LISTS, true) && $this->mayTransition($type, $item, $transition)) {
+            if (!\in_array($transition, self::NOT_IN_LISTS, true) && $this->mayTransition($item, $transition)) {
                 $actions['transition:'.$transition] = $this->transitionLabel($transition);
             }
         }
@@ -418,12 +420,13 @@ final readonly class ContentLists
         foreach ($this->extensions($type, 'action') as $id => $action) {
             \assert($action instanceof ContentActionInterface);
 
-            if ($action->isAvailable($item)) {
+            // An extension's action changes the item: only on items they may change (D-42), and when it says so
+            if ($this->access->mayEdit($item) && $action->isAvailable($item)) {
                 $actions['extension:'.$id] = $action->label();
             }
         }
 
-        if ($this->security->isGranted(self::ability($type, 'delete'))) {
+        if ($this->access->mayDelete($item)) {
             $actions['trash'] = $this->translator->trans('Move to trash', [], 'quire-admin');
         }
 
@@ -516,7 +519,7 @@ final readonly class ContentLists
 
     public function mayEdit(ContentTypeDefinition $type, Content $item): bool
     {
-        return $this->security->isGranted(self::ability($type, 'edit_any')) || $this->security->isGranted(self::ability($type, 'edit_own'), $item);
+        return $this->access->mayEdit($item);
     }
 
     /**
@@ -527,13 +530,9 @@ final readonly class ContentLists
         return array_values(array_filter($this->extensions($type, 'next-step'), static fn (object $step): bool => $step instanceof NextStepInterface));
     }
 
-    private function mayTransition(ContentTypeDefinition $type, Content $item, string $transition): bool
+    private function mayTransition(Content $item, string $transition): bool
     {
-        if (\in_array($transition, self::PUBLISHING, true)) {
-            return $this->security->isGranted(self::ability($type, 'publish'));
-        }
-
-        return $this->security->isGranted(self::ability($type, 'edit_any')) || $this->security->isGranted(self::ability($type, 'edit_own'), $item);
+        return null === $this->access->mayTransition($item, $transition);
     }
 
     private function transitionLabel(string $transition): string

@@ -110,7 +110,7 @@ final readonly class ContentChangesController
                 case 'approve':
                 case 'request_changes':
                 case 'comment':
-                    if (!$this->changes->mayReview($definition) || ('approve' === $intent && !$this->changes->mayApprove($definition, $revision))) {
+                    if (!$this->changes->mayReview($item) || ('approve' === $intent && !$this->changes->mayApprove($item, $revision))) {
                         throw new AccessDeniedHttpException($this->translator->trans('You may not review these changes.', [], 'quire-admin'));
                     }
 
@@ -118,7 +118,7 @@ final readonly class ContentChangesController
                     $flash->add('success', $this->translator->trans('review.done.'.$intent, [], 'quire-admin'));
                     break;
                 case 'publish':
-                    $can = $this->changes->canPublish($definition, $revision);
+                    $can = $this->changes->canPublish($item, $revision);
 
                     if (true !== $can) {
                         throw new AccessDeniedHttpException($can);
@@ -129,7 +129,7 @@ final readonly class ContentChangesController
 
                     return $this->toEditor($definition, $item);
                 case 'discard':
-                    if (!$this->changes->mayDiscard($definition, $revision)) {
+                    if (!$this->changes->mayDiscard($item, $revision)) {
                         throw new AccessDeniedHttpException($this->translator->trans('Only their author, or someone who may publish, discards changes.', [], 'quire-admin'));
                     }
 
@@ -239,6 +239,16 @@ final readonly class ContentChangesController
         $sent = $request->request->getString('pending_version');
         $message = $this->translator->trans('Restore the version of {date}', ['date' => $revision->createdAt->setTimezone($this->timezone())->format('Y-m-d H:i')], 'quire-admin');
 
+        // Restoring changes the item: theirs to change, as the editor asks (rules decide on it too, D-42)
+        if (!$this->lists->mayEdit($definition, $item)) {
+            throw new AccessDeniedHttpException(\sprintf('You may not edit this %s.', strtolower($definition->label)));
+        }
+
+        // Restored straight into the item, it changes what visitors see or will see: as saving does (M-02)
+        if (!$this->changes->applies($item) && !$this->changes->maySave($item)) {
+            throw new AccessDeniedHttpException($this->translator->trans('Publishing takes the right to publish; ask someone who has it.', [], 'quire-admin'));
+        }
+
         try {
             if ($this->changes->applies($item)) {
                 // A published item: the old version becomes the user's changes, to look at and publish.
@@ -279,7 +289,7 @@ final readonly class ContentChangesController
         $this->assertToken($request);
         $flash = $this->flash($request);
 
-        if (!$this->changes->mayPublish($definition)) {
+        if (!$this->changes->mayPublish($item)) {
             throw new AccessDeniedHttpException($this->translator->trans('Publishing takes the right to publish; ask someone who has it.', [], 'quire-admin'));
         }
 
@@ -381,10 +391,10 @@ final readonly class ContentChangesController
             'reviews' => $reviews,
             'names' => $this->changes->names($people),
             'own' => $this->changes->isOwn($revision),
-            'may_review' => $this->changes->mayReview($type),
-            'may_approve' => $this->changes->mayApprove($type, $revision),
-            'can_publish' => $this->changes->canPublish($type, $revision),
-            'may_discard' => $this->changes->mayDiscard($type, $revision),
+            'may_review' => $this->changes->mayReview($item),
+            'may_approve' => $this->changes->mayApprove($item, $revision),
+            'can_publish' => $this->changes->canPublish($item, $revision),
+            'may_discard' => $this->changes->mayDiscard($item, $revision),
             'timezone' => $this->settings->getString('site.timezone'),
         ]), $status);
     }
