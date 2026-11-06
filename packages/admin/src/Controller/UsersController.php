@@ -8,7 +8,9 @@ use Quire\Action\Actions;
 use Quire\Action\Exception\ActionDeniedException;
 use Quire\Action\Exception\InvalidArgumentsException;
 use Quire\Admin\Permission\AbilityCatalog;
+use Quire\Admin\Security\ConfirmGuard;
 use Quire\Permission\Access;
+use Quire\Permission\Delegation;
 use Quire\Permission\Permissions;
 use Quire\Permission\ViewAs;
 use Quire\Routing\AdminAccessListener;
@@ -19,6 +21,7 @@ use Quire\User\Exception\InvalidUserException;
 use Quire\User\Exception\UserNotFoundException;
 use Quire\User\Invitation;
 use Quire\User\Invitations;
+use Quire\User\Mail\UserMailer;
 use Quire\User\Role;
 use Quire\User\UpdateUser;
 use Quire\User\User;
@@ -73,6 +76,9 @@ final readonly class UsersController
         private AbilityCatalog $abilities,
         private ViewAs $viewAs,
         private Access $access,
+        private Delegation $delegation,
+        private ConfirmGuard $confirm,
+        private UserMailer $mailer,
     ) {
     }
 
@@ -151,6 +157,19 @@ final readonly class UsersController
         $role = $request->request->getString('role');
         $roles = isset($this->assignableRoles()[$role]) ? [$role] : [];
         [$invited, $problems] = [0, []];
+        $beyond = $this->rolesBeyond($roles);
+
+        if ([] !== $beyond) {
+            $this->flash($request, 'error', $this->rolesRefusal($beyond));
+
+            return $this->redirect('quire_admin_users');
+        }
+
+        $confirm = $this->confirm->required($request, $this->urls->generate('quire_admin_users'));
+
+        if ($confirm instanceof RedirectResponse) {
+            return $confirm;
+        }
 
         foreach ($emails as $email) {
             try {
@@ -206,6 +225,11 @@ final readonly class UsersController
     {
         $this->assertAllowed();
         $values = ['display_name' => '', 'email' => '', 'username' => '', 'roles' => [], 'password_mode' => null === $this->invitations->unavailableReason() ? 'invite' : 'none'];
+        $confirm = $this->confirm->required($request, $this->urls->generate('quire_admin_user_new'));
+
+        if ($confirm instanceof RedirectResponse) {
+            return $confirm;
+        }
 
         if (!$request->isMethod('POST')) {
             return $this->form(null, $values, []);
@@ -213,7 +237,13 @@ final readonly class UsersController
 
         $this->assertToken($request);
         $values = $this->submitted($request) + $values;
-        $password = 'set' === $values['password_mode'] ? $request->request->getString('password') : null;
+        // Nobody chooses another person's password (D-42): they're invited to choose it
+        $values['password_mode'] = 'invite' === $values['password_mode'] ? 'invite' : 'none';
+        $beyond = $this->rolesBeyond($values['roles']);
+
+        if ([] !== $beyond) {
+            return $this->form(null, $values, ['roles' => $this->rolesRefusal($beyond)], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
 
         if ('' === trim($values['email']) && 'invite' === $values['password_mode']) {
             return $this->form(null, $values, ['email' => $this->translator->trans('An invitation goes to the user\'s email, so enter one.', [], 'quire-admin')], Response::HTTP_UNPROCESSABLE_ENTITY);
@@ -224,7 +254,6 @@ final readonly class UsersController
                 displayName: $values['display_name'],
                 email: '' === trim($values['email']) ? null : $values['email'],
                 username: '' === trim($values['username']) ? null : $values['username'],
-                password: $password,
                 roles: $values['roles'],
             ));
         } catch (InvalidUserException $e) {
@@ -245,23 +274,45 @@ final readonly class UsersController
         $this->assertAllowed();
         $user = $this->user($id);
         $values = ['display_name' => $user->displayName, 'email' => (string) $user->email, 'username' => $user->username, 'roles' => $user->roles];
+        $self = $this->isSelf($user);
+        // Nobody manages someone who can do things they can't (D-42)
+        $locked = $self ? null : $this->outranks($user);
+
+        // Someone else's account, or one's own sent: confirmed first, so an open session isn't enough
+        if (null === $locked && (!$self || $request->isMethod('POST'))) {
+            $confirm = $this->confirm->required($request, $this->urls->generate('quire_admin_user', ['id' => $user->id]));
+
+            if ($confirm instanceof RedirectResponse) {
+                return $confirm;
+            }
+        }
 
         if (!$request->isMethod('POST')) {
-            return $this->form($user, $values, []);
+            return $this->form($user, $values, [], locked: $locked);
+        }
+
+        if (null !== $locked) {
+            throw new AccessDeniedHttpException($locked);
         }
 
         $this->assertToken($request);
         $values = $this->submitted($request) + $values;
         $password = $request->request->getString('password');
 
+        // Roles the user has but the form doesn't offer, e.g. of a disabled extension, stay; so do those
+        // the person signed in can't give or take away.
+        $changeable = array_diff(array_keys($this->assignableRoles()), array_keys($this->rolesBeyond(array_keys($this->assignableRoles()))));
+        $roles = [...array_diff($user->roles, $changeable), ...array_intersect($values['roles'], $changeable)];
+
+        if ('' !== $password && !$self) {
+            return $this->form($user, $values, ['password' => $this->translator->trans('Passwords aren\'t set for others: email them a link to choose a new one.', [], 'quire-admin')], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
         try {
-            $this->writer->update(new UpdateUser($user->id)
+            $after = $this->writer->update(new UpdateUser($user->id)
                 ->displayName($values['display_name'])
                 ->email('' === trim($values['email']) ? null : $values['email'])
                 ->username($values['username']));
-
-            // Roles the user has but the form doesn't offer, e.g. of a disabled extension, stay.
-            $roles = [...array_diff($user->roles, array_keys($this->assignableRoles())), ...$values['roles']];
 
             if ($this->sorted($roles) !== $this->sorted($user->roles)) {
                 $this->writer->setRoles($user->id, $roles);
@@ -276,6 +327,15 @@ final readonly class UsersController
 
         $this->flash($request, 'success', $this->translator->trans('Saved.', [], 'quire-admin'));
 
+        // The owner of the old address learns of it, even when the new one is someone else's
+        if (!$self && null !== $user->email && $after->email !== $user->email) {
+            try {
+                $this->mailer->sendEmailChanged($user, (string) $after->email, $this->currentUser->get());
+            } catch (TransportExceptionInterface|\LogicException $e) {
+                $this->flash($request, 'error', $this->translator->trans('{name} couldn\'t be told at their old address: {problem}', ['name' => $user->displayName, 'problem' => $e->getMessage()], 'quire-admin'));
+            }
+        }
+
         return $this->redirect('quire_admin_user', ['id' => $user->id]);
     }
 
@@ -287,9 +347,20 @@ final readonly class UsersController
         $this->assertAllowed();
         $this->assertToken($request);
         $user = $this->user($id);
+        $refusal = $this->isSelf($user) ? null : $this->outranks($user);
+
+        if (null !== $refusal) {
+            throw new AccessDeniedHttpException($refusal);
+        }
+
+        $confirm = $this->confirm->required($request, $this->urls->generate('quire_admin_user', ['id' => $user->id]));
+
+        if ($confirm instanceof RedirectResponse) {
+            return $confirm;
+        }
 
         if ('invite' === $action) {
-            $this->invite($request, $user);
+            null === $user->passwordHash ? $this->invite($request, $user) : $this->askForNewPassword($request, $user);
 
             return $this->back($request) ?? $this->redirect('quire_admin_user', ['id' => $user->id]);
         }
@@ -328,6 +399,18 @@ final readonly class UsersController
             throw new AccessDeniedHttpException($this->translator->trans('You can\'t delete yourself. Ask another admin.', [], 'quire-admin'));
         }
 
+        $refusal = $this->outranks($user);
+
+        if (null !== $refusal) {
+            throw new AccessDeniedHttpException($refusal);
+        }
+
+        $confirm = $this->confirm->required($request, $this->urls->generate('quire_admin_user_delete', ['id' => $user->id]));
+
+        if ($confirm instanceof RedirectResponse) {
+            return $confirm;
+        }
+
         $count = $this->writer->contentCount($user->id);
         $heirs = array_values(array_filter($this->users->search(limit: 200)['users'], static fn (User $other): bool => $other->id !== $user->id));
         $error = null;
@@ -360,7 +443,7 @@ final readonly class UsersController
      * @param array{display_name: string, email: string, username: string, roles: list<string>, password_mode?: string} $values
      * @param array<string, string>                                                                                     $errors
      */
-    private function form(?User $user, array $values, array $errors, int $status = Response::HTTP_OK): Response
+    private function form(?User $user, array $values, array $errors, int $status = Response::HTTP_OK, ?string $locked = null): Response
     {
         $identities = $user instanceof User ? $this->users->identities($user->id) : [];
         $hostRoles = [];
@@ -383,6 +466,9 @@ final readonly class UsersController
             'self' => $user instanceof User && $this->isSelf($user),
             'view_as_refusal' => $user instanceof User ? $this->viewAs->refusal($user) : null,
             'view_as_admin' => $user instanceof User && $this->access->for($user)->allows(AdminAccessListener::ABILITY),
+            // Why the person can't manage them, or null; and the roles they can't give or take away (D-42)
+            'locked' => $locked,
+            'roles_beyond' => array_keys($this->rolesBeyond(array_keys($this->assignableRoles()))),
             'timezone' => $this->settings->getString('site.timezone'),
         ]), $status);
     }
@@ -413,6 +499,53 @@ final readonly class UsersController
         } catch (TransportExceptionInterface|\LogicException $e) {
             $this->flash($request, 'error', $this->translator->trans('The invitation couldn\'t be sent: {problem}', ['problem' => $e->getMessage()], 'quire-admin'));
         }
+    }
+
+    private function askForNewPassword(Request $request, User $user): void
+    {
+        try {
+            $this->invitations->askForNewPassword($user, $this->currentUser->get());
+            $this->flash($request, 'success', $this->translator->trans('Emailed {name} a link to choose a new password. It works for a day; until then, their password stays as it is.', ['name' => $user->displayName], 'quire-admin'));
+        } catch (InvalidUserException $e) {
+            $this->flash($request, 'error', implode(' ', $e->violations));
+        } catch (TransportExceptionInterface|\LogicException $e) {
+            $this->flash($request, 'error', $this->translator->trans('The link couldn\'t be sent: {problem}', ['problem' => $e->getMessage()], 'quire-admin'));
+        }
+    }
+
+    /**
+     * Why the person signed in may not manage the user, or null: they can do things the person can't.
+     */
+    private function outranks(User $user): ?string
+    {
+        $actor = $this->security->getUser();
+        $beyond = $actor instanceof \Symfony\Component\Security\Core\User\UserInterface ? $this->delegation->beyond($actor, $user) : ['quire.admin.access'];
+
+        return [] === $beyond ? null : $this->translator->trans('You can\'t manage {name}: they can do things you can\'t ({abilities}).', ['name' => $user->displayName, 'abilities' => $this->delegation->labels($beyond)], 'quire-admin');
+    }
+
+    /**
+     * Of the roles, those the person signed in can't give, with what they lack.
+     *
+     * @param list<string> $roles
+     *
+     * @return array<string, list<string>>
+     */
+    private function rolesBeyond(array $roles): array
+    {
+        $actor = $this->security->getUser();
+
+        return $actor instanceof \Symfony\Component\Security\Core\User\UserInterface ? $this->delegation->rolesBeyond($actor, $roles) : array_fill_keys($roles, ['quire.admin.access']);
+    }
+
+    /**
+     * @param array<string, list<string>> $beyond
+     */
+    private function rolesRefusal(array $beyond): string
+    {
+        $role = (string) array_key_first($beyond);
+
+        return $this->translator->trans('You can\'t give the role “{role}”: it can do things you can\'t ({abilities}).', ['role' => $this->assignableRoles()[$role] ?? $role, 'abilities' => $this->delegation->labels($beyond[$role])], 'quire-admin');
     }
 
     /**

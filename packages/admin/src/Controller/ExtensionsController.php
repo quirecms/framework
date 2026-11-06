@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Quire\Admin\Controller;
 
+use Quire\Admin\Security\ConfirmGuard;
 use Quire\Extension\Contributions;
 use Quire\Extension\Exception\DependencyException;
 use Quire\Extension\Exception\ExtensionStateException;
@@ -51,6 +52,7 @@ final readonly class ExtensionsController
         private TranslatorInterface $translator,
         private Environment $twig,
         private ExtensionContributions $contributions,
+        private ConfirmGuard $confirmation,
     ) {
     }
 
@@ -116,10 +118,16 @@ final readonly class ExtensionsController
     /**
      * What the action changes, to confirm.
      */
-    public function confirm(string $id, string $action): Response
+    public function confirm(Request $request, string $id, string $action): Response
     {
         $this->assertAllowed();
         $manifest = $this->manifest($id);
+        // An extension's code runs on the site: confirmed it's them first (D-42)
+        $confirm = $this->confirmation->required($request);
+
+        if ($confirm instanceof RedirectResponse) {
+            return $confirm;
+        }
 
         try {
             $plan = $this->plan($id, $action);
@@ -137,6 +145,12 @@ final readonly class ExtensionsController
 
         if (!$this->csrf->isTokenValid(new CsrfToken(self::CSRF_TOKEN, $request->request->getString('_token')))) {
             throw new AccessDeniedHttpException('The form expired. Reload the page and try again.');
+        }
+
+        $confirm = $this->confirmation->required($request, $this->urls->generate('quire_admin_extension_confirm', ['id' => $id, 'action' => $action]));
+
+        if ($confirm instanceof RedirectResponse) {
+            return $confirm;
         }
 
         if ('purge' === $action && $manifest->id !== trim($request->request->getString('confirm'))) {

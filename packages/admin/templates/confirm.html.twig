@@ -1,0 +1,33 @@
+{#
+    "Confirm it's you" (D-42), before changing who may do what or running new code.
+    Variables: back (the admin page to go back to), by_password, error, minutes.
+#}
+{% extends '@quire_admin/layout.html.twig' %}
+
+{% block title %}{{ 'Confirm it\'s you'|trans({}, 'quire-admin') }}{% endblock %}
+
+{% block content %}
+    <section class="q-card confirm-page">
+        <h1>{{ 'Confirm it\'s you'|trans({}, 'quire-admin') }}</h1>
+        <p>{{ 'What you\'re about to do changes who may do what on the site, or runs new code on it. So that an open or stolen session isn\'t enough, show it\'s you. It holds for {minutes} minutes.'|trans({minutes: minutes}, 'quire-admin') }}</p>
+
+        {% if by_password %}
+            <form method="post" action="{{ path('quire_admin_confirm') }}" novalidate>
+                <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_confirm') }}">
+                <input type="hidden" name="back" value="{{ back }}">
+                <div class="q-field">
+                    <label for="confirm-password">{{ 'Your password'|trans({}, 'quire-admin') }}</label>
+                    {% if error %}<p class="q-error" id="confirm-password-error">{{ error|trans({}, 'quire-admin') }}</p>{% endif %}
+                    <input type="password" id="confirm-password" name="password" autocomplete="current-password" required autofocus{% if error %} aria-invalid="true" aria-describedby="confirm-password-error"{% endif %}>
+                </div>
+                <div class="editor__buttons">
+                    <button type="submit" class="q-btn">{{ 'Confirm'|trans({}, 'quire-admin') }}</button>
+                    <a href="{{ back }}">{{ 'Go back'|trans({}, 'quire-admin') }}</a>
+                </div>
+            </form>
+        {% else %}
+            <p>{{ 'You sign in without a password here: sign out, sign in again, and come back to do it.'|trans({}, 'quire-admin') }}</p>
+            <p><a class="q-btn" href="{{ logout_path() }}" data-turbo="false">{{ 'Sign out'|trans({}, 'quire-admin') }}</a> <a href="{{ back }}">{{ 'Go back'|trans({}, 'quire-admin') }}</a></p>
+        {% endif %}
+    </section>
+{% endblock %}

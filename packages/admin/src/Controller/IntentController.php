@@ -9,6 +9,7 @@ use Quire\Action\Exception\ActionDeniedException;
 use Quire\Action\Exception\InvalidArgumentsException;
 use Quire\Admin\Intent\Finder;
 use Quire\Admin\Intent\IntentParser;
+use Quire\User\Security\Confirmation;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -62,6 +63,11 @@ final readonly class IntentController
         $intent = $this->parser->parse($words);
         $session = $request->getSession();
         \assert($session instanceof FlashBagAwareSessionInterface);
+
+        // Changes to who may do what, or new code: confirmed first, then back to try again (D-42)
+        if ($intent instanceof \Quire\Admin\Intent\Intent && Confirmation::REFUSAL === $intent->denied) {
+            return new RedirectResponse($this->urls->generate('quire_admin_confirm', ['back' => $this->urls->generate('quire_admin_find', ['q' => $words])]), Response::HTTP_SEE_OTHER);
+        }
 
         if (!$intent instanceof \Quire\Admin\Intent\Intent || null !== $intent->denied) {
             $session->getFlashBag()->add('error', $intent->denied ?? $this->translator->trans('That isn’t something the admin understands yet.', [], 'quire-admin'));

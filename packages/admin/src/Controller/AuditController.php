@@ -14,6 +14,7 @@ use Quire\Audit\AuditUndo;
 use Quire\Audit\Origin;
 use Quire\Settings\Settings;
 use Quire\User\CurrentUser;
+use Quire\User\Security\Confirmation;
 use Quire\User\UserRepository;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -178,6 +179,11 @@ final readonly class AuditController
                 $this->undo->undo($entry);
                 ++$undone;
             } catch (ActionDeniedException $e) {
+                // Undoing a change of who may do what is one too: confirmed first (D-42)
+                if (Confirmation::REFUSAL === $e->getMessage()) {
+                    return new RedirectResponse($this->urls->generate('quire_admin_confirm', ['back' => $this->urls->generate('quire_admin_audit')]), Response::HTTP_SEE_OTHER);
+                }
+
                 throw new AccessDeniedHttpException($e->getMessage(), $e);
             } catch (InvalidArgumentsException $e) {
                 $problems[] = implode(' ', $e->errors);

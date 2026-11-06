@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Quire\Admin\Controller;
 
 use Quire\Admin\Permission\AbilityCatalog;
+use Quire\Admin\Security\ConfirmGuard;
 use Quire\Permission\AccessExplainer;
+use Quire\Permission\Delegation;
 use Quire\Permission\Exception\InvalidRoleException;
 use Quire\Permission\Permissions;
 use Quire\Permission\SiteRoles;
@@ -50,6 +52,8 @@ final readonly class RolesController
         private CsrfTokenManagerInterface $csrf,
         private TranslatorInterface $translator,
         private Environment $twig,
+        private Delegation $delegation,
+        private ConfirmGuard $confirm,
     ) {
     }
 
@@ -108,6 +112,8 @@ final readonly class RolesController
             'everyone' => Role::GUEST === $role ? [] : $this->permissions->abilitiesOf(Role::GUEST),
             'changed' => [] !== array_diff($has, $defaults) || [] !== array_diff($defaults, $has),
             'problems' => $this->catalog->problems($role, $has),
+            // Nobody gives or takes away what they don't have (D-42)
+            'beyond' => $this->beyond(),
         ]));
     }
 
@@ -125,6 +131,21 @@ final readonly class RolesController
             : $this->target($role, $request->request->all('abilities'));
         $added = array_values(array_diff($target, $current));
         $removed = array_values(array_diff($current, $target));
+        $refusal = $this->refusal([...$added, ...$removed]);
+
+        if (null !== $refusal) {
+            $this->flash($request, 'error', $refusal);
+
+            return $this->redirect('quire_admin_role', ['role' => $role]);
+        }
+
+        if ([] !== $added || [] !== $removed) {
+            $confirm = $this->confirm->required($request, $this->urls->generate('quire_admin_role', ['role' => $role]));
+
+            if ($confirm instanceof RedirectResponse) {
+                return $confirm;
+            }
+        }
 
         if ([] === $added && [] === $removed) {
             $this->flash($request, 'success', $this->translator->trans('Nothing changed.', [], 'quire-admin'));
@@ -157,7 +178,23 @@ final readonly class RolesController
             return $this->redirect('quire_admin_role', ['role' => $role]);
         }
 
-        $this->permissions->setAbilities($role, $this->target($role, $request->request->all('abilities')));
+        $current = $this->permissions->abilitiesOf($role);
+        $target = $this->target($role, $request->request->all('abilities'));
+        $refusal = $this->refusal([...array_diff($target, $current), ...array_diff($current, $target)]);
+
+        if (null !== $refusal) {
+            $this->flash($request, 'error', $refusal);
+
+            return $this->redirect('quire_admin_role', ['role' => $role]);
+        }
+
+        $confirm = $this->confirm->required($request, $this->urls->generate('quire_admin_role', ['role' => $role]));
+
+        if ($confirm instanceof RedirectResponse) {
+            return $confirm;
+        }
+
+        $this->permissions->setAbilities($role, $target);
         $this->flash($request, 'success', $this->translator->trans('Saved what “{role}” may do.', ['role' => $this->permissions->roles()[$role]], 'quire-admin'));
 
         return $this->redirect('quire_admin_role', ['role' => $role]);
@@ -169,6 +206,14 @@ final readonly class RolesController
         $this->assertToken($request);
         $name = trim($request->request->getString('name'));
         $from = $request->request->getString('from');
+
+        $beyond = '' === $from ? [] : $this->rolesBeyond([$from]);
+
+        if ([] !== $beyond) {
+            $this->flash($request, 'error', $this->translator->trans('You can\'t start a role from “{role}”: it can do things you can\'t ({abilities}).', ['role' => $from, 'abilities' => $this->delegation->labels($beyond[$from])], 'quire-admin'));
+
+            return $this->redirect('quire_admin_roles');
+        }
 
         try {
             $this->siteRoles->create($name, $request->request->getString('label'), '' === $from ? null : $from);
@@ -202,6 +247,20 @@ final readonly class RolesController
     {
         $this->assertAllowed();
         $label = $this->role($role);
+        // Its holders lose what it gives: only a role one could give (D-42)
+        $beyond = $this->rolesBeyond([$role]);
+
+        if ([] !== $beyond) {
+            $this->flash($request, 'error', $this->translator->trans('You can\'t delete “{role}”: it can do things you can\'t ({abilities}).', ['role' => $label, 'abilities' => $this->delegation->labels($beyond[$role])], 'quire-admin'));
+
+            return $this->redirect('quire_admin_role', ['role' => $role]);
+        }
+
+        $confirm = $this->confirm->required($request, $this->urls->generate('quire_admin_role_delete', ['role' => $role]));
+
+        if ($confirm instanceof RedirectResponse) {
+            return $confirm;
+        }
 
         if ($request->isMethod('POST')) {
             $this->assertToken($request);
@@ -276,11 +335,48 @@ final readonly class RolesController
      */
     private function target(string $role, array $submitted): array
     {
-        $offered = $this->offered($role);
+        // What the person can't give isn't theirs to change: it stays as it is, like what isn't offered
+        $offered = array_values(array_diff($this->offered($role), $this->beyond()));
         $ticked = array_values(array_intersect(array_filter($submitted, \is_string(...)), $offered));
 
         // What the page doesn't offer stays as it is.
         return array_values(array_unique([...$ticked, ...array_diff($this->permissions->abilitiesOf($role), $offered)]));
+    }
+
+    /**
+     * The abilities the person signed in doesn't hold, so can't give or take away.
+     *
+     * @return list<string>
+     */
+    private function beyond(): array
+    {
+        $actor = $this->security->getUser();
+
+        return $actor instanceof \Symfony\Component\Security\Core\User\UserInterface ? $this->delegation->missing($actor, array_keys($this->permissions->abilities())) : array_keys($this->permissions->abilities());
+    }
+
+    /**
+     * @param list<string> $roles
+     *
+     * @return array<string, list<string>>
+     */
+    private function rolesBeyond(array $roles): array
+    {
+        $actor = $this->security->getUser();
+
+        return $actor instanceof \Symfony\Component\Security\Core\User\UserInterface ? $this->delegation->rolesBeyond($actor, $roles) : array_fill_keys($roles, ['quire.admin.access']);
+    }
+
+    /**
+     * Why the person may not give or take away these abilities, or null.
+     *
+     * @param array<string> $abilities
+     */
+    private function refusal(array $abilities): ?string
+    {
+        $missing = array_values(array_intersect(array_values(array_unique($abilities)), $this->beyond()));
+
+        return [] === $missing ? null : $this->translator->trans('You can\'t give or take away {abilities}: you don\'t have it yourself.', ['abilities' => $this->delegation->labels($missing)], 'quire-admin');
     }
 
     /**
