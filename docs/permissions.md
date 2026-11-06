@@ -124,7 +124,7 @@ new Extend\Permissions()
 ```
 
 - Ability names start with the extension's ID and a dot, like settings; the site's own start with `custom.`.
-- The roles given are the defaults. Admins have every ability that isn't **strict**; a strict one must be granted to admins like to any role, e.g. for things that can't be undone.
+- The roles given are the defaults. Admins have every ability that isn't **strict**; a strict one must be granted to admins like to any role, e.g. for things that can't be undone. In the admin, people grant only abilities they hold themselves (`Quire\Permission\Delegation`), so strict abilities are granted with `bin/console quire:permissions:grant`.
 - Roles are declared before the abilities that use them. An extension can give its abilities to roles of core or of extensions it requires.
 
 ### Rules

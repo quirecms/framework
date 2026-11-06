@@ -228,6 +228,14 @@
 
     .q-skip:focus { top: var(--q-space-2); }
 
+    /* A fieldset that only groups, e.g. to disable a form's fields at once */
+    .q-plain {
+        border: 0;
+        margin: 0;
+        padding: 0;
+        min-inline-size: 0;
+    }
+
     .q-sr {
         position: absolute !important;
         width: 1px;

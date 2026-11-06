@@ -2,7 +2,8 @@
     Adding a user (user is null) or changing one. Variables: user, values (display_name, email, username,
     roles, password_mode), errors (by field: displayName, email, username, roles, password), roles (labels
     by name), host_roles (roles mapped from the host application), identities, content_count,
-    invitation_problem (why users can't be invited), self (whether it's the signed-in user), timezone.
+    invitation_problem (why users can't be invited), self (whether it's the signed-in user), locked (why the
+    signed-in user can't manage them, or null), roles_beyond (roles they can't give or take away), timezone.
 #}
 {% extends '@quire_admin/layout.html.twig' %}
 
@@ -46,9 +47,15 @@
         </div>
     {% endif %}
 
+    {% if locked %}
+        <p class="q-notice q-notice--warning" role="status">{{ locked }}</p>
+    {% endif %}
+
     <div class="editor">
         <form method="post" action="{{ user ? path('quire_admin_user', {id: user.id}) : path('quire_admin_user_new') }}" class="settings-form" novalidate>
             <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_users') }}">
+            <fieldset class="q-plain"{% if locked %} disabled{% endif %}>
+            <legend class="q-sr">{{ 'Account'|trans({}, 'quire-admin') }}</legend>
 
             {% for field, label in {display_name: 'Name', email: 'Email', username: 'Username'} %}
                 {% set key = field == 'display_name' ? 'displayName' : field %}
@@ -69,8 +76,10 @@
                 <ul class="q-choices">
                     {% for name, label in roles %}
                         <li>
-                            <input type="checkbox" id="role-{{ name }}" name="roles[]" value="{{ name }}"{% if name in values.roles %} checked{% endif %}>
+                            {% set fixed = name in roles_beyond %}
+                            <input type="checkbox" id="role-{{ name }}" name="roles[]" value="{{ name }}"{% if name in values.roles %} checked{% endif %}{% if fixed %} disabled aria-describedby="role-{{ name }}-fixed"{% endif %}>
                             <label for="role-{{ name }}">{{ label }}</label>
+                            {% if fixed %}<span class="q-meta" id="role-{{ name }}-fixed">{{ 'it can do things you can\'t, so you can\'t give it or take it away'|trans({}, 'quire-admin') }}</span>{% endif %}
                             <a class="q-meta" href="{{ path('quire_admin_role', {role: name}) }}">{{ 'what they may do'|trans({}, 'quire-admin') }}<span class="q-sr"> ({{ label }})</span></a>
                         </li>
                     {% endfor %}
@@ -80,13 +89,15 @@
                 {% endif %}
             </fieldset>
 
-            {% if user %}
+            {% if user and self %}
                 <div class="q-field">
                     <label for="password">{{ 'New password'|trans({}, 'quire-admin') }}</label>
-                    <p class="q-help" id="password-help">{{ 'Leave empty to keep it. Better: invite them to choose one themselves.'|trans({}, 'quire-admin') }}</p>
+                    <p class="q-help" id="password-help">{{ 'Leave empty to keep it.'|trans({}, 'quire-admin') }}</p>
                     {% if errors.password is defined %}<p class="q-error" id="password-error">{{ errors.password }}</p>{% endif %}
                     <input type="password" id="password" name="password" autocomplete="new-password" aria-describedby="password-help{% if errors.password is defined %} password-error{% endif %}"{% if errors.password is defined %} aria-invalid="true"{% endif %}>
                 </div>
+            {% elseif user %}
+                <p class="q-help">{{ 'Nobody sets another person\'s password, so nobody else knows it: email them a link to choose a new one.'|trans({}, 'quire-admin') }}</p>
             {% else %}
                 <fieldset class="q-field">
                     <legend>{{ 'Password'|trans({}, 'quire-admin') }}</legend>
@@ -97,22 +108,18 @@
                             <label for="password-invite">{{ 'Email them a link to choose it (recommended)'|trans({}, 'quire-admin') }}</label>
                         </li>
                         <li>
-                            <input type="radio" id="password-set" name="password_mode" value="set"{% if values.password_mode == 'set' %} checked{% endif %}>
-                            <label for="password-set">{{ 'Set it now'|trans({}, 'quire-admin') }}</label>
-                        </li>
-                        <li>
                             <input type="radio" id="password-none" name="password_mode" value="none"{% if values.password_mode == 'none' %} checked{% endif %}>
                             <label for="password-none">{{ 'None: they sign in another way, e.g. with single sign-on'|trans({}, 'quire-admin') }}</label>
                         </li>
                     </ul>
                     {% if invitation_problem %}<p class="q-help">{{ invitation_problem }}</p>{% endif %}
-                    <label for="password">{{ 'Password, if you set it now'|trans({}, 'quire-admin') }}</label>
-                    <input type="password" id="password" name="password" autocomplete="new-password"{% if errors.password is defined %} aria-invalid="true" aria-describedby="password-error"{% endif %}>
                 </fieldset>
             {% endif %}
 
+            </fieldset>
+
             <div class="editor__buttons">
-                <button type="submit" class="q-btn">{{ user ? 'Save'|trans({}, 'quire-admin') : 'Add the user'|trans({}, 'quire-admin') }}</button>
+                <button type="submit" class="q-btn"{% if locked %} disabled{% endif %}>{{ user ? 'Save'|trans({}, 'quire-admin') : 'Add the user'|trans({}, 'quire-admin') }}</button>
                 <a href="{{ path('quire_admin_users') }}">{{ 'Cancel'|trans({}, 'quire-admin') }}</a>
             </div>
         </form>
@@ -132,13 +139,13 @@
                     <p class="q-meta">{{ '{count, plural, =0 {No content} one {Author of # item} other {Author of # items}}'|trans({count: content_count}, 'quire-admin') }}</p>
                     <div class="q-card__actions">
                     <a class="q-link-btn" href="{{ path('quire_admin_access', {user: user.username}) }}">{{ 'Check what they may do'|trans({}, 'quire-admin') }}</a>
-                    {% if user.email and not invitation_problem %}
+                    {% if user.email and not invitation_problem and not locked %}
                         <form method="post" action="{{ path('quire_admin_user_act', {id: user.id, action: 'invite'}) }}">
                             <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_users') }}">
                             <button type="submit" class="q-link-btn">{{ user.passwordHash ? 'Email a link to choose a new password'|trans({}, 'quire-admin') : 'Invite again'|trans({}, 'quire-admin') }}</button>
                         </form>
                     {% endif %}
-                    {% if not self %}
+                    {% if not self and not locked %}
                         <form method="post" action="{{ path('quire_admin_user_act', {id: user.id, action: user.active ? 'suspend' : 'activate'}) }}">
                             <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_users') }}">
                             <button type="submit" class="q-link-btn{% if user.active %} q-link-btn--danger{% endif %}">{{ user.active ? 'Suspend'|trans({}, 'quire-admin') : 'Activate'|trans({}, 'quire-admin') }}</button>

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Quire\Admin\Controller;
 
+use Quire\Admin\Security\ConfirmGuard;
 use Quire\Extension\ExtensionManifest;
 use Quire\Extension\Rebuild\RebuildFailedException;
 use Quire\Theme\Exception\ThemeException;
@@ -44,6 +45,7 @@ final readonly class ThemesController
         private TranslatorInterface $translator,
         private Environment $twig,
         private ThemePreview $preview,
+        private ConfirmGuard $confirm,
     ) {
     }
 
@@ -88,6 +90,13 @@ final readonly class ThemesController
 
         if (!$this->csrf->isTokenValid(new CsrfToken(self::CSRF_TOKEN, $request->request->getString('_token')))) {
             throw new AccessDeniedHttpException('The form expired. Reload the page and try again.');
+        }
+
+        // A theme's code runs on the site: confirmed it's them first (D-42)
+        $confirm = $this->confirm->required($request, $this->urls->generate('quire_admin_themes'));
+
+        if ($confirm instanceof RedirectResponse) {
+            return $confirm;
         }
 
         $session = $request->getSession();

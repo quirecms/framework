@@ -195,3 +195,32 @@ test('a new post: its slug follows the title, changing it keeps what is written,
     await page.waitForTimeout(1500);
     await expect(page.locator('#slug')).toHaveValue('draw');
 });
+
+test('a session kept by "keep me signed in" confirms it is you before managing someone else', async ({ page, context }) => {
+    // Signed in again, kept on this device; then only that cookie is left, as a taken-along session would be
+    await context.clearCookies();
+    await page.goto('/login');
+    await page.fill('#username', 'ada');
+    await page.fill('#password', 'correct-horse-42');
+    await page.check('#remember-me');
+    await Promise.all([page.waitForURL(/\/(admin)?$/), page.click('form button[type=submit]')]);
+    const kept = (await context.cookies()).filter((cookie) => cookie.name === 'REMEMBERME');
+    expect(kept).toHaveLength(1);
+    await context.clearCookies();
+    await context.addCookies(kept);
+
+    await page.goto('/admin/users?q=farah', { waitUntil: 'networkidle' });
+    await page.getByRole('link', { name: 'Farah Novak' }).first().click();
+    await page.waitForURL(/\/admin\/confirm\?back=/);
+    await expect(page.locator('.confirm-page h1')).toHaveText("Confirm it's you");
+
+    await page.fill('#confirm-password', 'not it');
+    await page.getByRole('button', { name: 'Confirm' }).click();
+    await expect(page.locator('#confirm-password-error')).toBeVisible();
+    await expect(page.locator('#confirm-password')).toHaveAttribute('aria-invalid', 'true');
+
+    await page.fill('#confirm-password', 'correct-horse-42');
+    await page.getByRole('button', { name: 'Confirm' }).click();
+    await page.waitForURL(/\/admin\/users\/[0-9a-f-]{36}$/);
+    await expect(page.locator('#display_name, [name=display_name]').first()).toHaveValue('Farah Novak');
+});

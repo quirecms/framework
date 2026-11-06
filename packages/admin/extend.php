@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Quire\Admin\Controller\AuditController;
+use Quire\Admin\Controller\ConfirmController;
 use Quire\Admin\Controller\ContentChangesController;
 use Quire\Admin\Controller\ContentEditController;
 use Quire\Admin\Controller\ContentListController;
@@ -63,6 +64,7 @@ return [
         ->add('/users/{id}', 'quire_admin_user', [UsersController::class, 'edit'], ['GET', 'HEAD', 'POST'], ['id' => Requirement::UUID])
         ->post('/users/{id}/{action}', 'quire_admin_user_act', [UsersController::class, 'act'], requirements: ['id' => Requirement::UUID, 'action' => 'suspend|activate|invite'])
         ->add('/users/{id}/delete', 'quire_admin_user_delete', [UsersController::class, 'delete'], ['GET', 'HEAD', 'POST'], ['id' => Requirement::UUID])
+        ->add('/confirm', 'quire_admin_confirm', ConfirmController::class, ['GET', 'HEAD', 'POST'])
         ->get('/roles', 'quire_admin_roles', RolesController::class)
         ->post('/roles', 'quire_admin_roles_create', [RolesController::class, 'create'])
         ->get('/access', 'quire_admin_access', [RolesController::class, 'check'])

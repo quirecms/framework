@@ -316,6 +316,7 @@ new Extend\Settings()
 | `default` | Used until someone changes the setting. Must fit the type. |
 | `label`, `help`, `group`, `widget` | How admin interfaces present the setting: the admin shows settings by `group` (your extension's ID when not given), with `label` and `help` translated in your extension's translation domain. `widget` is the admin's control for it, e.g. `textarea`. |
 | `choices` | The allowed values, for `enum` settings |
+| `ability` | An ability changing it takes, besides `quire.settings.manage`: for a setting another part of your extension owns, e.g. `acme-shop.prices.manage`, so managing settings isn't a way around it. The settings page, the import, `setting.set` and undo all check it. |
 | `nullable` | Whether the setting may be empty (`null`) |
 | `sensitive` | Hides the value in listings, e.g. for API keys |
 | `exposed` | Lets templates read it with `quire_setting()`, e.g. a footer text. Sensitive settings can't be exposed. |

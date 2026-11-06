@@ -14,11 +14,13 @@ use Quire\Extension\ExtensionType;
 use Quire\Extension\InstalledExtensions;
 use Quire\Permission\Permissions;
 use Quire\Settings\Exception\InvalidSettingValueException;
+use Quire\Settings\SettingAccess;
 use Quire\Settings\SettingDefinition;
 use Quire\Settings\Settings;
 use Quire\Settings\SettingsSchema;
 use Quire\Settings\SettingType;
 use Quire\Theme\Themes;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Twig\Markup;
 
@@ -55,7 +57,27 @@ final readonly class SettingsForm
         private ContentChecker $checker,
         private TranslatorInterface $translator,
         private InstalledExtensions $installed,
+        private SettingAccess $access,
+        private Security $security,
     ) {
+    }
+
+    /**
+     * Whether the setting is one of the group's, as its page shows it: for a "back to the default" of it.
+     */
+    public function inGroup(string $group, string $key): bool
+    {
+        return isset($this->definitions()[$key]) && $group === $this->group($this->definitions()[$key]);
+    }
+
+    /**
+     * Why the signed-in person may not change the setting to the value, or null (see {@see SettingAccess}).
+     */
+    public function refusal(string $key, mixed $value): ?string
+    {
+        $actor = $this->security->getUser();
+
+        return $actor instanceof \Symfony\Component\Security\Core\User\UserInterface ? $this->access->refusal($actor, $key, $value) : 'Only someone signed in changes settings.';
     }
 
     /** Core's groups, in this order; extensions' come after, by label */
@@ -282,6 +304,15 @@ final readonly class SettingsForm
             }
 
             if ($this->normalized($value) === $this->normalized($this->settings->get($key))) {
+                continue;
+            }
+
+            $refusal = $this->refusal($key, $value);
+
+            if (null !== $refusal) {
+                $errors[$key] = $refusal;
+                $values[$key] = $value;
+
                 continue;
             }
 

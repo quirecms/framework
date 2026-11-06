@@ -136,14 +136,9 @@ final class UsersTest extends AdminTestCase
         $this->user('Grace Hopper', []);
         $crawler = $this->client->request('GET', '/admin/users/new');
 
-        $crawler = $this->client->submit($crawler->selectButton('Add the user')->form(['display_name' => 'Grace Two', 'email' => 'grace.hopper@example.com', 'password_mode' => 'set', 'password' => 'short']));
-
+        $crawler = $this->client->submit($crawler->selectButton('Add the user')->form(['display_name' => 'Grace Two', 'email' => 'grace.hopper@example.com', 'password_mode' => 'none']));
         self::assertResponseStatusCodeSame(422);
-        self::assertSame('Passwords must be at least 8 characters long.', $crawler->filter('#password-error')->text());
         self::assertSame('Grace Two', $crawler->filter('#display_name')->attr('value'), 'What was entered stays.');
-
-        $crawler = $this->client->submit($crawler->selectButton('Add the user')->form(['password_mode' => 'set', 'password' => 'long enough now']));
-        self::assertResponseStatusCodeSame(422);
         self::assertSame('Another user has this email.', $crawler->filter('#email-error')->text());
         self::assertSame('#email', $crawler->filter('.q-error-summary a')->attr('href'));
 
@@ -158,14 +153,19 @@ final class UsersTest extends AdminTestCase
         $grace = $this->user('Grace Hopper', ['member']);
         $crawler = $this->client->request('GET', '/admin/users/'.$grace->id);
 
-        $this->client->submit($this->roles($crawler->selectButton('Save')->form(['display_name' => 'Grace B. Hopper', 'username' => 'amazing-grace', 'password' => 'a new horse battery']), ['editor']));
+        self::assertCount(0, $crawler->filter('#password'), 'Nobody sets another person\'s password (D-42).');
+        $this->client->submit($this->roles($crawler->selectButton('Save')->form(['display_name' => 'Grace B. Hopper', 'username' => 'amazing-grace']), ['editor']));
         self::assertResponseRedirects('/admin/users/'.$grace->id, 303);
 
         $grace = $this->reload($grace);
         self::assertSame('Grace B. Hopper', $grace->displayName);
         self::assertSame('amazing-grace', $grace->username);
         self::assertSame(['editor'], $grace->roles);
-        self::assertNotNull($grace->passwordHash);
+
+        // A password sent anyway is refused
+        $this->client->request('POST', '/admin/users/'.$grace->id, ['_token' => $crawler->selectButton('Save')->form()->getValues()['_token'], 'display_name' => 'Grace B. Hopper', 'email' => 'grace@example.com', 'username' => 'amazing-grace', 'roles' => ['editor'], 'password' => 'a new horse battery']);
+        self::assertResponseStatusCodeSame(422);
+        self::assertSame($this->reload($grace)->passwordHash, $grace->passwordHash);
     }
 
     public function testUsersAreSuspendedButNotOneself(): void

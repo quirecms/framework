@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Quire\Admin\Controller;
 
+use Quire\Admin\Security\ConfirmGuard;
 use Quire\Admin\Site\SettingsForm;
+use Quire\Permission\Permissions;
 use Quire\Settings\Exception\InvalidSettingValueException;
 use Quire\Settings\Settings;
 use Quire\Settings\SettingsSchema;
@@ -44,6 +46,8 @@ final readonly class SettingsController
         private TranslatorInterface $translator,
         private Environment $twig,
         private SettingsTransfer $transfer,
+        private ConfirmGuard $confirm,
+        private Permissions $permissions,
     ) {
     }
 
@@ -100,7 +104,8 @@ final readonly class SettingsController
         $content = $file instanceof UploadedFile && $file->isValid() ? (string) file_get_contents($file->getPathname()) : $request->request->getString('content');
 
         try {
-            $import = $this->transfer->plan($this->transfer->parse($content), skipUnknown: true);
+            // What the person may not change is refused, and so the import (D-42)
+            $import = $this->transfer->plan($this->transfer->parse($content), skipUnknown: true, by: $this->security->getUser());
         } catch (\InvalidArgumentException $e) {
             return $this->flashed($request, 'error', $e->getMessage());
         }
@@ -108,6 +113,15 @@ final readonly class SettingsController
         if ($request->request->has('apply')) {
             if (!$import->canApply()) {
                 return $this->flashed($request, 'error', implode(' ', $import->errors));
+            }
+
+            // Many settings at once: confirmed, so an open session isn't enough
+            $confirm = $this->confirm->required($request, $this->urls->generate('quire_admin_settings'));
+
+            if ($confirm instanceof RedirectResponse) {
+                $this->flashed($request, 'error', $this->translator->trans('Confirm it\'s you, then import the file again.', [], 'quire-admin'));
+
+                return $confirm;
             }
 
             try {
@@ -124,6 +138,12 @@ final readonly class SettingsController
         foreach (array_keys($import->changes) as $key) {
             $definition = $this->schema->get($key);
             $labels[$key] = ['label' => $this->translator->trans($definition->label ?? $key, [], $definition->owner), 'from' => $this->form->shown($definition, $import->changes[$key]['from']), 'to' => $this->form->shown($definition, $import->changes[$key]['to'])];
+
+            // What changes who may do what says so in words, not as data (AUTHZ-14)
+            if (Permissions::SETTING === $key) {
+                $labels[$key]['from'] = '';
+                $labels[$key]['to'] = $this->grantsInWords($import->changes[$key]['from'], $import->changes[$key]['to']);
+            }
         }
 
         return new Response($this->twig->render('@quire_admin/site/settings_import.html.twig', [
@@ -144,8 +164,10 @@ final readonly class SettingsController
 
         foreach ($this->form->document() as $part) {
             foreach ($part['sentences'] as $sentence) {
-                if ($sentence['changed']) {
-                    $this->settings->restoreDefault($sentence['entry']['definition']->key);
+                $key = $sentence['entry']['definition']->key;
+
+                if ($sentence['changed'] && null === $this->form->refusal($key, $sentence['entry']['definition']->default)) {
+                    $this->settings->restoreDefault($key);
                     ++$count;
                 }
             }
@@ -164,6 +186,15 @@ final readonly class SettingsController
         $default = $request->request->getString('default');
 
         if ('' !== $default) {
+            // Only a setting of this page, and one the person may change (D-42)
+            $refusal = $this->form->inGroup($group, $default) ? $this->form->refusal($default, $this->schema->get($default)->default) : $this->translator->trans('That setting isn\'t on this page.', [], 'quire-admin');
+
+            if (null !== $refusal) {
+                $session->getFlashBag()->add('error', $refusal);
+
+                return $this->back($group, $request);
+            }
+
             try {
                 $this->settings->restoreDefault($this->schema->get($default)->key);
                 $session->getFlashBag()->add('success', $this->translator->trans('The setting is back to its default.', [], 'quire-admin'));
@@ -227,6 +258,39 @@ final readonly class SettingsController
         $admin = rtrim($this->urls->generate('quire_admin_dashboard'), '/');
 
         return new RedirectResponse(str_starts_with($back, $admin.'/') && !str_starts_with($back, '//') ? $back : $this->urls->generate('quire_admin_settings', ['group' => $group]), Response::HTTP_SEE_OTHER);
+    }
+
+    /**
+     * What a new value of the permission changes does, by role: "Editors get: Manage users. Members
+     * lose: Comment.".
+     */
+    private function grantsInWords(mixed $from, mixed $to): string
+    {
+        [$before, $after] = [$this->permissions->grantsFrom($from), $this->permissions->grantsFrom($to)];
+        [$gained, $lost] = [[], []];
+
+        foreach ($after as $ability => $roles) {
+            foreach (array_diff($roles, $before[$ability] ?? []) as $role) {
+                $gained[$role][] = $this->permissions->abilities()[$ability]['label'];
+            }
+
+            foreach (array_diff($before[$ability] ?? [], $roles) as $role) {
+                $lost[$role][] = $this->permissions->abilities()[$ability]['label'];
+            }
+        }
+
+        $roles = $this->permissions->roles();
+        $sentences = [];
+
+        foreach ($gained as $role => $abilities) {
+            $sentences[] = $this->translator->trans('{role} get: {abilities}.', ['role' => $roles[$role] ?? $role, 'abilities' => implode(', ', $abilities)], 'quire-admin');
+        }
+
+        foreach ($lost as $role => $abilities) {
+            $sentences[] = $this->translator->trans('{role} lose: {abilities}.', ['role' => $roles[$role] ?? $role, 'abilities' => implode(', ', $abilities)], 'quire-admin');
+        }
+
+        return implode(' ', $sentences);
     }
 
     private function flashed(Request $request, string $type, string $message): RedirectResponse

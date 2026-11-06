@@ -102,7 +102,7 @@ An item's **address and place** (slug, author, parent) aren't part of the change
 
 ## Managing the site
 
-Under "Site" in the menu, for admins: each page takes its own ability, `quire.settings.manage`, `quire.themes.manage` and `quire.extensions.manage`, which no other role has by default. Grant one to a role to share that part, e.g. `bin/console quire:permissions:grant manager quire.settings.manage`.
+Under "Site" in the menu, for admins: each page takes its own ability, `quire.settings.manage`, `quire.themes.manage` and `quire.extensions.manage`, which no other role has by default (see [who may give what](#users-and-roles) below). Grant one to a role to share that part, e.g. `bin/console quire:permissions:grant manager quire.settings.manage`.
 
 - **Settings** read as a document: each group a paragraph, each setting a sentence ("This site is called Tournament News. It's written in English…"), using the phrase it's declared with (see [`Extend\Settings`](extensions.md#extendsettings)), or its label. Choose a value to change it in a small form with the control its type asks for, and its help; what differs from the default stands out, and a list beside the document says what changed and from what, with "Back to the defaults". Each group is also a form of its own ("as a form"). Settings that an environment variable sets show a lock and can't be changed here. Sensitive settings, e.g. API keys, are never shown: entering a value replaces them. The levels of the [content checks](content.md#checks-before-publishing) are chosen per check.
 - **Moving settings between sites:** "Download" gives what the site changed as a YAML file (sensitive settings left out), and "Bring in a file…" takes one, from another site or your code, YAML or JSON, and shows every difference before "Change them" changes anything, as `quire:settings:export` and `quire:settings:import` do (see [settings](settings.md)).
@@ -127,6 +127,14 @@ Everything the admin does, it does through the same services as the console comm
 ## Users and roles
 
 Under "People" in the menu, for admins: the list of people takes the ability `quire.users.manage`, "Roles" and "Check access" take `quire.permissions.manage`. No other role has them by default.
+
+Sharing these is safe, because **nobody hands out, or acts beyond, what they hold**:
+- **Roles:** someone who changes roles grants and revokes only abilities they have. The others show greyed out, with why, so strict abilities are granted only on the command line.
+- **Users:** someone who manages users gives only roles whose abilities they have, and manages only people who can't do more than they can. An admin still manages admins.
+- **Settings:** settings another page owns, such as the theme and the permissions, take that page's ability too. A settings import that touches one the person may not change is refused as a whole.
+- **Passwords:** nobody sets another person's password, so nobody else knows it. "Email a link to choose a new password" sends one that works for a day, and their password keeps working until they use it. When someone changes another person's email, the old address is told.
+
+**Confirm it's you:** before changing someone else's account or a role, switching the theme, enabling an extension or importing settings, the admin asks for your password once every 10 minutes, so an unattended or stolen session isn't enough. Signing in counts; coming back through "remember me" doesn't. Without a password (single sign-on), you sign in again.
 
 - **People** lists everyone, by role, those invited who haven't joined yet, and those suspended, each tab with how many. Each person shows their roles, their status (active, "new" in their first week, invited when, the invitation expired, or suspended), when they were last seen, and the one thing to do: their activity, sending the invitation again, or letting them in again. Search by name, username or email.
 - **Invite people** beside the list takes one email or many, and the role they get, with what that role may do in a sentence. Each one is added and invited by email to choose their password; those already users are invited again (see [users](users.md#managing-users)). "Add a user" adds one person with every detail, and can set the password or leave them without one when they sign in another way, e.g. with single sign-on.
