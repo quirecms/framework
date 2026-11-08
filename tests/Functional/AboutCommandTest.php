@@ -5,14 +5,23 @@ declare(strict_types=1);
 namespace App\Tests\Functional;
 
 use Doctrine\DBAL\Connection;
+use Quire\Extension\Boot\OfflineBoot;
+use Quire\Extension\Exception\ExtensionStateException;
+use Quire\Extension\InstalledExtensions;
+use Quire\Extension\State\ExtensionStateStoreInterface;
 use Quire\Runtime\ServerContract;
 use Quire\Runtime\SiteReport;
+use Quire\Storage\Internal\DiskFactory;
+use Quire\Storage\Internal\InstalledDisks;
+use Quire\Storage\StorageDisks;
 use Quire\User\CreateUser;
 use Quire\User\Role;
 use Quire\User\UserWriter;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\DependencyInjection\ServiceLocator;
+use Symfony\Component\HttpFoundation\UriSigner;
 
 /**
  * "quire:about": what tools that manage sites (Quire Server) read about a site.
@@ -82,6 +91,38 @@ final class AboutCommandTest extends KernelTestCase
 
         $this->expectExceptionMessageIsOrContains('Unknown format "xml". Use "table" or "json".');
         $tester->execute(['--format' => 'xml']);
+    }
+
+    public function testTheReportIsMadeWhenTheDisksCantBeChecked(): void
+    {
+        // A dormant disk, so the extensions' state is read, and it can't be, e.g. before the site is installed.
+        $container = self::getContainer();
+        $disks = new StorageDisks([], new DiskFactory($container->get('router'), new UriSigner('test')), new ServiceLocator([]), '/tmp', ['acme-reviews' => ['adapter' => 'local', 'public' => null, 'path' => null]]);
+        $state = new class implements ExtensionStateStoreInterface {
+            public function enabledIds(): array
+            {
+                throw new ExtensionStateException('The "quire.extension" table doesn\'t exist yet.');
+            }
+
+            public function readOnlyReason(): ?string
+            {
+                return null;
+            }
+
+            public function enable(array $ids): void
+            {
+            }
+
+            public function disable(array $ids): void
+            {
+            }
+        };
+        $container->set(InstalledDisks::class, new InstalledDisks($disks, $container->get(InstalledExtensions::class), $state, $container->get(OfflineBoot::class)));
+
+        $report = $container->get(SiteReport::class)->report();
+
+        self::assertSame(ServerContract::VERSION, $report['contract'], 'What a server relies on is there: e.g. that it can invite the first admin.');
+        self::assertSame(['The storage disks couldn\'t be checked (Quire\Extension\Exception\ExtensionStateException): run "bin/console quire:storage:list" to see them.'], $report['warnings']);
     }
 
     /**
