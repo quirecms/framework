@@ -47,6 +47,12 @@ quire:
 
 **S3-compatible services** need the adapter package: `composer require league/flysystem-async-aws-s3`. This includes AWS S3, Cloudflare R2, Backblaze B2, Wasabi, and self-hosted SeaweedFS, Garage or RustFS. (MinIO's community edition has been archived since 2026 and isn't recommended.) For R2, use `endpoint: https://<account-id>.r2.cloudflarestorage.com`, and set `url` to the bucket's public domain, since R2 serves public files elsewhere than its API. Quire sends no ACLs, so who may read a bucket is up to its policy. A public disk's bucket must allow anonymous reads of its prefix.
 
+A disk the site placed keeps its place while the extension that declares it is disabled: it isn't in use then (Quire serves nothing from it, nor collects it), but [backups](backups.md) still copy its files, and it's in use again once the extension is enabled. `quire:storage:list` lists such disks.
+
+- When the site also set the disk's `public`, the disk is the site's own while the extension is disabled, and it's served as before: public files to everyone, private ones only through signed links.
+- In Quire's Docker setup, Caddy serves the directories of local public disks, `storage/public/<disk>`, whether the disk is in use or not. To stop serving a disabled extension's public files, move or delete them.
+- A disk placed without `public` that no installed extension declares, e.g. a typo or a renamed disk, is never used. `quire:about` warns about it and `quire:storage:check` fails.
+
 The site can also add disks of its own, e.g. for files its own code keeps. Each disk needs a place of its own: two disks in the same directory, or the same bucket and prefix, are refused, because each would see the other's files.
 
 ## Storing files
@@ -103,6 +109,8 @@ It deletes two kinds of garbage, both only after the grace period:
 
 - **Objects that nothing refers to.** It finds out what refers to objects from PostgreSQL itself: every foreign key to `quire.storage_object`, in core's tables and every extension's, counts.
 - **Files on a disk that no object records**, e.g. from an upload whose transaction was rolled back.
+
+Only disks in use are cleaned up: the objects and files of a disabled extension, or of one removed with Composer, are kept as they are, for when it's back.
 
 Storing the same content again restarts an object's grace period. The [scheduled task](jobs.md#scheduled-tasks) `quire.collect-garbage` runs the collector daily, with a grace period of `quire.storage.gc_grace_days` days (default `1`). Choose a grace period at least as long as the time you might want to restore an older database backup, because the files it refers to must still be there.
 

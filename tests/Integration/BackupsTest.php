@@ -13,10 +13,11 @@ use Quire\Backup\Backups;
 use Quire\Backup\Internal\RestoreChecks;
 use Quire\Content\Command\CreateContent;
 use Quire\Content\ContentWriter;
+use Quire\Extension\Boot\OfflineBoot;
 use Quire\Extension\InstalledExtensions;
 use Quire\Extension\Rebuild\AppRebuilderInterface;
 use Quire\Extension\State\ExtensionStateStoreInterface;
-use Quire\Storage\StorageDisks;
+use Quire\Storage\Internal\InstalledDisks;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 /**
@@ -173,9 +174,8 @@ final class BackupsTest extends WebTestCase
                 {
                 }
             },
-            $container->get(StorageDisks::class),
-            $container->getParameter('kernel.project_dir'),
-            'test',
+            $container->get(InstalledDisks::class),
+            $container->get(OfflineBoot::class),
         );
 
         self::assertSame([], $checks->problems($this->contents(extensions: ['quire-fixture-hello'])), 'An installed extension the backup has enabled is fine.');

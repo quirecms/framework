@@ -20,7 +20,7 @@ A backup is a tar archive, which any tar program reads (`tar -tvf site.tar`), of
 
 - `database.dump`: the database, as a `pg_dump` archive in PostgreSQL's custom format (compressed), which PostgreSQL's own tools read too;
 - `files/<disk>/<key>`: the stored files;
-- `manifest.json`: what was copied, and what was missing.
+- `manifest.json`: what was copied, whether the backup is complete (`complete`), and each file it has no good copy of, with why (`absent`).
 
 It's consistent even while the site is being used: the files are exactly those the dumped database lists (read from the same snapshot), and [cleaning up stored files](storage.md#cleaning-up) waits while a backup runs.
 
@@ -34,12 +34,25 @@ bin/console quire:backup --files-dir=/backups/files
 ```
 
 - **Local disks** are copied by default: nothing else has those files. Files on **S3 disks** aren't, as buckets keep their own copies: turn on versioning or replication for them. Pass `--files=all` to copy them anyway, e.g. for a copy kept away from the provider, or to move the site to another one.
-- **Every file is checked** against its checksum as it's copied. Files that are missing from their disk, or damaged, are listed in a warning and in the manifest: the site already lacks them, so the backup can't have a good copy.
+- **Every file is checked** against its checksum as it's copied. Files that are missing from their disk, or damaged, are listed in a warning and in the manifest: the site already lacks them, so the backup can't have a good copy, and it's [incomplete](#incomplete-backups).
+- **Disabled extensions' files are copied too.** Disabling an extension keeps its data, files included, so the backup reaches its disks, wherever the site placed them.
 - **A files directory** (`--files-dir`) keeps the files outside the backup, named after their content as on the disks. Stored files never change, so each backup copies only the files that are new, and daily backups of a large media library stay small and fast. Keep the directory with the backups, and give it to `quire:restore` with the same option. With Docker, it must be a directory the container sees, e.g. a volume mounted at `/backups`.
 
 - **Only Quire's data.** When Quire shares a database with an application, the application's tables aren't in the backup; back them up separately.
 - **Safe to write.** A file written by `quire:backup` appears only once the backup is complete, so a failed backup never leaves a truncated file behind, and only its owner can read it. (Writing to standard output, that's up to whatever receives it.) It contains all of the site's data, including anything private: store it as carefully as the database itself.
 - **Client tools.** The commands run `pg_dump` and `pg_restore`, which must be at least the version of the PostgreSQL server. The Docker image includes them. Elsewhere, install the client tools, e.g. the `postgresql-client-18` package from [PostgreSQL's repository](https://www.postgresql.org/download/).
+
+### Incomplete backups
+
+A backup that has no good copy of a stored file it was to copy is **incomplete**: the file is missing from its disk, damaged, or on a disk that neither the site nor any installed extension has (e.g. of an extension removed with Composer, or a disk renamed in `quire.storage.disks`), so where it is can't be known. Files it doesn't copy by choice (`--files`) don't count.
+
+An incomplete backup is still written, as the best copy there is, and its manifest says `"complete": false`. But it doesn't count as a backup that worked:
+
+- `quire:backup` lists what's absent and exits with **3**: 0 is a complete backup, 1 is none. Writing to standard output, it exits with 3 after the stream.
+- The [backup log](#scheduling-backups) records it as failed, so admin interfaces say the last backup failed, and the last complete one stays the last that worked.
+- `quire:restore` says it's incomplete, and what it lacks, before it changes anything.
+
+Fix what's listed (install the extension that declares the disk, or configure the disk; restore lost files from an older backup) and back up again. When the files really are gone and you accept that, `--allow-incomplete` exits with 0 and records the backup as working, for that run only: the list is still shown.
 
 ## Restoring a backup
 
@@ -86,7 +99,7 @@ mv /srv/backups/site.partial "/srv/backups/site-$(date +%F).tar"
 find /srv/backups -name 'site-*.tar' -mtime +14 -delete
 ```
 
-The command fails when the backup does, so the `mv` only keeps complete backups.
+The command fails when the backup does, so the `mv` only keeps complete backups. An [incomplete](#incomplete-backups) one exits with 3, which stops the script too: it's left as `site.partial`, for you to look at what it lists. Whatever you keep, keep the newest complete backup however old it is.
 
 Quire remembers the backups it makes, when they finished, how big they were and whether they worked, so admin interfaces can say when the site was last backed up (`Quire\Backup\BackupLog`). Backups made with the database's own tools aren't in it, and restoring a backup brings back the record as it was then.
 

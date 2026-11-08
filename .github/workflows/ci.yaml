@@ -213,7 +213,11 @@ jobs:
       - name: Check the app can write to its storage volume
         run: docker compose --env-file prod.env exec -T php sh -c 'touch storage/public/.check storage/private/.check && rm storage/public/.check storage/private/.check'
       - name: Check the server contract's report
-        run: docker compose --env-file prod.env exec -T php bin/console quire:about --format=json | jq -e '.contract == 1 and .health.status == "ok" and .migrations.pending == 0'
+        # The version the code keeps, so raising it can't leave this behind
+        run: |
+          version=$(sed -n 's/^ *public const int VERSION = \([0-9][0-9]*\);$/\1/p' packages/core/src/Runtime/ServerContract.php)
+          test -n "$version"
+          docker compose --env-file prod.env exec -T php bin/console quire:about --format=json | jq -e --argjson contract "$version" '.contract == $contract and .health.status == "ok" and .migrations.pending == 0'
       # Behind a reverse proxy (compose.proxy.yaml): plain HTTP on this machine's loopback only, and
       # HTTPS as the proxy says it was.
       - name: Check the site behind a reverse proxy
