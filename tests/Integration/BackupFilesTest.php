@@ -21,6 +21,7 @@ use Quire\Extension\Boot\OfflineBoot;
 use Quire\Extension\InstalledExtensions;
 use Quire\Extension\Rebuild\AppRebuilderInterface;
 use Quire\Extension\State\ExtensionStateStoreInterface;
+use Quire\Storage\Console\CheckDisksCommand;
 use Quire\Storage\Internal\DiskFactory;
 use Quire\Storage\Internal\GarbageCollector;
 use Quire\Storage\Internal\InstalledDisks;
@@ -28,6 +29,8 @@ use Quire\Storage\ObjectStore;
 use Quire\Storage\StorageDisks;
 use Quire\Storage\StoredObject;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\UriSigner;
@@ -315,6 +318,24 @@ final class BackupFilesTest extends WebTestCase
         self::assertFalse($disks->get('site-files')->files->fileExists($own->key));
         self::assertSame(['acme-gone', 'quire-fixture-hello'], $connection->fetchFirstColumn('SELECT disk FROM quire.storage_object ORDER BY disk'), 'The rows stay: the extension finds its files as it left them when it\'s back.');
         self::assertFileExists($placed.'/'.$photo->key);
+    }
+
+    public function testADiskPlacedThatNoInstalledExtensionDeclaresIsReported(): void
+    {
+        $container = self::getContainer();
+        [$disks, $state] = $this->disabled('quire-fixture-hello');
+        $typo = new StorageDisks([], new DiskFactory($container->get('router'), new UriSigner('test')), new ServiceLocator([]), $this->directory.'/root', [
+            'quire-fixture-helo' => ['adapter' => 'local', 'public' => null, 'url' => null, 'path' => $this->directory.'/typo', 'service' => null],
+            'quire-fixture-hello' => ['adapter' => 'local', 'public' => null, 'url' => null, 'path' => $this->directory.'/placed', 'service' => null],
+        ]);
+        $installed = new InstalledDisks($typo, $container->get(InstalledExtensions::class), $state, $container->get(OfflineBoot::class));
+
+        self::assertSame(['quire-fixture-helo'], $installed->placedButUndeclared(), 'Not the disabled extension\'s: that one is declared.');
+        self::assertSame([], new InstalledDisks($disks, $container->get(InstalledExtensions::class), $state, $container->get(OfflineBoot::class))->placedButUndeclared());
+
+        $tester = new CommandTester(new Command('quire:storage:check')->setCode(new CheckDisksCommand($typo, $installed)));
+        self::assertSame(Command::FAILURE, $tester->execute([]), 'It used to fail the build.');
+        self::assertStringContainsString('"quire.storage.disks.quire-fixture-helo" places a disk that no installed extension declares', $tester->getDisplay());
     }
 
     public function testTheGarbageCollectorWaitsForRunningBackups(): void

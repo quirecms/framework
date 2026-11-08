@@ -47,7 +47,11 @@ quire:
 
 **S3-compatible services** need the adapter package: `composer require league/flysystem-async-aws-s3`. This includes AWS S3, Cloudflare R2, Backblaze B2, Wasabi, and self-hosted SeaweedFS, Garage or RustFS. (MinIO's community edition has been archived since 2026 and isn't recommended.) For R2, use `endpoint: https://<account-id>.r2.cloudflarestorage.com`, and set `url` to the bucket's public domain, since R2 serves public files elsewhere than its API. Quire sends no ACLs, so who may read a bucket is up to its policy. A public disk's bucket must allow anonymous reads of its prefix.
 
-A disk the site placed keeps its place while the extension that declares it is disabled: it isn't in use then (nothing is served from it, nor collected), but [backups](backups.md) still copy its files, and it's in use again once the extension is enabled. `quire:storage:list` lists such disks.
+A disk the site placed keeps its place while the extension that declares it is disabled: it isn't in use then (Quire serves nothing from it, nor collects it), but [backups](backups.md) still copy its files, and it's in use again once the extension is enabled. `quire:storage:list` lists such disks.
+
+- When the site also set the disk's `public`, the disk is the site's own while the extension is disabled, and it's served as before: public files to everyone, private ones only through signed links.
+- In Quire's Docker setup, Caddy serves the directories of local public disks, `storage/public/<disk>`, whether the disk is in use or not. To stop serving a disabled extension's public files, move or delete them.
+- A disk placed without `public` that no installed extension declares, e.g. a typo or a renamed disk, is never used. `quire:about` warns about it and `quire:storage:check` fails.
 
 The site can also add disks of its own, e.g. for files its own code keeps. Each disk needs a place of its own: two disks in the same directory, or the same bucket and prefix, are refused, because each would see the other's files.
 

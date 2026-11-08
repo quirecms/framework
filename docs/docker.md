@@ -208,7 +208,7 @@ Example response:
 A server that runs several sites, such as [Quire Server](https://github.com/quirecms/server), finds and manages them through a small, versioned contract (`Quire\Runtime\ServerContract`, currently version 2):
 
 - **Labels** on the `php` container: `com.quirecms.site=true` and `com.quirecms.contract=2`, so a site already running on a machine can be found.
-- **`bin/console quire:about --format=json`**: the site's Quire, PHP and Symfony versions, title, language, time zone, address, whether it's installed (has an admin), its extensions and theme, its migrations (run and pending) and its health checks, with the contract's version. Parts that need the database are `null` when it can't be reached. Without `--format`, the same for people.
+- **`bin/console quire:about --format=json`**: the site's Quire, PHP and Symfony versions, title, language, time zone, address, whether it's installed (has an admin), its extensions and theme, its migrations (run and pending) and its health checks, with the contract's version, and warnings for the people managing the site. Parts that need the database are `null` when it can't be reached. Without `--format`, the same for people.
 - **`bin/console quire:install --no-interaction --admin-email=… --invite`**: a new site, its first admin invited by email.
 - **`compose.proxy.yaml`**: the site behind the server's own front door ([behind a reverse proxy](#behind-a-reverse-proxy)).
 - **`bin/console quire:backup`** (from version 2): exits with 0 for a complete backup, 1 for none, and 3 for one that was written but has no good copy of some stored files; its `manifest.json` has `complete` and `absent` ([backups](backups.md#incomplete-backups)). What the commands print is for people, not part of the contract.
@@ -228,7 +228,8 @@ docker compose --env-file prod.env exec -T php bin/console quire:about --format=
     "extensions": [{"id": "quire-admin", "package": "quire/admin", "version": "v0.1.0", "type": "extension", "status": "enabled"}],
     "theme": "quire-theme-default",
     "migrations": {"executed": 19, "pending": 0},
-    "health": {"status": "ok", "checks": {"cache": {"status": "ok"}, "database": {"status": "ok"}, "extensions": {"status": "ok"}}}
+    "health": {"status": "ok", "checks": {"cache": {"status": "ok"}, "database": {"status": "ok"}, "extensions": {"status": "ok"}}},
+    "warnings": []
 }
 ```
 

@@ -48,6 +48,7 @@ final class AboutCommandTest extends KernelTestCase
         self::assertGreaterThan(0, $report['migrations']['executed']);
         self::assertSame('ok', $report['health']['status']);
         self::assertSame(['cache', 'database', 'extensions'], array_keys($report['health']['checks']));
+        self::assertSame([], $report['warnings']);
         self::assertNotNull($report['site']['title']);
         self::assertFalse($report['site']['installed'], 'No admin yet.');
 
@@ -84,7 +85,7 @@ final class AboutCommandTest extends KernelTestCase
     }
 
     /**
-     * @return array{contract: int, quire: array{version: string, reference: ?string}, php: string, symfony: string, environment: string, site: array{title: ?string, locale: ?string, timezone: ?string, url: ?string, installed: ?bool}, extensions: list<array{id: string, package: string, version: string, type: string, status: string}>, theme: ?string, migrations: array{executed: ?int, pending: ?int}, health: array{status: string, checks: array<string, array{status: string, message?: string}>}}
+     * @return array{contract: int, quire: array{version: string, reference: ?string}, php: string, symfony: string, environment: string, site: array{title: ?string, locale: ?string, timezone: ?string, url: ?string, installed: ?bool}, extensions: list<array{id: string, package: string, version: string, type: string, status: string}>, theme: ?string, migrations: array{executed: ?int, pending: ?int}, health: array{status: string, checks: array<string, array{status: string, message?: string}>}, warnings: list<string>}
      */
     private function report(): array
     {

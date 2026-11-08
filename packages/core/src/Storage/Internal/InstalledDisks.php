@@ -15,8 +15,8 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 /**
  * Every disk the site has files on, whether the extension that declares it is enabled or not: the site's
  * disks, plus those every installed extension declares, where the site placed them or where they are
- * without configuration. A disabled extension keeps its data, files too, so backups copy them and the
- * garbage collector collects them as usual.
+ * without configuration. A disabled extension keeps its data, files too, so backups copy them and
+ * restores put them back. The garbage collector leaves them alone: it collects disks in use only.
  *
  * A disk that no installed extension declares, e.g. of an extension removed with Composer, isn't here:
  * where its files are can't be known.
@@ -58,6 +58,16 @@ final readonly class InstalledDisks
 
             return $this->disks->withDeclarations($declarations);
         }
+    }
+
+    /**
+     * @return list<string> Disks "quire.storage.disks" places without "public" that no installed extension
+     *                      declares, e.g. a typo or a renamed disk: never used. Cheap when there are
+     *                      no dormant disks, which is when the extenders aren't run.
+     */
+    public function placedButUndeclared(): array
+    {
+        return [] === $this->disks->dormant() ? [] : $this->all()->dormant();
     }
 
     /**
