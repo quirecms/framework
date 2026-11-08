@@ -17,11 +17,13 @@ use Quire\Backup\Internal\PostgresTools;
 use Quire\Backup\Internal\RestoreChecks;
 use Quire\Backup\Internal\TarReader;
 use Quire\Content\ContentRenderer;
+use Quire\Extension\Boot\OfflineBoot;
 use Quire\Extension\InstalledExtensions;
 use Quire\Extension\Rebuild\AppRebuilderInterface;
 use Quire\Extension\State\ExtensionStateStoreInterface;
 use Quire\Storage\Internal\DiskFactory;
 use Quire\Storage\Internal\GarbageCollector;
+use Quire\Storage\Internal\InstalledDisks;
 use Quire\Storage\ObjectStore;
 use Quire\Storage\StorageDisks;
 use Quire\Storage\StoredObject;
@@ -201,6 +203,120 @@ final class BackupFilesTest extends WebTestCase
         }
     }
 
+    public function testADisabledExtensionsFilesAreBackedUpAndRestoredWhereTheSitePlacedThem(): void
+    {
+        $photo = $this->attach('quire-fixture-hello', 'photo');
+        [$disks, $state, $placed] = $this->disabled('quire-fixture-hello', $photo);
+
+        $report = $this->backups($disks, $state)->create($this->directory.'/site.tar');
+
+        self::assertTrue($report->complete(), 'Disabling an extension keeps its files: they\'re not "missing".');
+        self::assertSame([1, 1, []], [$report->objects, $report->copied, $report->missing]);
+        self::assertArrayHasKey('files/quire-fixture-hello/'.$photo->key, new TarReader($this->directory.'/site.tar')->entries());
+
+        // Into an empty schema, e.g. on a new server, with the extension still disabled.
+        unlink($placed.'/'.$photo->key);
+        self::getContainer()->get(Connection::class)->executeStatement('DROP SCHEMA quire CASCADE');
+        $restored = $this->backups($disks, $state)->restore($this->directory.'/site.tar', static function (string $output): void {});
+
+        self::assertSame([1, []], [$restored->restored, $restored->corrupt]);
+        self::assertSame($this->contents($photo), file_get_contents($placed.'/'.$photo->key), 'Back on its disk, where the site placed it.');
+    }
+
+    public function testAnIncompleteBackupIsWrittenButDoesntCountAsOneThatWorked(): void
+    {
+        $lost = $this->attach('quire-fixture-hello', 'lost');
+        $damaged = $this->attach('quire-fixture-hello', 'damaged');
+        $this->backups()->create($this->directory.'/good.tar');
+        $this->lose($lost);
+        $this->disk('quire-fixture-hello')->files->write($damaged->key, strrev($this->contents($damaged)));
+
+        $report = $this->backups()->create($this->directory.'/site.tar');
+
+        self::assertFalse($report->complete());
+        self::assertFileExists($this->directory.'/site.tar', 'The best copy there is.');
+        $manifest = $this->manifest($this->directory.'/site.tar');
+        self::assertFalse($manifest['complete']);
+        self::assertSame([['file' => 'quire-fixture-hello:'.$lost->key, 'reason' => 'missing'], ['file' => 'quire-fixture-hello:'.$damaged->key, 'reason' => 'damaged']], $manifest['absent']);
+        self::assertFalse($this->backups()->inspect($this->directory.'/site.tar')->complete);
+        self::assertTrue($this->backups()->inspect($this->directory.'/good.tar')->complete);
+
+        $log = self::getContainer()->get(BackupLog::class);
+        self::assertFalse($log->last()?->ok);
+        self::assertStringContainsString('Incomplete: 2 stored file(s) aren\'t in it', (string) $log->last()->problem);
+        self::assertSame($this->directory.'/good.tar', $log->lastSuccessful()?->target, 'The last complete one is still the last that worked.');
+    }
+
+    public function testFilesOnADiskNothingHasMakeTheBackupIncompleteWhateverItCopies(): void
+    {
+        $this->attach('quire-fixture-hello', 'photo');
+        $this->orphan('acme-gone');
+
+        foreach ([BackupFiles::Local, BackupFiles::None] as $files) {
+            $report = $this->backups()->create($this->directory.'/'.$files->value.'.tar', $files);
+
+            self::assertSame([['acme-gone'], ['acme-gone:00/00/'.str_repeat('0', 64).'.jpg'], []], [$report->unknownDisks, $report->onUnknownDisks, $report->missing], 'Its own problem, not "missing".');
+            self::assertFalse($report->complete(), 'Where its files are, and whether they\'d be copied, can\'t be known.');
+            self::assertSame('unknown_disk', $this->manifest($this->directory.'/'.$files->value.'.tar')['absent'][0]['reason']);
+        }
+    }
+
+    public function testQuireBackupExitsWith0OnlyForACompleteBackupAnd3ForAnIncompleteOne(): void
+    {
+        $this->attach('quire-fixture-hello', 'photo');
+        $this->console('quire:backup', ['file' => $this->directory.'/complete.tar']);
+        $this->console('quire:backup', ['file' => $this->directory.'/complete.tar'], expectedStatus: 1);
+        $this->orphan('acme-gone');
+
+        // 3, not BackupCommand::INCOMPLETE: Quire Server relies on the number (see ServerContract).
+        $output = $this->console('quire:backup', ['file' => $this->directory.'/incomplete.tar'], expectedStatus: 3);
+        self::assertStringContainsString('on the disk "acme-gone", which neither the site nor any installed extension has', $output);
+        self::assertStringContainsString('Install the extension that declares it, or configure it in "quire.storage.disks"', $output);
+        self::assertStringContainsString('The backup is incomplete: 1 stored file(s) aren\'t in it', $output);
+        self::assertFileExists($this->directory.'/incomplete.tar');
+        self::assertFalse(self::getContainer()->get(BackupLog::class)->last()?->ok);
+
+        $output = $this->console('quire:backup', ['file' => $this->directory.'/accepted.tar', '--allow-incomplete' => true]);
+        self::assertStringContainsString('acme-gone:00/00/', $output, 'The list is still shown.');
+        self::assertStringContainsString('--allow-incomplete accepts that', $output);
+        $last = self::getContainer()->get(BackupLog::class)->last();
+        self::assertTrue($last?->ok);
+        self::assertStringContainsString('Incomplete, which was allowed', (string) $last->problem);
+
+        $output = $this->console('quire:restore', ['file' => $this->directory.'/accepted.tar', '--dry-run' => true], expectedStatus: 1);
+        self::assertStringContainsString('The backup is incomplete: 1 stored file(s)', $output, 'Said before anything is restored.');
+    }
+
+    public function testAStreamedIncompleteBackupIsRecordedAsFailed(): void
+    {
+        $this->orphan('acme-gone');
+        $bytes = '';
+
+        $report = $this->backups()->stream(static function (string $data) use (&$bytes): void {
+            $bytes .= $data;
+        });
+
+        self::assertFalse($report->complete());
+        self::assertNotSame('', $bytes, 'The stream is complete, as a backup.');
+        self::assertFalse(self::getContainer()->get(BackupLog::class)->last()?->ok);
+    }
+
+    public function testTheGarbageCollectorKeepsTheObjectsOfDisksNotInUse(): void
+    {
+        $photo = $this->objects()->store('quire-fixture-hello', 'Unused '.bin2hex(random_bytes(8)));
+        $this->orphan('acme-gone');
+        [$disks, , $placed] = $this->disabled('quire-fixture-hello', $photo);
+        $connection = self::getContainer()->get(Connection::class);
+        $own = new ObjectStore($disks, $connection)->store('site-files', 'Unused too '.bin2hex(random_bytes(8)));
+
+        $collected = new GarbageCollector($connection, $disks)->collect(new \DateTimeImmutable('+1 day'));
+
+        self::assertSame(1, $collected['objects'], 'Only the one on a disk in use.');
+        self::assertFalse($disks->get('site-files')->files->fileExists($own->key));
+        self::assertSame(['acme-gone', 'quire-fixture-hello'], $connection->fetchFirstColumn('SELECT disk FROM quire.storage_object ORDER BY disk'), 'The rows stay: the extension finds its files as it left them when it\'s back.');
+        self::assertFileExists($placed.'/'.$photo->key);
+    }
+
     public function testTheGarbageCollectorWaitsForRunningBackups(): void
     {
         $connection = self::getContainer()->get(Connection::class);
@@ -223,20 +339,94 @@ final class BackupFilesTest extends WebTestCase
         self::assertSame(['objects' => 0, 'files' => 0], self::getContainer()->get(GarbageCollector::class)->collect(new \DateTimeImmutable('-1 year')), 'And runs once it\'s over.');
     }
 
-    private function backups(?StorageDisks $disks = null): Backups
+    private function backups(?StorageDisks $disks = null, ?ExtensionStateStoreInterface $state = null): Backups
     {
         $container = self::getContainer();
         $disks ??= $container->get(StorageDisks::class);
+        $installed = new InstalledDisks($disks, $container->get(InstalledExtensions::class), $state ?? $container->get(ExtensionStateStoreInterface::class), $container->get(OfflineBoot::class));
         $checks = new RestoreChecks(
             $container->get(Connection::class),
             $container->get(InstalledExtensions::class),
-            $container->get(ExtensionStateStoreInterface::class),
-            $disks,
-            $container->getParameter('kernel.project_dir'),
-            'test',
+            $state ?? $container->get(ExtensionStateStoreInterface::class),
+            $installed,
+            $container->get(OfflineBoot::class),
         );
 
-        return new Backups($container->get(Connection::class), $container->get(PostgresTools::class), $checks, $container->get(AppRebuilderInterface::class), $container->get(ContentRenderer::CACHE_POOL), $disks, $container->get(BackupLog::class));
+        return new Backups($container->get(Connection::class), $container->get(PostgresTools::class), $checks, $container->get(AppRebuilderInterface::class), $container->get(ContentRenderer::CACHE_POOL), $installed, $container->get(BackupLog::class));
+    }
+
+    /**
+     * The site as it is once the extension is disabled, having placed its disks in a directory of the
+     * test's: they're dormant, not in use, and its files are there.
+     *
+     * @return array{StorageDisks, ExtensionStateStoreInterface, string} The disks, the extensions' state, where the files are
+     */
+    private function disabled(string $extension, StoredObject ...$objects): array
+    {
+        $container = self::getContainer();
+        $placed = $this->directory.'/placed';
+
+        foreach ($objects as $object) {
+            new Filesystem()->dumpFile($placed.'/'.$object->key, $this->contents($object));
+        }
+
+        $container->get(Connection::class)->executeStatement('UPDATE quire.extension SET enabled = false WHERE id = ?', [$extension]);
+        /** @var array<string, array<mixed>> $config */
+        $config = $container->getParameter(StorageDisks::PARAMETER);
+        $disks = new StorageDisks(
+            [...array_filter($config, static fn (array $disk): bool => $extension !== $disk['owner']), 'site-files' => ['adapter' => 'local', 'public' => false, 'path' => $this->directory.'/site-files', 'owner' => 'site']],
+            new DiskFactory($container->get('router'), new UriSigner('test')),
+            new ServiceLocator([]),
+            $this->directory.'/root',
+            [$extension => ['adapter' => 'local', 'public' => null, 'url' => null, 'path' => $placed, 'service' => null]],
+        );
+        $enabled = array_values(array_diff($container->get(ExtensionStateStoreInterface::class)->enabledIds(), [$extension]));
+        $state = new readonly class($enabled) implements ExtensionStateStoreInterface {
+            /** @param list<string> $enabled */
+            public function __construct(private array $enabled)
+            {
+            }
+
+            public function enabledIds(): array
+            {
+                return $this->enabled;
+            }
+
+            public function readOnlyReason(): ?string
+            {
+                return null;
+            }
+
+            public function enable(array $ids): void
+            {
+            }
+
+            public function disable(array $ids): void
+            {
+            }
+        };
+
+        return [$disks, $state, $placed];
+    }
+
+    /**
+     * A stored file the database lists on a disk that neither the site nor any installed extension has.
+     */
+    private function orphan(string $disk): void
+    {
+        self::getContainer()->get(Connection::class)->insert('quire.storage_object', ['disk' => $disk, 'key' => '00/00/'.str_repeat('0', 64).'.jpg', 'size' => 3, 'sha256' => hash('sha256', 'abc'), 'mime_type' => 'image/jpeg']);
+    }
+
+    /**
+     * @return array{complete: bool, absent: list<array{file: string, reason: string}>}
+     */
+    private function manifest(string $backup): array
+    {
+        $reader = new TarReader($backup);
+        /** @var array{complete: bool, absent: list<array{file: string, reason: string}>} $manifest */
+        $manifest = json_decode($reader->read($reader->entries()['manifest.json']), true, flags: \JSON_THROW_ON_ERROR);
+
+        return $manifest;
     }
 
     /**
