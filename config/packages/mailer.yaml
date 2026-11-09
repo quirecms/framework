@@ -1,3 +1,10 @@
 framework:
     mailer:
         dsn: '%env(MAILER_DSN)%'
+
+when@test:
+    framework:
+        mailer:
+            # Tests read the messages that were sent (assertEmailCount(), getMailerMessage()) and deliver
+            # none, whatever MAILER_DSN the environment sets, e.g. the dev stack's Mailpit.
+            dsn: 'null://null'
