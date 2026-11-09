@@ -59,7 +59,7 @@ Build it to see what new sites get: `.github/skeleton.sh /tmp/skeleton`. A test 
    docker compose exec php composer qa
    ```
 
-   CI runs the same checks, and a pull request can only be merged when they pass. `composer fix` applies coding-standard fixes and automated refactorings for you.
+   CI runs the same checks, and a pull request can only be merged when they pass. It also runs `composer audit` on the lock: a dependency with a known advisory fails the build. `composer fix` applies coding-standard fixes and automated refactorings for you.
 4. Open a pull request against `main`.
 
 ### Code guidelines
@@ -78,6 +78,8 @@ Build it to see what new sites get: `.github/skeleton.sh /tmp/skeleton`. A test 
 - New features need tests for their normal behaviour and their edge cases.
 - Unit tests for a package live in that package's `tests/` folder (e.g. `packages/core/tests/`). Tests that need the whole application live in the root `tests/` folder.
 - Run a single test with `composer test -- --filter NameOfTest`.
+- Tests send no email: the test environment uses the null transport whatever `MAILER_DSN` says, and tests read the messages with `assertEmailCount()` and `getMailerMessage()`. They don't need the `mailer` service.
+- Tests that compare times (an item's publication, a backup's) assume the machine's clock doesn't jump. On WSL2, when tests fail now and then for no reason, check that the clock isn't being stepped back (`journalctl | grep 'Clock change detected'`) and that Windows syncs its own time.
 - Changes to the default theme's templates or CSS must keep it accessible: CI checks it with axe-core (see "Accessibility" in [docs/themes.md](docs/themes.md#accessibility) to run the same check locally).
 
 ### Commit messages
@@ -120,7 +122,7 @@ The workflow "Release" then publishes the GitHub release with them, and Quire's 
 
 The runtime images sites build on (`runtime/Dockerfile`, see [docs/docker.md](docs/docker.md#the-runtime-images)) aren't tied to releases: the workflow "Runtime" builds, signs and publishes them every week, whenever `runtime/` changes on `main`, and by hand. CI builds the site's images on the runtime of the commit it tests (`.github/runtime.hcl`), so a change there is tested before it's published. A new PHP version gets its own tags (`8.6`, `8.6-builder`) next to the current ones.
 
-Between releases, the packages develop the next version, `0.1.x-dev`: their `main` branches are aliased to it, and they require each other in it (`^0.1`). To start the next minor version, change both in every `composer.json`, and the versions of the path repository in the root one; a test checks that they agree. A new package goes into `.github/split.json`, with its repository, and gets the `LICENSE`, `.gitattributes` and `.github/workflows/close-pull-request.yaml` the others have.
+Between releases, the packages develop the next version, `0.2.x-dev`: their `main` branches are aliased to it, and they require each other in it (`^0.2`). To start the next minor version, change both in every `composer.json`, and the versions of the path repository in the root one; a test checks that they agree. A new package goes into `.github/split.json`, with its repository, and gets the `LICENSE`, `.gitattributes` and `.github/workflows/close-pull-request.yaml` the others have.
 
 ## License
 

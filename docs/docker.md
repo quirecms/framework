@@ -8,7 +8,7 @@ Quire runs on [FrankenPHP](https://frankenphp.dev) (a PHP application server bui
 |---------|-------|---------|
 | `php` | Built from `Dockerfile` | FrankenPHP + PHP 8.5. Serves HTTP, HTTPS and HTTP/3. |
 | `worker` | The `php` service's image | Runs [background jobs](jobs.md) and scheduled tasks, e.g. sending emails and publishing scheduled content. It starts once `php` is healthy (the migrations ran), restarts by itself after extensions change, and in development every 5 minutes, to run code you changed. Its health check reads its heartbeat. |
-| `database` | `postgres:18-alpine` | Stores all of Quire's data |
+| `database` | `postgres:18-alpine` | Stores all of Quire's data. Like `php` and `worker`, it comes back by itself after a reboot or a crash (`restart: unless-stopped`). |
 | `mailer` | `axllent/mailpit` | Development only: catches the emails Quire sends, e.g. to reset passwords, and shows them in a web inbox |
 | `s3` | `chrislusf/seaweedfs` | Development only: an S3-compatible service, to try [storage disks](storage.md) on S3 and to test them. Its S3 API is at the address `docker compose port s3 8333` shows; it accepts any credentials. |
 

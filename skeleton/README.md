@@ -35,6 +35,8 @@ docker compose --env-file prod.env exec php bin/console quire:install
 
 `prod.env` holds the site's secrets: Git and the Docker image never include it, so keep a copy somewhere safe. Caddy obtains the TLS certificate and adds security headers. See [Docker in production](https://github.com/quirecms/framework/blob/main/docs/docker.md#production).
 
+To run several sites on one machine instead, with backups off the machine and updates that roll back by themselves, use [Quire Server](https://github.com/quirecms/server): it creates sites from this skeleton itself.
+
 ## What's here
 
 | Path | Contents |
@@ -54,6 +56,6 @@ Content, users and settings are kept in PostgreSQL, and uploaded files on the `s
 - [Extensions](https://github.com/quirecms/framework/blob/main/docs/extensions.md): install, enable, and write your own
 - [Themes](https://github.com/quirecms/framework/blob/main/docs/themes.md) and [the admin](https://github.com/quirecms/framework/blob/main/docs/admin.md)
 - [Content](https://github.com/quirecms/framework/blob/main/docs/content.md), [users](https://github.com/quirecms/framework/blob/main/docs/users.md), [permissions](https://github.com/quirecms/framework/blob/main/docs/permissions.md) and [settings](https://github.com/quirecms/framework/blob/main/docs/settings.md)
-- [Docker, in development and production](https://github.com/quirecms/framework/blob/main/docs/docker.md), [storage](https://github.com/quirecms/framework/blob/main/docs/storage.md), [backups](https://github.com/quirecms/framework/blob/main/docs/backups.md) and [background jobs](https://github.com/quirecms/framework/blob/main/docs/jobs.md)
+- [Docker, in development and production](https://github.com/quirecms/framework/blob/main/docs/docker.md), [storage](https://github.com/quirecms/framework/blob/main/docs/storage.md), [backups](https://github.com/quirecms/framework/blob/main/docs/backups.md), [background jobs](https://github.com/quirecms/framework/blob/main/docs/jobs.md) and [the audit log](https://github.com/quirecms/framework/blob/main/docs/audit.md)
 
 Quire is developed at [quirecms/framework](https://github.com/quirecms/framework); report issues there. This repository is built from the application there, and is read-only.
