@@ -9,6 +9,7 @@ use App\Tests\Support\ScratchDatabases;
 use Doctrine\DBAL\Connection;
 use Quire\Backup\BackupContents;
 use Quire\Backup\BackupLog;
+use Quire\Backup\BackupRun;
 use Quire\Backup\Backups;
 use Quire\Backup\Internal\RestoreChecks;
 use Quire\Content\Command\CreateContent;
@@ -61,6 +62,28 @@ final class BackupsTest extends WebTestCase
         self::assertSame([true, filesize($file), $file, null], [$last->ok, $last->bytes, $last->target, $last->problem], 'A refused backup isn\'t one.');
         self::assertEqualsWithDelta(time(), $last->finishedAt->getTimestamp(), 60);
         self::assertEquals($last, self::getContainer()->get(BackupLog::class)->lastSuccessful());
+    }
+
+    public function testTheLastBackupIsTheLastRecordedEvenWhenTheClockSteppedBack(): void
+    {
+        $this->clientForNewDatabase('backup_log');
+        $log = self::getContainer()->get(BackupLog::class);
+        $now = new \DateTimeImmutable('2026-11-09 13:02:05');
+
+        $log->record(new BackupRun($now, true, target: '/backups/good.tar'));
+        // The clock was corrected back a second in between, as NTP or a virtual machine's host does.
+        $log->record(new BackupRun($now->modify('-1 second'), false, target: '/backups/failed.tar', problem: 'Incomplete'));
+
+        self::assertSame('/backups/failed.tar', $log->last()?->target, 'It failed: that mustn\'t be hidden by the time it says.');
+        self::assertSame('/backups/good.tar', $log->lastSuccessful()?->target);
+
+        for ($i = 1; $i <= 100; ++$i) {
+            $log->record(new BackupRun($now->modify(\sprintf('-%d hours', $i)), true, target: \sprintf('/backups/%d.tar', $i)));
+        }
+
+        $kept = self::getContainer()->get(Connection::class)->fetchFirstColumn('SELECT target FROM quire.backup_run ORDER BY id');
+        self::assertCount(100, $kept);
+        self::assertSame(['/backups/1.tar', '/backups/100.tar'], [$kept[0], $kept[99]], 'The oldest recorded go, not the ones with the earliest times.');
     }
 
     public function testAFailedRestorePutsTheDataFromBeforeBack(): void
