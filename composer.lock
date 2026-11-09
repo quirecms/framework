@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d4a4891a155bf8c7ba9b72f44d6d9725",
+    "content-hash": "f2e1de325dda3d078fec3fb091376bff",
     "packages": [
         {
             "name": "composer/semver",
@@ -2165,18 +2165,18 @@
         },
         {
             "name": "quire/admin",
-            "version": "0.1.x-dev",
+            "version": "0.2.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/admin",
-                "reference": "36966feaa4dfe2ca6dddeb948d54d267ee646e69"
+                "reference": "6e51228138ff5d7aec02b7497b43ed7046d174be"
             },
             "require": {
                 "php": ">=8.5",
-                "quire/core": "^0.1"
+                "quire/core": "^0.2"
             },
             "require-dev": {
-                "quire/testing": "^0.1"
+                "quire/testing": "^0.2"
             },
             "type": "quire-extension",
             "extra": {
@@ -2214,7 +2214,7 @@
                     }
                 },
                 "branch-alias": {
-                    "dev-main": "0.1.x-dev"
+                    "dev-main": "0.2.x-dev"
                 }
             },
             "autoload": {
@@ -2243,17 +2243,22 @@
                 "cms",
                 "quire"
             ],
+            "support": {
+                "email": "hello@quirecms.com",
+                "issues": "https://github.com/quirecms/framework/issues",
+                "security": "https://github.com/quirecms/framework/security/policy"
+            },
             "transport-options": {
                 "relative": true
             }
         },
         {
             "name": "quire/core",
-            "version": "0.1.x-dev",
+            "version": "0.2.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/core",
-                "reference": "fc6fb9c72bc3feeecb23bfbb02c88790efc838e0"
+                "reference": "9eea93f2041537be5c8293561d471f0697fce43a"
             },
             "require": {
                 "doctrine/dbal": "^4.2",
@@ -2299,7 +2304,7 @@
             "type": "symfony-bundle",
             "extra": {
                 "branch-alias": {
-                    "dev-main": "0.1.x-dev"
+                    "dev-main": "0.2.x-dev"
                 }
             },
             "autoload": {
@@ -2329,24 +2334,29 @@
                 "quire",
                 "symfony"
             ],
+            "support": {
+                "email": "hello@quirecms.com",
+                "issues": "https://github.com/quirecms/framework/issues",
+                "security": "https://github.com/quirecms/framework/security/policy"
+            },
             "transport-options": {
                 "relative": true
             }
         },
         {
             "name": "quire/theme-default",
-            "version": "0.1.x-dev",
+            "version": "0.2.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/theme-default",
-                "reference": "f8a198b9798377b709b8ae671a6e8fdbecf81c4c"
+                "reference": "8da0a7a82bca7fdf5677225f36df4dd851bfa76d"
             },
             "require": {
                 "php": ">=8.5",
-                "quire/core": "^0.1"
+                "quire/core": "^0.2"
             },
             "require-dev": {
-                "quire/testing": "^0.1"
+                "quire/testing": "^0.2"
             },
             "type": "quire-theme",
             "extra": {
@@ -2358,7 +2368,7 @@
                     }
                 },
                 "branch-alias": {
-                    "dev-main": "0.1.x-dev"
+                    "dev-main": "0.2.x-dev"
                 }
             },
             "autoload-dev": {
@@ -2382,6 +2392,11 @@
                 "quire",
                 "theme"
             ],
+            "support": {
+                "email": "hello@quirecms.com",
+                "issues": "https://github.com/quirecms/framework/issues",
+                "security": "https://github.com/quirecms/framework/security/policy"
+            },
             "transport-options": {
                 "relative": true
             }
@@ -9162,17 +9177,17 @@
         },
         {
             "name": "quire/testing",
-            "version": "0.1.x-dev",
+            "version": "0.2.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/testing",
-                "reference": "d2b8a111748f760a26c7db5f427a19e3a901d81d"
+                "reference": "110d4a4e45fdbd1c088f92ebebe7cf83f01612e9"
             },
             "require": {
                 "doctrine/doctrine-bundle": "^3.0",
                 "php": ">=8.5",
                 "phpunit/phpunit": "^13.4",
-                "quire/core": "^0.1",
+                "quire/core": "^0.2",
                 "symfony/browser-kit": "^8.1",
                 "symfony/css-selector": "^8.1",
                 "symfony/filesystem": "^8.1",
@@ -9183,7 +9198,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-main": "0.1.x-dev"
+                    "dev-main": "0.2.x-dev"
                 }
             },
             "autoload": {
@@ -9213,6 +9228,11 @@
                 "quire",
                 "testing"
             ],
+            "support": {
+                "email": "hello@quirecms.com",
+                "issues": "https://github.com/quirecms/framework/issues",
+                "security": "https://github.com/quirecms/framework/security/policy"
+            },
             "transport-options": {
                 "relative": true
             }

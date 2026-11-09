@@ -1,6 +1,6 @@
 # Quire Admin
 
-The administration panel of [Quire](https://quirecms.com): manage content, settings, extensions, themes and users in the browser, at `/admin`.
+The administration panel of [Quire](https://quirecms.com), at `/admin`, in the browser and on phones: write, review and publish content (several people at once, without losing each other's changes), manage people and roles, settings, themes and extensions, and see who did what in the activity log, with the console command that does the same. One bar finds or does anything ("Find or do anything"), and changes to who may do what ask you to confirm it's you.
 
 ```bash
 composer require quire/admin

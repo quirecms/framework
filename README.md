@@ -9,7 +9,7 @@
 
 Quire has a small core, and everything else is an extension: the admin panel, single sign-on, comments, reviews. You write content in Markdown, and PostgreSQL is the source of truth for everything, with uploaded files on a volume or any S3-compatible service. Quire runs on its own or inside an existing Symfony application.
 
-> **Status:** early development, no stable release yet. Content, URLs, extensions, themes, backups, users, permissions and background jobs work; the admin panel is being built, and single sign-on comes next.
+> **Status:** early development, no stable release yet (0.x: a minor version may change what extensions and sites rely on, and its notes say how). Content with revisions and reviews, URLs, extensions, themes, users and permissions, the admin in the browser and on phones, storage, backups, background jobs and the audit log work.
 
 ## Requirements
 
@@ -28,14 +28,14 @@ docker compose build --pull
 docker compose up --wait
 ```
 
-> The packages aren't on Packagist yet. Until they are, run Quire from this repository instead:
->
-> ```bash
-> git clone https://github.com/quirecms/framework.git quire
-> cd quire
-> docker compose build --pull --no-cache
-> docker compose up --wait
-> ```
+To work on Quire itself, run it from this repository instead (see [CONTRIBUTING.md](CONTRIBUTING.md)):
+
+```bash
+git clone https://github.com/quirecms/framework.git quire
+cd quire
+docker compose build --pull --no-cache
+docker compose up --wait
+```
 
 Then set up the site and its first admin; you're asked for the site's title, its language, and your email and password:
 
@@ -50,6 +50,8 @@ Names ending in `.localhost` always point to your own machine. Browsers and curl
 The health report is at <https://quire.localhost/_quire/health>.
 
 Stop the stack with `docker compose down --remove-orphans`.
+
+To put a site online, see "Production" in [docs/docker.md](docs/docker.md). To run several sites on one machine, with HTTPS, backups off the machine and updates that roll back by themselves, use [Quire Server](https://github.com/quirecms/server).
 
 ### Using other ports
 
@@ -169,7 +171,7 @@ See [docs/storage.md](docs/storage.md).
 
 ## Backups
 
-One file holds the site: its database and its uploaded files. Restoring checks first that the code is new enough for the backup:
+One file holds the site: its database and its uploaded files. A backup that lacks a stored file (missing, damaged, or on a disk nothing declares) is still written, says which, and exits with 3. Restoring checks first that the code is new enough for the backup:
 
 ```bash
 docker compose exec -T php bin/console quire:backup - > site.tar

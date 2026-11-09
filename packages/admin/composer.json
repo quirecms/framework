@@ -18,10 +18,10 @@
     },
     "require": {
         "php": ">=8.5",
-        "quire/core": "^0.1"
+        "quire/core": "^0.2"
     },
     "require-dev": {
-        "quire/testing": "^0.1"
+        "quire/testing": "^0.2"
     },
     "autoload": {
         "psr-4": {
@@ -68,7 +68,7 @@
             }
         },
         "branch-alias": {
-            "dev-main": "0.1.x-dev"
+            "dev-main": "0.2.x-dev"
         }
     },
     "minimum-stability": "dev",

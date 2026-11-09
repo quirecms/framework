@@ -128,6 +128,7 @@ public function __invoke(IdentityLinking $event): void
 | `Quire\User\Event\UserCreated` | After a user was created, however (see `UserRegistered` for registrations) |
 | `Quire\User\Event\UserUpdated` | After a user's profile, roles, status, password or email confirmation changed; compare `$before` with `$user` |
 | `Quire\User\Event\UserInvited` | After a user was invited by email to choose their password |
+| `Quire\User\Event\PasswordChangeAsked` | After someone who manages a user emailed them a link to choose a new password (`Quire\User\Invitations::askForNewPassword()`); `$by` is who asked |
 | `Quire\User\Event\UserDeleting` | Before a user is deleted, in its transaction: deal with your data about them |
 | `Quire\User\Event\UserDeleted` | After a user was deleted |
 

@@ -101,7 +101,7 @@ find /srv/backups -name 'site-*.tar' -mtime +14 -delete
 
 The command fails when the backup does, so the `mv` only keeps complete backups. An [incomplete](#incomplete-backups) one exits with 3, which stops the script too: it's left as `site.partial`, for you to look at what it lists. Whatever you keep, keep the newest complete backup however old it is.
 
-Quire remembers the backups it makes, when they finished, how big they were and whether they worked, so admin interfaces can say when the site was last backed up (`Quire\Backup\BackupLog`). Backups made with the database's own tools aren't in it, and restoring a backup brings back the record as it was then.
+Quire remembers the backups it makes, when they finished, how big they were and whether they worked, so admin interfaces can say when the site was last backed up (`Quire\Backup\BackupLog`). The last backup is the last one recorded, even when the machine's clock was set back since. Backups made with the database's own tools aren't in it, and restoring a backup brings back the record as it was then.
 
 A backup you've never restored is only a hope: restore one into a test environment now and then (`--dry-run` alone doesn't prove the data is complete).
 
