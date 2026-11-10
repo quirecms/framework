@@ -217,6 +217,30 @@ final class FeedTest extends TestCase
             MD, $process->getOutput());
     }
 
+    public function testTheChangelogHasEveryReleasesTextNewestFirst(): void
+    {
+        $process = new Process(['php', self::ROOT.'/.github/feed.php', '--changelog', '--root='.$this->repository]);
+        $process->mustRun();
+        $changelog = $process->getOutput();
+
+        self::assertStringStartsWith("# Changelog\n", $changelog);
+        self::assertStringContainsString("## [0.1.1](https://github.com/quirecms/framework/releases/tag/v0.1.1)\n\nDrafts stay drafts.", $changelog);
+        self::assertStringContainsString("### Security fixes\n\n- **GHSA-2c3f-4g5h-6j7m**", $changelog, 'One level under the version.');
+        self::assertStringContainsString("### Upgrading\n\nRun `composer update \"quire/*\"`.", $changelog);
+        preg_match_all('/^## \[([^\]]+)\]/m', $changelog, $versions);
+        $sorted = $versions[1];
+        usort($sorted, static fn (string $a, string $b): int => version_compare($b, $a));
+        self::assertSame($sorted, $versions[1]);
+    }
+
+    public function testQuiresChangelogIsUpToDate(): void
+    {
+        $process = new Process(['php', self::ROOT.'/.github/feed.php', '--changelog']);
+        $process->mustRun();
+
+        self::assertSame($process->getOutput(), file_get_contents(self::ROOT.'/CHANGELOG.md'), 'CHANGELOG.md is made from docs/releases: "php .github/feed.php --changelog > CHANGELOG.md".');
+    }
+
     public function testQuiresOwnReleaseNotesAreValid(): void
     {
         $files = iterator_to_array(new Finder()->files()->in(self::ROOT.'/docs/releases')->name('*.md'));

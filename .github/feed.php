@@ -7,6 +7,7 @@
  *
  *   php .github/feed.php --version=0.1.2 --skeleton=<dir> --published=<dir> --packages=<file> [--root=<dir>]
  *   php .github/feed.php --version=0.1.2 --release-notes [--root=<dir>]   (the GitHub release's text)
+ *   php .github/feed.php --changelog [--root=<dir>]                       (CHANGELOG.md: every release's text)
  *
  * --skeleton   this version's skeleton, as .github/skeleton.sh builds it
  * --published  a clone of quirecms/skeleton, with its tags: earlier versions' skeletons
@@ -144,6 +145,46 @@ function notes(string $file): array
     }
 
     return ['security' => $security, 'upgrade' => null === $header['upgrade'] ? null : trim($header['upgrade']), 'notes' => $text];
+}
+
+/**
+ * A release's text: its notes, then its security fixes and upgrade notes under headings of the level
+ * given (the GitHub release's are "##", CHANGELOG.md's "###", under each version's "##").
+ *
+ * @param array{security: list<array{id: string, severity: string, package: string, summary: string}>, upgrade: ?string, notes: string} $notes
+ */
+function text(array $notes, string $heading = '##'): string
+{
+    $text = $notes['notes'];
+
+    if ([] !== $notes['security']) {
+        $text .= "\n\n".$heading." Security fixes\n\n".implode("\n", array_map(static fn (array $advisory): string => sprintf('- **%s** (%s, %s): %s', $advisory['id'], $advisory['severity'], $advisory['package'], $advisory['summary']), $notes['security']));
+    }
+
+    if (null !== $notes['upgrade']) {
+        $text .= "\n\n".$heading." Upgrading\n\n".$notes['upgrade'];
+    }
+
+    return $text;
+}
+
+/**
+ * CHANGELOG.md: every release's text, newest first, from docs/releases. No dates: a release's notes are
+ * written before it's tagged, and its date is its tag's (on its GitHub release).
+ */
+function changelog(string $root): string
+{
+    $versions = array_map(static fn (string $file): string => basename($file, '.md'), glob($root.'/docs/releases/*.md') ?: []);
+    $versions = array_values(array_filter($versions, static fn (string $version): bool => 1 === preg_match(VERSION, $version)));
+    usort($versions, static fn (string $a, string $b): int => version_compare($b, $a));
+
+    $text = "# Changelog\n\nEvery release of Quire, newest first: what it brings, the security fixes, and what to do when updating. Each release's date is on its [GitHub release](https://github.com/quirecms/framework/releases).\n\n<!-- Made from docs/releases/<version>.md by \"php .github/feed.php --changelog > CHANGELOG.md\": change those files, not this one. A test checks it's up to date. -->\n";
+
+    foreach ($versions as $version) {
+        $text .= sprintf("\n## [%s](https://github.com/quirecms/framework/releases/tag/v%s)\n\n%s\n", $version, $version, text(notes($root.'/docs/releases/'.$version.'.md'), '###'));
+    }
+
+    return $text;
 }
 
 /**
@@ -319,9 +360,15 @@ function tagged(string $version, array $packages, array &$tags, string $root): a
     return $commits;
 }
 
-$options = getopt('', ['version:', 'skeleton:', 'published:', 'packages:', 'root:', 'release-notes']);
-$version = is_string($options['version'] ?? null) ? $options['version'] : fail('--version is needed.');
+$options = getopt('', ['version:', 'skeleton:', 'published:', 'packages:', 'root:', 'release-notes', 'changelog']);
 $root = is_string($options['root'] ?? null) ? $options['root'] : dirname(__DIR__);
+
+if (isset($options['changelog'])) {
+    echo changelog($root);
+    exit(0);
+}
+
+$version = is_string($options['version'] ?? null) ? $options['version'] : fail('--version is needed.');
 
 if (1 !== preg_match(VERSION, $version)) {
     fail('"'.$version.'" isn\'t a version.');
@@ -330,17 +377,7 @@ if (1 !== preg_match(VERSION, $version)) {
 if (isset($options['release-notes'])) {
     $file = $root.'/docs/releases/'.$version.'.md';
     $notes = is_file($file) ? notes($file) : fail('There are no release notes for '.$version.': write docs/releases/'.$version.'.md first.');
-    $text = $notes['notes'];
-
-    if ([] !== $notes['security']) {
-        $text .= "\n\n## Security fixes\n\n".implode("\n", array_map(static fn (array $advisory): string => sprintf('- **%s** (%s, %s): %s', $advisory['id'], $advisory['severity'], $advisory['package'], $advisory['summary']), $notes['security']));
-    }
-
-    if (null !== $notes['upgrade']) {
-        $text .= "\n\n## Upgrading\n\n".$notes['upgrade'];
-    }
-
-    echo $text."\n";
+    echo text($notes)."\n";
     exit(0);
 }
 
