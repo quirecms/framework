@@ -80,17 +80,17 @@ The sign-in page then shows only the other ways to sign in that extensions add.
 Three settings, all off by default, let visitors help themselves:
 
 ```bash
-bin/console quire:settings:set quire.auth.registration true          # anyone can create an account, as a member
+bin/console quire:settings:set quire.auth.registration true          # anyone can create an account, as a member…
 bin/console quire:settings:set quire.auth.email_verification true    # …and confirms their email before signing in
 bin/console quire:settings:set quire.auth.password_reset true        # "Forgot your password?" emails a link
 ```
 
-The sign-in page then links to `/register` and `/forgot-password`. Pages of settings that are off answer "404 Not Found".
+The sign-in page then links to `/register` and `/forgot-password`. Pages of settings that are off answer "404 Not Found". Registration is open only while email confirmation is on too: without it, a new address would be signed in at once and a taken one couldn't be, so the form would tell who has an account.
 
 Emails need a mailer: set `MAILER_DSN` (see [Docker](docker.md#environment-variables)); in development, Mailpit catches them. They come from `quire.mail.from`, or from the site title and `noreply@` the site's domain. Their links use the site's address (`DEFAULT_URI`, Symfony's `framework.router.default_uri`), never the host a request named, so a forged `Host` header can't send someone's link to another site. Without that address, Quire uses the request's host only when `framework.trusted_hosts` checks it, and refuses to send otherwise. Themes can replace the emails in `templates/email/` and the pages in `templates/security/`.
 
 - **Links work once**, for an hour (password reset) or two days (email confirmation), and only the newest one does. A link sent to an email the user has since changed doesn't work. Tokens are stored as hashes, so the database alone gives nobody working links.
-- **Nobody learns who has an account.** "Forgot your password?" answers the same for every email. With email confirmation on, registering with an email that has an account also answers "Check your inbox", and emails its owner that someone tried. (Without confirmation, the new user is signed in straight away, so the page has to say the email is taken.)
+- **The pages don't say who has an account.** Signing in checks a password the same way whether the account exists, has no password, or doesn't exist, and answers "Invalid credentials" for each. "Forgot your password?" answers the same for every email. Registering with an email that has an account hashes the password as for a new one, answers "Check your inbox" too, and emails its owner that someone tried.
 - **Limits:** each form accepts 5 submissions in 15 minutes from one address, and each account gets at most one email every 2 minutes. A hidden field catches bots that fill in every field. With several servers, give `cache.app` a shared store (e.g. Redis) so the limits count across them.
 - **Resetting a password** signs the user out everywhere else, and confirms their email, since they read the link. The token leaves the address bar on arrival, so it can't leak through the browser history or `Referer` headers.
 - **Registered users are members.** Extensions hear about them through the `UserRegistered` event, e.g. to send a welcome email. Users created on the command line count as having confirmed their email; changing a user's email unconfirms it.
