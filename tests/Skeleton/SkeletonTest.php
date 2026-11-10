@@ -22,7 +22,7 @@ final class SkeletonTest extends TestCase
 
     /** What's at the root of this repository only for Quire's own development (never in the skeleton) */
     private const array DEVELOPMENT = [
-        '.env.test', '.github', '.php-cs-fixer.dist.php', 'CONTRIBUTING.md', 'LICENSE', 'README.md', 'SECURITY.md',
+        '.env.test', '.github', '.php-cs-fixer.dist.php', 'CHANGELOG.md', 'CONTRIBUTING.md', 'LICENSE', 'README.md', 'SECURITY.md',
         'composer.json', 'composer.lock', 'docs', 'packages', 'phpstan.dist.neon', 'phpunit.dist.xml', 'rector.php',
         'runtime', 'skeleton', 'symfony.lock', 'tests',
     ];
