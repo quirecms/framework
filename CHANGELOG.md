@@ -4,6 +4,19 @@ Every release of Quire, newest first: what it brings, the security fixes, and wh
 
 <!-- Made from docs/releases/<version>.md by "php .github/feed.php --changelog > CHANGELOG.md": change those files, not this one. A test checks it's up to date. -->
 
+## [0.2.2](https://github.com/quirecms/framework/releases/tag/v0.2.2)
+
+A site with a theme or an extension of its own builds for production, and the ones Quire makes install.
+
+- **Themes and extensions in the site build for production:** the `Dockerfile` copies `themes/` and `extensions/` before Composer installs the packages from them, so a site with its own theme (`quire:make:theme`) or extension (`quire:make:extension`) no longer fails its production build, on Quire Server too. Sites without them build as before.
+- **What the makers create installs:** the new theme's or extension's `composer.json` requires the Quire version the site runs (`^0.2`), and a test checks that the makers keep up with each new version.
+- **Their tests run:** the makers add Quire's test kit (`quire/testing`, for development only) when the site doesn't have it, so `vendor/bin/phpunit -c themes/<name>` works in a new site.
+
+### Upgrading
+
+A patch release: sites on `^0.2` take it with their next update, with no new migrations. The skeleton's `Dockerfile` changed: sites run by Quire Server get it with the update unless they edited theirs (then the update shows the difference to merge); other sites can take it from https://github.com/quirecms/skeleton/blob/v0.2.2/Dockerfile.
+- A theme or extension made with `quire:make:theme` or `quire:make:extension` on 0.2.0 or 0.2.1 requires `quire/core` `^0.1@dev`: change it to `^0.2` (and `quire/testing` the same) in its `composer.json`.
+
 ## [0.2.1](https://github.com/quirecms/framework/releases/tag/v0.2.1)
 
 Nobody finds out who has an account by trying to sign in or register.
