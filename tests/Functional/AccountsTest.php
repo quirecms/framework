@@ -59,9 +59,9 @@ final class AccountsTest extends WebTestCase
         self::assertSelectorNotExists('a[href="/forgot-password"]');
     }
 
-    public function testVisitorsRegisterAndAreSignedIn(): void
+    public function testVisitorsRegisterAsMembers(): void
     {
-        $this->settings([AccountSettings::REGISTRATION => true]);
+        $this->settings([AccountSettings::REGISTRATION => true, AccountSettings::EMAIL_VERIFICATION => true]);
         $registered = [];
         self::getContainer()->get(EventDispatcherInterface::class)->addListener(UserRegistered::class, static function (UserRegistered $event) use (&$registered): void {
             $registered[] = $event->user->email;
@@ -72,26 +72,21 @@ final class AccountsTest extends WebTestCase
         self::assertStringContainsString('no-store', (string) $this->client->getResponse()->headers->get('Cache-Control'));
         $this->client->submitForm('Create account', ['name' => 'Ada Lovelace', 'email' => 'ada@example.com', 'password' => 'correct horse']);
 
-        self::assertResponseRedirects('/');
-        self::assertSame('ada', $this->whoami(), 'Signed in.');
+        self::assertSelectorTextContains('h1', 'Check your inbox');
         self::assertSame(['member'], $this->user('ada@example.com')->roles);
         self::assertSame(['ada@example.com'], $registered);
-        self::assertEmailCount(0);
+        self::assertEmailCount(1);
     }
 
     public function testRegistrationShowsWhatToFix(): void
     {
-        $this->settings([AccountSettings::REGISTRATION => true]);
-        $this->existing('grace@example.com');
+        $this->settings([AccountSettings::REGISTRATION => true, AccountSettings::EMAIL_VERIFICATION => true]);
 
         $this->register(['email' => 'not an email', 'password' => 'short']);
         self::assertResponseStatusCodeSame(422);
         self::assertSelectorTextSame('#email-error', 'Enter a valid email address.');
         self::assertSelectorTextSame('#password-error', 'Passwords must be at least 8 characters long.');
         self::assertInputValueSame('email', 'not an email');
-
-        $this->register(['email' => 'Grace@example.com', 'password' => 'correct horse']);
-        self::assertSelectorTextSame('#email-error', 'Another user has this email.', 'Without confirmation, the page can only say so.');
 
         $this->client->request('GET', '/register');
         $this->client->submitForm('Create account', ['email' => 'ada@example.com', 'password' => 'correct horse', '_csrf_token' => 'forged']);
@@ -146,7 +141,7 @@ final class AccountsTest extends WebTestCase
 
     public function testBotsAndFloodsAreTurnedAway(): void
     {
-        $this->settings([AccountSettings::REGISTRATION => true]);
+        $this->settings([AccountSettings::REGISTRATION => true, AccountSettings::EMAIL_VERIFICATION => true]);
 
         $this->register(['email' => 'bot@example.com', 'password' => 'correct horse', 'website' => 'https://spam.example']);
         self::assertSelectorTextContains('h1', 'Check your inbox');
