@@ -78,6 +78,20 @@ final class PackagesTest extends TestCase
                 }
             }
         }
+
+        // So do the packages that "quire:make:extension" and "quire:make:theme" create: a site on this
+        // version must be able to install them (0.2.0 shipped ones that required ^0.1@dev).
+        $templates = array_map(static fn (string $file): string => substr($file, \strlen(self::ROOT) + 1), [...$this->glob('packages/core/resources/skeleton/*/composer.json.tpl'), ...$this->glob('packages/core/resources/skeleton/*/*/composer.json.tpl')]);
+        self::assertNotEmpty($templates);
+
+        foreach ($templates as $file) {
+            preg_match_all('#"(quire/[a-z0-9-]+)": "([^"]*)"#', (string) file_get_contents(self::ROOT.'/'.$file), $requirements, \PREG_SET_ORDER);
+            self::assertNotEmpty($requirements, $file);
+
+            foreach ($requirements as [, $package, $requirement]) {
+                self::assertSame($constraint, $requirement, \sprintf('%s must require %s in the version that is being developed.', $file, $package));
+            }
+        }
     }
 
     public function testTheTestsInstallTheAdminWithItsOwnManifest(): void
