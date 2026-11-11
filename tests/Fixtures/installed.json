@@ -132,6 +132,19 @@
             }
         },
         {
+            "name": "quire/fixture-theme-head-tags",
+            "version": "1.0.0.0",
+            "pretty_version": "1.0.0",
+            "type": "quire-theme",
+            "install-path": "themes/head-tags",
+            "description": "Test theme that writes head tags by hand, for quire:theme:lint",
+            "extra": {
+                "quire": {
+                    "id": "quire-fixture-head-tags"
+                }
+            }
+        },
+        {
             "name": "quire/theme-default",
             "version": "dev-main",
             "pretty_version": "dev-main",
