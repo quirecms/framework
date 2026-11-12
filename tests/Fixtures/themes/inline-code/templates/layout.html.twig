@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="{{ site.locale }}">
+<head>
+    <title>{% block title %}{{ site.title }}{% endblock %}</title>
+    {{ quire_head() }}
+    <script>document.documentElement.classList.add('js');</script>
+    <style>body { margin: 0; }</style>
+    <script type="application/ld+json">{"@context": "https://schema.org"}</script>
+    <script src="{{ quire_asset('theme.js') }}" defer></script>
+    {{ quire_slot('head') }}
+</head>
+<body>
+    {{ quire_slot('body_start') }}
+    <header style="color: red">{{ quire_slot('header.nav') }}</header>
+    <main>{% block content %}{% endblock %}<button onclick="window.print()">Print</button></main>
+    {{ quire_slot('sidebar') }}
+    <footer>{{ quire_slot('footer') }}<a href="javascript:history.back()">Back</a></footer>
+    {{ quire_slot('body_end') }}
+</body>
+</html>

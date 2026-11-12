@@ -237,6 +237,8 @@ new Extend\Assets()
 
 `$group` is `site` for the public pages and `admin` for the admin interface. Quire adds the files to the `head` slot, in the order extensions boot, then themes, then the site, so the site's styles can override everyone's. Templates link other files with `quire_asset()`, e.g. `<img src="{{ quire_asset('acme-reviews/star.svg') }}">`. No Node.js is needed. See [themes](themes.md#assets).
 
+The site's pages run no inline code and load nothing from other sites (their [Content-Security-Policy](security.md)): keep scripts and styles in these files, not in `<script>`, `<style>`, `style` or `onclick=` in templates. Other sites' hosts can't be added by an extension; a service that loads from one is declared through `quire/privacy`, so visitors are asked first. Inline code only one viewer sees can use the response's nonce (see [For extensions and themes](security.md#for-extensions-and-themes)).
+
 ##### JavaScript packages
 
 Don't copy libraries into `assets/`. List the npm packages your scripts import in the manifest instead, with exact versions, and import them by name:

@@ -113,6 +113,17 @@ final class HostUsersTest extends WebTestCase
         self::assertResponseHeaderSame('WWW-Authenticate', 'Basic realm="Secured Area"');
     }
 
+    public function testOnlyQuiresPagesGetItsContentSecurityPolicy(): void
+    {
+        $this->client->request('GET', '/tournaments');
+        self::assertResponseIsSuccessful();
+        self::assertFalse($this->client->getResponse()->headers->has('Content-Security-Policy'), 'The application\'s own pages are its own.');
+
+        $this->client->loginUser(new InMemoryUser('olga', null, ['ROLE_ORGANIZER']));
+        $this->client->request('GET', '/blog/draw-for-the-final');
+        self::assertStringStartsWith("default-src 'self'", (string) $this->client->getResponse()->headers->get('Content-Security-Policy'));
+    }
+
     public function testContentCantTakeTheApplicationsURLs(): void
     {
         $this->expectExceptionObject(InvalidContentException::single('slug', 'The URL /tournaments is taken by a page of the site itself (the route "app_tournaments"). Choose another slug.'));

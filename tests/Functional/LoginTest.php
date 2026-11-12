@@ -69,7 +69,8 @@ final class LoginTest extends WebTestCase
         self::assertNotEmpty($crawler->filter('input[name=_csrf_token]')->attr('value'));
         self::assertSelectorTextSame('.sign-in-options a.fixture-login', 'Continue with Fixture', 'Extensions add ways to sign in.');
         self::assertStringContainsString('no-store', (string) $this->client->getResponse()->headers->get('Cache-Control'));
-        self::assertResponseHeaderSame('Content-Security-Policy', "frame-ancestors 'none'");
+        self::assertStringEndsWith("form-action 'self'; frame-ancestors 'none'", (string) $this->client->getResponse()->headers->get('Content-Security-Policy'), 'Never in a frame (see CspTest).');
+        self::assertResponseHeaderSame('X-Frame-Options', 'DENY');
     }
 
     public function testSigningInAndOut(): void

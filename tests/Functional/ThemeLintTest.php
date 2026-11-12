@@ -62,6 +62,21 @@ final class ThemeLintTest extends KernelTestCase
         self::assertStringNotContainsString('No template calls quire_head()', $output, 'quire_seo() still counts.');
     }
 
+    public function testWarnsAboutCodeThePolicyBlocks(): void
+    {
+        [$status, $output] = $this->lint('quire-fixture-inline-code');
+
+        self::assertSame(0, $status, 'Warnings only: pages still render.');
+        $prefix = 'quire-fixture-inline-code: templates/layout.html.twig line ';
+        self::assertStringContainsString($prefix.'6: an inline <script>, which the site\'s Content-Security-Policy blocks. Move the code to a script in the theme\'s assets (Extend\Assets).', $output);
+        self::assertStringContainsString($prefix.'7: a <style> element, which the site\'s Content-Security-Policy blocks. Move the styles to the theme\'s stylesheet, with a class.', $output);
+        self::assertStringContainsString($prefix.'14: a style attribute', $output);
+        self::assertStringContainsString($prefix.'15: an event handler attribute (on…=)', $output);
+        self::assertStringContainsString($prefix.'17: a javascript: link', $output);
+        self::assertStringNotContainsString($prefix.'8:', $output, 'Structured data isn\'t code.');
+        self::assertStringNotContainsString($prefix.'9:', $output, 'A script from a file is fine.');
+    }
+
     public function testThemesThatCantBeUsedFail(): void
     {
         [$status, $output] = $this->lint('quire-fixture-orphan');

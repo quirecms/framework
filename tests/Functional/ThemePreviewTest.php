@@ -39,6 +39,7 @@ final class ThemePreviewTest extends ExtensionTestCase
         $crawler = $this->client->request('GET', '/blog/spring-draw');
         self::assertSelectorTextSame('.child-banner', 'Read by the child theme', 'Its templates, and its parent\'s for the rest.');
         self::assertSelectorTextContains('.quire-theme-preview', 'You’re previewing the theme “quire-fixture-default-child”: only you see it.');
+        self::assertStringContainsString(\sprintf("'nonce-%s'", (string) $crawler->filter('style[nonce]')->attr('nonce')), (string) $this->client->getResponse()->headers->get('Content-Security-Policy'), 'The bar\'s styles are allowed by the response\'s nonce.');
         self::assertCount(1, $crawler->filter('link[rel=stylesheet][href*="quire-theme-default/style"]'), 'The stylesheets of the themes it inherits from.');
 
         // Not the admin's pages.

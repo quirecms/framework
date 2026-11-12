@@ -145,6 +145,19 @@
             }
         },
         {
+            "name": "quire/fixture-theme-inline-code",
+            "version": "1.0.0.0",
+            "pretty_version": "1.0.0",
+            "type": "quire-theme",
+            "install-path": "themes/inline-code",
+            "description": "Test theme with inline scripts and styles, for quire:theme:lint",
+            "extra": {
+                "quire": {
+                    "id": "quire-fixture-inline-code"
+                }
+            }
+        },
+        {
             "name": "quire/theme-default",
             "version": "dev-main",
             "pretty_version": "dev-main",

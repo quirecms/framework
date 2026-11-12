@@ -22,6 +22,7 @@ final class LayersTest extends TestCase
     public static function modules(): iterable
     {
         yield 'Head' => ['Head', ['Head', 'Extend', 'Http', 'Settings']];
+        yield 'Csp' => ['Csp', ['Csp', 'Extend', 'Http', 'Settings']];
     }
 
     /**
