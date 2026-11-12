@@ -78,7 +78,7 @@ Send outside production too: Испраќај и надвор од продук�
 "You can change your choice at any time with “Cookie settings”.": "Изборот можете да го промените во секое време преку „Поставки за колачиња“."
 "Your choice’s ID, if you ask the site what you agreed to:": "Ознаката на вашиот избор, ако го прашате сајтот на што сте се согласиле:"
 "Keep proof of consent for (months)": "Чувај доказ за согласноста (месеци)"
-"Each choice is kept with what visitors were told, then removed. At most 60.": "Секој избор се чува заедно со она што им било кажано на посетителите, а потоа се брише. Најмногу 60."
+"Each choice is kept with what visitors were told, then removed; never before the choice itself expires. At most 60.": "Секој избор се чува заедно со она што им било кажано на посетителите, а потоа се брише; никогаш пред да истече самиот избор. Најмногу 60."
 "Privacy and cookies": "Приватност и колачиња"
 "What visitors see": "Што гледаат посетителите"
 "Visitors see no banner: no enabled extension or theme uses a service of another company that they must be asked about.": "Посетителите не гледаат банер: ниту едно вклучено проширување или тема не користи услуга од друга компанија за која мора да бидат прашани."

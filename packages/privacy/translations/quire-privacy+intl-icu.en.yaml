@@ -78,7 +78,7 @@ Send outside production too: Send outside production too
 "You can change your choice at any time with “Cookie settings”.": "You can change your choice at any time with “Cookie settings”."
 "Your choice’s ID, if you ask the site what you agreed to:": "Your choice’s ID, if you ask the site what you agreed to:"
 "Keep proof of consent for (months)": "Keep proof of consent for (months)"
-"Each choice is kept with what visitors were told, then removed. At most 60.": "Each choice is kept with what visitors were told, then removed. At most 60."
+"Each choice is kept with what visitors were told, then removed; never before the choice itself expires. At most 60.": "Each choice is kept with what visitors were told, then removed; never before the choice itself expires. At most 60."
 "Privacy and cookies": "Privacy and cookies"
 "What visitors see": "What visitors see"
 "Visitors see no banner: no enabled extension or theme uses a service of another company that they must be asked about.": "Visitors see no banner: no enabled extension or theme uses a service of another company that they must be asked about."

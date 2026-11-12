@@ -69,10 +69,22 @@ final readonly class PrivacySettings
         return $this->settings->getBool(self::HONOUR_SIGNALS);
     }
 
-    /** How long logged choices are kept as proof */
+    /** How long the owner wants logged choices kept as proof */
     public function logMonths(): int
     {
         return max(1, min(self::MAX_LOG_MONTHS, $this->settings->getInt(self::LOG_MONTHS)));
+    }
+
+    /**
+     * Logged choices made before this are removed: after the owner's months, and never while the
+     * choice they prove may still hold (a choice's cookie lasts its months of 31 days).
+     */
+    public function proofCutoff(\DateTimeImmutable $now): \DateTimeImmutable
+    {
+        $choice = max($this->choiceMonths(), $this->askAgainMonths()) * 31;
+        $log = $now->modify(\sprintf('-%d months', $this->logMonths()));
+
+        return min($log, $now->modify(\sprintf('-%d days', $choice)));
     }
 
     /**

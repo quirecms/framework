@@ -97,6 +97,38 @@ final class ConsentLogTest extends PrivacyTestCase
         self::assertSame([$this->service(Services::class)->revision()], $this->connection()->fetchFirstColumn('SELECT revision FROM quire.quire_privacy_declaration'));
     }
 
+    /**
+     * @return iterable<string, array{int, int, int, int}>
+     */
+    public static function proofOutlivesTheChoice(): iterable
+    {
+        // log_months, choice_months, ask_again_months, the longest a choice's cookie lasts (days)
+        yield 'the defaults' => [12, 6, 6, 186];
+        yield 'choices kept a year' => [12, 12, 6, 372];
+        yield 'a shorter log than choices' => [1, 12, 6, 372];
+        yield 'refusals kept longest' => [1, 3, 9, 279];
+    }
+
+    /**
+     * A choice holds while its cookie lasts (its months of 31 days): its proof is never removed before.
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('proofOutlivesTheChoice')]
+    public function testTheProofIsKeptWhileTheChoiceCanHold(int $log, int $choice, int $again, int $days): void
+    {
+        $this->setSetting(PrivacySettings::LOG_MONTHS, $log);
+        $this->setSetting(PrivacySettings::CHOICE_MONTHS, $choice);
+        $this->setSetting(PrivacySettings::ASK_AGAIN_MONTHS, $again);
+        $this->log()->record(self::ID, ['fixture-video' => false]);
+        $this->log()->record('11111111111111111111111111111111', ['fixture-video' => false]);
+        $this->age(self::ID, \sprintf('-%d days +1 hour', $days));
+        $this->age('11111111111111111111111111111111', \sprintf('-%d days', max($days, $log * 31) + 1));
+
+        $this->service(MessageBusInterface::class)->dispatch(new PurgeConsentLog());
+        $this->runJobs();
+
+        self::assertSame([self::ID], $this->connection()->fetchFirstColumn('SELECT consent_id FROM quire.quire_privacy_consent'), 'Kept while it can hold; removed after both the owner\'s months and the choice.');
+    }
+
     public function testThePurgeKeepsWhatVisitorsAreToldNowEvenWithNoChoiceLeft(): void
     {
         $this->log()->record(self::ID, ['fixture-video' => false]);

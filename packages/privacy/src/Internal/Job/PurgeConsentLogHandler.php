@@ -20,6 +20,6 @@ final readonly class PurgeConsentLogHandler
 
     public function __invoke(PurgeConsentLog $job): void
     {
-        $this->log->purge(new \DateTimeImmutable()->modify(\sprintf('-%d months', $this->settings->logMonths())));
+        $this->log->purge($this->settings->proofCutoff(new \DateTimeImmutable()));
     }
 }

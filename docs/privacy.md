@@ -38,7 +38,7 @@ Under "Privacy and cookies" in the admin's settings, or with `bin/console quire:
 | `quire-privacy.honour_signals` | on | Global Privacy Control and Do Not Track count as rejecting |
 | `quire-privacy.send_in_test` | off | Services run after consent outside production and on other domains too, e.g. to check a setup on a temporary domain. What they send counts as real |
 | `quire-privacy.privacy_page` | | The site's privacy notice, linked from the cookie settings, e.g. `/privacy` |
-| `quire-privacy.log_months` | 12 | How long each choice is kept as proof, with what visitors were told (at most 60) |
+| `quire-privacy.log_months` | 12 | How long each choice is kept as proof, with what visitors were told (at most 60); never less than the choice itself lasts |
 
 ## The admin's page
 
@@ -63,14 +63,16 @@ A site may have to show what a visitor agreed to. Each time a visitor chooses, t
 - when;
 - what visitors were told then: each service's declaration, kept once per revision of the site's services, so the proof holds after the services change.
 
-Visitors find their choice's ID in "Cookie settings"; the admin's page looks it up and shows each choice with what the visitor was told. Choices are removed after `quire-privacy.log_months` (12 by default, at most 60) by a daily job; what visitors were told goes with the last choice that needs it.
+Visitors find their choice's ID in "Cookie settings"; the admin's page looks it up and shows each choice with what the visitor was told. A daily job removes choices older than `quire-privacy.log_months` (12 by default, at most 60), but never while the choice can still hold: a visitor's cookie lasts `choice_months` (or `ask_again_months` for a refusal) of 31 days each, and the proof is kept at least that long, whatever the setting. What visitors were told goes with the last choice that needs it.
 
 The pages are the same for every visitor (cached), so the request carries no form token. Instead:
 
 - it's taken only from the site's own pages: the browser's `Sec-Fetch-Site: same-origin`, or, from a browser that doesn't send it, an `Origin` equal to the site's;
 - each answer must be about a service visitors are asked about, as it is now: a "yes" to another revision, an unknown service or a necessary one is refused;
 - a choice is small: a body over 8 KB isn't read;
-- an address logs at most 30 choices an hour (it is counted for that hour only, in the cache, and never kept with the choice).
+- a choice is logged at most 10 times an hour (a visitor saves a few times), and an address at most 300 choices an hour (five a minute: many visitors can share one address, e.g. a mobile carrier's or an office's). Addresses are counted for that hour only, in the cache, and never kept with the choice.
+
+A choice over a limit isn't logged, and the site's log says so (at most every ten minutes, without the address). A site behind a proxy or load balancer must trust it (`SYMFONY_TRUSTED_PROXIES`; Quire Server sets this up): otherwise every visitor has the proxy's address, they all share one limit, and most choices go unlogged on a busy site.
 
 The log is proof of what the site's pages sent; it doesn't stop someone who controls a browser from logging choices of their own making.
 

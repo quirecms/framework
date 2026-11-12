@@ -21,7 +21,7 @@ final class BannerTest extends PrivacyTestCase
 
         self::assertCount(1, $crawler->filter('section.consent[data-consent-banner][hidden]'), 'Hidden: without JavaScript, no dead buttons.');
         self::assertSame('consent', 'consent consent--bar' === $crawler->filter('body > a.skip-link + *')->attr('class') ? 'consent' : $crawler->filter('body > *')->eq(1)->attr('class'), 'First after the skip link.');
-        self::assertCount(1, $crawler->filter('dialog[data-consent-dialog]'));
+        self::assertCount(1, $crawler->filter('dialog[data-consent-dialog]:not([open])'));
         self::assertCount(1, $crawler->filter('script[type=module][src^="/assets/quire-privacy/consent-"]'));
         self::assertCount(1, $crawler->filter('head link[rel=stylesheet][href^="/assets/quire-privacy/consent-"]'));
         self::assertCount(1, $crawler->filter('footer button.consent__opener[data-consent-open][hidden]'), 'Once, in the footer.');

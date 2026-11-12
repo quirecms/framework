@@ -80,12 +80,14 @@ final readonly class PrivacyController
      */
     private function previews(string $locale): array
     {
-        $html = $this->twig->render('@quire_privacy/consent.html.twig', [...$this->banner->view(), 'config' => [], 'loader' => '', 'preview' => true]);
         $stylesheets = [$this->assets->url('quire-privacy/consent.css'), $this->assets->url('quire-privacy/preview.css')];
+        // The template shows the part asked for; preview.css shows it too, for a theme's override
+        // of the template that leaves it hidden.
+        $render = fn (string $part): string => $this->twig->render('@quire_privacy/consent.html.twig', [...$this->banner->view(), 'config' => [], 'loader' => '', 'preview' => $part]);
 
         return [
-            'banner' => $this->previews->document('<div class="consent-preview">'.str_replace(' data-consent-banner aria-labelledby="quire-consent-heading" hidden>', ' data-consent-banner aria-labelledby="quire-consent-heading">', $html).'</div>', $locale, $stylesheets),
-            'dialog' => $this->previews->document(str_replace('<dialog class="consent-dialog" data-consent-dialog', '<dialog open class="consent-dialog" data-consent-dialog', $html), $locale, $stylesheets),
+            'banner' => $this->previews->document('<div class="consent-preview consent-preview--banner">'.$render('banner').'</div>', $locale, $stylesheets),
+            'dialog' => $this->previews->document('<div class="consent-preview consent-preview--dialog">'.$render('dialog').'</div>', $locale, $stylesheets),
         ];
     }
 }

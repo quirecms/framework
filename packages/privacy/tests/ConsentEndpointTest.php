@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace Quire\Privacy\Tests;
 
+use Psr\Cache\CacheItemPoolInterface;
+use Quire\Privacy\ConsentLog;
+use Quire\Privacy\Internal\Http\ConsentController;
 use Quire\Privacy\Services;
+use Symfony\Component\ErrorHandler\BufferingLogger;
 
 /**
  * Where the loader logs a choice: only from the site's own pages, only answers about the services as
- * they are, small, and so many an hour from an address.
+ * they are, small, and so many an hour per choice and per address.
  */
 final class ConsentEndpointTest extends PrivacyTestCase
 {
@@ -88,20 +92,53 @@ final class ConsentEndpointTest extends PrivacyTestCase
         self::assertResponseStatusCodeSame(413);
     }
 
-    public function testAnAddressLogsSoManyChoicesAnHour(): void
+    public function testAChoiceIsLoggedSoManyTimesAnHour(): void
     {
         $address = '203.0.113.'.random_int(1, 254);
+        $id = bin2hex(random_bytes(16));
 
-        for ($i = 0; $i < 30; ++$i) {
-            $this->post(['id' => self::ID, 's' => ['fixture-video' => false]], ['REMOTE_ADDR' => $address]);
+        for ($i = 0; $i < ConsentController::PER_CHOICE; ++$i) {
+            $this->post(['id' => $id, 's' => ['fixture-video' => false]], ['REMOTE_ADDR' => $address]);
             self::assertResponseStatusCodeSame(204);
         }
 
-        $this->post(['id' => self::ID, 's' => ['fixture-video' => false]], ['REMOTE_ADDR' => $address]);
-        self::assertResponseStatusCodeSame(429);
+        $this->post(['id' => $id, 's' => ['fixture-video' => false]], ['REMOTE_ADDR' => '198.51.100.'.random_int(1, 254)]);
+        self::assertResponseStatusCodeSame(429, 'From another address too.');
 
-        $this->post(['id' => self::ID, 's' => ['fixture-video' => false]], ['REMOTE_ADDR' => '198.51.100.'.random_int(1, 254)]);
+        $this->post(['id' => bin2hex(random_bytes(16)), 's' => ['fixture-video' => false]], ['REMOTE_ADDR' => $address]);
+        self::assertResponseStatusCodeSame(204, 'Other choices from the same address still are.');
+    }
+
+    public function testManyVisitorsShareAnAddressUpToItsLimitAndTheOwnerHearsOfMore(): void
+    {
+        // One kernel, whose endpoint logs to a buffer; and no warning given already by another run.
+        $this->client->disableReboot();
+        $cache = $this->service(CacheItemPoolInterface::class);
+        $cache->clear();
+        $logger = new BufferingLogger();
+        self::getContainer()->set(ConsentController::class, new ConsentController($this->service(ConsentLog::class), $cache, $logger));
+        $address = '203.0.113.'.random_int(1, 254);
+
+        for ($i = 0; $i < ConsentController::PER_ADDRESS; ++$i) {
+            $this->post(['id' => bin2hex(random_bytes(16)), 's' => ['fixture-video' => false]], ['REMOTE_ADDR' => $address]);
+            self::assertResponseStatusCodeSame(204);
+        }
+
+        for ($i = 0; $i < 3; ++$i) {
+            $this->post(['id' => bin2hex(random_bytes(16)), 's' => ['fixture-video' => false]], ['REMOTE_ADDR' => $address]);
+            self::assertResponseStatusCodeSame(429);
+        }
+
+        $this->post(['id' => bin2hex(random_bytes(16)), 's' => ['fixture-video' => false]], ['REMOTE_ADDR' => '198.51.100.'.random_int(1, 254)]);
         self::assertResponseStatusCodeSame(204, 'Other addresses still can.');
+
+        /** @var list<array{string, string, array<string, mixed>}> $logs */
+        $logs = $logger->cleanLogs();
+        $warnings = array_values(array_filter($logs, static fn (array $log): bool => 'warning' === $log[0]));
+        self::assertCount(1, $warnings, 'Once, for many refusals.');
+        self::assertStringContainsString('weren\'t logged as proof', $warnings[0][1]);
+        self::assertSame(['route' => ConsentController::ROUTE, 'per' => 'address', 'limit' => ConsentController::PER_ADDRESS], $warnings[0][2]);
+        self::assertStringNotContainsString($address, json_encode($warnings, \JSON_THROW_ON_ERROR), 'Never the address.');
     }
 
     public function testOnlyPost(): void
