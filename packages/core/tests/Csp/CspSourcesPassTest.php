@@ -12,6 +12,7 @@ use Quire\Csp\Internal\FirstPartySourcesInterface;
 use Quire\Csp\Internal\NoThirdPartySources;
 use Quire\Csp\ThirdPartySourcesInterface;
 use Quire\Privacy\Internal\ServiceSources;
+use Quire\QuireBundle;
 use Quire\Storage\Internal\DiskSources;
 use Quire\Storage\StorageDisks;
 use Quire\Tests\Csp\Fixtures\OutsideDecorator;
@@ -34,6 +35,16 @@ final class CspSourcesPassTest extends TestCase
     {
         // quire/privacy isn't installed here: its stand-in, where the pass is told the package is.
         require_once self::PRIVACY.'/src/ServiceSources.php';
+    }
+
+    public function testTheBundleChecksOnceDecorationHasRun(): void
+    {
+        $container = new ContainerBuilder();
+        new QuireBundle()->build($container);
+        $passes = $container->getCompilerPassConfig();
+
+        self::assertCount(1, array_filter($passes->getBeforeRemovingPasses(), static fn (object $pass): bool => $pass instanceof CspSourcesPass), 'Before decoration, a decorator would get round the check.');
+        self::assertSame([], array_filter([...$passes->getBeforeOptimizationPasses(), ...$passes->getOptimizationPasses()], static fn (object $pass): bool => $pass instanceof CspSourcesPass));
     }
 
     #[DoesNotPerformAssertions]
