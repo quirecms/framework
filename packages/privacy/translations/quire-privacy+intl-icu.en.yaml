@@ -111,3 +111,11 @@ Send outside production too: Send outside production too
 "allowed": "allowed"
 "refused": "refused"
 "not asked": "not asked"
+# Embeds held until consent
+"This content is from {label}, run by {vendor}. Loading it sends {vendor} your address (IP), and lets them set cookies.": "This content is from {label}, run by {vendor}. Loading it sends {vendor} your address (IP), and lets them set cookies."
+"This content is from another site. Loading it sends that site your address (IP), and lets it set cookies.": "This content is from another site. Loading it sends that site your address (IP), and lets it set cookies."
+"Their privacy policy": "Their privacy policy"
+"Test site: nothing is loaded.": "Test site: nothing is loaded."
+"Load it": "Load it"
+"Always allow {label}": "Always allow {label}"
+"Open it on {host}": "Open it on {host}"

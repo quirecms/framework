@@ -7,6 +7,10 @@
 //   start({config, consent}): run, e.g. load the vendor's script (its host is in the policy)
 //   stop(): stop what it can (the loader also removes the service's first-party cookies)
 //
+// Embeds that trusted shortcodes print from such a service wait in a placeholder ([data-consent-embed],
+// quire/privacy's EmbedGuard): "Load it" puts back that one, this time; "Always allow" keeps a "yes" for
+// the service. Withdrawing holds them again.
+//
 // Themes and extensions can use window.quire.consent: allows(serviceOrCategory), set({id: bool}),
 // services(), open(), and the "quire:consent" event on document (detail: {allowed, withdrawn}).
 
@@ -75,6 +79,34 @@ function start(config) {
     for (const opener of document.querySelectorAll('.consent__opener[data-consent-open]')) {
         opener.hidden = false;
     }
+
+    // Embeds held until consent (a trusted shortcode's video, map…): their buttons work from now on.
+    const loaded = [];
+
+    for (const actions of document.querySelectorAll('[data-consent-embed] [data-consent-embed-actions]')) {
+        actions.hidden = false;
+
+        for (const allow of actions.querySelectorAll('[data-consent-embed-allow]')) {
+            allow.hidden = signal;
+        }
+    }
+
+    document.addEventListener('click', (event) => {
+        const target = event.target instanceof Element ? event.target.closest('[data-consent-embed-load], [data-consent-embed-allow]') : null;
+        const box = target?.closest('[data-consent-embed]');
+
+        if (!target || !box) {
+            return;
+        }
+
+        if (target.hasAttribute('data-consent-embed-allow') && box.dataset.consentEmbed) {
+            // Kept as the visitor's choice, and logged; every embed of the service loads.
+            api.set({[box.dataset.consentEmbed]: true});
+        } else {
+            // This one, this time: the click is the visitor's own action, and nothing is kept.
+            reveal(box, true);
+        }
+    });
 
     document.addEventListener('click', (event) => {
         const target = event.target instanceof Element ? event.target.closest('[data-consent-accept], [data-consent-reject], [data-consent-save], [data-consent-open]') : null;
@@ -268,9 +300,50 @@ function start(config) {
             }
         }
 
+        embeds(withdrawn.map((service) => service.id));
         document.dispatchEvent(new CustomEvent('quire:consent', {detail: {allowed: now, withdrawn: withdrawn.map((service) => service.id)}}));
 
         return withdrawn;
+    }
+
+    // Puts back the embeds of services the visitor allows, and holds again those of services withdrawn.
+    function embeds(withdrawn) {
+        for (const entry of [...loaded]) {
+            if (withdrawn.includes(entry.service)) {
+                const first = entry.nodes.find((node) => node.isConnected);
+                first?.before(entry.box);
+
+                for (const node of entry.nodes) {
+                    node.remove();
+                }
+
+                loaded.splice(loaded.indexOf(entry), 1);
+            }
+        }
+
+        for (const box of document.querySelectorAll('[data-consent-embed]')) {
+            if (box.dataset.consentEmbed && allowed(box.dataset.consentEmbed)) {
+                reveal(box, false);
+            }
+        }
+    }
+
+    // The embed in place of its placeholder. In test mode nothing loads; the placeholder says so.
+    function reveal(box, focus) {
+        const template = box.querySelector('template[data-consent-embed-content]');
+
+        if (config.test || !template) {
+            return;
+        }
+
+        const content = document.importNode(template.content, true);
+        const nodes = [...content.childNodes];
+        box.replaceWith(content);
+        loaded.push({service: box.dataset.consentEmbed, box, nodes});
+
+        if (focus) {
+            nodes.find((node) => node instanceof HTMLElement)?.focus?.();
+        }
     }
 
     async function run(service) {

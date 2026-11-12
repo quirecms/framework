@@ -111,3 +111,11 @@ Send outside production too: Испраќај и надвор од продук�
 "allowed": "дозволено"
 "refused": "одбиено"
 "not asked": "не е прашано"
+# Embeds held until consent
+"This content is from {label}, run by {vendor}. Loading it sends {vendor} your address (IP), and lets them set cookies.": "Оваа содржина е од {label}, што ја води {vendor}. Ако ја вчитате, {vendor} ја добива вашата адреса (IP) и може да постави колачиња."
+"This content is from another site. Loading it sends that site your address (IP), and lets it set cookies.": "Оваа содржина е од друг сајт. Ако ја вчитате, тој сајт ја добива вашата адреса (IP) и може да постави колачиња."
+"Their privacy policy": "Нивната политика за приватност"
+"Test site: nothing is loaded.": "Тест-сајт: ништо не се вчитува."
+"Load it": "Вчитај"
+"Always allow {label}": "Секогаш дозволи {label}"
+"Open it on {host}": "Отвори на {host}"
