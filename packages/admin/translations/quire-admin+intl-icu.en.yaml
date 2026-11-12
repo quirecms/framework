@@ -995,3 +995,5 @@
 'Confirm': 'Confirm'
 'Go back': 'Go back'
 'You sign in without a password here: sign out, sign in again, and come back to do it.': 'You sign in without a password here: sign out, sign in again, and come back to do it.'
+"{count, plural, one {The theme has a problem:} other {The theme has # problems:}}": "{count, plural, one {The theme has a problem:} other {The theme has # problems:}}"
+"{count, plural, one {# warning about the theme} other {# warnings about the theme}}": "{count, plural, one {# warning about the theme} other {# warnings about the theme}}"

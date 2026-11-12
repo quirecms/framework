@@ -1,7 +1,8 @@
 {#
     The site's look: the installed themes, the one in use first, each with its screenshot, a preview of
     the site in it, and using it. Variables: themes (manifest, parent, active, problem, screenshot,
-    preview: why it can't be previewed, or null), builtin (no theme is used), problem (why the theme
+    preview: why it can't be previewed, or null, checks: for the theme in use, what quire:theme:lint
+    finds, as errors and warnings), builtin (no theme is used), problem (why the theme
     that's set can't be used), read_only (why it can't change).
 #}
 {% extends '@quire_admin/layout.html.twig' %}
@@ -31,6 +32,18 @@
                         {% if theme.parent %} · {{ 'based on {theme}'|trans({theme: theme.parent}, 'quire-admin') }}{% endif %}
                     </p>
                     {% if theme.problem %}<p class="q-error">{{ theme.problem }}</p>{% endif %}
+                    {% if theme.checks and theme.checks.errors is not empty %}
+                        <div class="q-notice q-notice--error">
+                            <p>{{ '{count, plural, one {The theme has a problem:} other {The theme has # problems:}}'|trans({count: theme.checks.errors|length}, 'quire-admin') }}</p>
+                            <ul>{% for error in theme.checks.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                        </div>
+                    {% endif %}
+                    {% if theme.checks and theme.checks.warnings is not empty %}
+                        <details class="look__checks">
+                            <summary>{{ '{count, plural, one {# warning about the theme} other {# warnings about the theme}}'|trans({count: theme.checks.warnings|length}, 'quire-admin') }}</summary>
+                            <ul>{% for warning in theme.checks.warnings %}<li>{{ warning }}</li>{% endfor %}</ul>
+                        </details>
+                    {% endif %}
                     {% if not theme.active and not theme.problem %}
                         <p class="look__actions">
                             {% if theme.preview is null %}

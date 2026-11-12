@@ -8,6 +8,7 @@ use Quire\Privacy\Internal\Admin\PrivacyController;
 use Quire\Privacy\Internal\Formatter\ServicesShortcode;
 use Quire\Privacy\Internal\Http\ConsentController;
 use Quire\Privacy\Internal\Job\PurgeConsentLog;
+use Quire\Privacy\Internal\Lint\ConsentLoadsPass;
 use Quire\Privacy\Internal\SourcesSlotPass;
 use Quire\Privacy\Internal\Theme;
 use Quire\Privacy\PrivacySettings;
@@ -27,7 +28,9 @@ return [
             __DIR__.'/src/Extend',
         ])
         ->load(__DIR__.'/config/services.php')
-        ->compilerPass(new SourcesSlotPass()),
+        ->compilerPass(new SourcesSlotPass())
+        // No template may load a service visitors are asked about before they consent.
+        ->compilerPass(new ConsentLoadsPass()),
 
     new Extend\Views()
         ->namespace('quire_privacy', __DIR__.'/templates')
