@@ -13,7 +13,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light dark">
     <title>{% block title %}{{ site.title }}{% endblock %}</title>
-    {{ quire_seo() }}
+    {{ quire_head() }}
     {% block head %}{% endblock %}
     {{ quire_slot('head') }}
 </head>

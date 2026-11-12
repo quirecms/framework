@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="{{ site.locale }}">
+<head>
+    <title>{% block title %}{{ site.title }}{% endblock %}</title>
+    {{ quire_seo() }}
+    <meta name="description" content="{{ site.description }}">
+    <link rel="canonical" href="{{ canonical_url|default('') }}">
+    {{ quire_slot('head') }}
+</head>
+<body>
+    {{ quire_slot('body_start') }}
+    <header>{{ quire_slot('header.nav') }}</header>
+    <main>{% block content %}{% endblock %}</main>
+    {{ quire_slot('sidebar') }}
+    <footer>{{ quire_slot('footer') }}</footer>
+    {{ quire_slot('body_end') }}
+</body>
+</html>

@@ -271,6 +271,29 @@ Sites download the packages of every installed extension and theme when Composer
 | `slot($slot, $fragment, $priority = 0)` | Adds a fragment to a slot of the theme, e.g. `content.after_body`: a template (`'@reviews/summary.html.twig'`) or a class implementing `Quire\Theme\SlotRendererInterface`. Higher priorities come first. See [slots](themes.md#slots). |
 | `global($name, $value)` | Adds a variable to every template. Values must be scalars or arrays of scalars. |
 
+#### `Extend\Head`
+
+Adds tags to the `<head>` of the site's pages, the ones the theme's `{{ quire_head() }}` prints: meta tags, links and structured data. A contributor implements `Quire\Head\HeadContributorInterface`:
+
+```php
+new Extend\Head()
+    ->contributor(VerificationTag::class);
+
+final readonly class VerificationTag implements HeadContributorInterface
+{
+    public function contribute(Head $head, array $context): void
+    {
+        $head->meta('google-site-verification', $this->settings->getString('acme-console.token'));
+    }
+}
+```
+
+| Method | Purpose |
+|--------|---------|
+| `contributor($class, $priority = 0)` | Adds a contributor. Contributors run lowest priority first, so a later one can change or remove what an earlier one set. Quire's own tags (description, canonical URL, Open Graph, structured data) run at -100. |
+
+Every tag has a key, so a page never has two of the same: `meta('description', …)` is `meta:description`, `property('og:image', …)` is `property:og:image`, `link('canonical', …)` is `link:canonical`, and `jsonLd('organization', […])` is `json-ld:organization`. Setting a key again replaces the tag where it was; `null` (or `remove('meta:robots')`) removes it. Links a page has several of take their own key, e.g. `link('alternate', $url, ['hreflang' => 'de'], key: 'alternate:de')`. `$context` holds the variables of the template that prints the head, e.g. `content` on an item's page and `canonical_url`.
+
 #### `Extend\Events`
 
 | Method | Purpose |

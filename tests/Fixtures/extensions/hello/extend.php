@@ -29,6 +29,9 @@ return [
         ->slot('footer', '@hello/footer.html.twig')
         ->slot('auth.login_options', '@hello/login_option.html.twig'),
 
+    new Extend\Head()
+        ->contributor(Hello\Theme\VerificationTag::class),
+
     new Extend\Assets()
         ->stylesheet('quire-fixture-hello/hello.css')
         ->script('quire-fixture-hello/hello.js')

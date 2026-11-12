@@ -20,7 +20,7 @@ final class ThemeLintTest extends KernelTestCase
         self::assertSame(0, $status, $output);
         // The count includes Quire's built-in templates, which grow over time.
         self::assertMatchesRegularExpression('/The theme "quire-fixture-child" is fine: \d+ templates, every standard slot rendered\./', $output);
-        self::assertStringContainsString('No template calls quire_seo()', $output, 'Only a warning.');
+        self::assertStringContainsString('No template calls quire_head()', $output, 'Only a warning.');
     }
 
     public function testFindsTheMistakesOfATheme(): void
@@ -49,6 +49,17 @@ final class ThemeLintTest extends KernelTestCase
         }
 
         self::assertStringContainsString('quire-fixture-broken: templates/layout.html.twig line 6: quire_asset(\'theme/missing.png\') links to a file that doesn\'t exist.', $output);
+    }
+
+    public function testWarnsAboutHeadTagsQuireHeadPrintsToo(): void
+    {
+        [$status, $output] = $this->lint('quire-fixture-head-tags');
+
+        self::assertSame(0, $status, 'Warnings only: the theme works.');
+        self::assertStringContainsString('quire-fixture-head-tags: templates/layout.html.twig line 5: quire_seo() is now called quire_head(). The old name works until Quire 1.0.', $output);
+        self::assertStringContainsString('quire-fixture-head-tags: templates/layout.html.twig line 6: prints <meta name="description"> itself, and quire_head() prints it too, so pages would have it twice.', $output);
+        self::assertStringContainsString('quire-fixture-head-tags: templates/layout.html.twig line 7: prints <link rel="canonical"> itself', $output);
+        self::assertStringNotContainsString('No template calls quire_head()', $output, 'quire_seo() still counts.');
     }
 
     public function testThemesThatCantBeUsedFail(): void

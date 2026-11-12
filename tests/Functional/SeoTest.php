@@ -12,9 +12,10 @@ use Quire\Theme\Event\SeoTagsBuilding;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Twig\Environment;
 
 /**
- * quire_seo() on Quire's built-in templates.
+ * quire_head() on Quire's built-in templates: the SEO tags, and the tags extensions add.
  */
 final class SeoTest extends WebTestCase
 {
@@ -69,6 +70,28 @@ final class SeoTest extends WebTestCase
         $html = (string) $this->client->getResponse()->getContent();
         self::assertStringNotContainsString('<script>alert(1)', $html);
         self::assertStringContainsString('"headline":"Hello \u003C/script\u003E\u003Cscript\u003Ealert(1)\u003C/script\u003E"', $html);
+    }
+
+    public function testEveryTagIsOnThePageOnceWithTheExtensionsAfterQuires(): void
+    {
+        $this->publish('Hello world');
+
+        $crawler = $this->client->request('GET', '/blog/hello-world');
+
+        self::assertCount(1, $crawler->filter('head meta[name=description]'));
+        self::assertCount(1, $crawler->filter('head link[rel=canonical]'));
+        self::assertSame('quire-fixture-hello', $crawler->filter('head meta[name=google-site-verification]')->attr('content'), 'The fixture extension\'s head contributor.');
+        $names = $crawler->filter('head meta[name], head meta[property]')->each(static fn ($meta): string => (string) ($meta->attr('name') ?? $meta->attr('property')));
+        self::assertCount(\count(array_unique($names)), $names, 'No tag twice: '.implode(', ', $names));
+        self::assertSame('google-site-verification', array_last($names), 'Contributors with the default priority come after Quire\'s own tags.');
+    }
+
+    public function testTheOldNameStillPrintsTheHead(): void
+    {
+        $html = self::getContainer()->get(Environment::class)->createTemplate('{{ quire_seo() }}')->render(['canonical_url' => 'https://example.com/cards']);
+
+        self::assertStringContainsString('<link rel="canonical" href="https://example.com/cards">', $html);
+        self::assertStringContainsString('<meta name="google-site-verification" content="quire-fixture-hello">', $html);
     }
 
     private function publish(string $title): void
