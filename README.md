@@ -220,6 +220,7 @@ See [docs/security.md](docs/security.md).
 | `packages/core/` | `quire/core`, the engine |
 | `packages/theme-default/` | `quire/theme-default`, the default theme |
 | `packages/admin/` | `quire/admin`, the admin interface |
+| `packages/privacy/` | `quire/privacy`, privacy and cookies: the services visitors are asked about, and the banner |
 | `packages/testing/` | `quire/testing`, for testing extensions and themes |
 | `skeleton/` | What only `quire/skeleton`, the starter project of new sites, has (it's built from the application) |
 | `config/`, `src/`, `templates/`, `public/` | The application that develops and tests Quire, and that new sites start from |

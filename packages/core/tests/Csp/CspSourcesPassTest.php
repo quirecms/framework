@@ -11,7 +11,7 @@ use Quire\Csp\Internal\CspSourcesPass;
 use Quire\Csp\Internal\FirstPartySourcesInterface;
 use Quire\Csp\Internal\NoThirdPartySources;
 use Quire\Csp\ThirdPartySourcesInterface;
-use Quire\Privacy\Internal\ServiceSources;
+use Quire\Privacy\Fixture\FixtureSources;
 use Quire\QuireBundle;
 use Quire\Storage\Internal\DiskSources;
 use Quire\Storage\StorageDisks;
@@ -34,7 +34,7 @@ final class CspSourcesPassTest extends TestCase
     public static function setUpBeforeClass(): void
     {
         // quire/privacy isn't installed here: its stand-in, where the pass is told the package is.
-        require_once self::PRIVACY.'/src/ServiceSources.php';
+        require_once self::PRIVACY.'/src/FixtureSources.php';
     }
 
     public function testTheBundleChecksOnceDecorationHasRun(): void
@@ -57,8 +57,8 @@ final class CspSourcesPassTest extends TestCase
     public function testQuirePrivacyMayFillTheSlot(): void
     {
         $container = $this->container();
-        $container->register(ServiceSources::class, ServiceSources::class);
-        $container->setAlias(ThirdPartySourcesInterface::class, ServiceSources::class);
+        $container->register(FixtureSources::class, FixtureSources::class);
+        $container->setAlias(ThirdPartySourcesInterface::class, FixtureSources::class);
 
         $this->compile($container);
     }
@@ -67,7 +67,7 @@ final class CspSourcesPassTest extends TestCase
     public function testQuirePrivacyMayDecorateTheSlot(): void
     {
         $container = $this->container();
-        $container->register(ServiceSources::class, ServiceSources::class)
+        $container->register(FixtureSources::class, FixtureSources::class)
             ->setDecoratedService(ThirdPartySourcesInterface::class)
             ->setArguments([new Reference('.inner')]);
 
@@ -115,11 +115,11 @@ final class CspSourcesPassTest extends TestCase
     public function testNorWithQuirePrivacysNamespaceFromElsewhere(): void
     {
         $container = $this->container();
-        $container->register(ServiceSources::class, ServiceSources::class);
-        $container->setAlias(ThirdPartySourcesInterface::class, ServiceSources::class);
+        $container->register(FixtureSources::class, FixtureSources::class);
+        $container->setAlias(ThirdPartySourcesInterface::class, FixtureSources::class);
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessageIsOrContains('"Quire\Privacy\Internal\ServiceSources" adds other sites\' hosts');
+        $this->expectExceptionMessageIsOrContains('"Quire\Privacy\Fixture\FixtureSources" adds other sites\' hosts');
 
         $this->compile($container, privacy: null);
     }

@@ -1,0 +1,244 @@
+/*
+ * The banner and the settings dialog of quire/privacy. They inherit the page's font and use the
+ * system's colours (which also work in forced colours), so they fit a theme that styles nothing. A
+ * theme maps its own look onto the --quire-consent-* properties. Accepting and rejecting share one
+ * button style, so neither is ever the call to action.
+ */
+:root {
+    --quire-consent-background: Canvas;
+    --quire-consent-text: CanvasText;
+    --quire-consent-border: color-mix(in srgb, CanvasText 25%, transparent);
+    --quire-consent-button-background: ButtonFace;
+    --quire-consent-button-text: ButtonText;
+    --quire-consent-button-border: ButtonText;
+    --quire-consent-radius: 0.375rem;
+    --quire-consent-gap: 0.75rem;
+    --quire-consent-shadow: 0 -0.25rem 1.5rem color-mix(in srgb, CanvasText 15%, transparent);
+    --quire-consent-max-width: 72rem;
+    --quire-consent-focus: Highlight;
+}
+
+/* The page keeps room for the banner at its end (set by the loader while it's shown). */
+html.consent-shown body {
+    padding-bottom: var(--quire-consent-height, 0);
+}
+
+.consent {
+    position: fixed;
+    z-index: 1000;
+    inset: auto 0 0 0;
+    box-sizing: border-box;
+    max-height: 40vh;
+    overflow: auto;
+    font: inherit;
+    color: var(--quire-consent-text);
+    background: var(--quire-consent-background);
+    border-top: 1px solid var(--quire-consent-border);
+    box-shadow: var(--quire-consent-shadow);
+}
+
+.consent[hidden],
+.consent__opener[hidden],
+.consent__new[hidden] {
+    display: none;
+}
+
+.consent__inner {
+    box-sizing: border-box;
+    max-width: var(--quire-consent-max-width);
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.consent--corner {
+    inset: auto 1rem 1rem auto;
+    max-width: min(26rem, calc(100vw - 2rem));
+    border: 1px solid var(--quire-consent-border);
+    border-radius: var(--quire-consent-radius);
+}
+
+.consent__heading,
+.consent-dialog__heading {
+    margin: 0 0 0.5rem;
+    font-size: 1.125rem;
+}
+
+.consent__text {
+    margin: 0 0 var(--quire-consent-gap);
+}
+
+.consent__test {
+    font-weight: 600;
+}
+
+.consent__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--quire-consent-gap);
+    align-items: center;
+}
+
+.consent__btn {
+    flex: 0 1 14rem;
+    min-height: 2.75rem;
+    padding: 0.5rem 1rem;
+    font: inherit;
+    font-weight: 600;
+    color: var(--quire-consent-button-text);
+    background: var(--quire-consent-button-background);
+    border: 2px solid var(--quire-consent-button-border);
+    border-radius: var(--quire-consent-radius);
+    cursor: pointer;
+}
+
+.consent__btn[hidden] {
+    display: none;
+}
+
+.consent__link,
+.consent__opener {
+    min-height: 2.75rem;
+    padding: 0.5rem 0.25rem;
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.consent__btn:focus-visible,
+.consent__link:focus-visible,
+.consent__opener:focus-visible,
+.consent-dialog input:focus-visible {
+    outline: 3px solid var(--quire-consent-focus);
+    outline-offset: 2px;
+}
+
+.consent__status {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.consent-dialog {
+    box-sizing: border-box;
+    width: min(40rem, calc(100vw - 2rem));
+    max-height: calc(100dvh - 2rem);
+    padding: 1.25rem;
+    font: inherit;
+    color: var(--quire-consent-text);
+    background: var(--quire-consent-background);
+    border: 1px solid var(--quire-consent-border);
+    border-radius: var(--quire-consent-radius);
+}
+
+.consent-dialog::backdrop {
+    background: color-mix(in srgb, CanvasText 40%, transparent);
+}
+
+.consent-dialog__category {
+    margin: 0 0 1rem;
+    padding: 0.75rem;
+    border: 1px solid var(--quire-consent-border);
+    border-radius: var(--quire-consent-radius);
+}
+
+.consent-dialog__category legend {
+    padding: 0 0.25rem;
+    font-weight: 600;
+}
+
+.consent-dialog__switch {
+    display: inline-flex;
+    gap: 0.5rem;
+    align-items: center;
+    min-height: 2.75rem;
+}
+
+.consent-dialog__switch input {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.consent-dialog__help {
+    margin: 0 0 0.5rem;
+}
+
+.consent-dialog__service {
+    margin: 0.5rem 0 0;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--quire-consent-border);
+}
+
+.consent-dialog__service summary {
+    cursor: pointer;
+    min-height: 1.5rem;
+}
+
+.consent-dialog__facts {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.25rem 0.75rem;
+    margin: 0.5rem 0;
+}
+
+.consent-dialog__facts dt {
+    font-weight: 600;
+}
+
+.consent-dialog__facts dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.consent-dialog__cookies {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.consent-dialog__cookies caption {
+    text-align: start;
+    font-weight: 600;
+    padding: 0.25rem 0;
+}
+
+.consent-dialog__cookies th,
+.consent-dialog__cookies td {
+    padding: 0.25rem 0.5rem 0.25rem 0;
+    text-align: start;
+    vertical-align: top;
+    border-top: 1px solid var(--quire-consent-border);
+}
+
+@media (max-width: 40rem) {
+    .consent__btn {
+        flex: 1 1 100%;
+    }
+
+    .consent--corner {
+        inset: auto 0 0 0;
+        max-width: none;
+        border-radius: 0;
+    }
+
+    .consent-dialog__facts {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .consent {
+        animation: quire-consent-in 0.2s ease-out;
+    }
+}
+
+@keyframes quire-consent-in {
+    from {
+        transform: translateY(1rem);
+        opacity: 0;
+    }
+}

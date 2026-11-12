@@ -1,0 +1,47 @@
+{
+    "name": "quire/privacy",
+    "type": "quire-extension",
+    "description": "Privacy and cookies for Quire: the services a site uses that visitors are asked about, their consent, the banner and the settings dialog.",
+    "keywords": ["quire", "cms", "privacy", "consent", "cookies", "gdpr"],
+    "homepage": "https://quirecms.com",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "YorvoLabs",
+            "homepage": "https://quirecms.com"
+        }
+    ],
+    "support": {
+        "email": "hello@quirecms.com",
+        "issues": "https://github.com/quirecms/framework/issues",
+        "security": "https://github.com/quirecms/framework/security/policy"
+    },
+    "require": {
+        "php": ">=8.5",
+        "quire/core": "^0.2"
+    },
+    "require-dev": {
+        "quire/testing": "^0.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Quire\\Privacy\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Quire\\Privacy\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "quire": {
+            "title": "Privacy and cookies",
+            "description": "Asks visitors before a service of another company runs: analytics, videos, fonts. Without such a service, it shows nothing."
+        },
+        "branch-alias": {
+            "dev-main": "0.2.x-dev"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

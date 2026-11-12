@@ -1,0 +1,73 @@
+# quire/privacy
+Necessary: Necessary
+Preferences: Preferences
+Own measurement: Own measurement
+Analytics: Analytics
+Marketing: Marketing
+Needed for the site to work, e.g. to sign in. Always on.: Needed for the site to work, e.g. to sign in. Always on.
+Remember your choices, e.g. fonts or a map's settings.: Remember your choices, e.g. fonts or a map's settings.
+Count visits for this site only, without sharing them.: Count visits for this site only, without sharing them.
+Help the site see how it's used, through an analytics service.: Help the site see how it's used, through an analytics service.
+Videos and other content from companies that may follow you across sites.: Videos and other content from companies that may follow you across sites.
+consent.single.heading.statistics: Analytics cookies
+consent.single.heading.statistics-own: Measurement cookies
+consent.single.heading.preferences: Preference cookies
+consent.single.heading.marketing: Marketing cookies
+consent.single.text.statistics: This site would like to use analytics cookies to see how it's used. They stay off unless you accept them.
+consent.single.text.statistics-own: This site would like to count visits for itself only, without sharing them. Nothing is counted unless you accept.
+consent.single.text.preferences: This site would like to use services that remember your choices, e.g. fonts. They stay off unless you accept them.
+consent.single.text.marketing: This site would like to show content from companies that may follow you across sites, e.g. videos. It stays off unless you accept it.
+consent.single.accept.statistics: Accept analytics cookies
+consent.single.accept.statistics-own: Accept measurement
+consent.single.accept.preferences: Accept preference cookies
+consent.single.accept.marketing: Accept marketing cookies
+consent.single.reject.statistics: Reject analytics cookies
+consent.single.reject.statistics-own: Reject measurement
+consent.single.reject.preferences: Reject preference cookies
+consent.single.reject.marketing: Reject marketing cookies
+Reject all: Reject all
+Necessary only: Necessary only
+Technical cookies only: Technical cookies only
+Cookies on this site: Cookies on this site
+This site would like to use services of other companies. Nothing of theirs runs until you allow it.: This site would like to use services of other companies. Nothing of theirs runs until you allow it.
+'New since your last visit:': 'New since your last visit:'
+'Test site: nothing is sent.': 'Test site: nothing is sent.'
+Accept all: Accept all
+Choose cookies: Choose cookies
+Cookie details: Cookie details
+Cookie settings: Cookie settings
+Choose what this site may use. You can change it at any time with “Cookie settings”.: Choose what this site may use. You can change it at any time with “Cookie settings”.
+Your browser asks sites not to track you, so everything below stays off.: Your browser asks sites not to track you, so everything below stays off.
+Always on: Always on
+Allow all of them: Allow all of them
+About {service}: About {service}
+Run by: Run by
+What it does: What it does
+It reaches: It reaches
+Its company keeps the data for: Its company keeps the data for
+Its privacy policy: Its privacy policy
+What it keeps on your device: What it keeps on your device
+Name: Name
+Kept for: Kept for
+Purpose: Purpose
+Privacy notice: Privacy notice
+Save my choices: Save my choices
+Close: Close
+Your choice is saved.: Your choice is saved.
+'{label} is off.': '{label} is off.'
+Banner: Banner
+'Where visitors see it: a bar at the bottom, or a box in a corner.': 'Where visitors see it: a bar at the bottom, or a box in a corner.'
+A bar at the bottom: A bar at the bottom
+A box in a corner: A box in a corner
+The button that rejects: The button that rejects
+'They all mean the same: only what the site needs to work.': 'They all mean the same: only what the site needs to work.'
+'"Reject …"': '"Reject …"'
+'"Necessary only"': '"Necessary only"'
+'"Technical cookies only"': '"Technical cookies only"'
+Keep a visitor's choice for (months): Keep a visitor's choice for (months)
+Then they are asked again. At most 12.: Then they are asked again. At most 12.
+Ask visitors who rejected again after (months): Ask visitors who rejected again after (months)
+At most 12.: At most 12.
+Respect "do not track" signals: Respect "do not track" signals
+Browsers that send Global Privacy Control or Do Not Track count as rejecting, and see no banner.: Browsers that send Global Privacy Control or Do Not Track count as rejecting, and see no banner.
+'A path on the site, e.g. "/privacy", or an address: linked from the cookie settings.': 'A path on the site, e.g. "/privacy", or an address: linked from the cookie settings.'

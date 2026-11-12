@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Quire\Extend;
 
+use Quire\Extension\Boot\ExtensionPasses;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\Compiler\PassConfig;
@@ -107,8 +108,10 @@ final class Services implements ExtenderInterface
             $loader->load(basename($file));
         }
 
+        // Kept for QuireBundle's runners: the container is compiling already, so a pass added to it
+        // now would never run.
         foreach ($this->passes as $pass) {
-            $container->addCompilerPass($pass['pass'], $pass['type'], $pass['priority']);
+            ExtensionPasses::add($container, $pass['pass'], $pass['type'], $pass['priority']);
         }
     }
 }

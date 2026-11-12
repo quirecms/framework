@@ -44,6 +44,20 @@
             }
         },
         {
+            "name": "quire/privacy",
+            "version": "0.1.0.0",
+            "pretty_version": "0.1.0",
+            "type": "quire-extension",
+            "install-path": "../../packages/privacy",
+            "description": "Privacy and cookies for Quire",
+            "extra": {
+                "quire": {
+                    "title": "Privacy and cookies",
+                    "description": "Asks visitors before a service of another company runs: analytics, videos, fonts. Without such a service, it shows nothing."
+                }
+            }
+        },
+        {
             "name": "quire/fixture-hello",
             "version": "1.0.0.0",
             "pretty_version": "1.0.0",
@@ -67,6 +81,21 @@
                 "quire": {
                     "id": "quire-fixture-recipes",
                     "title": "Recipes"
+                }
+            }
+        },
+        {
+            "name": "quire/fixture-video",
+            "version": "0.1.0.0",
+            "pretty_version": "0.1.0",
+            "type": "quire-extension",
+            "install-path": "extensions/video",
+            "extra": {
+                "quire": {
+                    "id": "quire-fixture-video",
+                    "requires": [
+                        "quire-privacy"
+                    ]
                 }
             }
         },

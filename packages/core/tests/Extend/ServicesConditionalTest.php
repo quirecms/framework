@@ -7,10 +7,12 @@ namespace Quire\Tests\Extend;
 use Quire\Extend\Conditional;
 use Quire\Extend\Routes;
 use Quire\Extend\Services;
+use Quire\Extension\Boot\ExtensionPasses;
 use Quire\Tests\Extend\Fixtures\FixtureCommand;
 use Quire\Tests\Extend\Fixtures\InvokableController;
 use Quire\Tests\Extend\Fixtures\NotInvokable;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
+use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 final class ServicesConditionalTest extends ExtenderTestCase
@@ -54,7 +56,7 @@ final class ServicesConditionalTest extends ExtenderTestCase
 
         $this->apply(new Services()->compilerPass($pass));
 
-        self::assertContains($pass, $this->container->getCompilerPassConfig()->getBeforeOptimizationPasses());
+        self::assertSame([$pass], ExtensionPasses::of($this->container, PassConfig::TYPE_BEFORE_OPTIMIZATION), 'For QuireBundle\'s runner: added to the compiling container, it would never run.');
     }
 
     public function testServicesRejectInvalidInput(): void
