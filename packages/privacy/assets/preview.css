@@ -1,0 +1,19 @@
+/* quire/privacy: the admin's preview of the banner, in a frame of its own. The banner sits at the end
+   of the frame as on a page, in full rather than held to part of the screen. */
+.consent-preview {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: 100vh;
+    /* Edge to edge, as on a page: without the preview's padding. */
+    margin: -1rem;
+}
+
+.consent-preview .consent {
+    position: static;
+    max-height: none;
+}
+
+.consent-preview .consent--corner {
+    align-self: flex-end;
+}

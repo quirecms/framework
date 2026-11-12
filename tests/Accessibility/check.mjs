@@ -34,7 +34,7 @@ for (const colorScheme of ['light', 'dark']) {
             await page.goto(base + '/login');
             await page.fill('#username', username);
             await page.fill('#password', password.join(':'));
-            await Promise.all([page.waitForNavigation(), page.click('form button[type=submit]')]);
+            await Promise.all([page.waitForNavigation(), page.click('form:has(#password) button[type=submit]')]);
         }
 
         for (const path of pages) {

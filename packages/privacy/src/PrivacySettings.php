@@ -20,6 +20,10 @@ final readonly class PrivacySettings
     public const string HONOUR_SIGNALS = 'quire-privacy.honour_signals';
     public const string PRIVACY_PAGE = 'quire-privacy.privacy_page';
     public const string SEND_IN_TEST = 'quire-privacy.send_in_test';
+    public const string LOG_MONTHS = 'quire-privacy.log_months';
+
+    /** The longest choices are kept as proof, in months */
+    public const int MAX_LOG_MONTHS = 60;
 
     /** The longest a choice is kept, in months: regulators expect visitors to be asked again within a year */
     public const int MAX_MONTHS = 12;
@@ -63,6 +67,12 @@ final readonly class PrivacySettings
     public function honourSignals(): bool
     {
         return $this->settings->getBool(self::HONOUR_SIGNALS);
+    }
+
+    /** How long logged choices are kept as proof */
+    public function logMonths(): int
+    {
+        return max(1, min(self::MAX_LOG_MONTHS, $this->settings->getInt(self::LOG_MONTHS)));
     }
 
     /**

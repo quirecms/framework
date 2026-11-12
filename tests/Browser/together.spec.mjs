@@ -13,7 +13,7 @@ async function signInAs(page, username) {
     await page.goto('/login');
     await page.fill('#username', username);
     await page.fill('#password', 'correct-horse-42');
-    await Promise.all([page.waitForURL(/\/(admin)?$/), page.click('form button[type=submit]')]);
+    await Promise.all([page.waitForURL(/\/(admin)?$/), page.click('form:has(#password) button[type=submit]')]);
 }
 
 // The demo site asks for approval; publishing changes right away is what a fresh site does

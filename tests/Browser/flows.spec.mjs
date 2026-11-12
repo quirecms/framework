@@ -203,7 +203,7 @@ test('a session kept by "keep me signed in" confirms it is you before managing s
     await page.fill('#username', 'ada');
     await page.fill('#password', 'correct-horse-42');
     await page.check('#remember-me');
-    await Promise.all([page.waitForURL(/\/(admin)?$/), page.click('form button[type=submit]')]);
+    await Promise.all([page.waitForURL(/\/(admin)?$/), page.click('form:has(#password) button[type=submit]')]);
     const kept = (await context.cookies()).filter((cookie) => cookie.name === 'REMEMBERME');
     expect(kept).toHaveLength(1);
     await context.clearCookies();

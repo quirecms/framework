@@ -148,6 +148,21 @@ await check('"Reject all" keeps a refusal of every service, hides the banner, mo
     await context.close();
 });
 
+await check('each choice is logged as proof, by the ID the dialog shows', async () => {
+    const { context, page } = await fresh();
+    await page.goto(base + '/', { waitUntil: 'networkidle' });
+    const logged = page.waitForResponse((response) => response.url().endsWith('/_quire/privacy/consent') && response.request().method() === 'POST');
+    await page.locator('[data-consent-banner] [data-consent-accept]').click();
+    const response = await logged;
+    const sent = response.request().postDataJSON();
+    const kept = await choice(context);
+    expect(response.status() === 204, `The log answered ${response.status()}.`);
+    expect(sent.id === kept.id && JSON.stringify(sent.s) === JSON.stringify(kept.s), `Logged ${JSON.stringify(sent)}, kept ${JSON.stringify(kept)}`);
+    await page.locator('.consent__opener').click();
+    expect((await page.locator('[data-consent-dialog] [data-consent-id] code').textContent()) === kept.id, 'The dialog doesn\'t show the choice\'s ID.');
+    await context.close();
+});
+
 await check('"Cookie settings" reopens the choice; saving one service keeps it, and focus comes back', async () => {
     const { context, page } = await fresh();
     await page.goto(base + '/', { waitUntil: 'networkidle' });

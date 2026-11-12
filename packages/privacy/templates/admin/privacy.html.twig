@@ -1,0 +1,119 @@
+{% extends '@quire_admin/layout.html.twig' %}
+{% set domain = 'quire-privacy' %}
+
+{% block title %}{{ 'Privacy and cookies'|trans({}, domain) }}{% endblock %}
+
+{% block content %}
+<div class="privacy-admin">
+    <section class="q-panel" aria-labelledby="privacy-what">
+        <h2 id="privacy-what">{{ 'What visitors see'|trans({}, domain) }}</h2>
+        {% if not shown %}
+            <p>{{ 'Visitors see no banner: no enabled extension or theme uses a service of another company that they must be asked about.'|trans({}, domain) }}</p>
+        {% else %}
+            <p>{{ 'Visitors see a banner that asks about: {services}.'|trans({services: groups|map(g => g.services|map(s => s.label ~ ' (' ~ (g.category.label|trans({}, domain)) ~ ')')|join(', '))|join(', ')}, domain) }}</p>
+            <p class="q-help">{{ (mode == 'single' ? 'With one kind of service, the banner asks about it by name; visitors accept or reject it.' : 'With several kinds of service, visitors accept all, reject all, or choose.')|trans({}, domain) }}</p>
+        {% endif %}
+        {% if test %}
+            <p class="q-notice q-notice--warning">{{ 'Test mode: here, nothing is sent to the services, even after visitors accept. It runs outside production and on other domains than the site\'s own, unless "Send outside production too" is on.'|trans({}, domain) }}</p>
+        {% endif %}
+        {% if shown and not privacy_page %}
+            <p class="q-notice q-notice--warning">{{ 'The site has services of other companies but no privacy notice linked: visitors must be able to read what happens with their data. Write one (a page, with [[privacy_services]] listing the services) and set it in the settings.'|trans({}, domain) }}</p>
+        {% endif %}
+        <p><a class="q-btn q-btn--ghost" href="{{ path('quire_admin_settings', {group: 'quire-privacy'}) }}">{{ 'Settings'|trans({}, domain) }}</a></p>
+    </section>
+
+    {% if necessary is not empty %}
+        <section class="q-panel" aria-labelledby="privacy-necessary">
+            <h2 id="privacy-necessary">{{ 'Necessary, and reaching other sites: check these'|trans({}, domain) }}</h2>
+            <p>{{ 'These services run without asking visitors, because their extension or theme says the site can\'t work without them. Yet they reach other sites. If one isn\'t truly needed, e.g. it tracks visitors, it must be asked about: tell its maker, or disable it.'|trans({}, domain) }}</p>
+            <div class="q-scroll" role="region" aria-labelledby="privacy-necessary" tabindex="0">
+                <table class="q-table">
+                    <thead><tr><th scope="col">{{ 'Service'|trans({}, domain) }}</th><th scope="col">{{ 'Run by'|trans({}, domain) }}</th><th scope="col">{{ 'Declared by'|trans({}, domain) }}</th><th scope="col">{{ 'It reaches'|trans({}, domain) }}</th></tr></thead>
+                    <tbody>
+                        {% for service in necessary %}
+                            <tr><td>{{ service.label }}</td><td>{{ service.vendor }}</td><td><code>{{ service.owner }}</code></td><td>{{ service.hosts|reduce((all, list) => all|merge(list), [])|join(', ') }}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    {% endif %}
+
+    {% if groups is not empty %}
+        <section class="q-panel" aria-labelledby="privacy-services">
+            <h2 id="privacy-services">{{ 'Services visitors are asked about'|trans({}, domain) }}</h2>
+            <p class="q-help">{{ 'From what the site\'s extensions and theme declare. The answers count the choices of the last 30 days.'|trans({}, domain) }}</p>
+            <div class="q-scroll" role="region" aria-labelledby="privacy-services" tabindex="0">
+                <table class="q-table">
+                    <thead><tr><th scope="col">{{ 'Service'|trans({}, domain) }}</th><th scope="col">{{ 'Kind'|trans({}, domain) }}</th><th scope="col">{{ 'Run by'|trans({}, domain) }}</th><th scope="col">{{ 'Declared by'|trans({}, domain) }}</th><th scope="col">{{ 'It reaches'|trans({}, domain) }}</th><th scope="col" class="q-num">{{ 'Allowed'|trans({}, domain) }}</th><th scope="col" class="q-num">{{ 'Refused'|trans({}, domain) }}</th></tr></thead>
+                    <tbody>
+                        {% for group in groups %}
+                            {% for service in group.services %}
+                                <tr>
+                                    <td>{{ service.label }}</td>
+                                    <td>{{ group.category.label|trans({}, domain) }}</td>
+                                    <td>{{ service.vendor }}</td>
+                                    <td><code>{{ service.owner }}</code></td>
+                                    <td>{{ service.hosts|reduce((all, list) => all|merge(list), [])|map(host => host|replace({'https://': ''}))|join(', ') }}</td>
+                                    <td class="q-num">{{ totals[service.id].allowed|default(0) }}</td>
+                                    <td class="q-num">{{ totals[service.id].refused|default(0) }}</td>
+                                </tr>
+                            {% endfor %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    {% endif %}
+
+    {% if previews is not empty %}
+        <section class="q-panel" aria-labelledby="privacy-preview">
+            <h2 id="privacy-preview">{{ 'Preview, in the site\'s look'|trans({}, domain) }}</h2>
+            <div class="privacy-admin__previews">
+                <figure>
+                    <iframe class="privacy-admin__preview" sandbox="" srcdoc="{{ previews.banner }}" title="{{ 'The banner, on a first visit'|trans({}, domain) }}" loading="lazy"></iframe>
+                    <figcaption>{{ 'On a first visit'|trans({}, domain) }}</figcaption>
+                </figure>
+                <figure>
+                    <iframe class="privacy-admin__preview privacy-admin__preview--tall" sandbox="" srcdoc="{{ previews.dialog }}" title="{{ 'The cookie settings'|trans({}, domain) }}" loading="lazy"></iframe>
+                    <figcaption>{{ '“Cookie settings”'|trans({}, domain) }}</figcaption>
+                </figure>
+            </div>
+        </section>
+    {% endif %}
+
+    <section class="q-panel" aria-labelledby="privacy-proof">
+        <h2 id="privacy-proof">{{ 'A visitor\'s choices'|trans({}, domain) }}</h2>
+        <p class="q-help">{{ 'Visitors find the ID of their choice in “Cookie settings”. Choices are kept for {months, plural, one {# month} other {# months}}, with what visitors were told; never their account or address.'|trans({months: log_months}, domain) }}</p>
+        <form method="get" class="q-form-row" role="search">
+            <div class="q-field privacy-admin__lookup">
+                <label for="privacy-consent">{{ 'Choice ID'|trans({}, domain) }}</label>
+                <input type="text" id="privacy-consent" name="consent" value="{{ consent_id }}" pattern="[0-9a-fA-F]{32}" spellcheck="false" autocomplete="off"{% if consent_id is not null and choices is null %} aria-invalid="true" aria-describedby="privacy-consent-error"{% endif %}>
+                {% if consent_id is not null and choices is null %}<p class="q-error" id="privacy-consent-error">{{ 'A choice\'s ID is 32 characters, 0–9 and a–f.'|trans({}, domain) }}</p>{% endif %}
+            </div>
+            <div class="q-form-row__actions"><button class="q-btn" type="submit">{{ 'Look up'|trans({}, domain) }}</button></div>
+        </form>
+        {% if choices is not null %}
+            <div aria-live="polite">
+                {% if choices is empty %}
+                    <p class="q-empty">{{ 'No choice with this ID is kept.'|trans({}, domain) }}</p>
+                {% else %}
+                    <div class="q-stack">
+                        {% for choice in choices %}
+                            <section class="q-card">
+                                <h3 class="q-card__title"><time datetime="{{ choice.at|date('c') }}">{{ choice.at|date('Y-m-d H:i') }}</time></h3>
+                                <ul>
+                                    {% for service in choice.services %}
+                                        {% set answer = choice.answers[service.id] ?? null %}
+                                        <li>{{ service.label }} ({{ service.vendor }}): {{ answer is same as(false) ? 'refused'|trans({}, domain) : (answer is null ? 'not asked'|trans({}, domain) : 'allowed'|trans({}, domain)) }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </section>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

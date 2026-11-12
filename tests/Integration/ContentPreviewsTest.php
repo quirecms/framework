@@ -48,6 +48,16 @@ final class ContentPreviewsTest extends KernelTestCase
         self::assertStringContainsString($card, $document);
     }
 
+    public function testAnyHtmlInAPageOfItsOwnWithMoreStylesheets(): void
+    {
+        $document = self::getContainer()->get(ContentPreviews::class)->document('<p class="x">Hi</p>', 'de', ['/assets/acme/a.css?v="1"']);
+
+        self::assertStringContainsString('<html lang="de">', $document);
+        self::assertStringContainsString("<body class=\"quire-preview\">\n<p class=\"x\">Hi</p>\n</body>", $document);
+        self::assertMatchesRegularExpression('~<link rel="stylesheet" href="[^"]+">\n.*<link rel="stylesheet" href="/assets/acme/a.css\?v=&quot;1&quot;">~s', $document, 'After the theme\'s, escaped.');
+        self::assertStringNotContainsString('<script', $document);
+    }
+
     public function testTagsForSearchResultsAndSharing(): void
     {
         $settings = self::getContainer()->get(Settings::class);
