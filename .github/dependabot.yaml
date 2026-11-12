@@ -26,3 +26,8 @@ updates:
       prefix: "chore"
     cooldown:
       default-days: 7
+    groups:
+      # CodeQL's steps must all run the same version: one pull request for all of them
+      codeql:
+        patterns:
+          - "github/codeql-action*"
