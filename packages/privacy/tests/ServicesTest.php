@@ -35,6 +35,15 @@ final class ServicesTest extends TestCase
         self::assertNotSame($revision, $this->services([['id' => 'video'], ['id' => 'fonts', 'category' => 'preferences']])->revision(), 'A new service is.');
     }
 
+    public function testEachServiceHasItsOwnRevision(): void
+    {
+        $before = $this->services([['id' => 'video'], ['id' => 'fonts', 'category' => 'preferences']]);
+        $after = $this->services([['id' => 'video', 'hosts' => ['frame-src' => ['https://new.video.example']]], ['id' => 'fonts', 'category' => 'preferences']]);
+
+        self::assertNotSame($before->get('video')?->revision(), $after->get('video')?->revision(), 'The changed service is asked about again.');
+        self::assertSame($before->get('fonts')?->revision(), $after->get('fonts')?->revision(), 'The others\' answers hold.');
+    }
+
     public function testHostsOfEveryServiceByDirective(): void
     {
         $services = $this->services([

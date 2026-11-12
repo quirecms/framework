@@ -37,5 +37,6 @@ return [
         ->define(PrivacySettings::CHOICE_MONTHS, 'int', 6, label: 'Keep a visitor\'s choice for (months)', help: 'Then they are asked again. At most 12.')
         ->define(PrivacySettings::ASK_AGAIN_MONTHS, 'int', 6, label: 'Ask visitors who rejected again after (months)', help: 'At most 12.')
         ->define(PrivacySettings::HONOUR_SIGNALS, 'bool', true, label: 'Respect "do not track" signals', help: 'Browsers that send Global Privacy Control or Do Not Track count as rejecting, and see no banner.')
+        ->define(PrivacySettings::SEND_IN_TEST, 'bool', false, label: 'Send outside production too', help: 'Services run after consent on other domains than the site\'s own and outside production too, e.g. to check a setup on a temporary domain. What they send there counts as real.')
         ->define(PrivacySettings::PRIVACY_PAGE, 'string', '', label: 'Privacy notice', help: 'A path on the site, e.g. "/privacy", or an address: linked from the cookie settings.'),
 ];

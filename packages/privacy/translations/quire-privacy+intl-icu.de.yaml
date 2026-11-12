@@ -30,7 +30,7 @@ Necessary only: Nur notwendige
 Technical cookies only: Nur technische Cookies
 Cookies on this site: Cookies auf dieser Website
 This site would like to use services of other companies. Nothing of theirs runs until you allow it.: Diese Website möchte Dienste anderer Unternehmen verwenden. Davon läuft nichts, bis Sie es erlauben.
-'New since your last visit:': 'Neu seit Ihrem letzten Besuch:'
+'New or changed since your last visit:': 'Neu oder geändert seit Ihrem letzten Besuch:'
 'Test site: nothing is sent.': 'Testseite: Es wird nichts gesendet.'
 Accept all: Alle akzeptieren
 Choose cookies: Cookies auswählen
@@ -71,3 +71,5 @@ At most 12.: Höchstens 12.
 Respect "do not track" signals: „Nicht verfolgen“-Signale beachten
 Browsers that send Global Privacy Control or Do Not Track count as rejecting, and see no banner.: Browser, die Global Privacy Control oder Do Not Track senden, gelten als ablehnend und sehen keinen Banner.
 'A path on the site, e.g. "/privacy", or an address: linked from the cookie settings.': 'Ein Pfad auf der Website, z. B. „/privacy“, oder eine Adresse: verlinkt in den Cookie-Einstellungen.'
+Send outside production too: Auch außerhalb der Produktion senden
+'Services run after consent on other domains than the site''s own and outside production too, e.g. to check a setup on a temporary domain. What they send there counts as real.': 'Dienste laufen nach der Zustimmung auch auf anderen Domains als der eigenen und außerhalb der Produktion, z. B. um eine Einrichtung auf einer vorläufigen Domain zu prüfen. Was sie dort senden, zählt als echt.'

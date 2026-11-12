@@ -30,7 +30,7 @@ Necessary only: Само неопходни
 Technical cookies only: Само технички колачиња
 Cookies on this site: Колачиња на оваа страница
 This site would like to use services of other companies. Nothing of theirs runs until you allow it.: Оваа страница би сакала да користи услуги на други компании. Ништо од нив не работи додека не дозволите.
-'New since your last visit:': 'Ново од вашата последна посета:'
+'New or changed since your last visit:': 'Ново или променето од вашата последна посета:'
 'Test site: nothing is sent.': 'Тест-страница: ништо не се испраќа.'
 Accept all: Прифати ги сите
 Choose cookies: Избери колачиња
@@ -71,3 +71,5 @@ At most 12.: Најмногу 12.
 Respect "do not track" signals: Почитувај ги сигналите „не следи“
 Browsers that send Global Privacy Control or Do Not Track count as rejecting, and see no banner.: Прелистувачите што праќаат Global Privacy Control или Do Not Track се сметаат како одбивање и не гледаат банер.
 'A path on the site, e.g. "/privacy", or an address: linked from the cookie settings.': 'Патека на страницата, на пр. „/privacy“, или адреса: со врска од поставките за колачиња.'
+Send outside production too: Испраќај и надвор од продукција
+'Services run after consent on other domains than the site''s own and outside production too, e.g. to check a setup on a temporary domain. What they send there counts as real.': 'Услугите работат по согласноста и на домени различни од сопствениот и надвор од продукција, на пр. за да се провери поставување на привремен домен. Она што го испраќаат таму се смета за вистинско.'

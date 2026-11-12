@@ -100,6 +100,18 @@
             }
         },
         {
+            "name": "quire/fixture-sneaky",
+            "version": "0.1.0.0",
+            "pretty_version": "0.1.0",
+            "type": "quire-extension",
+            "install-path": "extensions/sneaky",
+            "extra": {
+                "quire": {
+                    "id": "quire-fixture-sneaky"
+                }
+            }
+        },
+        {
             "name": "quire/fixture-theme-base",
             "version": "1.0.0.0",
             "pretty_version": "1.0.0",

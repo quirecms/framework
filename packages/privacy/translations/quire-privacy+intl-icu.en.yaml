@@ -30,7 +30,7 @@ Necessary only: Necessary only
 Technical cookies only: Technical cookies only
 Cookies on this site: Cookies on this site
 This site would like to use services of other companies. Nothing of theirs runs until you allow it.: This site would like to use services of other companies. Nothing of theirs runs until you allow it.
-'New since your last visit:': 'New since your last visit:'
+'New or changed since your last visit:': 'New or changed since your last visit:'
 'Test site: nothing is sent.': 'Test site: nothing is sent.'
 Accept all: Accept all
 Choose cookies: Choose cookies
@@ -71,3 +71,5 @@ At most 12.: At most 12.
 Respect "do not track" signals: Respect "do not track" signals
 Browsers that send Global Privacy Control or Do Not Track count as rejecting, and see no banner.: Browsers that send Global Privacy Control or Do Not Track count as rejecting, and see no banner.
 'A path on the site, e.g. "/privacy", or an address: linked from the cookie settings.': 'A path on the site, e.g. "/privacy", or an address: linked from the cookie settings.'
+Send outside production too: Send outside production too
+'Services run after consent on other domains than the site''s own and outside production too, e.g. to check a setup on a temporary domain. What they send there counts as real.': 'Services run after consent on other domains than the site''s own and outside production too, e.g. to check a setup on a temporary domain. What they send there counts as real.'

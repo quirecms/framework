@@ -18,6 +18,9 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  */
 final class ExtensionPasses implements CompilerPassInterface
 {
+    /** The types of pass an extension may add: none after Quire's checks, before services are removed */
+    public const array TYPES = [PassConfig::TYPE_BEFORE_OPTIMIZATION, PassConfig::TYPE_OPTIMIZE, PassConfig::TYPE_BEFORE_REMOVING];
+
     /** @var \WeakMap<ContainerBuilder, list<array{pass: CompilerPassInterface, type: string, priority: int, order: int}>>|null */
     private static ?\WeakMap $passes = null;
 
@@ -57,7 +60,7 @@ final class ExtensionPasses implements CompilerPassInterface
     {
         $runners = [];
 
-        foreach ([PassConfig::TYPE_BEFORE_OPTIMIZATION, PassConfig::TYPE_OPTIMIZE, PassConfig::TYPE_BEFORE_REMOVING, PassConfig::TYPE_REMOVE, PassConfig::TYPE_AFTER_REMOVING] as $type) {
+        foreach (self::TYPES as $type) {
             $runners[$type] = new self($type);
         }
 

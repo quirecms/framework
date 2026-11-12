@@ -18,10 +18,10 @@ bin/console quire:extension:enable quire-privacy
   Accepting and rejecting look the same, side by side, and nothing is switched on in advance. The page keeps room for the banner, so it covers nothing.
 - **The cookie settings**, a dialog: each category with its switch and what it's for, and each service with who runs it, what it does, the other sites it reaches, what it keeps on the visitor's device and for how long, and its privacy policy. All of it comes from the services' declarations, so it's never out of date.
 - **"Cookie settings"** on every page, in the footer, reopens the dialog: withdrawing is as easy as giving. Withdrawing stops the service where it can, and removes its cookies on the site's domain.
-- **Asked again** when the site's services change (about the new ones only, by name; earlier answers stay), and when the choice expires.
+- **Asked again** about a service added since, or one that changed since the visitor allowed it (it reaches another site, keeps another cookie, or moved to another category), by name; other answers stay. A change of wording isn't a reason to ask again. Everyone is asked again when their choice expires.
 - **No banner for browsers that ask not to be tracked** (Global Privacy Control, Do Not Track): they count as rejecting, and the dialog says why.
 - **No banner without JavaScript**, and no service runs: the banner stays hidden rather than show buttons that do nothing.
-- **Test mode:** outside production, or on another domain than the site's own (`DEFAULT_URI`, e.g. a temporary domain), visitors are asked as usual, nothing is sent, and the banner says so.
+- **Test mode:** outside production, or on another domain than the site's own (`DEFAULT_URI`, e.g. a temporary domain), visitors are asked as usual, nothing is sent, and the banner says so. A site that answers on two domains without redirecting one to the other (e.g. with and without `www`) sends nothing on the other one: redirect it. To check a setup on a temporary domain, turn on `quire-privacy.send_in_test`.
 
 The banner is in English, German and Macedonian (German and Macedonian are drafts until a native speaker checks them).
 
@@ -36,6 +36,7 @@ Under "Privacy and cookies" in the admin's settings, or with `bin/console quire:
 | `quire-privacy.choice_months` | 6 | How long a choice that allows something is kept (at most 12) |
 | `quire-privacy.ask_again_months` | 6 | How soon visitors who allowed nothing are asked again (at most 12) |
 | `quire-privacy.honour_signals` | on | Global Privacy Control and Do Not Track count as rejecting |
+| `quire-privacy.send_in_test` | off | Services run after consent outside production and on other domains too, e.g. to check a setup on a temporary domain. What they send counts as real |
 | `quire-privacy.privacy_page` | | The site's privacy notice, linked from the cookie settings, e.g. `/privacy` |
 
 ## Declaring a service
@@ -89,7 +90,7 @@ In the browser, `window.quire.consent`:
 - `open()`: the cookie settings;
 - the `quire:consent` event on `document`, with `detail.allowed` and `detail.withdrawn` (service IDs).
 
-The choice is kept in the first-party cookie `quire_consent`: which services the visitor allowed, when, and a random ID of the choice (never the visitor's account).
+The choice is kept in the first-party cookie `quire_consent`: for each service, the revision the visitor allowed (what it reached and kept then) or a refusal; when; and a random ID of the choice (never the visitor's account). A "yes" holds for the service as it was: once it changes, it counts as unanswered, on the server too, until the visitor answers again.
 
 ## Theming
 

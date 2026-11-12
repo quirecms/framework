@@ -102,14 +102,7 @@ final readonly class Services
      */
     public function revision(): string
     {
-        $what = array_map(static fn (Service $service): array => [
-            $service->id,
-            $service->category->value,
-            $service->hosts,
-            array_map(static fn (Cookie $cookie): string => $cookie->name, $service->cookies),
-        ], $this->askedAbout());
-
-        return substr(hash('sha256', json_encode($what, \JSON_THROW_ON_ERROR)), 0, 12);
+        return substr(hash('sha256', json_encode(array_map(static fn (Service $service): array => [$service->id, $service->revision()], $this->askedAbout()), \JSON_THROW_ON_ERROR)), 0, 12);
     }
 
     /**

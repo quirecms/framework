@@ -29,7 +29,8 @@ final readonly class Consent
     /**
      * Whether the service may run for this visitor: always for a necessary one, never for an unknown
      * one, never when the browser signals a refusal (Global Privacy Control, Do Not Track) and the site
-     * honours it, and otherwise only as the visitor chose, while the choice holds.
+     * honours it, and otherwise only as the visitor chose, while the choice holds, and only for the
+     * service as it was when they allowed it.
      */
     public function allows(Request $request, string $serviceId, ?\DateTimeImmutable $now = null): bool
     {
@@ -47,7 +48,7 @@ final readonly class Consent
             return false;
         }
 
-        return $this->choice($request, $now)?->allows($serviceId) ?? false;
+        return $this->choice($request, $now)?->allows($serviceId, $service->revision()) ?? false;
     }
 
     /**
@@ -78,9 +79,9 @@ final readonly class Consent
 
         $services = [];
 
-        foreach ($data['s'] as $id => $allowed) {
-            if (\is_string($id) && (true === $allowed || false === $allowed || 1 === $allowed || 0 === $allowed)) {
-                $services[$id] = true === $allowed || 1 === $allowed;
+        foreach ($data['s'] as $id => $answer) {
+            if (\is_string($id) && (false === $answer || \is_string($answer) && 1 === preg_match('/^[0-9a-f]{1,64}$/', $answer))) {
+                $services[$id] = $answer;
             }
         }
 

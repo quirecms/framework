@@ -81,4 +81,14 @@ final readonly class Service
             throw new \InvalidArgumentException(\sprintf('The service "%s" is necessary and has a script: a necessary service runs without asking, so it loads like the rest of the site (Extend\Assets), not through consent.', $id));
         }
     }
+
+    /**
+     * Changes when what a visitor agrees to changes: its category, the other sites it reaches, or what
+     * it keeps on their device. A "yes" holds for one revision; after a change the visitor is asked
+     * again. Wording (label, purpose) isn't part of it.
+     */
+    public function revision(): string
+    {
+        return substr(hash('sha256', json_encode([$this->category->value, $this->hosts, array_map(static fn (Cookie $cookie): string => $cookie->name, $this->cookies)], \JSON_THROW_ON_ERROR)), 0, 12);
+    }
 }

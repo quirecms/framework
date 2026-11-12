@@ -19,6 +19,7 @@ final readonly class PrivacySettings
     public const string ASK_AGAIN_MONTHS = 'quire-privacy.ask_again_months';
     public const string HONOUR_SIGNALS = 'quire-privacy.honour_signals';
     public const string PRIVACY_PAGE = 'quire-privacy.privacy_page';
+    public const string SEND_IN_TEST = 'quire-privacy.send_in_test';
 
     /** The longest a choice is kept, in months: regulators expect visitors to be asked again within a year */
     public const int MAX_MONTHS = 12;
@@ -62,6 +63,15 @@ final readonly class PrivacySettings
     public function honourSignals(): bool
     {
         return $this->settings->getBool(self::HONOUR_SIGNALS);
+    }
+
+    /**
+     * Whether services run after consent outside production and on other domains than the site's own
+     * too, e.g. to check a setup on a temporary domain (off: they never do there).
+     */
+    public function sendInTest(): bool
+    {
+        return $this->settings->getBool(self::SEND_IN_TEST);
     }
 
     /** The site's privacy page, linked from the settings dialog; null without one */

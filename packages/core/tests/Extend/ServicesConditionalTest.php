@@ -59,6 +59,24 @@ final class ServicesConditionalTest extends ExtenderTestCase
         self::assertSame([$pass], ExtensionPasses::of($this->container, PassConfig::TYPE_BEFORE_OPTIMIZATION), 'For QuireBundle\'s runner: added to the compiling container, it would never run.');
     }
 
+    public function testAnExtensionsPassRunsBeforeQuiresChecks(): void
+    {
+        $pass = new class implements CompilerPassInterface {
+            public function process(ContainerBuilder $container): void
+            {
+            }
+        };
+
+        foreach ([PassConfig::TYPE_REMOVE, PassConfig::TYPE_AFTER_REMOVING] as $type) {
+            try {
+                new Services()->compilerPass($pass, $type);
+                self::fail(\sprintf('A pass at "%s" was taken.', $type));
+            } catch (\InvalidArgumentException $e) {
+                self::assertStringContainsString('Quire checks the container after those', $e->getMessage());
+            }
+        }
+    }
+
     public function testServicesRejectInvalidInput(): void
     {
         $this->assertExtenderFails(new Services()->autoload('Acme', __DIR__), 'The namespace must end with a backslash.');

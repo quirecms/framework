@@ -135,17 +135,32 @@ function start(config) {
         showBanner();
     }
 
-    function allowed(id) {
-        return !signal && choice !== null && choice.s[id] === true;
+    // A "yes" holds for the service as it was (its revision: category, hosts, cookies).
+    function allowed(id, from = choice) {
+        return !signal && from !== null && byId.has(id) && from.s[id] === byId.get(id).revision;
     }
 
-    // Services added since the visitor chose: asked about by name, earlier answers kept.
+    // Services the visitor hasn't answered for as they are now: added since, or changed since a "yes".
+    // They're asked about by name; other answers are kept.
     function unasked() {
-        return choice === null ? services : services.filter((service) => !(service.id in choice.s));
+        return choice === null ? services : services.filter((service) => !(service.id in choice.s) || choice.s[service.id] !== false && choice.s[service.id] !== service.revision);
     }
 
+    // The visitor's answers that still hold, as true and false; unanswered services are left out.
     function current() {
-        return Object.fromEntries(services.map((service) => [service.id, allowed(service.id)]));
+        const answers = {};
+
+        if (choice !== null) {
+            for (const service of services) {
+                if (choice.s[service.id] === false) {
+                    answers[service.id] = false;
+                } else if (allowed(service.id)) {
+                    answers[service.id] = true;
+                }
+            }
+        }
+
+        return answers;
     }
 
     function everything(value, onlyNew) {
@@ -186,11 +201,13 @@ function start(config) {
             const s = {};
 
             for (const [id, value] of Object.entries(data.s)) {
-                s[id] = value === true || value === 1;
+                if (value === false || typeof value === 'string' && /^[0-9a-f]{1,64}$/.test(value)) {
+                    s[id] = value;
+                }
             }
 
             const expires = new Date(data.t * 1000);
-            expires.setMonth(expires.getMonth() + (Object.values(s).includes(true) ? config.months.choice : config.months.again));
+            expires.setMonth(expires.getMonth() + (Object.values(s).some((value) => typeof value === 'string') ? config.months.choice : config.months.again));
 
             return expires > new Date() ? {v: 1, id: data.id, t: data.t, r: data.r, s} : null;
         } catch {
@@ -198,10 +215,19 @@ function start(config) {
         }
     }
 
+    // next: true or false by service ID. Kept as the service's revision for a "yes", false for a "no".
     function save(next) {
         const before = choice;
-        const months = Object.values(next).includes(true) ? config.months.choice : config.months.again;
-        choice = {v: 1, id: before?.id ?? randomId(), t: Math.floor(Date.now() / 1000), r: config.revision, s: next};
+        const s = {};
+
+        for (const [id, yes] of Object.entries(next)) {
+            if (byId.has(id)) {
+                s[id] = yes === true ? byId.get(id).revision : false;
+            }
+        }
+
+        const months = Object.values(s).some((value) => typeof value === 'string') ? config.months.choice : config.months.again;
+        choice = {v: 1, id: before?.id ?? randomId(), t: Math.floor(Date.now() / 1000), r: config.revision, s};
         const value = btoa(JSON.stringify(choice)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
         document.cookie = `${config.cookie.name}=${value}; Path=/; Max-Age=${months * 31 * 86400}; SameSite=Lax${config.cookie.secure ? '; Secure' : ''}`;
         const withdrawn = apply(before);
@@ -223,7 +249,7 @@ function start(config) {
                 started.add(service.id);
                 now.push(service.id);
                 run(service);
-            } else if (!yes && (started.has(service.id) || before?.s[service.id] === true)) {
+            } else if (!yes && (started.has(service.id) || allowed(service.id, before))) {
                 started.delete(service.id);
                 withdrawn.push(service);
                 modules.get(service.id)?.stop?.();

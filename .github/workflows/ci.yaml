@@ -111,6 +111,10 @@ jobs:
           status=0
           docker run --rm --network quire_default -e QUIRE_CHECK_SERVER=php -v "$PWD/tests/Accessibility:/work" -w /work "mcr.microsoft.com/playwright:v${playwright}-noble" \
             sh -c 'npm ci --no-audit --no-fund && node consent.mjs https://quire.localhost' || status=$?
+          # Then with services sending outside production: a service's script starts only with consent.
+          docker compose exec -T php bin/console quire:settings:set quire-privacy.send_in_test true
+          docker run --rm --network quire_default -e QUIRE_CHECK_SERVER=php -e QUIRE_CHECK_SENDS=1 -v "$PWD/tests/Accessibility:/work" -w /work "mcr.microsoft.com/playwright:v${playwright}-noble" \
+            node consent.mjs https://quire.localhost || status=$?
           cp "$RUNNER_TEMP/extend.php" extend.php
           rm -r assets/ci-consent
           exit "$status"

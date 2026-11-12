@@ -23,7 +23,7 @@
         <h2 class="consent__heading" id="quire-consent-heading">{% block consent_heading %}{{ mode == 'single' ? ('consent.single.heading.' ~ category.value)|trans({}, domain) : 'Cookies on this site'|trans({}, domain) }}{% endblock %}</h2>
         {% block consent_text %}
             <p class="consent__text">{{ mode == 'single' ? ('consent.single.text.' ~ category.value)|trans({}, domain) : 'This site would like to use services of other companies. Nothing of theirs runs until you allow it.'|trans({}, domain) }}</p>
-            <p class="consent__text consent__new" data-consent-new hidden>{{ 'New since your last visit:'|trans({}, domain) }} <span data-consent-new-names></span></p>
+            <p class="consent__text consent__new" data-consent-new hidden>{{ 'New or changed since your last visit:'|trans({}, domain) }} <span data-consent-new-names></span></p>
             {% if test %}<p class="consent__text consent__test">{{ 'Test site: nothing is sent.'|trans({}, domain) }}</p>{% endif %}
         {% endblock %}
         <div class="consent__actions">

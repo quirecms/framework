@@ -44,10 +44,15 @@ final readonly class Banner
 
     /**
      * Whether nothing is sent: outside production, or on a host other than the site's own address
-     * (a temporary domain, a preview). Visitors are still asked, and told.
+     * (a temporary domain, a preview), unless the owner turned that off. Visitors are still asked, and
+     * told. A site served on two hosts without a redirect (apex and www) sends nothing on the other.
      */
     public function testMode(): bool
     {
+        if ($this->settings->sendInTest()) {
+            return false;
+        }
+
         if ('prod' !== $this->environment) {
             return true;
         }
@@ -111,6 +116,7 @@ final readonly class Banner
                 'id' => $service->id,
                 'label' => $service->label,
                 'category' => $service->category->value,
+                'revision' => $service->revision(),
                 'script' => null === $service->script ? null : $this->assets->url($service->script),
                 'config' => (object) $service->config,
                 'cookies' => array_map(static fn (Cookie $cookie): string => $cookie->name, $service->cookies),
