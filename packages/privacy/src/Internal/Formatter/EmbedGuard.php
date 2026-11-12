@@ -13,9 +13,10 @@ use Symfony\Component\DependencyInjection\Attribute\AutowireServiceClosure;
 use Twig\Environment;
 
 /**
- * Holds what trusted shortcodes embed from a service visitors are asked about (a video, a map) until
- * the visitor allows it: in its place, a placeholder that says who it's from and what loading it does,
- * with the embed inside, inert, for the consent loader to put back (doc 20, condition C-B).
+ * Holds what a trusted shortcode prints, when it embeds from a service visitors are asked about (a
+ * video, a map), until the visitor allows it: in its place, one placeholder that says who it's from and
+ * what loading it does, with the output inside, inert, for the consent loader to put back (doc 20,
+ * condition C-B).
  *
  * The site's policy allows a service's hosts for every visitor, so pages stay cacheable; for embeds,
  * this is what makes them wait. It fails closed: markup it can't read, a URL whose host it can't tell,
@@ -29,9 +30,6 @@ final readonly class EmbedGuard implements EmbedGuardInterface
 {
     /** What can load something from another site */
     private const array ELEMENTS = ['iframe', 'frame', 'script', 'object', 'embed', 'video', 'audio', 'picture', 'source', 'track', 'img', 'image', 'input', 'link', 'style'];
-
-    /** Inside these, the container is what's held */
-    private const array CONTAINERS = ['video', 'audio', 'picture'];
 
     /**
      * @param \Closure(): Environment $twig Later: Twig renders content, and content is formatted here
@@ -64,35 +62,34 @@ final readonly class EmbedGuard implements EmbedGuardInterface
             return $this->placeholder(null, null, $html);
         }
 
-        $held = [];
+        // One placeholder for what the shortcode printed: its parts belong together (a frame and its
+        // script). It's from one service, or, from several or one it can't tell, loaded once only.
+        $services = [];
+        $unknown = false;
+        $first = null;
 
         foreach ($body->querySelectorAll(implode(', ', [...self::ELEMENTS, '[srcdoc]'])) as $element) {
-            if (!$element->isConnected || $element->parentElement instanceof \Dom\Element && \in_array(strtolower($element->parentElement->localName), self::CONTAINERS, true)) {
-                continue;
-            }
-
             $verdict = $this->verdict($element);
 
             if (false === $verdict) {
                 continue;
             }
 
-            $marker = $document->createComment('quire-embed-'.\count($held));
-            $held[] = $this->placeholder($verdict, $this->firstUrl($element), $element->outerHTML);
-            $element->replaceWith($marker);
+            $first ??= $this->firstUrl($element);
+
+            if (!$verdict instanceof Service) {
+                $unknown = true;
+            } else {
+                $services[$verdict->id] = $verdict;
+            }
         }
 
-        if ([] === $held) {
+        if (!$unknown && [] === $services) {
             return $html;
         }
 
-        $out = $body->innerHTML;
-
-        foreach ($held as $index => $placeholder) {
-            $out = str_replace('<!--quire-embed-'.$index.'-->', $placeholder, $out);
-        }
-
-        return $out;
+        // As the parser read it: a stray "</template>" can't end the placeholder's template early.
+        return $this->placeholder(!$unknown && 1 === \count($services) ? array_first($services) : null, $first, $body->innerHTML);
     }
 
     /**

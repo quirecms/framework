@@ -53,15 +53,32 @@ final class EmbedGuardTest extends PrivacyTestCase
     public function testEmbedsThatNeedConsentAreHeld(string $html, string $service): void
     {
         $out = $this->guard('<p>Before</p>'.$html.'<p>After</p>');
-        $crawler = new Crawler($out);
-        $box = $crawler->filter('[data-consent-embed]');
+        $box = new Crawler($out)->filter('[data-consent-embed]');
 
         self::assertCount(1, $box, $out);
         self::assertSame($service, $box->attr('data-consent-embed'));
-        self::assertSame(['Before', 'After'], $crawler->filter('body > p')->each(static fn (Crawler $p): string => $p->text()), 'The rest stays as it is.');
         // An HTML5 parser, as browsers: what's inside <template> is inert, and not in the page.
         $page = \Dom\HTMLDocument::createFromString('<!doctype html><body>'.$out, \LIBXML_NOERROR);
         self::assertCount(0, $page->querySelectorAll('iframe, script, object, embed, video, img, link, style'), 'Nothing loads outside the inert template.');
+        $template = $page->querySelector('template[data-consent-embed-content]');
+        \assert($template instanceof \Dom\HTMLElement);
+        self::assertStringContainsString('<p>Before</p>', $template->innerHTML, 'What the shortcode printed, all of it, for the loader to put back.');
+    }
+
+    public function testFromSeveralServicesItLoadsOnceOnly(): void
+    {
+        $box = new Crawler($this->guard('<iframe src="https://player.video.example/1"></iframe><link rel="stylesheet" href="https://fonts.example/a.css">'))->filter('[data-consent-embed]');
+
+        self::assertSame('', $box->attr('data-consent-embed'), '"Always allow" one service would load the other\'s too.');
+        self::assertCount(0, $box->filter('[data-consent-embed-allow]'));
+    }
+
+    public function testAStrayEndOfTemplateCantLetItOut(): void
+    {
+        $out = $this->guard('<p>x</template><iframe src="https://player.video.example/1"></iframe></p>');
+        $page = \Dom\HTMLDocument::createFromString('<!doctype html><body>'.$out, \LIBXML_NOERROR);
+
+        self::assertCount(0, $page->querySelectorAll('iframe'), $out);
     }
 
     /**
