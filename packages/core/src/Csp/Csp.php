@@ -77,8 +77,8 @@ final readonly class Csp
     public function policy(PolicyKind $kind): Policy
     {
         return match ($kind) {
-            PolicyKind::Page => $this->page("'self'"),
-            PolicyKind::Private => $this->page("'none'"),
+            PolicyKind::Page => $this->page(private: false),
+            PolicyKind::Private => $this->page(private: true),
             PolicyKind::StoredFile => new Policy([
                 'default-src' => ["'none'"],
                 'img-src' => ["'self'", 'data:'],
@@ -134,7 +134,12 @@ final readonly class Csp
         $request->attributes->set(self::HASHES_ATTRIBUTE, array_values(array_unique($hashes)));
     }
 
-    private function page(string $frameAncestors): Policy
+    /**
+     * @param bool $private A page with a form for passwords or accounts: never in a frame, and nothing
+     *                      from other sites' services, whatever the visitor consented to, since a
+     *                      script there could read what's typed
+     */
+    private function page(bool $private): Policy
     {
         $policy = new Policy([
             'default-src' => ["'self'"],
@@ -144,17 +149,20 @@ final readonly class Csp
             'object-src' => ["'none'"],
             'base-uri' => ["'self'"],
             'form-action' => ["'self'"],
-            'frame-ancestors' => [$frameAncestors],
+            'frame-ancestors' => [$private ? "'none'" : "'self'"],
         ]);
 
         foreach ($this->firstParty as $provider) {
             $policy = $this->add($policy, $provider->sources(), hostsOnly: true);
         }
 
-        $policy = $this->add($policy, $this->thirdParty->sources(), hostsOnly: true);
+        if (!$private) {
+            $policy = $this->add($policy, $this->thirdParty->sources(), hostsOnly: true);
+        }
+
         // The site's own configuration may also change the document rules, e.g. let a partner's site
         // show its pages in a frame; but a private page is never in a frame.
-        $policy = $this->add($policy, "'none'" === $frameAncestors ? array_diff_key($this->siteSources, ['frame-ancestors' => true]) : $this->siteSources, hostsOnly: false);
+        $policy = $this->add($policy, $private ? array_diff_key($this->siteSources, ['frame-ancestors' => true]) : $this->siteSources, hostsOnly: false);
 
         if (null !== $this->reportUri && '' !== $this->reportUri) {
             $policy = $policy->with('report-uri', $this->reportUri);

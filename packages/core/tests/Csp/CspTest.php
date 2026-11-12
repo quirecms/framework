@@ -30,6 +30,15 @@ final class CspTest extends TestCase
         self::assertSame(["'self'"], $policy->sources('script-src'));
     }
 
+    public function testPrivatePagesGetNoOtherSitesServices(): void
+    {
+        $csp = new Csp($this->thirdParty(['script-src' => ['https://www.googletagmanager.com']]), siteSources: ['img-src' => ['https://images.example.com']]);
+
+        self::assertStringContainsString('https://www.googletagmanager.com', $csp->policy(PolicyKind::Page)->header());
+        self::assertStringNotContainsString('https://www.googletagmanager.com', $csp->policy(PolicyKind::Private)->header(), 'A script on a password form could read the password, consent or not.');
+        self::assertSame(["'self'", 'data:', 'https://images.example.com'], $csp->policy(PolicyKind::Private)->sources('img-src'), 'The site\'s own choices still apply.');
+    }
+
     public function testStoredFilesAreSandboxedAsCaddySendsThem(): void
     {
         self::assertSame(Csp::STORED_FILE, new Csp(new NoThirdPartySources())->policy(PolicyKind::StoredFile)->header());

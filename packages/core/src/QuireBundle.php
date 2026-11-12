@@ -55,6 +55,7 @@ use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\Definition\Processor;
 use Symfony\Component\Config\Resource\FileExistenceResource;
 use Symfony\Component\Config\Resource\FileResource;
+use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Extension\ConfigurationExtensionInterface;
@@ -78,7 +79,8 @@ final class QuireBundle extends AbstractBundle
         $container->addCompilerPass(new AssetsPass());
         $container->addCompilerPass(new PermissionsPass());
         $container->addCompilerPass(new RelationFieldsPass());
-        $container->addCompilerPass(new CspSourcesPass());
+        // Once decoration has run: a decorator replaces the class that's bound (condition C-C).
+        $container->addCompilerPass(new CspSourcesPass(), PassConfig::TYPE_BEFORE_REMOVING);
     }
 
     public function configure(DefinitionConfigurator $definition): void
