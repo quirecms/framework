@@ -1,0 +1,75 @@
+# quire/privacy — a draft: checked by a native speaker before release
+Necessary: Notwendig
+Preferences: Einstellungen
+Own measurement: Eigene Messung
+Analytics: Analyse
+Marketing: Marketing
+Needed for the site to work, e.g. to sign in. Always on.: Für die Website nötig, z. B. zum Anmelden. Immer aktiv.
+Remember your choices, e.g. fonts or a map's settings.: Merken sich Ihre Auswahl, z. B. Schriften oder die Einstellungen einer Karte.
+Count visits for this site only, without sharing them.: Zählen Besuche nur für diese Website, ohne sie weiterzugeben.
+Help the site see how it's used, through an analytics service.: Zeigen der Website über einen Analysedienst, wie sie genutzt wird.
+Videos and other content from companies that may follow you across sites.: Videos und andere Inhalte von Unternehmen, die Sie über Websites hinweg verfolgen können.
+consent.single.heading.statistics: Analyse-Cookies
+consent.single.heading.statistics-own: Cookies zur Messung
+consent.single.heading.preferences: Cookies für Einstellungen
+consent.single.heading.marketing: Marketing-Cookies
+consent.single.text.statistics: Diese Website möchte Analyse-Cookies verwenden, um zu sehen, wie sie genutzt wird. Sie bleiben aus, wenn Sie sie nicht akzeptieren.
+consent.single.text.statistics-own: Diese Website möchte Besuche nur für sich zählen, ohne sie weiterzugeben. Ohne Ihre Zustimmung wird nichts gezählt.
+consent.single.text.preferences: Diese Website möchte Dienste verwenden, die sich Ihre Auswahl merken, z. B. Schriften. Sie bleiben aus, wenn Sie sie nicht akzeptieren.
+consent.single.text.marketing: Diese Website möchte Inhalte von Unternehmen zeigen, die Sie über Websites hinweg verfolgen können, z. B. Videos. Sie bleiben aus, wenn Sie sie nicht akzeptieren.
+consent.single.accept.statistics: Analyse-Cookies akzeptieren
+consent.single.accept.statistics-own: Messung akzeptieren
+consent.single.accept.preferences: Cookies für Einstellungen akzeptieren
+consent.single.accept.marketing: Marketing-Cookies akzeptieren
+consent.single.reject.statistics: Analyse-Cookies ablehnen
+consent.single.reject.statistics-own: Messung ablehnen
+consent.single.reject.preferences: Cookies für Einstellungen ablehnen
+consent.single.reject.marketing: Marketing-Cookies ablehnen
+Reject all: Alle ablehnen
+Necessary only: Nur notwendige
+Technical cookies only: Nur technische Cookies
+Cookies on this site: Cookies auf dieser Website
+This site would like to use services of other companies. Nothing of theirs runs until you allow it.: Diese Website möchte Dienste anderer Unternehmen verwenden. Davon läuft nichts, bis Sie es erlauben.
+'New or changed since your last visit:': 'Neu oder geändert seit Ihrem letzten Besuch:'
+'Test site: nothing is sent.': 'Testseite: Es wird nichts gesendet.'
+Accept all: Alle akzeptieren
+Choose cookies: Cookies auswählen
+Cookie details: Details zu Cookies
+Cookie settings: Cookie-Einstellungen
+Choose what this site may use. You can change it at any time with “Cookie settings”.: Wählen Sie, was diese Website verwenden darf. Sie können es jederzeit unter „Cookie-Einstellungen“ ändern.
+Your browser asks sites not to track you, so everything below stays off.: Ihr Browser bittet Websites, Sie nicht zu verfolgen, deshalb bleibt alles unten aus.
+Always on: Immer aktiv
+Allow all of them: Alle erlauben
+About {service}: Über {service}
+Run by: Betrieben von
+What it does: Was er tut
+It reaches: Er erreicht
+Its company keeps the data for: Das Unternehmen speichert die Daten für
+Its privacy policy: Datenschutzerklärung
+What it keeps on your device: Was er auf Ihrem Gerät speichert
+Name: Name
+Kept for: Gespeichert für
+Purpose: Zweck
+Privacy notice: Datenschutzhinweis
+Save my choices: Auswahl speichern
+Close: Schließen
+Your choice is saved.: Ihre Auswahl ist gespeichert.
+'{label} is off.': '{label} ist aus.'
+Banner: Banner
+'Where visitors see it: a bar at the bottom, or a box in a corner.': 'Wo Besucher ihn sehen: als Leiste unten oder als Kasten in einer Ecke.'
+A bar at the bottom: Eine Leiste unten
+A box in a corner: Ein Kasten in einer Ecke
+The button that rejects: Die Schaltfläche zum Ablehnen
+'They all mean the same: only what the site needs to work.': 'Alle bedeuten dasselbe: nur, was die Website zum Funktionieren braucht.'
+'"Reject …"': „Ablehnen …“
+'"Necessary only"': „Nur notwendige“
+'"Technical cookies only"': „Nur technische Cookies“
+Keep a visitor's choice for (months): Auswahl eines Besuchers behalten (Monate)
+Then they are asked again. At most 12.: Danach wird erneut gefragt. Höchstens 12.
+Ask visitors who rejected again after (months): Besucher, die abgelehnt haben, erneut fragen nach (Monaten)
+At most 12.: Höchstens 12.
+Respect "do not track" signals: „Nicht verfolgen“-Signale beachten
+Browsers that send Global Privacy Control or Do Not Track count as rejecting, and see no banner.: Browser, die Global Privacy Control oder Do Not Track senden, gelten als ablehnend und sehen keinen Banner.
+'A path on the site, e.g. "/privacy", or an address: linked from the cookie settings.': 'Ein Pfad auf der Website, z. B. „/privacy“, oder eine Adresse: verlinkt in den Cookie-Einstellungen.'
+Send outside production too: Auch außerhalb der Produktion senden
+'Services run after consent on other domains than the site''s own and outside production too, e.g. to check a setup on a temporary domain. What they send there counts as real.': 'Dienste laufen nach der Zustimmung auch auf anderen Domains als der eigenen und außerhalb der Produktion, z. B. um eine Einrichtung auf einer vorläufigen Domain zu prüfen. Was sie dort senden, zählt als echt.'

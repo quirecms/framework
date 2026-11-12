@@ -1,0 +1,75 @@
+# quire/privacy — a draft: checked by a native speaker before release
+Necessary: Неопходни
+Preferences: Поставки
+Own measurement: Сопствено мерење
+Analytics: Аналитика
+Marketing: Маркетинг
+Needed for the site to work, e.g. to sign in. Always on.: Потребни за да работи страницата, на пр. за најава. Секогаш вклучени.
+Remember your choices, e.g. fonts or a map's settings.: Ги паметат вашите избори, на пр. фонтови или поставки на мапа.
+Count visits for this site only, without sharing them.: Ги бројат посетите само за оваа страница, без да ги споделуваат.
+Help the site see how it's used, through an analytics service.: Ѝ покажуваат на страницата како се користи, преку услуга за аналитика.
+Videos and other content from companies that may follow you across sites.: Видеа и друга содржина од компании што може да ве следат низ страниците.
+consent.single.heading.statistics: Колачиња за аналитика
+consent.single.heading.statistics-own: Колачиња за мерење
+consent.single.heading.preferences: Колачиња за поставки
+consent.single.heading.marketing: Колачиња за маркетинг
+consent.single.text.statistics: Оваа страница би сакала да користи колачиња за аналитика, за да види како се користи. Остануваат исклучени ако не ги прифатите.
+consent.single.text.statistics-own: Оваа страница би сакала да ги брои посетите само за себе, без да ги споделува. Ништо не се брои ако не прифатите.
+consent.single.text.preferences: Оваа страница би сакала да користи услуги што ги паметат вашите избори, на пр. фонтови. Остануваат исклучени ако не ги прифатите.
+consent.single.text.marketing: Оваа страница би сакала да прикажува содржина од компании што може да ве следат низ страниците, на пр. видеа. Останува исклучена ако не ја прифатите.
+consent.single.accept.statistics: Прифати колачиња за аналитика
+consent.single.accept.statistics-own: Прифати мерење
+consent.single.accept.preferences: Прифати колачиња за поставки
+consent.single.accept.marketing: Прифати колачиња за маркетинг
+consent.single.reject.statistics: Одбиј колачиња за аналитика
+consent.single.reject.statistics-own: Одбиј мерење
+consent.single.reject.preferences: Одбиј колачиња за поставки
+consent.single.reject.marketing: Одбиј колачиња за маркетинг
+Reject all: Одбиј ги сите
+Necessary only: Само неопходни
+Technical cookies only: Само технички колачиња
+Cookies on this site: Колачиња на оваа страница
+This site would like to use services of other companies. Nothing of theirs runs until you allow it.: Оваа страница би сакала да користи услуги на други компании. Ништо од нив не работи додека не дозволите.
+'New or changed since your last visit:': 'Ново или променето од вашата последна посета:'
+'Test site: nothing is sent.': 'Тест-страница: ништо не се испраќа.'
+Accept all: Прифати ги сите
+Choose cookies: Избери колачиња
+Cookie details: Детали за колачињата
+Cookie settings: Поставки за колачиња
+Choose what this site may use. You can change it at any time with “Cookie settings”.: Изберете што смее да користи оваа страница. Можете да го смените секогаш преку „Поставки за колачиња“.
+Your browser asks sites not to track you, so everything below stays off.: Вашиот прелистувач бара страниците да не ве следат, па сè подолу останува исклучено.
+Always on: Секогаш вклучени
+Allow all of them: Дозволи ги сите
+About {service}: За {service}
+Run by: Ја води
+What it does: Што прави
+It reaches: Пристапува до
+Its company keeps the data for: Компанијата ги чува податоците
+Its privacy policy: Политика за приватност
+What it keeps on your device: Што чува на вашиот уред
+Name: Име
+Kept for: Се чува
+Purpose: Намена
+Privacy notice: Известување за приватност
+Save my choices: Зачувај ги изборите
+Close: Затвори
+Your choice is saved.: Вашиот избор е зачуван.
+'{label} is off.': '{label} е исклучено.'
+Banner: Банер
+'Where visitors see it: a bar at the bottom, or a box in a corner.': 'Каде го гледаат посетителите: лента на дното или кутија во агол.'
+A bar at the bottom: Лента на дното
+A box in a corner: Кутија во агол
+The button that rejects: Копчето за одбивање
+'They all mean the same: only what the site needs to work.': 'Сите значат исто: само она што ѝ треба на страницата за да работи.'
+'"Reject …"': „Одбиј …“
+'"Necessary only"': „Само неопходни“
+'"Technical cookies only"': „Само технички колачиња“
+Keep a visitor's choice for (months): Чувај го изборот на посетителот (месеци)
+Then they are asked again. At most 12.: Потоа повторно се прашува. Најмногу 12.
+Ask visitors who rejected again after (months): Повторно прашај ги посетителите што одбиле по (месеци)
+At most 12.: Најмногу 12.
+Respect "do not track" signals: Почитувај ги сигналите „не следи“
+Browsers that send Global Privacy Control or Do Not Track count as rejecting, and see no banner.: Прелистувачите што праќаат Global Privacy Control или Do Not Track се сметаат како одбивање и не гледаат банер.
+'A path on the site, e.g. "/privacy", or an address: linked from the cookie settings.': 'Патека на страницата, на пр. „/privacy“, или адреса: со врска од поставките за колачиња.'
+Send outside production too: Испраќај и надвор од продукција
+'Services run after consent on other domains than the site''s own and outside production too, e.g. to check a setup on a temporary domain. What they send there counts as real.': 'Услугите работат по согласноста и на домени различни од сопствениот и надвор од продукција, на пр. за да се провери поставување на привремен домен. Она што го испраќаат таму се смета за вистинско.'

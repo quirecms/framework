@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a94579bcb5241a61494c9c9b9a02e015",
+    "content-hash": "76c018c957227e81fdc0b60a9ebb99a6",
     "packages": [
         {
             "name": "composer/semver",
@@ -2153,7 +2153,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/admin",
-                "reference": "6e51228138ff5d7aec02b7497b43ed7046d174be"
+                "reference": "101aa2b25e048f5ff133b7ceadb13f568c0f7b23"
             },
             "require": {
                 "php": ">=8.5",
@@ -2242,7 +2242,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/core",
-                "reference": "9eea93f2041537be5c8293561d471f0697fce43a"
+                "reference": "bcf010dff7e38b5941fbf6dc7bd483f482b9785b"
             },
             "require": {
                 "doctrine/dbal": "^4.2",
@@ -2333,7 +2333,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/theme-default",
-                "reference": "8da0a7a82bca7fdf5677225f36df4dd851bfa76d"
+                "reference": "515e5324c4fb5dab8c87b3fdeb45c59b791e9a25"
             },
             "require": {
                 "php": ">=8.5",
@@ -9103,12 +9103,75 @@
             "time": "2026-11-02T07:12:28+00:00"
         },
         {
+            "name": "quire/privacy",
+            "version": "0.2.x-dev",
+            "dist": {
+                "type": "path",
+                "url": "packages/privacy",
+                "reference": "be710ab21ce9df64ed75fc933208939ea1131b5e"
+            },
+            "require": {
+                "php": ">=8.5",
+                "quire/core": "^0.2"
+            },
+            "require-dev": {
+                "quire/testing": "^0.2"
+            },
+            "type": "quire-extension",
+            "extra": {
+                "quire": {
+                    "title": "Privacy and cookies",
+                    "description": "Asks visitors before a service of another company runs: analytics, videos, fonts. Without such a service, it shows nothing."
+                },
+                "branch-alias": {
+                    "dev-main": "0.2.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Quire\\Privacy\\": "src/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Quire\\Privacy\\Tests\\": "tests/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "YorvoLabs",
+                    "homepage": "https://quirecms.com"
+                }
+            ],
+            "description": "Privacy and cookies for Quire: the services a site uses that visitors are asked about, their consent, the banner and the settings dialog.",
+            "homepage": "https://quirecms.com",
+            "keywords": [
+                "cms",
+                "consent",
+                "cookies",
+                "gdpr",
+                "privacy",
+                "quire"
+            ],
+            "support": {
+                "email": "hello@quirecms.com",
+                "issues": "https://github.com/quirecms/framework/issues",
+                "security": "https://github.com/quirecms/framework/security/policy"
+            },
+            "transport-options": {
+                "relative": true
+            }
+        },
+        {
             "name": "quire/testing",
             "version": "0.2.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/testing",
-                "reference": "110d4a4e45fdbd1c088f92ebebe7cf83f01612e9"
+                "reference": "d4bc7fb08c64bc611bf1ce5dd928adf2ce1a63e9"
             },
             "require": {
                 "doctrine/doctrine-bundle": "^3.0",

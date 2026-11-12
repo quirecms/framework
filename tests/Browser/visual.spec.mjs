@@ -47,6 +47,8 @@ for (const [name, path] of Object.entries(screens)) {
     test(name, async ({ page }) => {
         typeof path === 'function' ? await path(page) : await page.goto(path, { waitUntil: 'networkidle' });
         await page.evaluate(() => document.fonts.ready);
+        // The pointer stays where signing in clicked: off the page, so nothing is shown hovered.
+        await page.mouse.move(0, 0);
 
         await expect(page).toHaveScreenshot(`${name}.png`, {
             // A dialog covers what's on screen, not the whole page.

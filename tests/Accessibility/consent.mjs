@@ -1,0 +1,242 @@
+/*
+ * Checks quire/privacy's banner, settings dialog and consent loader in a browser, on a running site
+ * with quire-privacy enabled and two services to ask about (consent-site/, as CI sets it up):
+ * what visitors see and can do, what's kept, what the keyboard reaches, and axe-core (WCAG 2.2 AA) on
+ * the banner and on the open dialog, light and dark, at desktop width and at 320px. Exits with 1 when
+ * something fails.
+ *
+ *     node consent.mjs https://quire.localhost
+ *
+ * QUIRE_CHECK_SERVER works as for check.mjs. Outside production the loader is in test mode: it asks,
+ * keeps the choice and sends events, and starts no service's script; this is checked too.
+ *
+ * With QUIRE_CHECK_SENDS=1, for a site with "quire-privacy.send_in_test" on, it checks only what the
+ * loader is for: a service's script isn't even requested before consent or after a refusal, starts
+ * after accepting, and stops when the visitor withdraws.
+ */
+import { chromium } from 'playwright';
+import AxeBuilder from '@axe-core/playwright';
+
+const base = process.argv[2] ?? 'https://quire.localhost';
+const server = process.env.QUIRE_CHECK_SERVER;
+const browser = await chromium.launch({ args: server ? [`--host-resolver-rules=MAP ${new URL(base).hostname} ${server}`] : [] });
+let failures = 0;
+
+async function check(name, run) {
+    try {
+        await run();
+        console.log(`✓ ${name}`);
+    } catch (error) {
+        failures++;
+        console.log(`✗ ${name}\n    ${String(error?.message ?? error).split('\n').join('\n    ')}`);
+    }
+}
+
+function expect(condition, message) {
+    if (!condition) {
+        throw new Error(message);
+    }
+}
+
+async function fresh(options = {}) {
+    const context = await browser.newContext({ ignoreHTTPSErrors: true, viewport: { width: 1280, height: 900 }, ...options });
+    const page = await context.newPage();
+    const errors = [];
+    page.on('pageerror', (error) => errors.push(String(error)));
+    page.on('console', (message) => message.type() === 'error' && errors.push(message.text()));
+
+    return { context, page, errors };
+}
+
+async function choice(context) {
+    const cookie = (await context.cookies()).find((c) => c.name === 'quire_consent');
+
+    return cookie ? JSON.parse(Buffer.from(cookie.value.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString()) : null;
+}
+
+async function axe(page, label) {
+    const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
+    expect(results.violations.length === 0, `${label}: ${results.violations.map((v) => `${v.id} (${v.nodes.map((n) => n.target.join(' ')).join(', ')})`).join('; ')}`);
+}
+
+const script = (request) => request.url().includes('/assets/ci-consent/start');
+
+async function requests(page) {
+    const seen = [];
+    page.on('request', (request) => script(request) && seen.push(request.url()));
+
+    return seen;
+}
+
+if (process.env.QUIRE_CHECK_SENDS === '1') {
+    await check('a service\'s script isn\'t requested before consent or after a refusal, starts after accepting, and stops when withdrawn', async () => {
+        const { context, page, errors } = await fresh();
+        const seen = await requests(page);
+        await page.goto(base + '/', { waitUntil: 'networkidle' });
+        expect(seen.length === 0, `Requested before consent: ${seen.join(', ')}`);
+        await page.locator('[data-consent-banner] [data-consent-reject]').click();
+        await page.reload({ waitUntil: 'networkidle' });
+        expect(seen.length === 0, `Requested after a refusal: ${seen.join(', ')}`);
+
+        await page.locator('.consent__opener').click();
+        await page.locator('[data-consent-dialog] [data-consent-accept]').click();
+        await page.waitForFunction(() => document.documentElement.dataset.ciVideo === 'started', null, { timeout: 5000 });
+        expect(seen.length === 1, `Requested ${seen.length} times after accepting.`);
+        await page.reload({ waitUntil: 'networkidle' });
+        await page.waitForFunction(() => document.documentElement.dataset.ciVideo === 'started', null, { timeout: 5000 });
+
+        await page.locator('.consent__opener').click();
+        await page.locator('[data-consent-dialog] [data-consent-reject]').click();
+        await page.waitForFunction(() => document.documentElement.dataset.ciVideo === 'stopped', null, { timeout: 5000 });
+        const before = seen.length;
+        await page.reload({ waitUntil: 'networkidle' });
+        expect(seen.length === before && (await page.evaluate(() => document.documentElement.dataset.ciVideo)) === undefined, 'Started again after withdrawing.');
+        expect(errors.length === 0, errors.join('; '));
+        await context.close();
+    });
+
+    await browser.close();
+    console.log(failures === 0 ? 'Services start only with consent.' : `${failures} check(s) failed.`);
+    process.exit(failures === 0 ? 0 : 1);
+}
+
+await check('in test mode a service\'s script isn\'t even requested, accepted or not', async () => {
+    const { context, page } = await fresh();
+    const seen = await requests(page);
+    await page.goto(base + '/', { waitUntil: 'networkidle' });
+    await page.locator('[data-consent-banner] [data-consent-accept]').click();
+    await page.reload({ waitUntil: 'networkidle' });
+    expect(seen.length === 0 && (await page.evaluate(() => window.quire.consent.allows('ci-video'))), `Requested in test mode: ${seen.join(', ')}`);
+    await context.close();
+});
+
+await check('a first visit shows the banner, keeps room for it, and the page has no errors', async () => {
+    const { context, page, errors } = await fresh();
+    await page.goto(base + '/', { waitUntil: 'networkidle' });
+    const banner = page.locator('[data-consent-banner]');
+    expect(await banner.isVisible(), 'The banner isn\'t shown.');
+    const [height, padding] = await page.evaluate(() => [document.querySelector('[data-consent-banner]').offsetHeight, parseFloat(getComputedStyle(document.body).paddingBottom)]);
+    expect(Math.abs(height - padding) <= 1, `The page keeps ${padding}px for a banner of ${height}px.`);
+    expect(await page.locator('.consent__opener').isVisible(), 'The "Cookie settings" opener isn\'t shown.');
+    const buttons = await banner.locator('.consent__btn').evaluateAll((elements) => elements.map((e) => { const s = getComputedStyle(e); return [e.offsetWidth, s.backgroundColor, s.color, s.fontWeight, s.borderTopWidth].join(' '); }));
+    expect(buttons.length === 2 && buttons[0] === buttons[1], `Accepting and rejecting don't look the same: ${buttons.join(' | ')}`);
+    expect(errors.length === 0, errors.join('; '));
+    await context.close();
+});
+
+await check('the keyboard reaches the skip link, then the banner', async () => {
+    const { context, page } = await fresh();
+    await page.goto(base + '/', { waitUntil: 'networkidle' });
+    await page.keyboard.press('Tab');
+    expect(await page.evaluate(() => document.activeElement?.classList.contains('skip-link')), 'The first Tab doesn\'t reach the skip link.');
+    await page.keyboard.press('Tab');
+    expect(await page.evaluate(() => document.activeElement?.closest('[data-consent-banner]') !== null), 'The second Tab doesn\'t reach the banner.');
+    await context.close();
+});
+
+await check('"Reject all" keeps a refusal of every service, hides the banner, moves focus and says so', async () => {
+    const { context, page } = await fresh();
+    await page.goto(base + '/', { waitUntil: 'networkidle' });
+    await page.locator('[data-consent-banner] [data-consent-reject]').click();
+    expect(!(await page.locator('[data-consent-banner]').isVisible()), 'The banner stays.');
+    const kept = await choice(context);
+    expect(kept && kept.s['ci-video'] === false && kept.s['ci-fonts'] === false && /^[0-9a-f]{32}$/.test(kept.id), `Kept: ${JSON.stringify(kept)}`);
+    expect(await page.evaluate(() => document.activeElement?.classList.contains('consent__opener')), 'Focus isn\'t on "Cookie settings".');
+    await page.waitForFunction(() => document.querySelector('[data-consent-status]')?.textContent !== '');
+    await page.reload({ waitUntil: 'networkidle' });
+    expect(!(await page.locator('[data-consent-banner]').isVisible()), 'Asked again after choosing.');
+    await context.close();
+});
+
+await check('"Cookie settings" reopens the choice; saving one service keeps it, and focus comes back', async () => {
+    const { context, page } = await fresh();
+    await page.goto(base + '/', { waitUntil: 'networkidle' });
+    await page.locator('[data-consent-banner] [data-consent-reject]').click();
+    const opener = page.locator('.consent__opener');
+    await opener.click();
+    const dialog = page.locator('[data-consent-dialog]');
+    expect(await dialog.isVisible(), 'The dialog didn\'t open.');
+    expect(await page.evaluate(() => document.querySelector('[data-consent-dialog]').contains(document.activeElement)), 'Focus isn\'t in the dialog.');
+    expect(!(await dialog.locator('[data-consent-service="ci-video"]').isChecked()), 'The refused service is ticked.');
+    await dialog.locator('[data-consent-service="ci-video"]').check();
+    expect(await dialog.locator('[data-consent-category="marketing"]').isChecked(), 'Its category doesn\'t follow its only service.');
+    await dialog.locator('[data-consent-save]').click();
+    expect(!(await dialog.isVisible()), 'The dialog stays open.');
+    expect(await page.evaluate(() => document.activeElement?.classList.contains('consent__opener')), 'Focus didn\'t come back to "Cookie settings".');
+    const kept = await choice(context);
+    expect(/^[0-9a-f]{12}$/.test(kept.s['ci-video']) && kept.s['ci-fonts'] === false, `Kept: ${JSON.stringify(kept.s)}`);
+    expect(await page.evaluate(() => window.quire.consent.allows('ci-video') && window.quire.consent.allows('marketing') && !window.quire.consent.allows('ci-fonts')), 'window.quire.consent disagrees.');
+    await context.close();
+});
+
+await check('withdrawing removes the service\'s cookies and says it\'s off', async () => {
+    const { context, page } = await fresh();
+    await page.goto(base + '/', { waitUntil: 'networkidle' });
+    await page.locator('[data-consent-banner] [data-consent-accept]').click();
+    await page.evaluate(() => { document.cookie = 'ci_video_id=1; Path=/'; });
+    const withdrawn = page.evaluate(() => new Promise((resolve) => document.addEventListener('quire:consent', (event) => resolve(event.detail), { once: true })));
+    await page.locator('.consent__opener').click();
+    await page.locator('[data-consent-dialog] [data-consent-reject]').click();
+    const detail = await withdrawn;
+    expect(detail.withdrawn.includes('ci-video'), `The event says: ${JSON.stringify(detail)}`);
+    expect(!(await context.cookies()).some((c) => c.name === 'ci_video_id'), 'Its cookie stays.');
+    await page.waitForFunction(() => document.querySelector('[data-consent-status]')?.textContent.includes('CI Video'));
+    await context.close();
+});
+
+await check('a service added or changed since the visitor chose is asked about by name, and other answers stay', async () => {
+    const { context, page } = await fresh();
+    await page.goto(base + '/', { waitUntil: 'networkidle' });
+    const revisions = await page.evaluate(() => Object.fromEntries(JSON.parse(document.getElementById('quire-consent-config').textContent).services.map((s) => [s.id, s.revision])));
+    const host = new URL(base).hostname;
+    // A "yes" to fonts as they are, and a "yes" to the video before it changed.
+    const old = Buffer.from(JSON.stringify({ v: 1, id: 'aaaabbbbccccddddaaaabbbbccccdddd', t: Math.floor(Date.now() / 1000), r: 'old', s: { 'ci-fonts': revisions['ci-fonts'], 'ci-video': '000000000000' } })).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    await context.addCookies([{ name: 'quire_consent', value: old, domain: host, path: '/' }]);
+    await page.reload({ waitUntil: 'networkidle' });
+    expect(await page.locator('[data-consent-banner]').isVisible(), 'Not asked about the changed service.');
+    expect(await page.evaluate(() => !window.quire.consent.allows('ci-video') && window.quire.consent.allows('ci-fonts')), 'The old "yes" still counts for the changed service, or the other answer is lost.');
+    expect((await page.locator('[data-consent-new]').innerText()).includes('CI Video'), 'The changed service isn\'t named.');
+    await page.locator('[data-consent-banner] [data-consent-reject]').click();
+    const kept = await choice(context);
+    expect(kept.s['ci-fonts'] === revisions['ci-fonts'] && kept.s['ci-video'] === false && kept.id === 'aaaabbbbccccddddaaaabbbbccccdddd', `Kept: ${JSON.stringify(kept)}`);
+    await context.close();
+});
+
+await check('Global Privacy Control: no banner, everything off, and the dialog says why', async () => {
+    const { context, page } = await fresh();
+    await context.addInitScript(() => Object.defineProperty(Navigator.prototype, 'globalPrivacyControl', { get: () => true }));
+    await page.goto(base + '/', { waitUntil: 'networkidle' });
+    expect(!(await page.locator('[data-consent-banner]').isVisible()), 'The banner is shown.');
+    await page.locator('.consent__opener').click();
+    expect(await page.locator('[data-consent-signal]').isVisible(), 'The dialog doesn\'t say why.');
+    expect(await page.locator('[data-consent-service="ci-video"]').isDisabled(), 'The switches can be changed.');
+    expect(!(await page.locator('[data-consent-dialog] [data-consent-accept]').isVisible()), '"Accept all" is offered.');
+    expect(await page.evaluate(() => !window.quire.consent.allows('ci-video')), 'A service is allowed.');
+    await context.close();
+});
+
+await check('without JavaScript there\'s no banner and no dead button', async () => {
+    const { context, page } = await fresh({ javaScriptEnabled: false });
+    await page.goto(base + '/');
+    expect(!(await page.locator('[data-consent-banner]').isVisible()) && !(await page.locator('.consent__opener').isVisible()), 'Something of the banner shows.');
+    await context.close();
+});
+
+for (const colorScheme of ['light', 'dark']) {
+    for (const width of [1280, 320]) {
+        await check(`axe: the banner and the open dialog (${colorScheme}, ${width}px)`, async () => {
+            const { context, page } = await fresh({ colorScheme, viewport: { width, height: 900 } });
+            await page.goto(base + '/', { waitUntil: 'networkidle' });
+            await axe(page, 'with the banner');
+            const wide = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
+            expect(!wide, 'The page is wider than the screen.');
+            await page.locator('[data-consent-banner] [data-consent-open]').first().click();
+            await axe(page, 'with the dialog open');
+            await context.close();
+        });
+    }
+}
+
+await browser.close();
+console.log(failures === 0 ? 'The banner works.' : `${failures} check(s) failed.`);
+process.exit(failures === 0 ? 0 : 1);

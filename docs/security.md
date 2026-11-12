@@ -19,7 +19,7 @@ default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; o
 - **The importmap is allowed by its hash.** AssetMapper prints the importmap and the scripts that start the site's JavaScript inline. Quire adds each one's SHA-256 hash to `script-src`. Hashes are the same for every visitor, so pages stay cacheable. AssetMapper writes a stylesheet that a script imports (`import './styles/app.css'`) as a `data:` script, which the policy refuses (allowing `data:` scripts would let injected ones run). On the site's pages Quire links such a stylesheet in the head instead, and maps the import to an empty module of the site's (`/_quire/empty.js`). JSON files imported by scripts are still `data:` scripts: fetch them instead. This follows the format AssetMapper writes today (a test runs it against AssetMapper's real output, so a change fails there first), and goes once AssetMapper writes such modules as files ([symfony-docs#21356](https://github.com/symfony/symfony-docs/pull/21356)).
 - **Public disks elsewhere** (S3, a CDN; see [storage](storage.md)) are added to `img-src` and `media-src`, so their images and videos show.
 - **Forms post to the site only, and other sites can't show its pages in a frame.**
-- **Nothing from other sites** unless the site's configuration allows it, or `quire/privacy` declares a service that needs it (analytics, embedded videos, fonts from a font service). Services of `quire/privacy` are the ones visitors are asked to consent to, and that the privacy page lists. (`quire/privacy` is being written; until it's out, only the site's configuration adds other sites.)
+- **Nothing from other sites** unless the site's configuration allows it, or `quire/privacy` declares a service that needs it (analytics, embedded videos, fonts from a font service). Services of `quire/privacy` are the ones visitors are asked to consent to, and that its cookie settings list (see [Privacy and cookies](privacy.md)).
 
 Other responses get policies of their own:
 
@@ -46,7 +46,7 @@ quire:
 
 Each source is checked when the container is built: a host (`https://cdn.example.com`, `https://*.example.com`), a scheme (`https:`), or a keyword in quotes (`"'unsafe-inline'"`). A source can't add a directive of its own (`;`) or a second policy (`,`).
 
-A third-party service that visitors should be asked about (analytics, an embedded video that sets cookies) belongs in `quire/privacy` instead: there the banner asks first, and the privacy page lists it.
+A third-party service that visitors should be asked about (analytics, an embedded video that sets cookies) belongs in `quire/privacy` instead: there the banner asks first, and the cookie settings list it ([Privacy and cookies](privacy.md)).
 
 ## Trying a policy out
 
@@ -79,5 +79,5 @@ The pages then get their policy as `Content-Security-Policy-Report-Only`. Browse
   ```
 
 - **Inline code that is the same for everyone** can be allowed by its hash instead, which keeps the page cacheable: `$csp->allowScript($request, $code)`, with the exact text between `<script>` and `</script>`.
-- **Other sites' hosts can't be added by an extension.** There's no extension point for it: a host added that way would load before the visitor's consent, and be missing from the privacy page. Only `quire/privacy` fills the policy's slot for other sites (`Quire\Csp\ThirdPartySourcesInterface`); the container refuses any other implementation, also one that decorates the slot or core's own sources, and says why. Declare the service through `quire/privacy`.
+- **Other sites' hosts can't be added by an extension.** There's no extension point for it: a host added that way would load before the visitor's consent, and be missing from the privacy page. Only `quire/privacy` fills the policy's slot for other sites (`Quire\Csp\ThirdPartySourcesInterface`); the container refuses any other implementation, also one that decorates the slot or core's own sources, and says why. Declare the service through `quire/privacy` ([Declaring a service](privacy.md#declaring-a-service)).
 - **Don't set the header yourself.** A response that has its own `Content-Security-Policy` gets Quire's instead, and the log says so.
