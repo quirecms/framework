@@ -111,6 +111,10 @@ jobs:
           status=0
           docker run --rm --network quire_default -e QUIRE_CHECK_SERVER=php -v "$PWD/tests/Accessibility:/work" -w /work "mcr.microsoft.com/playwright:v${playwright}-noble" \
             sh -c 'npm ci --no-audit --no-fund && node consent.mjs https://quire.localhost' || status=$?
+          # The owner's "Privacy and cookies", with the choices just logged, and one looked up by its ID.
+          consent=$(docker compose exec -T database psql -U app -d app -Atc "select consent_id from quire.quire_privacy_consent order by created_at limit 1")
+          docker run --rm --network quire_default -e QUIRE_CHECK_SERVER=php -e QUIRE_CHECK_LOGIN=admin:correct-horse-42 -v "$PWD/tests/Accessibility:/work" -w /work "mcr.microsoft.com/playwright:v${playwright}-noble" \
+            node check.mjs https://quire.localhost /admin/privacy "/admin/privacy?consent=$consent" /admin/settings/quire-privacy || status=$?
           # Then with services sending outside production: a service's script starts only with consent.
           docker compose exec -T php bin/console quire:settings:set quire-privacy.send_in_test true
           docker run --rm --network quire_default -e QUIRE_CHECK_SERVER=php -e QUIRE_CHECK_SENDS=1 -v "$PWD/tests/Accessibility:/work" -w /work "mcr.microsoft.com/playwright:v${playwright}-noble" \

@@ -230,11 +230,22 @@ function start(config) {
         choice = {v: 1, id: before?.id ?? randomId(), t: Math.floor(Date.now() / 1000), r: config.revision, s};
         const value = btoa(JSON.stringify(choice)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
         document.cookie = `${config.cookie.name}=${value}; Path=/; Max-Age=${months * 31 * 86400}; SameSite=Lax${config.cookie.secure ? '; Secure' : ''}`;
+        record(choice);
         const withdrawn = apply(before);
 
         announce(withdrawn.length > 0
             ? withdrawn.map((service) => config.messages.off.replace('{label}', service.label)).join(' ')
             : config.messages.saved);
+    }
+
+    // The site keeps each choice as proof (its random ID, the answers, never the visitor's account).
+    function record(made) {
+        if (!config.log) {
+            return;
+        }
+
+        fetch(config.log, {method: 'POST', keepalive: true, credentials: 'same-origin', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id: made.id, s: made.s})})
+            .catch(() => {});
     }
 
     // Starts what's allowed and stops what isn't; returns the services withdrawn just now.
@@ -347,6 +358,13 @@ function start(config) {
 
         for (const button of dialog.querySelectorAll('[data-consent-accept], [data-consent-reject], [data-consent-save]')) {
             button.hidden = signal;
+        }
+
+        const id = dialog.querySelector('[data-consent-id]');
+
+        if (id) {
+            id.hidden = choice === null;
+            id.querySelector('code').textContent = choice?.id ?? '';
         }
 
         const note = dialog.querySelector('[data-consent-signal]');

@@ -6,7 +6,8 @@
     Variables: mode ("single": one category, asked about by name; "several": accept all, reject all,
     choose), category (the one category in "single" mode), layout ("bar" or "corner"), reject
     ("reject", "necessary" or "technical"), test (nothing is sent), privacy_page (a URL or null),
-    categories (each: category, services), config (for the loader), loader (its URL).
+    categories (each: category, services), config (for the loader), loader (its URL), preview (the
+    admin's preview, without the loader: "banner" shows the banner, "dialog" the open settings).
 
     Blocks (override them, not the whole file, with {% extends '@!quire_privacy/consent.html.twig' %}):
     consent_heading, consent_text, consent_actions, consent_details_link, consent_dialog.
@@ -18,7 +19,7 @@
 {%- set reject_label = reject == 'reject'
     ? (mode == 'single' ? ('consent.single.reject.' ~ category.value)|trans({}, domain) : 'Reject all'|trans({}, domain))
     : (reject == 'necessary' ? 'Necessary only'|trans({}, domain) : 'Technical cookies only'|trans({}, domain)) -%}
-<section class="consent consent--{{ layout }}" data-consent-banner aria-labelledby="quire-consent-heading" hidden>
+<section class="consent consent--{{ layout }}" data-consent-banner aria-labelledby="quire-consent-heading"{% if preview|default(false) != 'banner' %} hidden{% endif %}>
     <div class="consent__inner">
         <h2 class="consent__heading" id="quire-consent-heading">{% block consent_heading %}{{ mode == 'single' ? ('consent.single.heading.' ~ category.value)|trans({}, domain) : 'Cookies on this site'|trans({}, domain) }}{% endblock %}</h2>
         {% block consent_text %}
@@ -43,7 +44,7 @@
     </div>
 </section>
 {% block consent_dialog %}
-<dialog class="consent-dialog" data-consent-dialog aria-labelledby="quire-consent-dialog-heading">
+<dialog class="consent-dialog" data-consent-dialog aria-labelledby="quire-consent-dialog-heading"{% if preview|default(false) == 'dialog' %} open{% endif %}>
     <form method="dialog" class="consent-dialog__form">
         <h2 class="consent-dialog__heading" id="quire-consent-dialog-heading">{{ 'Cookie settings'|trans({}, domain) }}</h2>
         <p>{{ 'Choose what this site may use. You can change it at any time with “Cookie settings”.'|trans({}, domain) }}</p>
@@ -91,6 +92,7 @@
         {% endfor %}
 
         {% if privacy_page %}<p><a href="{{ privacy_page }}">{{ 'Privacy notice'|trans({}, domain) }}</a></p>{% endif %}
+        <p class="consent-dialog__id" data-consent-id hidden>{{ 'Your choice’s ID, if you ask the site what you agreed to:'|trans({}, domain) }} <code></code></p>
 
         <div class="consent__actions">
             <button type="button" class="consent__btn" data-consent-save>{{ 'Save my choices'|trans({}, domain) }}</button>
@@ -102,8 +104,10 @@
 </dialog>
 {% endblock %}
 <p class="consent__status" data-consent-status role="status" aria-live="polite"></p>
+{% if not preview|default(false) %}
 <script type="application/json" id="quire-consent-config">{{ config|merge({messages: {
     saved: 'Your choice is saved.'|trans({}, domain),
     off: '{label} is off.'|trans({label: '{label}'}, domain),
 }})|json_encode(constant('JSON_HEX_TAG') b-or constant('JSON_HEX_AMP') b-or constant('JSON_UNESCAPED_SLASHES'))|raw }}</script>
 <script type="module" src="{{ loader }}"></script>
+{% endif %}

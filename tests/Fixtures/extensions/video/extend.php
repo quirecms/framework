@@ -8,7 +8,8 @@ use Quire\Privacy\Extend\Privacy;
 
 /*
  * A test extension with services that visitors are asked about, none of them analytics (doc 20, A7):
- * an embedded video (marketing) and a font service (preferences). It requires quire-privacy.
+ * an embedded video (marketing) and a font service (preferences); and a necessary one that reaches
+ * another site, which the owner is asked to check (a form's spam check). It requires quire-privacy.
  */
 return [
     new Privacy()
@@ -32,5 +33,13 @@ return [
             vendor: 'Fixture Fonts Inc.',
             purpose: 'Serves the site\'s fonts.',
             hosts: ['style-src' => ['https://fonts.example'], 'font-src' => ['https://fonts.example']],
+        )
+        ->service(
+            'fixture-spam-check',
+            label: 'Fixture Spam Check',
+            category: Category::Necessary,
+            vendor: 'Fixture Spam Check GmbH',
+            purpose: 'Keeps spam out of the contact form.',
+            hosts: ['script-src' => ['https://spam-check.example']],
         ),
 ];

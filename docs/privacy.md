@@ -38,6 +38,43 @@ Under "Privacy and cookies" in the admin's settings, or with `bin/console quire:
 | `quire-privacy.honour_signals` | on | Global Privacy Control and Do Not Track count as rejecting |
 | `quire-privacy.send_in_test` | off | Services run after consent outside production and on other domains too, e.g. to check a setup on a temporary domain. What they send counts as real |
 | `quire-privacy.privacy_page` | | The site's privacy notice, linked from the cookie settings, e.g. `/privacy` |
+| `quire-privacy.log_months` | 12 | How long each choice is kept as proof, with what visitors were told (at most 60); never less than the choice itself lasts |
+
+## The admin's page
+
+With `quire/admin`, "Privacy and cookies" under Site (the ability `quire-privacy.manage`, for admins) shows:
+
+- **What visitors see**, in words: which services the banner asks about, or that there's no banner; whether test mode is on; and a warning when the site has services but no privacy notice is set.
+- **The services visitors are asked about:** who runs them, which extension or theme declared them, the sites they reach, and how many visitors allowed and refused each in the last 30 days.
+- **Necessary services that reach other sites,** apart: they run without asking, because their extension or theme says the site can't work without them. Check each one: if it isn't truly needed (e.g. it tracks visitors), it must be asked about. Tell its maker, or disable it.
+- **A preview** of the banner and the cookie settings in the site's look, without scripts.
+- **A visitor's choices,** by the ID of their choice (below).
+
+## The privacy notice
+
+The site's privacy notice should list its services. Rather than copy them, put `[[privacy_services]]` in the notice's text, or `{{ quire_privacy_services() }}` in a template: the list comes from the services' declarations each time the page is shown, so it's never out of date. It gives each service's company, purpose, the sites it reaches, how long its company keeps the data, its privacy policy, and what it keeps on the visitor's device. Set the notice's address in `quire-privacy.privacy_page`, and the cookie settings link to it.
+
+## Proof of consent
+
+A site may have to show what a visitor agreed to. Each time a visitor chooses, the loader sends the choice to the site (`POST /_quire/privacy/consent`), which keeps:
+
+- the choice's random ID (the one in the cookie; never the visitor's account or address);
+- each answer: the service's revision allowed, or a refusal;
+- when;
+- what visitors were told then: each service's declaration, kept once per revision of the site's services, so the proof holds after the services change.
+
+Visitors find their choice's ID in "Cookie settings"; the admin's page looks it up and shows each choice with what the visitor was told. A daily job removes choices older than `quire-privacy.log_months` (12 by default, at most 60), but never while the choice can still hold: a visitor's cookie lasts `choice_months` (or `ask_again_months` for a refusal) of 31 days each, and the proof is kept at least that long, whatever the setting. What visitors were told goes with the last choice that needs it.
+
+The pages are the same for every visitor (cached), so the request carries no form token. Instead:
+
+- it's taken only from the site's own pages: the browser's `Sec-Fetch-Site: same-origin`, or, from a browser that doesn't send it, an `Origin` equal to the site's;
+- each answer must be about a service visitors are asked about, as it is now: a "yes" to another revision, an unknown service or a necessary one is refused;
+- a choice is small: a body over 8 KB isn't read;
+- a choice is logged at most 10 times an hour (a visitor saves a few times), and an address at most 300 choices an hour (five a minute: many visitors can share one address, e.g. a mobile carrier's or an office's). Addresses are counted for that hour only, in the cache, and never kept with the choice.
+
+A choice over a limit isn't logged, and the site's log says so (at most every ten minutes, without the address). A site behind a proxy or load balancer must trust it (`SYMFONY_TRUSTED_PROXIES`; Quire Server sets this up): otherwise every visitor has the proxy's address, they all share one limit, and most choices go unlogged on a busy site.
+
+The log is proof of what the site's pages sent; it doesn't stop someone who controls a browser from logging choices of their own making.
 
 ## Declaring a service
 

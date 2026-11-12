@@ -1,0 +1,26 @@
+/* quire/privacy: the admin's previews of the banner and of the cookie settings, each in a frame of its
+   own. The banner sits at the end of the frame as on a page, in full rather than held to part of the
+   screen. */
+.consent-preview--banner {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: 100vh;
+    /* Edge to edge, as on a page: without the preview's padding. */
+    margin: -1rem;
+}
+
+.consent-preview--banner .consent {
+    position: static;
+    max-height: none;
+}
+
+.consent-preview--banner .consent--corner {
+    align-self: flex-end;
+}
+
+/* Shown even when a theme's override of the template leaves the part hidden or closed. */
+.consent-preview--banner [data-consent-banner][hidden],
+.consent-preview--dialog [data-consent-dialog]:not([open]) {
+    display: block;
+}

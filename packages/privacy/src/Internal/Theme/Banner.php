@@ -6,6 +6,7 @@ namespace Quire\Privacy\Internal\Theme;
 
 use Quire\Privacy\Category;
 use Quire\Privacy\Cookie;
+use Quire\Privacy\Internal\Http\ConsentController;
 use Quire\Privacy\PrivacySettings;
 use Quire\Privacy\Service;
 use Quire\Privacy\Services;
@@ -13,6 +14,7 @@ use Quire\Theme\ThemeAssets;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
  * What the banner, the settings dialog and the consent loader are given: the same for every visitor
@@ -30,6 +32,7 @@ final readonly class Banner
         private PrivacySettings $settings,
         private ThemeAssets $assets,
         private RequestStack $requests,
+        private UrlGeneratorInterface $urls,
         #[Autowire(param: 'kernel.environment')]
         private string $environment,
         #[Autowire(param: 'router.request_context.base_url')]
@@ -111,6 +114,7 @@ final readonly class Banner
             'test' => $this->testMode(),
             'signals' => $this->settings->honourSignals(),
             'months' => ['choice' => $this->settings->choiceMonths(), 'again' => $this->settings->askAgainMonths()],
+            'log' => $this->urls->generate(ConsentController::ROUTE),
             'cookie' => ['name' => 'quire_consent', 'secure' => 'https' === $this->requests->getMainRequest()?->getScheme()],
             'services' => array_map(fn (Service $service): array => [
                 'id' => $service->id,

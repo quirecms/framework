@@ -20,6 +20,10 @@ final readonly class PrivacySettings
     public const string HONOUR_SIGNALS = 'quire-privacy.honour_signals';
     public const string PRIVACY_PAGE = 'quire-privacy.privacy_page';
     public const string SEND_IN_TEST = 'quire-privacy.send_in_test';
+    public const string LOG_MONTHS = 'quire-privacy.log_months';
+
+    /** The longest choices are kept as proof, in months */
+    public const int MAX_LOG_MONTHS = 60;
 
     /** The longest a choice is kept, in months: regulators expect visitors to be asked again within a year */
     public const int MAX_MONTHS = 12;
@@ -63,6 +67,24 @@ final readonly class PrivacySettings
     public function honourSignals(): bool
     {
         return $this->settings->getBool(self::HONOUR_SIGNALS);
+    }
+
+    /** How long the owner wants logged choices kept as proof */
+    public function logMonths(): int
+    {
+        return max(1, min(self::MAX_LOG_MONTHS, $this->settings->getInt(self::LOG_MONTHS)));
+    }
+
+    /**
+     * Logged choices made before this are removed: after the owner's months, and never while the
+     * choice they prove may still hold (a choice's cookie lasts its months of 31 days).
+     */
+    public function proofCutoff(\DateTimeImmutable $now): \DateTimeImmutable
+    {
+        $choice = max($this->choiceMonths(), $this->askAgainMonths()) * 31;
+        $log = $now->modify(\sprintf('-%d months', $this->logMonths()));
+
+        return min($log, $now->modify(\sprintf('-%d days', $choice)));
     }
 
     /**

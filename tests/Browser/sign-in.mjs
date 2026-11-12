@@ -3,5 +3,5 @@ export async function signIn(page) {
     await page.goto('/login');
     await page.fill('#username', 'ada');
     await page.fill('#password', 'correct-horse-42');
-    await Promise.all([page.waitForURL(/\/(admin)?$/), page.click('form button[type=submit]')]);
+    await Promise.all([page.waitForURL(/\/(admin)?$/), page.click('form:has(#password) button[type=submit]')]);
 }

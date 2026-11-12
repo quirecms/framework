@@ -17,6 +17,7 @@ final readonly class SettingsValidator implements SettingValidatorInterface
     {
         return match ($key) {
             PrivacySettings::CHOICE_MONTHS, PrivacySettings::ASK_AGAIN_MONTHS => \is_int($value) && $value >= 1 && $value <= PrivacySettings::MAX_MONTHS ? null : \sprintf('From 1 to %d months: visitors are asked again within a year.', PrivacySettings::MAX_MONTHS),
+            PrivacySettings::LOG_MONTHS => \is_int($value) && $value >= 1 && $value <= PrivacySettings::MAX_LOG_MONTHS ? null : \sprintf('From 1 to %d months.', PrivacySettings::MAX_LOG_MONTHS),
             PrivacySettings::PRIVACY_PAGE => !\is_string($value) || '' === $value || 1 === preg_match('#^(/[^\s"<>]*|https://[^\s"<>]+)$#', $value) ? null : 'A path on the site, e.g. "/privacy", or an https:// address.',
             default => null,
         };

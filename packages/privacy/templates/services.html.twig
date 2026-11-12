@@ -1,0 +1,35 @@
+{#
+    The site's services, for its privacy notice: each one's company, purpose, what it keeps on the
+    visitor's device, where data goes and for how long, from their declarations. Placed with
+    quire_privacy_services() in a template, or [[privacy_services]] in a page's text.
+
+    Variables: categories (each: category, services), necessary (necessary services).
+#}
+{%- set domain = 'quire-privacy' -%}
+<div class="privacy-services">
+    {% if categories is empty and necessary is empty %}
+        <p>{{ 'This site uses no services of other companies.'|trans({}, domain) }}</p>
+    {% endif %}
+    {% for group in (necessary is empty ? [] : [{category: null, services: necessary}])|merge(categories) %}
+        <h3>{{ group.category is null ? 'Necessary'|trans({}, domain) : group.category.label|trans({}, domain) }}</h3>
+        <p>{{ group.category is null ? 'Needed for the site to work, e.g. to sign in. Always on.'|trans({}, domain) : group.category.description|trans({}, domain) }}</p>
+        {% for service in group.services %}
+            <h4>{{ service.label }}</h4>
+            <dl>
+                <dt>{{ 'Run by'|trans({}, domain) }}</dt><dd>{{ service.vendor }}</dd>
+                <dt>{{ 'What it does'|trans({}, domain) }}</dt><dd>{{ service.purpose }}</dd>
+                {% if service.hosts is not empty %}<dt>{{ 'It reaches'|trans({}, domain) }}</dt><dd>{{ service.hosts|reduce((all, list) => all|merge(list), [])|map(host => host|replace({'https://': ''}))|join(', ') }}</dd>{% endif %}
+                {% if service.retention %}<dt>{{ 'Its company keeps the data for'|trans({}, domain) }}</dt><dd>{{ service.retention }}</dd>{% endif %}
+                {% if service.policyUrl %}<dt>{{ 'Its privacy policy'|trans({}, domain) }}</dt><dd><a href="{{ service.policyUrl }}" rel="noopener">{{ service.policyUrl|replace({'https://': ''}) }}</a></dd>{% endif %}
+            </dl>
+            {% if service.cookies is not empty %}
+                <table>
+                    <caption>{{ 'What it keeps on your device'|trans({}, domain) }}</caption>
+                    <thead><tr><th scope="col">{{ 'Name'|trans({}, domain) }}</th><th scope="col">{{ 'Kept for'|trans({}, domain) }}</th><th scope="col">{{ 'Purpose'|trans({}, domain) }}</th></tr></thead>
+                    <tbody>{% for cookie in service.cookies %}<tr><td><code>{{ cookie.name }}</code></td><td>{{ cookie.lifetime }}</td><td>{{ cookie.purpose }}</td></tr>{% endfor %}</tbody>
+                </table>
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
+    <p>{{ 'You can change your choice at any time with “Cookie settings”.'|trans({}, domain) }}</p>
+</div>
