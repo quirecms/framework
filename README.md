@@ -207,6 +207,12 @@ docker compose exec php bin/console quire:audit:list --since "-1 day"
 
 See [docs/audit.md](docs/audit.md).
 
+## Content-Security-Policy
+
+Quire sends the policy of every page it serves: the site's pages load scripts, styles and images from the site itself and run no inline code, uploaded files never run scripts, and the sign-in pages are never shown in a frame. Sites add what else they load in `quire.csp`, and can try a policy out in report-only mode first.
+
+See [docs/security.md](docs/security.md).
+
 ## Repository layout
 
 | Path | Contents |

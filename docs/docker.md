@@ -103,6 +103,8 @@ Caddy adds these headers to every response, unless Quire set its own (for exampl
 | `Permissions-Policy` | `camera=(), microphone=(), geolocation=(), payment=(), usb=()` | Pages can't ask for the camera, microphone, location, payments or USB |
 | `Cross-Origin-Opener-Policy` | `same-origin` | Windows the site opens on other sites can't reach back into it |
 
+The Content-Security-Policy comes from Quire, not from Caddy: one policy per response, for the site's pages, the admin and uploaded files. Don't add one in your own directives, or browsers would apply both. See [security.md](security.md).
+
 The `Server` header is removed. To change one, set it in your own Caddy directives (`CADDY_SERVER_EXTRA_DIRECTIVES`), or in a response, for a page of your own. HSTS covers only the site's own domain, not its subdomains. To go further (`includeSubDomains`, `preload`), make sure every subdomain has HTTPS first, since browsers remember it.
 
 ### Behind a reverse proxy

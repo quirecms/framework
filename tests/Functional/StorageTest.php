@@ -6,6 +6,7 @@ namespace App\Tests\Functional;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\DriverException;
+use Quire\Csp\Csp;
 use Quire\Settings\Settings;
 use Quire\Storage\Internal\GarbageCollector;
 use Quire\Storage\Job\CollectGarbage;
@@ -89,7 +90,7 @@ final class StorageTest extends WebTestCase
         self::assertResponseHeaderSame('Content-Type', 'image/png');
         self::assertResponseHeaderSame('Cache-Control', 'immutable, max-age=31536000, public');
         self::assertResponseHeaderSame('X-Content-Type-Options', 'nosniff');
-        self::assertStringContainsString('sandbox', (string) $this->client->getResponse()->headers->get('Content-Security-Policy'), 'Uploaded files never run scripts as the site.');
+        self::assertSame([Csp::STORED_FILE], $this->client->getResponse()->headers->all('content-security-policy'), 'Uploaded files never run scripts as the site.');
 
         $this->client->request('GET', $url, server: ['HTTP_IF_NONE_MATCH' => '"'.$object->sha256.'"']);
         self::assertResponseStatusCodeSame(304);

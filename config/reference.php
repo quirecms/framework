@@ -979,6 +979,11 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *             service?: scalar|Param|null, // service: the ID of the FilesystemOperator service // Default: null
  *         }>,
  *     },
+ *     csp?: array{ // The Content-Security-Policy of the site's pages, which Quire sends (and nothing else should). See docs/security.md.
+ *         mode?: "enforce"|"report-only"|Param, // "enforce", or "report-only" to try a policy out: browsers then report what they would block (to "report_uri"), and block nothing. // Default: "enforce"
+ *         report_uri?: scalar|Param|null, // Where browsers report what the policy blocked, e.g. a reporting service's address. // Default: null
+ *         sources?: array<string, list<scalar|Param|null>>,
+ *     },
  *     extensions?: array{
  *         pinned?: bool|Param, // Fix the enabled extensions in configuration instead of the database. Use it for immutable production images; enabling or disabling at runtime is then refused. // Default: false
  *         enabled?: list<scalar|Param|null>,

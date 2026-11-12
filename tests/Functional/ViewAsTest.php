@@ -51,6 +51,10 @@ final class ViewAsTest extends AdminTestCase
         // Every page says so, the site's too, and stopping is let through: they're themselves again.
         $crawler = $this->client->request('GET', '/');
         self::assertSelectorTextContains('.quire-view-as', 'You’re seeing this as Kim Ono: nothing can be changed.');
+        $nonce = (string) $crawler->filter('style[nonce]')->attr('nonce');
+        self::assertStringContainsString(\sprintf("style-src 'self' 'nonce-%s'", $nonce), (string) $this->client->getResponse()->headers->get('Content-Security-Policy'), 'The bar\'s styles are allowed by the response\'s nonce, not by style attributes.');
+        self::assertCount(0, $crawler->filter('.quire-view-as [style], .quire-view-as[style]'));
+        self::assertTrue($this->client->getResponse()->headers->hasCacheControlDirective('no-store'), 'A page with a nonce is never cached.');
         $this->client->submit($crawler->selectButton('Stop seeing as Kim Ono')->form());
         self::assertResponseRedirects('/', 303);
         $this->client->request('GET', '/admin');

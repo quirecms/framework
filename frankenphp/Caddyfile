@@ -44,8 +44,10 @@
 
 	# Files of local public storage disks (storage/public/<disk>): named after their content, so they
 	# never change. Uploads are someone's content: never sniffed into another type, and never able to
-	# run scripts as the site. Without a file, the request goes on to Quire, which says 404.
-	# See https://github.com/quirecms/framework/blob/main/docs/storage.md
+	# run scripts as the site: the policy is Quire's own for stored files (Quire\Csp\Csp::STORED_FILE,
+	# kept equal by a test). The site's pages get theirs from Quire, never from here: browsers apply
+	# every policy a response has. Without a file, the request goes on to Quire, which says 404.
+	# See https://github.com/quirecms/framework/blob/main/docs/storage.md and docs/security.md
 	@storedFile {
 		path_regexp ^/storage/[a-z][a-z0-9_-]*/[0-9a-f]{2}/[0-9a-f]{2}/[0-9a-f]{64}\.[a-z0-9]+$
 		file {
