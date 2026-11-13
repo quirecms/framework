@@ -18,11 +18,11 @@
     },
     "require": {
         "php": ">=8.5",
-        "quire/core": "^0.2",
-        "quire/privacy": "^0.2"
+        "quire/core": "^0.3",
+        "quire/privacy": "^0.3"
     },
     "require-dev": {
-        "quire/testing": "^0.2"
+        "quire/testing": "^0.3"
     },
     "autoload": {
         "psr-4": {
@@ -41,7 +41,7 @@
             "requires": ["quire-privacy"]
         },
         "branch-alias": {
-            "dev-main": "0.2.x-dev"
+            "dev-main": "0.3.x-dev"
         }
     },
     "minimum-stability": "dev",

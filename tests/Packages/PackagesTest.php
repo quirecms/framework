@@ -109,7 +109,7 @@ final class PackagesTest extends TestCase
 
     /**
      * @return string The version that the packages are developing, as the path repository of the
-     *                application gives it to them, e.g. "0.2.x-dev"
+     *                application gives it to them, e.g. "0.3.x-dev"
      */
     private function developmentVersion(): string
     {
