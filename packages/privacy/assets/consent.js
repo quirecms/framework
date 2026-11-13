@@ -345,6 +345,10 @@ function start(config) {
 
         // Read by the browser's own parser, inert until it's in the page; scripts made that way never
         // run, so each is made again, as the page's own would be (the policy still decides).
+        // This is HTML on purpose, and safe: the data is written by the server from a trusted
+        // shortcode's output, after quire/privacy's guard, never from what visitors send or editors
+        // write (content is sanitised). Parsing it here, not on the server, is what keeps it from
+        // escaping the placeholder (doc 20, C2c review R1). Static analysis flags it; don't "fix" it.
         const parsed = document.createElement('template');
         parsed.innerHTML = html;
 
