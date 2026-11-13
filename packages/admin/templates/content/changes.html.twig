@@ -74,7 +74,7 @@
                     <caption class="q-sr">{{ 'Changes to the text'|trans({}, 'quire-admin') }}</caption>
                     <thead>
                         <tr>
-                            <th scope="col">{{ 'What’s live · {date}'|trans({date: live_at|date('j M', timezone)}, 'quire-admin') }}</th>
+                            <th scope="col">{{ 'What’s live · {date}'|trans({date: '<time datetime="' ~ live_at|date('c') ~ '">' ~ live_at|date('j M', timezone)|e ~ '</time>'}, 'quire-admin')|raw }}</th>
                             <th scope="col">{{ own ? 'Your version'|trans({}, 'quire-admin') : (author ? '{name}’s version'|trans({name: author}, 'quire-admin') : 'The changes'|trans({}, 'quire-admin')) }}</th>
                         </tr>
                     </thead>
