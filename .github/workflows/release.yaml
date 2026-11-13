@@ -24,8 +24,9 @@ jobs:
     name: Release
     if: github.repository == 'quirecms/framework'
     runs-on: ubuntu-26.04
-    timeout-minutes: 20
+    timeout-minutes: 70   # up to 45 waiting for CI
     permissions:
+      actions: read     # CI's runs, to wait for it
       contents: write   # the GitHub release
       id-token: write   # Sigstore's keyless signing: this workflow's identity
     steps:
@@ -43,6 +44,12 @@ jobs:
           git merge-base --is-ancestor "$GITHUB_SHA" origin/main || { echo "::error::$GITHUB_REF_NAME isn't on main."; exit 1; }
           [ -f "docs/releases/$version.md" ] || { echo "::error::There are no release notes for $version: docs/releases/$version.md."; exit 1; }
           echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      # Nothing is published for a commit that hasn't passed CI on main (0.3.0's release didn't wait for it).
+      - name: CI passed on it
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: .github/ci-passed.sh "$GITHUB_SHA"
 
       - name: Set up PHP
         uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
