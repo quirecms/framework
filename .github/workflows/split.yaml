@@ -26,12 +26,23 @@ jobs:
     # Holds the GitHub App's credentials, which only main and version tags can use.
     environment: split
     runs-on: ubuntu-26.04
+    permissions:
+      actions: read     # CI's runs, to wait for it
+      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
+      # A version tag reaches Packagist from here, so it waits for CI on main as Release does. Main's
+      # own pushes don't: they're the development versions, and main is only changed by pull requests
+      # that passed CI.
+      - name: CI passed on it
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: .github/ci-passed.sh "$GITHUB_SHA"
       - name: List the repositories
         id: repositories
         run: echo "names=$(jq -r 'map(.repository | split("/")[1]) | join(",")' .github/split.json)" >> "$GITHUB_OUTPUT"

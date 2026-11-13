@@ -101,7 +101,7 @@ A maintainer will review it. We may ask for changes. Please push new commits ins
 
 ## Releases
 
-All packages are released together, with the same version, from a tag of this repository: tagging a commit of `main` with `v0.1.0` gives that version to every package. The workflow "Split" copies `main` and each tag to the packages' repositories (`.github/split.json` lists them; `.github/split.sh main` shows what it would push, without pushing).
+All packages are released together, with the same version, from a tag of this repository: tagging a commit of `main` with `v0.1.0` gives that version to every package. The workflow "Split" copies `main` and each tag to the packages' repositories (`.github/split.json` lists them; `.github/split.sh main` shows what it would push, without pushing). A tag publishes nothing until CI has passed on `main` for its commit: both workflows wait for it (`.github/ci-passed.sh`, 45 minutes at most) and stop if it failed. Then re-run CI's run for that commit ("Run workflow" by hand doesn't count), and the two workflows once it has passed.
 
 Every release has its notes in `docs/releases/<version>.md`, written before it's tagged (the release fails without them). They start with a header that tools read:
 
