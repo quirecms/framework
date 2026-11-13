@@ -129,7 +129,7 @@ An extension is a Composer package with the type `quire-extension`. Themes use `
     "type": "quire-extension",
     "description": "Star ratings and reviews for any content.",
     "require": {
-        "quire/core": "^0.2"
+        "quire/core": "^0.3"
     },
     "extra": {
         "quire": {

@@ -122,7 +122,7 @@ The workflow "Release" then publishes the GitHub release with them, and Quire's 
 
 The runtime images sites build on (`runtime/Dockerfile`, see [docs/docker.md](docs/docker.md#the-runtime-images)) aren't tied to releases: the workflow "Runtime" builds, signs and publishes them every week, whenever `runtime/` changes on `main`, and by hand. CI builds the site's images on the runtime of the commit it tests (`.github/runtime.hcl`), so a change there is tested before it's published. A new PHP version gets its own tags (`8.6`, `8.6-builder`) next to the current ones.
 
-Between releases, the packages develop the next version, `0.2.x-dev`: their `main` branches are aliased to it, and they require each other in it (`^0.2`). To start the next minor version, change both in every `composer.json`, and the versions of the path repository in the root one; a test checks that they agree. A new package goes into `.github/split.json`, with its repository, and gets the `LICENSE`, `.gitattributes` and `.github/workflows/close-pull-request.yaml` the others have.
+Between releases, the packages develop the next version, `0.3.x-dev`: their `main` branches are aliased to it, and they require each other in it (`^0.3`). To start the next minor version, change both in every `composer.json`, and the versions of the path repository in the root one; a test checks that they agree. A new package goes into `.github/split.json`, with its repository, and gets the `LICENSE`, `.gitattributes` and `.github/workflows/close-pull-request.yaml` the others have.
 
 ## License
 
