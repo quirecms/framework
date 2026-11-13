@@ -1,0 +1,49 @@
+{
+    "name": "quire/analytics",
+    "type": "quire-extension",
+    "description": "Analytics for Quire: Google Analytics 4, loaded only once visitors allow it, and events marked in plain HTML.",
+    "keywords": ["quire", "cms", "analytics", "google-analytics", "ga4", "consent"],
+    "homepage": "https://quirecms.com",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "YorvoLabs",
+            "homepage": "https://quirecms.com"
+        }
+    ],
+    "support": {
+        "email": "hello@quirecms.com",
+        "issues": "https://github.com/quirecms/framework/issues",
+        "security": "https://github.com/quirecms/framework/security/policy"
+    },
+    "require": {
+        "php": ">=8.5",
+        "quire/core": "^0.2",
+        "quire/privacy": "^0.2"
+    },
+    "require-dev": {
+        "quire/testing": "^0.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Quire\\Analytics\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Quire\\Analytics\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "quire": {
+            "title": "Analytics",
+            "description": "Google Analytics 4 for the site, loaded only once visitors allow it, and events marked in templates.",
+            "requires": ["quire-privacy"]
+        },
+        "branch-alias": {
+            "dev-main": "0.2.x-dev"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

@@ -38,8 +38,16 @@ function expect(condition, message) {
     }
 }
 
+// Google's hosts never see CI: gtag.js is a stand-in that sets the cookies Google's would and counts
+// its loads, and hits are answered empty. What would be sent is read from window.dataLayer.
+const GOOGLE = /^https:\/\/([a-z0-9-]+\.)*(googletagmanager\.com|google-analytics\.com|analytics\.google\.com)\//;
+const GTAG = `document.cookie = '_ga=GA1.1.1; Path=/; Domain=quire.localhost'; document.cookie = '_ga_CITEST123=GS1.1.1; Path=/; Domain=quire.localhost'; window.ciGtag = (window.ciGtag ?? 0) + 1;`;
+
 async function fresh(options = {}) {
     const context = await browser.newContext({ ignoreHTTPSErrors: true, viewport: { width: 1280, height: 900 }, ...options });
+    await context.route(GOOGLE, (route) => route.request().url().includes('/gtag/js')
+        ? route.fulfill({ status: 200, contentType: 'text/javascript', body: GTAG })
+        : route.fulfill({ status: 204 }));
     const page = await context.newPage();
     const errors = [];
     page.on('pageerror', (error) => errors.push(String(error)));
@@ -154,6 +162,82 @@ if (process.env.QUIRE_CHECK_SENDS === '1') {
         await page.evaluate(() => window.quire.consent.set({'ci-video': true}));
         await page.waitForFunction(() => document.documentElement.dataset.ciEmbed === '1', null, { timeout: 5000 });
         expect(await page.locator('main iframe[data-ci-frame]').count() === 1, 'No frame after allowing.');
+        await context.close();
+    });
+
+    // quire/analytics (Google Analytics 4): what gtag would send, read from window.dataLayer.
+    const layer = (page) => page.evaluate(() => (window.dataLayer ?? []).map((entry) => JSON.parse(JSON.stringify(Array.from(entry)))));
+    const googleRequests = (page) => {
+        const seen = [];
+        page.on('request', (request) => GOOGLE.test(request.url()) && seen.push(request.url()));
+
+        return seen;
+    };
+
+    await check('Google Analytics: nothing before consent; then the page\'s address and referrer go without tokens, only campaigns kept', async () => {
+        const { context, page } = await fresh();
+        const seen = googleRequests(page);
+        await page.goto(base + '/embed?token=secret&email=a%40b.example&utm_source=ci#top', { waitUntil: 'networkidle', referer: base + '/reset-password?token=abc&utm_medium=mail' });
+        expect(seen.length === 0, `Google was asked before consent: ${seen.join(', ')}`);
+        await page.locator('[data-consent-banner] [data-consent-accept]').click();
+        await page.waitForFunction(() => window.ciGtag === 1, null, { timeout: 5000 });
+        const config = (await layer(page)).find((entry) => entry[0] === 'config');
+        expect(config?.[1] === 'G-CITEST123', `No config: ${JSON.stringify(await layer(page))}`);
+        expect(config[2].page_location === base + '/embed?utm_source=ci', `page_location: ${config[2].page_location}`);
+        expect(config[2].page_referrer === base + '/reset-password?utm_medium=mail', `page_referrer: ${config[2].page_referrer}`);
+        expect(config[2].allow_google_signals === false && config[2].allow_ad_personalization_signals === false, 'Signals or ad personalisation on.');
+        const consent = (await layer(page)).find((entry) => entry[0] === 'consent');
+        expect(consent?.[2].ad_storage === 'denied' && consent[2].ad_user_data === 'denied' && consent[2].ad_personalization === 'denied', `Advertising not denied: ${JSON.stringify(consent)}`);
+        await context.close();
+    });
+
+    await check('Google Analytics: events marked in templates go only after consent, within GA4\'s limits; one before consent is dropped, not kept', async () => {
+        const { context, page } = await fresh();
+        await page.goto(base + '/embed', { waitUntil: 'networkidle' });
+        await page.locator('[data-consent-banner] [data-consent-reject]').click();
+        await page.locator('[data-ci-event]').click();
+        await page.locator('.consent__opener').click();
+        await page.locator('[data-consent-dialog] [data-consent-service="google-analytics"]').check();
+        await page.locator('[data-consent-dialog] [data-consent-save]').click();
+        await page.waitForFunction(() => window.ciGtag === 1, null, { timeout: 5000 });
+        expect(!(await layer(page)).some((entry) => entry[0] === 'event'), 'An event from before consent was sent.');
+        await page.locator('[data-ci-event]').click();
+        await page.locator('[data-ci-bad-event]').click();
+        const events = (await layer(page)).filter((entry) => entry[0] === 'event');
+        expect(events.length === 1 && events[0][1] === 'ci_click', `Events: ${JSON.stringify(events)}`);
+        const parameters = events[0][2];
+        expect(Object.keys(parameters).length === 25, `${Object.keys(parameters).length} parameters, not GA4's 25.`);
+        expect(parameters.link_text?.length === 100, `A value of ${parameters.link_text?.length} characters, not GA4's 100.`);
+        await context.close();
+    });
+
+    await check('Google Analytics: withdrawing removes _ga and _ga_* on the site\'s domain, and nothing more is sent', async () => {
+        const { context, page } = await fresh();
+        await page.goto(base + '/embed', { waitUntil: 'networkidle' });
+        await page.locator('[data-consent-banner] [data-consent-accept]').click();
+        await page.waitForFunction(() => window.ciGtag === 1, null, { timeout: 5000 });
+        expect((await page.evaluate(() => document.cookie)).includes('_ga='), 'The stand-in set no cookie.');
+        await page.locator('.consent__opener').click();
+        await page.locator('[data-consent-dialog] [data-consent-service="google-analytics"]').uncheck();
+        await page.locator('[data-consent-dialog] [data-consent-save]').click();
+        const cookies = await page.evaluate(() => document.cookie);
+        expect(!/(^|; )_ga/.test(cookies), `Cookies left: ${cookies}`);
+        expect(await page.evaluate(() => window['ga-disable-G-CITEST123']) === true, 'gtag isn\'t told to stop.');
+        const before = (await layer(page)).filter((entry) => entry[0] === 'event').length;
+        await page.locator('[data-ci-event]').click();
+        expect((await layer(page)).filter((entry) => entry[0] === 'event').length === before, 'An event was sent after withdrawing.');
+        await context.close();
+    });
+
+    await check('Google Analytics: pages with password forms have no loader, so nothing is sent there, consent or not', async () => {
+        const { context, page } = await fresh();
+        await page.goto(base + '/embed', { waitUntil: 'networkidle' });
+        await page.locator('[data-consent-banner] [data-consent-accept]').click();
+        // The stand-in ran: the one request to Google is done.
+        await page.waitForFunction(() => window.ciGtag === 1, null, { timeout: 5000 });
+        const seen = googleRequests(page);
+        await page.goto(base + '/login', { waitUntil: 'networkidle' });
+        expect(await page.locator('#quire-consent-config').count() === 0 && seen.length === 0, `On the sign-in page: ${seen.join(', ')}`);
         await context.close();
     });
 

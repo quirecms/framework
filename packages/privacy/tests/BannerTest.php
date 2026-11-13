@@ -82,6 +82,14 @@ final class BannerTest extends PrivacyTestCase
         self::assertStringNotContainsString('video.example', (string) $this->client->getResponse()->headers->get('Content-Security-Policy'), 'A script on a password form could read the password.');
     }
 
+    public function testPagesWithPasswordFormsHaveNoBannerAndNoLoader(): void
+    {
+        $crawler = $this->client->request('GET', '/login');
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(0, $crawler->filter('[data-consent-banner], #quire-consent-config, .consent__opener, script[src*="quire-privacy/consent"], link[href*="quire-privacy/consent"]'), 'Nothing of a service runs there, whatever the visitor allowed.');
+    }
+
     public function testThePackageFillsCoresSlotForOtherSitesHosts(): void
     {
         self::assertInstanceOf(ServiceSources::class, $this->service(ThirdPartySourcesInterface::class));

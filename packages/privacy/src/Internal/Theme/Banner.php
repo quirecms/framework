@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Quire\Privacy\Internal\Theme;
 
+use Quire\Csp\Csp;
+use Quire\Csp\PolicyKind;
 use Quire\Privacy\Category;
 use Quire\Privacy\Cookie;
 use Quire\Privacy\Internal\Http\ConsentController;
@@ -43,6 +45,16 @@ final readonly class Banner
     public function shown(): bool
     {
         return $this->services->needConsent();
+    }
+
+    /**
+     * Whether this page has the banner and the loader: not a page with a form for passwords or
+     * accounts (the private policy, which allows no other site's host), so nothing of a service runs
+     * there, whatever the visitor allowed.
+     */
+    public function onThisPage(): bool
+    {
+        return $this->shown() && PolicyKind::Private->value !== $this->requests->getMainRequest()?->attributes->get(Csp::ATTRIBUTE);
     }
 
     /**
@@ -146,7 +158,7 @@ final readonly class Banner
     {
         $request = $this->requests->getMainRequest();
 
-        if (!$this->shown() || !$request instanceof Request || true === $request->attributes->get(self::OPENER_ATTRIBUTE)) {
+        if (!$this->onThisPage() || !$request instanceof Request || true === $request->attributes->get(self::OPENER_ATTRIBUTE)) {
             return false;
         }
 

@@ -19,6 +19,6 @@ final readonly class StylesheetSlot implements SlotRendererInterface
 
     public function render(array $context): string
     {
-        return $this->banner->shown() ? \sprintf('<link rel="stylesheet" href="%s">', htmlspecialchars($this->banner->stylesheetUrl())) : '';
+        return $this->banner->onThisPage() ? \sprintf('<link rel="stylesheet" href="%s">', htmlspecialchars($this->banner->stylesheetUrl())) : '';
     }
 }

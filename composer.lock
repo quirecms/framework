@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "76c018c957227e81fdc0b60a9ebb99a6",
+    "content-hash": "106b003603e7785ef0dd7d2b56d3b5b5",
     "packages": [
         {
             "name": "composer/semver",
@@ -2153,7 +2153,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/admin",
-                "reference": "101aa2b25e048f5ff133b7ceadb13f568c0f7b23"
+                "reference": "97920feb340ed2aef2e745a6c5995fe9cbb4f275"
             },
             "require": {
                 "php": ">=8.5",
@@ -2242,7 +2242,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/core",
-                "reference": "bcf010dff7e38b5941fbf6dc7bd483f482b9785b"
+                "reference": "448c903a2978934cdb52135e6dad2faefb6e91cd"
             },
             "require": {
                 "doctrine/dbal": "^4.2",
@@ -2333,7 +2333,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/theme-default",
-                "reference": "515e5324c4fb5dab8c87b3fdeb45c59b791e9a25"
+                "reference": "c0951900f6ea18b29036d3557333abe136ce13ae"
             },
             "require": {
                 "php": ">=8.5",
@@ -9103,12 +9103,79 @@
             "time": "2026-11-02T07:12:28+00:00"
         },
         {
+            "name": "quire/analytics",
+            "version": "0.2.x-dev",
+            "dist": {
+                "type": "path",
+                "url": "packages/analytics",
+                "reference": "8398e6738f63a570b6205cc9b42394f71a15a751"
+            },
+            "require": {
+                "php": ">=8.5",
+                "quire/core": "^0.2",
+                "quire/privacy": "^0.2"
+            },
+            "require-dev": {
+                "quire/testing": "^0.2"
+            },
+            "type": "quire-extension",
+            "extra": {
+                "quire": {
+                    "title": "Analytics",
+                    "description": "Google Analytics 4 for the site, loaded only once visitors allow it, and events marked in templates.",
+                    "requires": [
+                        "quire-privacy"
+                    ]
+                },
+                "branch-alias": {
+                    "dev-main": "0.2.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Quire\\Analytics\\": "src/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Quire\\Analytics\\Tests\\": "tests/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "YorvoLabs",
+                    "homepage": "https://quirecms.com"
+                }
+            ],
+            "description": "Analytics for Quire: Google Analytics 4, loaded only once visitors allow it, and events marked in plain HTML.",
+            "homepage": "https://quirecms.com",
+            "keywords": [
+                "analytics",
+                "cms",
+                "consent",
+                "ga4",
+                "google-analytics",
+                "quire"
+            ],
+            "support": {
+                "email": "hello@quirecms.com",
+                "issues": "https://github.com/quirecms/framework/issues",
+                "security": "https://github.com/quirecms/framework/security/policy"
+            },
+            "transport-options": {
+                "relative": true
+            }
+        },
+        {
             "name": "quire/privacy",
             "version": "0.2.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/privacy",
-                "reference": "be710ab21ce9df64ed75fc933208939ea1131b5e"
+                "reference": "5fb44caad037c25d98b1adc3372e7d52a0864c56"
             },
             "require": {
                 "php": ">=8.5",
@@ -9171,7 +9238,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/testing",
-                "reference": "d4bc7fb08c64bc611bf1ce5dd928adf2ce1a63e9"
+                "reference": "46db7517e66f52de2b100013ef7f69c52de61dd6"
             },
             "require": {
                 "doctrine/doctrine-bundle": "^3.0",
