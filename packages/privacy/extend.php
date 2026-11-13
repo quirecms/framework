@@ -28,6 +28,8 @@ return [
             __DIR__.'/src/Cookie.php',
             __DIR__.'/src/Service.php',
             __DIR__.'/src/Extend',
+            // Not ServiceSwitchInterface: its #[AutoconfigureTag] tags implementers only while the
+            // interface itself is loaded here.
         ])
         ->load(__DIR__.'/config/services.php')
         ->compilerPass(new SourcesSlotPass())

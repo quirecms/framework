@@ -317,7 +317,7 @@ Commands registered through `Extend\Services::autoload()` are picked up without 
 
 | Method | Purpose |
 |--------|---------|
-| `autoload($namespace, $directory, $exclude = [])` | Registers every class in a directory as an autowired, autoconfigured service. Exclude directories holding non-services, such as entities and value objects. |
+| `autoload($namespace, $directory, $exclude = [])` | Registers every class in a directory as an autowired, autoconfigured service. Exclude directories holding non-services, such as entities and value objects, but not an interface with `#[AutoconfigureTag]`: it tags the classes that implement it only while it's loaded here. |
 | `load($file)` | Loads a Symfony service configuration file (`.php` or `.yaml`) |
 | `compilerPass($pass, $type, $priority)` | Adds a compiler pass, for advanced container changes: before optimization (the default), optimize, or before removing, never later. It runs after Quire's own passes of its type; its priority orders it among extensions' passes only |
 

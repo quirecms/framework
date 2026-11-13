@@ -110,6 +110,14 @@ final class ServiceSwitchesTest extends TestCase
         $this->build([[...$this->declaration(path: __DIR__.'/Fixtures/Elsewhere'), 'switched' => false, 'runtime' => []]], [ElsewhereSwitch::class]);
     }
 
+    public function testAServiceDeclaredTwiceIsRefusedAtBuild(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessageIsOrContains('is declared twice');
+
+        $this->build([$this->declaration(), $this->declaration()], []);
+    }
+
     #[\PHPUnit\Framework\Attributes\DoesNotPerformAssertions]
     public function testItsOwnPackagesSwitchBuilds(): void
     {

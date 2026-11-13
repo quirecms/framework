@@ -19,7 +19,8 @@ let stopEvents = null;
 let started = null;
 
 export function start({config}) {
-    if (document.querySelector('meta[name="quire-analytics"][content="off"]') || stopEvents) {
+    // A page of the site shown in a frame of the site counts once, as the page around it.
+    if (document.querySelector('meta[name="quire-analytics"][content="off"]') || stopEvents || window !== window.top) {
         return;
     }
 

@@ -186,6 +186,13 @@ if (process.env.QUIRE_CHECK_SENDS === '1') {
         expect(config[2].page_location === base + '/embed?utm_source=ci', `page_location: ${config[2].page_location}`);
         expect(config[2].page_referrer === base + '/reset-password?utm_medium=mail', `page_referrer: ${config[2].page_referrer}`);
         expect(config[2].allow_google_signals === false && config[2].allow_ad_personalization_signals === false, 'Signals or ad personalisation on.');
+        // The video's frame is a page of the site (/about): it doesn't count a second page view.
+        const frame = await (await page.locator('main iframe[data-ci-frame]').elementHandle())?.contentFrame();
+        await frame?.waitForURL(/\/about$/);
+        await frame?.waitForLoadState('networkidle');
+        // Its loader has run (consent is the page's), and Google Analytics didn't start.
+        await frame?.waitForFunction(() => window.quire?.consent?.allows('google-analytics') === true, null, { timeout: 5000 });
+        expect(frame && await frame.evaluate(() => window.ciGtag === undefined && (window.dataLayer ?? []).length === 0), 'A page in a frame of the site started Google Analytics.');
         const consent = (await layer(page)).find((entry) => entry[0] === 'consent');
         expect(consent?.[2].ad_storage === 'denied' && consent[2].ad_user_data === 'denied' && consent[2].ad_personalization === 'denied', `Advertising not denied: ${JSON.stringify(consent)}`);
         await context.close();
@@ -234,10 +241,7 @@ if (process.env.QUIRE_CHECK_SENDS === '1') {
         await page.goto(base + '/embed', { waitUntil: 'networkidle' });
         await page.locator('[data-consent-banner] [data-consent-accept]').click();
         await page.waitForFunction(() => window.ciGtag === 1, null, { timeout: 5000 });
-        // The sign-in page's own requests: the video's frame on /embed is a page of the site too, and
-        // starts Google Analytics there, with the visitor's consent.
-        const seen = [];
-        page.on('request', (request) => GOOGLE.test(request.url()) && request.frame() === page.mainFrame() && request.frame().url().includes('/login') && seen.push(request.url()));
+        const seen = googleRequests(page);
         await page.goto(base + '/login', { waitUntil: 'networkidle' });
         expect(await page.locator('#quire-consent-config').count() === 0 && seen.length === 0, `On the sign-in page: ${seen.join(', ')}`);
         await context.close();

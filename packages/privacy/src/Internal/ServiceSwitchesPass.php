@@ -26,6 +26,10 @@ final readonly class ServiceSwitchesPass implements CompilerPassInterface
         $declarations = [];
 
         foreach ($declared as $declaration) {
+            if (isset($declarations[$declaration['id']])) {
+                throw new InvalidArgumentException(\sprintf('The service "%s" is declared twice: a service is declared once, by the extension or theme that loads it.', $declaration['id']));
+            }
+
             $declarations[$declaration['id']] = ['switched' => $declaration['switched'] ?? false, 'runtime' => $declaration['runtime'] ?? [], 'path' => $declaration['path'] ?? ''];
         }
 
