@@ -6,7 +6,9 @@
  *         mcr.microsoft.com/playwright:v1.55.1-noble sh -c 'npm ci && npx playwright test'
  *
  * Add --update-snapshots=all to approve new screenshots after a deliberate change of the design (without
- * "=all", only those that differ by more than the tolerance are replaced).
+ * "=all", only those that differ by more than the tolerance are replaced), on a freshly seeded demo site:
+ * the browser flows change its data (e.g. Home's count of what waits), so screenshots taken after them
+ * are wrong. Look at each one before committing it. visual-tolerance.spec.mjs is skipped then.
  */
 import { defineConfig } from '@playwright/test';
 
@@ -21,7 +23,11 @@ export default defineConfig({
     retries: 0,
     reporter: [['list']],
     expect: {
-        toHaveScreenshot: { maxDiffPixelRatio: 0.01, animations: 'disabled', caret: 'hide' },
+        // At most 50 pixels may differ: screens taken again on a fresh demo site differ by none, and the
+        // smallest change the comparison must catch (a button left hovered) is about 230
+        // (visual-tolerance.spec.mjs checks that it does). A share of the page (1%) once let a whole new
+        // card and a whole new tab through.
+        toHaveScreenshot: { maxDiffPixels: 50, animations: 'disabled', caret: 'hide' },
     },
     use: {
         baseURL: base,
