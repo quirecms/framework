@@ -27,6 +27,11 @@ final readonly class BannerParityCheck implements ThemeCheckInterface
     {
     }
 
+    public function rendersTheme(): bool
+    {
+        return true;
+    }
+
     public function check(string $theme, array $templates): array
     {
         $file = $templates[self::TEMPLATE] ?? null;

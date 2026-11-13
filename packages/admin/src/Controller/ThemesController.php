@@ -70,8 +70,9 @@ final readonly class ThemesController
                 'parent' => null === $theme->parent ? null : ($installed[$theme->parent]->title ?? $theme->parent),
                 'active' => $id === $this->themes->active()?->id,
                 'problem' => $problem,
-                // What "quire:theme:lint" finds, for the theme in use: e.g. a load before consent.
-                'checks' => $id === $this->themes->active()?->id ? $this->checks->run($id) : null,
+                // What "quire:theme:lint" finds, for every theme before it's used: e.g. a load before
+                // consent. Checks that run a theme's code run only for the theme in use.
+                'checks' => null === $problem ? $this->checks->run($id, inUse: $id === $this->themes->active()?->id) : null,
                 'screenshot' => null !== $this->screenshotFile($theme),
                 // Already the site's look: nothing to preview.
                 'preview' => $id === $this->themes->active()?->id ? null : $this->preview->reason($id),

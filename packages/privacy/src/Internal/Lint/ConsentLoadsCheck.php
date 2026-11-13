@@ -30,6 +30,11 @@ final readonly class ConsentLoadsCheck implements ThemeCheckInterface
     ) {
     }
 
+    public function rendersTheme(): bool
+    {
+        return false;
+    }
+
     public function check(string $theme, array $templates): array
     {
         $extensions = [];

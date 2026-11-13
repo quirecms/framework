@@ -13,10 +13,12 @@ use Quire\Admin\Controller\IntentController;
 use Quire\Admin\Controller\PreferencesController;
 use Quire\Admin\Controller\RolesController;
 use Quire\Admin\Controller\SettingsController;
+use Quire\Admin\Controller\SetupController;
 use Quire\Admin\Controller\ThemesController;
 use Quire\Admin\Controller\UiController;
 use Quire\Admin\Controller\UsersController;
 use Quire\Admin\Dashboard\Inbox\ChangesInbox;
+use Quire\Admin\Dashboard\Inbox\ReportOnlyInbox;
 use Quire\Admin\Dashboard\Inbox\ScheduledChecksInbox;
 use Quire\Admin\Extend\Admin;
 use Quire\Admin\Preferences\AdminPreferences;
@@ -55,6 +57,8 @@ return [
         ->post('/settings/defaults', 'quire_admin_settings_defaults', [SettingsController::class, 'restoreDefaults'])
         ->get('/settings/{group}', 'quire_admin_settings', SettingsController::class, requirements: ['group' => '[a-z0-9_.-]+'], defaults: ['group' => null])
         ->post('/settings/{group}', 'quire_admin_settings_save', [SettingsController::class, 'save'], requirements: ['group' => '[a-z0-9_.-]+'])
+        ->get('/setup', SetupController::ROUTE, SetupController::class)
+        ->post('/setup/test-mail', 'quire_admin_setup_test_mail', [SetupController::class, 'testMail'])
         ->get('/themes', 'quire_admin_themes', ThemesController::class)
         ->get('/themes/{id}/screenshot', 'quire_admin_theme_screenshot', [ThemesController::class, 'screenshot'], requirements: ['id' => '[a-z0-9]+(?:-[a-z0-9]+)*'])
         ->post('/themes', 'quire_admin_themes_use', [ThemesController::class, 'use'])
@@ -113,5 +117,6 @@ return [
         ->menu('quire-admin.roles', 'Roles', 'quire_admin_roles', ability: RolesController::ABILITY, section: 'users', order: 20)
         ->menu('quire-admin.access', 'Check access', 'quire_admin_access', ability: RolesController::ABILITY, section: 'users', order: 30)
         ->inbox(ChangesInbox::class)
-        ->inbox(ScheduledChecksInbox::class),
+        ->inbox(ScheduledChecksInbox::class)
+        ->inbox(ReportOnlyInbox::class, ability: SetupController::ABILITY),
 ];

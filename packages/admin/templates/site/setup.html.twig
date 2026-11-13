@@ -1,0 +1,95 @@
+{#
+    The site's setup that whoever runs it decides: its address, e-mail, and Content-Security-Policy.
+    Read-only, except a test e-mail to oneself. Variables: address (or null), mail (a transport is
+    set), mail_from (the sender setting, or empty), verified (the user's confirmed address, or null),
+    report_only, report_uri (or null), production, sources (by directive: source, origin),
+    private_leaves_out (hosts that pages with password forms don't get), and privacy_url (quire/privacy's
+    page, or null).
+#}
+{% extends '@quire_admin/layout.html.twig' %}
+{% set domain = 'quire-admin' %}
+
+{% block title %}{{ 'Setup'|trans({}, domain) }}{% endblock %}
+
+{% block page_head %}{{ include('@quire_admin/site/_head.html.twig', {title: 'Setup'|trans({}, domain), current: 'setup'}) }}{% endblock %}
+
+{% block content %}
+<div class="q-stack">
+    <p class="q-help">{{ 'Whoever runs the site sets these where it\'s deployed; they\'re shown here so you know how the site is set up.'|trans({}, domain) }}</p>
+
+    <section class="q-card" aria-labelledby="setup-address">
+        <h2 class="q-card__title" id="setup-address">{{ 'The site\'s address'|trans({}, domain) }}</h2>
+        {% if address %}
+            <p><code>{{ address }}</code></p>
+        {% else %}
+            <p class="q-notice q-notice--warning">{{ 'Not set: e-mails can\'t link to the site. It\'s DEFAULT_URI in the site\'s environment.'|trans({}, domain) }}</p>
+        {% endif %}
+        <p class="q-meta">{{ 'Changed by whoever runs the site: DEFAULT_URI, or the domains on Quire Server.'|trans({}, domain) }}</p>
+    </section>
+
+    <section class="q-card" aria-labelledby="setup-mail">
+        <h2 class="q-card__title" id="setup-mail">{{ 'E-mail'|trans({}, domain) }}</h2>
+        {% if mail %}
+            <p><span class="q-tag q-tag--ok">{{ 'set up'|trans({}, domain) }}</span> {{ 'The site sends e-mails: invitations, password resets, confirmations.'|trans({}, domain) }}</p>
+        {% else %}
+            <p class="q-notice q-notice--warning">{{ 'The site sends no e-mails: no mail server is set (MAILER_DSN). Invitations and password resets don\'t arrive.'|trans({}, domain) }}</p>
+        {% endif %}
+        <p>{{ 'Sent as'|trans({}, domain) }}: {% if mail_from %}<code>{{ mail_from }}</code>{% else %}{{ 'the site\'s title and noreply@ its domain'|trans({}, domain) }}{% endif %} · <a href="{{ path('quire_admin_settings', {group: 'site'}) }}">{{ 'Change it in the settings'|trans({}, domain) }}</a></p>
+        <p class="q-meta">{{ 'The mail server is set by whoever runs the site (MAILER_DSN, or site:mail on Quire Server); it holds a password, so it isn\'t shown.'|trans({}, domain) }}</p>
+        {% if mail %}
+            {% if verified %}
+                <form method="post" action="{{ path('quire_admin_setup_test_mail') }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_setup') }}">
+                    <button type="submit" class="q-btn q-btn--ghost">{{ 'Send me a test e-mail'|trans({}, domain) }}</button>
+                    <span class="q-meta">{{ 'To {email}, only.'|trans({email: verified}, domain) }}</span>
+                </form>
+            {% else %}
+                <p class="q-meta">{{ 'Confirm your e-mail address to send yourself a test e-mail.'|trans({}, domain) }}</p>
+            {% endif %}
+        {% endif %}
+    </section>
+
+    <section class="q-card" aria-labelledby="setup-security">
+        <h2 class="q-card__title" id="setup-security">{{ 'Security policy'|trans({}, domain) }}</h2>
+        {% if report_only %}
+            <p class="q-notice q-notice--{{ production ? 'error' : 'warning' }}">{{ 'Report only: browsers report what the policy would block, and block nothing.'|trans({}, domain) }}</p>
+        {% else %}
+            <p><span class="q-tag q-tag--ok">{{ 'enforced'|trans({}, domain) }}</span> {{ 'Browsers block what the policy doesn\'t allow.'|trans({}, domain) }}</p>
+        {% endif %}
+        <p>{{ 'Reports go to'|trans({}, domain) }}: {% if report_uri %}<code>{{ report_uri }}</code>{% else %}{{ 'nowhere'|trans({}, domain) }}{% endif %}</p>
+        <h3>{{ 'What the site\'s pages may load from other sites'|trans({}, domain) }}</h3>
+        {% if sources is empty %}
+            <p class="q-empty">{{ 'Nothing: only the site itself.'|trans({}, domain) }}</p>
+        {% else %}
+            <div class="q-scroll" role="region" aria-labelledby="setup-security" tabindex="0">
+                <table class="q-table">
+                    <thead><tr><th scope="col">{{ 'For'|trans({}, domain) }}</th><th scope="col">{{ 'From'|trans({}, domain) }}</th><th scope="col">{{ 'Why'|trans({}, domain) }}</th></tr></thead>
+                    <tbody>
+                        {% for directive, list in sources %}
+                            {% for source in list %}
+                                <tr>
+                                    <td><code>{{ directive }}</code></td>
+                                    <td><code>{{ source.source }}</code></td>
+                                    <td>
+                                        {% if source.origin == 'privacy' %}
+                                            {{ 'A service visitors are asked about, or a necessary one'|trans({}, domain) }}{% if privacy_url %} · <a href="{{ privacy_url }}">{{ 'Privacy and cookies'|trans({}, domain) }}</a>{% endif %}
+                                        {% elseif source.origin == 'site' %}
+                                            {{ 'The site\'s configuration: loads for every visitor, without asking'|trans({}, domain) }}
+                                        {% else %}
+                                            {{ 'Quire itself, e.g. where files are stored'|trans({}, domain) }}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+        {% if private_leaves_out is not empty %}
+            <p class="q-meta">{{ 'Pages with forms for passwords or accounts (signing in, registering) don\'t get the services\' hosts: a script there could read what\'s typed.'|trans({}, domain) }}</p>
+        {% endif %}
+        <p class="q-meta">{{ 'Changed by whoever runs the site, in config/packages/quire.yaml ("quire.csp"); services through quire/privacy.'|trans({}, domain) }}</p>
+    </section>
+</div>
+{% endblock %}
