@@ -24,7 +24,7 @@ final class FeedTest extends TestCase
     private string $split;
     private string $remote;
 
-    /** @var array<string, string> Each package's commit of 0.1.0, in its repository (theme-default and privacy had none then) */
+    /** @var array<string, string> Each package's commit of 0.1.0, in its repository (theme-default, privacy and analytics had none then) */
     private array $tagged = [];
 
     #[\Override]
@@ -75,12 +75,12 @@ final class FeedTest extends TestCase
         $this->split = $this->tmp.'/split.txt';
         $lines = [];
 
-        foreach (['admin' => 'quire/admin', 'core' => 'quire/core', 'privacy' => 'quire/privacy', 'skeleton' => 'quire/skeleton', 'testing' => 'quire/testing', 'theme-default' => 'quire/theme-default'] as $repository => $name) {
+        foreach (['admin' => 'quire/admin', 'analytics' => 'quire/analytics', 'core' => 'quire/core', 'privacy' => 'quire/privacy', 'skeleton' => 'quire/skeleton', 'testing' => 'quire/testing', 'theme-default' => 'quire/theme-default'] as $repository => $name) {
             $directory = $this->remote.'/quirecms/'.$repository.'.git';
             $this->files($directory, ['README.md' => $repository]);
             $this->git($directory, ['init', '-q', '-b', 'main']);
 
-            if (!\in_array($repository, ['privacy', 'theme-default'], true)) {
+            if (!\in_array($repository, ['analytics', 'privacy', 'theme-default'], true)) {
                 $this->commit($directory, 'v0.1.0', '2026-10-01T12:00:00+00:00');
                 $this->tagged[$name] = trim(new Process(['git', 'rev-parse', 'v0.1.0^{commit}'], $directory)->mustRun()->getOutput());
             }
@@ -130,7 +130,7 @@ final class FeedTest extends TestCase
     {
         [$latest, $first] = $this->feed()['releases'];
 
-        self::assertSame(['quire/admin' => hash('sha1', 'quire/admin'), 'quire/core' => hash('sha1', 'quire/core'), 'quire/privacy' => hash('sha1', 'quire/privacy'), 'quire/testing' => hash('sha1', 'quire/testing'), 'quire/theme-default' => hash('sha1', 'quire/theme-default')], $latest['packages'], 'This version\'s, as the split makes them; not the skeleton\'s (its files vouch for it).');
+        self::assertSame(['quire/admin' => hash('sha1', 'quire/admin'), 'quire/analytics' => hash('sha1', 'quire/analytics'), 'quire/core' => hash('sha1', 'quire/core'), 'quire/privacy' => hash('sha1', 'quire/privacy'), 'quire/testing' => hash('sha1', 'quire/testing'), 'quire/theme-default' => hash('sha1', 'quire/theme-default')], $latest['packages'], 'This version\'s, as the split makes them; not the skeleton\'s (its files vouch for it).');
         unset($this->tagged['quire/skeleton']);
         ksort($this->tagged);
         self::assertSame($this->tagged, $first['packages'], 'Earlier ones\' from their tags (annotated: the commit, not the tag); one without the tag is left out.');
@@ -138,8 +138,8 @@ final class FeedTest extends TestCase
 
     public function testEveryPackagesCommitIsNeeded(): void
     {
-        // admin, core and privacy
-        $this->files($this->tmp, ['split.txt' => implode("\n", \array_slice(explode("\n", (string) file_get_contents($this->split)), 0, 3))."\n"]);
+        // admin, analytics, core and privacy
+        $this->files($this->tmp, ['split.txt' => implode("\n", \array_slice(explode("\n", (string) file_get_contents($this->split)), 0, 4))."\n"]);
         $this->refused('lacks quire/testing, quire/theme-default');
     }
 

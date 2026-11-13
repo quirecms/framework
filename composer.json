@@ -13,6 +13,7 @@
             "options": {
                 "versions": {
                     "quire/admin": "0.2.x-dev",
+                    "quire/analytics": "0.2.x-dev",
                     "quire/core": "0.2.x-dev",
                     "quire/privacy": "0.2.x-dev",
                     "quire/testing": "0.2.x-dev",
@@ -62,6 +63,7 @@
         "psr-4": {
             "App\\Tests\\": "tests/",
             "Quire\\Admin\\Tests\\": "packages/admin/tests/",
+            "Quire\\Analytics\\Tests\\": "packages/analytics/tests/",
             "Quire\\Privacy\\Tests\\": "packages/privacy/tests/",
             "Quire\\Fixtures\\Hello\\": "tests/Fixtures/extensions/hello/src/",
             "Quire\\Fixtures\\Recipes\\": "tests/Fixtures/extensions/recipes/src/",
@@ -138,6 +140,7 @@
         "phpstan/phpstan-strict-rules": "^2.1.1",
         "phpstan/phpstan-symfony": "^2.1",
         "phpunit/phpunit": "^13.4",
+        "quire/analytics": "^0.2",
         "quire/privacy": "^0.2",
         "quire/testing": "^0.2",
         "rector/rector": "^2.8.4",

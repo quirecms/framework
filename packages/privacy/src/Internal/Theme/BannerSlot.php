@@ -21,7 +21,7 @@ final readonly class BannerSlot implements SlotRendererInterface
 
     public function render(array $context): string
     {
-        if (!$this->banner->shown()) {
+        if (!$this->banner->onThisPage()) {
             return '';
         }
 

@@ -8,8 +8,10 @@ use Quire\Privacy\Extend\Privacy;
 
 /*
  * CI only: the site's extend.php while consent.mjs checks the banner, with two services of different
- * categories (none of them analytics), and [[ci_video]], a trusted shortcode embedding the video from
- * the site's own host (src/Ci). The step puts them in place of the site's own and back.
+ * categories (none of them analytics), and trusted shortcodes (src/Ci): [[ci_video]] embedding the
+ * video from the site's own host, [[ci_probe]] and [[ci_event]]. Google Analytics 4 (quire/analytics) is
+ * turned on by the step's setting; consent.mjs answers Google's hosts itself. The step puts these in
+ * place of the site's own and back.
  */
 return [
     new Quire\Extend\Assets()->entrypoint('app'),
@@ -20,5 +22,6 @@ return [
 
     new Quire\Extend\Formatter()
         ->shortcode('ci_video', App\Ci\CiVideoShortcode::class, trusted: true)
-        ->shortcode('ci_probe', App\Ci\CiProbeShortcode::class, trusted: true),
+        ->shortcode('ci_probe', App\Ci\CiProbeShortcode::class, trusted: true)
+        ->shortcode('ci_event', App\Ci\CiEventShortcode::class, trusted: true),
 ];

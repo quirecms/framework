@@ -40,6 +40,6 @@ final readonly class ConsentLoadsCheck implements ThemeCheckInterface
             }
         }
 
-        return array_map(ThemeProblem::error(...), ConsentLoads::find([...$templates, ...$extensions], $this->services->askedAbout()));
+        return array_map(ThemeProblem::error(...), ConsentLoads::find([...$templates, ...$extensions], array_values(array_filter($this->services->declared(), static fn (\Quire\Privacy\Service $service): bool => $service->category->needsConsent()))));
     }
 }

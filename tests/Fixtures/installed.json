@@ -44,6 +44,23 @@
             }
         },
         {
+            "name": "quire/analytics",
+            "version": "0.1.0.0",
+            "pretty_version": "0.1.0",
+            "type": "quire-extension",
+            "install-path": "../../packages/analytics",
+            "description": "Analytics for Quire",
+            "extra": {
+                "quire": {
+                    "title": "Analytics",
+                    "description": "Google Analytics 4 for the site, loaded only once visitors allow it, and events marked in templates.",
+                    "requires": [
+                        "quire-privacy"
+                    ]
+                }
+            }
+        },
+        {
             "name": "quire/privacy",
             "version": "0.1.0.0",
             "pretty_version": "0.1.0",

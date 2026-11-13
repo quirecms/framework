@@ -20,6 +20,7 @@ bin/console quire:extension:enable quire-privacy
 - **"Cookie settings"** on every page, in the footer, reopens the dialog: withdrawing is as easy as giving. Withdrawing stops the service where it can, and removes its cookies on the site's domain.
 - **Asked again** about a service added since, or one that changed since the visitor allowed it (it reaches another site, keeps another cookie, or moved to another category), by name; other answers stay. A change of wording isn't a reason to ask again. Everyone is asked again when their choice expires.
 - **No banner for browsers that ask not to be tracked** (Global Privacy Control, Do Not Track): they count as rejecting, and the dialog says why.
+- **Not on pages with forms for passwords or accounts** (sign-in, registration, password resets): no banner, no loader, and nothing of a service runs there, whatever the visitor allowed.
 - **No banner without JavaScript**, and no service runs: the banner stays hidden rather than show buttons that do nothing.
 - **Test mode:** outside production, or on another domain than the site's own (`DEFAULT_URI`, e.g. a temporary domain), visitors are asked as usual, nothing is sent, and the banner says so. A site that answers on two domains without redirecting one to the other (e.g. with and without `www`) sends nothing on the other one: redirect it. To check a setup on a temporary domain, turn on `quire-privacy.send_in_test`.
 
@@ -123,6 +124,8 @@ A shortcode needs nothing for this: its output passes through `quire/privacy`'s 
 Output that isn't UTF-8 can't be carried or checked: its placeholder says the content can't be shown, and the site's log says so.
 
 Editors can't embed by writing HTML: the sanitiser removes frames and scripts from content. Themes restyle the placeholder (`.consent-embed`, with the `--quire-consent-*` properties) or override `templates/extensions/quire_privacy/embed.html.twig`, keeping its `data-consent-embed*` attributes.
+
+Analytics comes this way too: `quire/analytics` declares Google Analytics 4 as a service of the site ([analytics.md](analytics.md)).
 
 ## In PHP and JavaScript
 

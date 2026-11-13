@@ -108,6 +108,6 @@
 <script type="application/json" id="quire-consent-config">{{ config|merge({messages: {
     saved: 'Your choice is saved.'|trans({}, domain),
     off: '{label} is off.'|trans({label: '{label}'}, domain),
-}})|json_encode(constant('JSON_HEX_TAG') b-or constant('JSON_HEX_AMP') b-or constant('JSON_UNESCAPED_SLASHES'))|raw }}</script>
+}})|json_encode(constant('JSON_HEX_TAG') b-or constant('JSON_HEX_AMP') b-or constant('JSON_HEX_APOS') b-or constant('JSON_HEX_QUOT') b-or constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_THROW_ON_ERROR'))|raw }}</script>
 <script type="module" src="{{ loader }}"></script>
 {% endif %}

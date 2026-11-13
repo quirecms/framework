@@ -1,5 +1,6 @@
 [
     {"path": "packages/admin", "repository": "quirecms/admin"},
+    {"path": "packages/analytics", "repository": "quirecms/analytics"},
     {"path": "packages/core", "repository": "quirecms/core"},
     {"path": "packages/privacy", "repository": "quirecms/privacy"},
     {"path": "packages/testing", "repository": "quirecms/testing"},

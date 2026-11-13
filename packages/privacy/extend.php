@@ -9,9 +9,11 @@ use Quire\Privacy\Internal\Formatter\ServicesShortcode;
 use Quire\Privacy\Internal\Http\ConsentController;
 use Quire\Privacy\Internal\Job\PurgeConsentLog;
 use Quire\Privacy\Internal\Lint\ConsentLoadsPass;
+use Quire\Privacy\Internal\ServiceSwitchesPass;
 use Quire\Privacy\Internal\SourcesSlotPass;
 use Quire\Privacy\Internal\Theme;
 use Quire\Privacy\PrivacySettings;
+use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 
 /*
  * Privacy and cookies: the services other extensions and themes declare (Quire\Privacy\Extend\Privacy),
@@ -26,11 +28,15 @@ return [
             __DIR__.'/src/Cookie.php',
             __DIR__.'/src/Service.php',
             __DIR__.'/src/Extend',
+            // Not ServiceSwitchInterface: its #[AutoconfigureTag] tags implementers only while the
+            // interface itself is loaded here.
         ])
         ->load(__DIR__.'/config/services.php')
         ->compilerPass(new SourcesSlotPass())
         // No template may load a service visitors are asked about before they consent.
-        ->compilerPass(new ConsentLoadsPass()),
+        ->compilerPass(new ConsentLoadsPass())
+        // Only a service's own package may switch it, once.
+        ->compilerPass(new ServiceSwitchesPass(), PassConfig::TYPE_BEFORE_REMOVING),
 
     new Extend\Views()
         ->namespace('quire_privacy', __DIR__.'/templates')

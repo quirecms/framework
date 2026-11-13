@@ -101,15 +101,17 @@ jobs:
             sh -c 'npm ci --no-audit --no-fund && node check.mjs https://quire.localhost /admin /admin/content/post /admin/content/page "/admin/content/post?q=hello" /admin/content/post/new /admin/content/page/new /admin/content/post/'"$draft"' '"${changes%/changes/*}"' '"$changes"' /admin/settings /admin/settings/content /admin/themes /admin/extensions /admin/extensions/quire-admin/purge /admin/users /admin/users/new /admin/roles /admin/roles/member /admin/roles/admin "/admin/access?user=admin&ability=quire.settings.manage" /admin/audit "/admin/audit?area=user." /admin/ui "/admin/content/post?mode=board" "/admin/content/post?mode=calendar" "/admin/content/post?view=needs-me" "/admin/content/post?f[status][]=draft&f[checks][]=any" "/admin/find?q=spring" "/admin/find?q=schedule+venue+guide+friday+18:00" /admin/preferences'
       - name: Check the cookie banner, its settings and its loader (quire/privacy, with axe-core)
         run: |
-          # The site with two services to ask about (tests/Accessibility/consent-site), then its own extend.php back.
+          # The site with services to ask about and Google Analytics (tests/Accessibility/consent-site), then its own extend.php back.
           docker compose exec -T php bin/console quire:extension:enable quire-privacy --no-interaction
+          docker compose exec -T php bin/console quire:extension:enable quire-analytics --no-interaction
+          docker compose exec -T php bin/console quire:settings:set quire-analytics.ga4_id G-CITEST123
           cp extend.php "$RUNNER_TEMP/extend.php"
           cp tests/Accessibility/consent-site/extend.php extend.php
           cp -r tests/Accessibility/consent-site/assets/ci-consent assets/
           # [[ci_video]], a trusted shortcode embedding the video, and [[ci_probe]], the C2c probe, on a page of their own.
           mkdir -p src/Ci && cp tests/Accessibility/consent-site/src/*.php src/Ci/
           docker compose exec -T php bin/console cache:clear
-          docker compose exec -T php bin/console quire:content:create page "Embed" --body "$(printf 'A video:\n\n[[ci_video]]\n\nA probe:\n\n[[ci_probe]]')" --publish
+          docker compose exec -T php bin/console quire:content:create page "Embed" --body "$(printf 'A video:\n\n[[ci_video]]\n\nA probe:\n\n[[ci_probe]]\n\n[[ci_event]]')" --publish
           playwright=$(jq -r '.dependencies.playwright' tests/Accessibility/package.json)
           status=0
           docker run --rm --network quire_default -e QUIRE_CHECK_SERVER=php -v "$PWD/tests/Accessibility:/work" -w /work "mcr.microsoft.com/playwright:v${playwright}-noble" \

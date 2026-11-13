@@ -1,0 +1,5 @@
+# quire/analytics
+"Google Analytics measurement ID": "ID за мерење на Google Analytics"
+"From Google Analytics: Admin, Data streams, the site's stream, e.g. \"G-ABC123DEF4\". Visitors are asked first. Empty: Google Analytics is off.": "Од Google Analytics: Admin, Data streams, стримот на сајтот, на пр. „G-ABC123DEF4“. Посетителите прво се прашуваат. Празно: Google Analytics е исклучен."
+"Query parameters Google Analytics may see": "Параметри во адресата што Google Analytics смее да ги види"
+"Besides campaigns (utm_…), separated by commas, e.g. \"q\" for the site's search. Others are left out of the addresses sent: links to sign in or reset a password carry tokens and e-mail addresses.": "Покрај кампањите (utm_…), одделени со запирки, на пр. „q“ за пребарувањето на сајтот. Другите се отстрануваат од испратените адреси: врските за најава или ресетирање лозинка содржат токени и е-адреси."

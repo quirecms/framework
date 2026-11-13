@@ -1,0 +1,5 @@
+# quire/analytics
+"Google Analytics measurement ID": "Mess-ID von Google Analytics"
+"From Google Analytics: Admin, Data streams, the site's stream, e.g. \"G-ABC123DEF4\". Visitors are asked first. Empty: Google Analytics is off.": "Aus Google Analytics: Verwaltung, Datenstreams, der Stream der Website, z. B. „G-ABC123DEF4“. Besucher werden zuerst gefragt. Leer: Google Analytics ist aus."
+"Query parameters Google Analytics may see": "Abfrageparameter, die Google Analytics sehen darf"
+"Besides campaigns (utm_…), separated by commas, e.g. \"q\" for the site's search. Others are left out of the addresses sent: links to sign in or reset a password carry tokens and e-mail addresses.": "Außer Kampagnen (utm_…), durch Kommas getrennt, z. B. „q“ für die Suche der Website. Andere werden aus den gesendeten Adressen entfernt: Links zum Anmelden oder Zurücksetzen eines Passworts enthalten Tokens und E-Mail-Adressen."
