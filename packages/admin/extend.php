@@ -112,6 +112,7 @@ return [
         ->menu('quire-admin.settings', 'Settings', 'quire_admin_settings', ability: SettingsController::ABILITY, section: 'site', order: 10)
         ->menu('quire-admin.themes', 'Themes', 'quire_admin_themes', ability: ThemesController::ABILITY, section: 'site', order: 20)
         ->menu('quire-admin.extensions', 'Extensions', 'quire_admin_extensions', ability: ExtensionsController::ABILITY, section: 'site', order: 30)
+        ->menu('quire-admin.setup', 'Setup', SetupController::ROUTE, ability: SetupController::ABILITY, section: 'site', order: 40)
         ->menu('quire-admin.audit', 'Activity', 'quire_admin_audit', ability: AuditController::ABILITY, section: 'activity', order: 10)
         ->menu('quire-admin.users', 'Users', 'quire_admin_users', ability: UsersController::ABILITY, section: 'users', order: 10)
         ->menu('quire-admin.roles', 'Roles', 'quire_admin_roles', ability: RolesController::ABILITY, section: 'users', order: 20)
