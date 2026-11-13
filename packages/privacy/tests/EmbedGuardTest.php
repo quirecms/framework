@@ -47,6 +47,12 @@ final class EmbedGuardTest extends PrivacyTestCase
         yield 'styles that load' => ['<style>.a { background: url(https://thumbs.video.example/a.png) }</style>', ''];
         yield 'a host that isn\'t one' => ['<iframe src="https://%zz.video.example/embed"></iframe>', ''];
         yield 'an unknown scheme' => ['<iframe src="ftp://player.video.example/x"></iframe>', ''];
+        // The architect's probe (C2c review, R1): escaped as printed, but a parser with scripting off
+        // writes the attribute back unescaped, and a browser reads <noscript> as text.
+        yield 'an escaped value in <noscript>' => ['<iframe src="https://player.video.example/1"></iframe><noscript><p title="&lt;/noscript&gt;&lt;/template&gt;&lt;img src=https://thumbs.video.example/leak.jpg&gt;">x</p></noscript>', ''];
+        // R2: browsers and the parser read <noscript> differently, however it's written.
+        yield 'markup in a <noscript> attribute' => ['<noscript><p title="</noscript><img src=https://thumbs.video.example/a.png>"></p></noscript>', ''];
+        yield 'any <noscript>' => ['<noscript><p>Turn on JavaScript to see the video.</p></noscript>', ''];
     }
 
     #[DataProvider('held')]
@@ -57,12 +63,13 @@ final class EmbedGuardTest extends PrivacyTestCase
 
         self::assertCount(1, $box, $out);
         self::assertSame($service, $box->attr('data-consent-embed'));
-        // An HTML5 parser, as browsers: what's inside <template> is inert, and not in the page.
+        // An HTML5 parser, as browsers: one element, the placeholder, and nothing that loads.
         $page = \Dom\HTMLDocument::createFromString('<!doctype html><body>'.$out, \LIBXML_NOERROR);
-        self::assertCount(0, $page->querySelectorAll('iframe, script, object, embed, video, img, link, style'), 'Nothing loads outside the inert template.');
-        $template = $page->querySelector('template[data-consent-embed-content]');
-        \assert($template instanceof \Dom\HTMLElement);
-        self::assertStringContainsString('<p>Before</p>', $template->innerHTML, 'What the shortcode printed, all of it, for the loader to put back.');
+        $body = $page->body;
+        \assert($body instanceof \Dom\HTMLElement);
+        self::assertCount(1, $body->children, 'One element: the placeholder.');
+        self::assertCount(0, $page->querySelectorAll('iframe, object, embed, video, img, link, style, script:not([type="application/json"])'), 'Nothing loads before consent.');
+        self::assertSame('<p>Before</p>'.$html.'<p>After</p>', $this->heldOutput($out), 'What the shortcode printed, exactly, as data for the loader.');
     }
 
     public function testFromSeveralServicesItLoadsOnceOnly(): void
@@ -73,12 +80,13 @@ final class EmbedGuardTest extends PrivacyTestCase
         self::assertCount(0, $box->filter('[data-consent-embed-allow]'));
     }
 
-    public function testAStrayEndOfTemplateCantLetItOut(): void
+    public function testNothingCanEndWhatHoldsIt(): void
     {
-        $out = $this->guard('<p>x</template><iframe src="https://player.video.example/1"></iframe></p>');
+        $out = $this->guard('<p>x</script></template><iframe src="https://player.video.example/1"></iframe></p>');
         $page = \Dom\HTMLDocument::createFromString('<!doctype html><body>'.$out, \LIBXML_NOERROR);
 
         self::assertCount(0, $page->querySelectorAll('iframe'), $out);
+        self::assertStringNotContainsString('</script></template>', $out);
     }
 
     /**
@@ -109,7 +117,8 @@ final class EmbedGuardTest extends PrivacyTestCase
         self::assertSame('https://video.example/privacy', $box->filter('a[rel=noopener]')->attr('href'));
         self::assertCount(1, $box->filter('[data-consent-embed-actions][hidden] [data-consent-embed-load]'), 'Hidden without JavaScript: no dead buttons.');
         self::assertSame('Always allow Fixture Video', trim($box->filter('[data-consent-embed-allow]')->text()));
-        self::assertStringContainsString('<iframe src="https://player.video.example/embed/1" title="A video"></iframe>', $box->filter('template[data-consent-embed-content]')->html());
+        self::assertSame('<iframe src="https://player.video.example/embed/1" title="A video"></iframe>', $this->heldOutput($box->outerHtml()));
+        self::assertStringNotContainsString('<iframe', $box->filter('script[data-consent-embed-content]')->text(), 'Data, with no tag in it.');
         self::assertStringContainsString('href="https://player.video.example/embed/1"', $box->filter('noscript')->html(), 'Without JavaScript, a link to it.');
         self::assertCount(1, $box->filter('[data-consent-embed-test]'), 'Outside production nothing loads, and it says so.');
     }
@@ -141,7 +150,7 @@ final class EmbedGuardTest extends PrivacyTestCase
         self::assertCount(1, $main->filter('[data-consent-embed="fixture-video"]'));
         $page = \Dom\HTMLDocument::createFromString((string) $this->client->getResponse()->getContent(), \LIBXML_NOERROR);
         self::assertCount(0, $page->querySelectorAll('main iframe'), 'Not before consent.');
-        self::assertStringContainsString('https://player.video.example/embed/intro', $main->filter('template[data-consent-embed-content]')->html());
+        self::assertStringContainsString('https://player.video.example/embed/intro', $this->heldOutput($main->filter('[data-consent-embed]')->outerHtml()));
     }
 
     public function testRawEmbedsInStoredContentDontSurviveTheSanitiser(): void
@@ -159,6 +168,19 @@ final class EmbedGuardTest extends PrivacyTestCase
     public function testQuirePrivacyFillsCoresSlot(): void
     {
         self::assertInstanceOf(EmbedGuard::class, $this->service(EmbedGuardInterface::class));
+    }
+
+    /**
+     * What the placeholder holds for the loader: the JSON in its data block, decoded.
+     */
+    private function heldOutput(string $placeholder): string
+    {
+        $data = new Crawler($placeholder)->filter('script[type="application/json"][data-consent-embed-content]');
+        self::assertCount(1, $data);
+        $html = json_decode($data->text(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsString($html);
+
+        return $html;
     }
 
     private function guard(string $html): string

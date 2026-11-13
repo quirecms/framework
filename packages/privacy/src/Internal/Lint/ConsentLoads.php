@@ -34,9 +34,12 @@ final class ConsentLoads
         }
 
         foreach ($templates as $name => $file) {
-            $source = @file_get_contents($file);
+            $source = is_file($file) && is_readable($file) ? file_get_contents($file) : false;
 
             if (!\is_string($source)) {
+                // Unchecked, it could load anything: say so rather than pass it.
+                $problems[] = \sprintf('%s can\'t be read, so it can\'t be checked for loads before consent. Make it readable to the site.', $name);
+
                 continue;
             }
 

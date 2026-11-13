@@ -19,5 +19,6 @@ return [
         ->service('ci-fonts', label: 'CI Fonts', category: Category::Preferences, vendor: 'CI Fonts Inc.', purpose: 'Serves the site\'s fonts.', hosts: ['font-src' => ['https://fonts.example']]),
 
     new Quire\Extend\Formatter()
-        ->shortcode('ci_video', App\Ci\CiVideoShortcode::class, trusted: true),
+        ->shortcode('ci_video', App\Ci\CiVideoShortcode::class, trusted: true)
+        ->shortcode('ci_probe', App\Ci\CiProbeShortcode::class, trusted: true),
 ];

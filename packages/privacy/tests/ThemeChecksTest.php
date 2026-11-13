@@ -55,6 +55,15 @@ final class ThemeChecksTest extends PrivacyTestCase
         self::assertStringStartsWith('layout.html.twig line 2: loads https://fonts.example, from "Fixture Fonts" (fixture-fonts), which visitors are asked about: it would load before they consent.', $problems[0]->message);
     }
 
+    public function testATemplateThatCantBeReadIsntPassed(): void
+    {
+        $problems = $this->service(ConsentLoadsCheck::class)->check('acme', ['layout.html.twig' => $this->directory.'/missing.html.twig']);
+
+        self::assertCount(1, $problems);
+        self::assertTrue($problems[0]->error);
+        self::assertStringStartsWith('layout.html.twig can\'t be read, so it can\'t be checked for loads before consent.', $problems[0]->message);
+    }
+
     public function testTheSiteIsntBuiltWithOne(): void
     {
         $this->template('layout.html.twig', '<iframe src="https://player.video.example/embed/1"></iframe>');

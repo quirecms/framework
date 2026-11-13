@@ -1,6 +1,7 @@
 {#
     In place of what a trusted shortcode embeds from a service visitors are asked about (a video, a
-    map), until the visitor allows it. The embed is inside, inert, for the consent loader to put back:
+    map), until the visitor allows it. The embed is inside as JSON (data, never markup), for the consent
+    loader to put back:
     "Load it" once, or "Always allow" the service (kept as the visitor's choice).
 
     Variables: service (the service, or null when it can't be told: then only "Load it"), url and host (the
@@ -30,5 +31,5 @@
         {% endblock %}
         {% if url and host %}<noscript><p class="consent-embed__text"><a href="{{ url }}" rel="noopener">{{ 'Open it on {host}'|trans({host: host}, domain) }}</a></p></noscript>{% endif %}
     </div>
-    <template data-consent-embed-content>{{ html|raw }}</template>
+    <script type="application/json" data-consent-embed-content>{{ html|json_encode(constant('JSON_HEX_TAG') b-or constant('JSON_HEX_AMP') b-or constant('JSON_HEX_APOS') b-or constant('JSON_HEX_QUOT') b-or constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_UNESCAPED_UNICODE'))|raw }}</script>
 </div>

@@ -330,13 +330,37 @@ function start(config) {
 
     // The embed in place of its placeholder. In test mode nothing loads; the placeholder says so.
     function reveal(box, focus) {
-        const template = box.querySelector('template[data-consent-embed-content]');
+        const data = box.querySelector('script[data-consent-embed-content]');
+        let html;
 
-        if (config.test || !template) {
+        try {
+            html = JSON.parse(data?.textContent ?? 'null');
+        } catch {
+            html = null;
+        }
+
+        if (config.test || typeof html !== 'string') {
             return;
         }
 
-        const content = document.importNode(template.content, true);
+        // Read by the browser's own parser, inert until it's in the page; scripts made that way never
+        // run, so each is made again, as the page's own would be (the policy still decides).
+        const parsed = document.createElement('template');
+        parsed.innerHTML = html;
+
+        for (const old of parsed.content.querySelectorAll('script')) {
+            const script = document.createElement('script');
+
+            for (const attribute of old.attributes) {
+                script.setAttribute(attribute.name, attribute.value);
+            }
+
+            script.async = false;
+            script.textContent = old.textContent;
+            old.replaceWith(script);
+        }
+
+        const content = document.importNode(parsed.content, true);
         const nodes = [...content.childNodes];
         box.replaceWith(content);
         loaded.push({service: box.dataset.consentEmbed, box, nodes});

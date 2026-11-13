@@ -95,19 +95,36 @@ if (process.env.QUIRE_CHECK_SENDS === '1') {
         await context.close();
     });
 
+    await check('nothing of an embed is requested before consent, and markup escaped in <noscript> never gets out of its placeholder', async () => {
+        const { context, page } = await fresh();
+        const seen = [];
+        page.on('request', (request) => (request.url().includes('/ci-consent/embed') || request.url().includes('/ci-leak') || request.frame() !== page.mainFrame()) && seen.push(request.url()));
+        await page.goto(base + '/embed', { waitUntil: 'networkidle' });
+        expect(seen.length === 0, `Requested before consent: ${seen.join(', ')}`);
+        expect(await page.locator('main img, main iframe').count() === 0, 'An element of an embed is in the page before consent.');
+        const probe = page.locator('main [data-consent-embed=""]');
+        expect(await probe.count() === 1 && await probe.locator('[data-consent-embed-allow]').count() === 0, 'The probe isn\'t held with "Load it" only.');
+        await page.locator('[data-consent-banner] [data-consent-reject]').click();
+        await probe.locator('[data-consent-embed-load]').click();
+        await page.waitForTimeout(500);
+        expect(!seen.some((url) => url.includes('/ci-leak')), 'The escaped image loaded.');
+        expect(await page.locator('main iframe[title="Probe"]').count() === 1, 'The probe\'s frame didn\'t load with "Load it".');
+        await context.close();
+    });
+
     await check('"Load it" loads one embed this time, runs its scripts as the page would (an inline one stays blocked), and keeps nothing', async () => {
         const { context, page } = await fresh();
         await page.goto(base + '/embed', { waitUntil: 'networkidle' });
         await page.locator('[data-consent-banner] [data-consent-reject]').click();
         const kept = JSON.stringify((await choice(context)).s);
-        expect(await page.locator('main iframe').count() === 0, 'The embed loaded before the click.');
-        await page.locator('[data-consent-embed] [data-consent-embed-load]').click();
+        expect(await page.locator('main iframe').count() === 0, 'An embed loaded before the click.');
+        await page.locator('[data-consent-embed="ci-video"] [data-consent-embed-load]').click();
         await page.waitForFunction(() => document.documentElement.dataset.ciEmbed === '1', null, { timeout: 5000 });
         expect(await page.locator('main iframe[data-ci-frame]').count() === 1, 'No frame after "Load it".');
         expect(await page.evaluate(() => document.documentElement.dataset.ciInline) === undefined, 'An inline script of the embed ran: the policy must block it, as on the page.');
         expect(JSON.stringify((await choice(context)).s) === kept, 'Loading once changed the visitor\'s choice.');
         await page.reload({ waitUntil: 'networkidle' });
-        expect(await page.locator('main [data-consent-embed]').count() === 1 && await page.locator('main iframe').count() === 0, 'Loaded again without a click.');
+        expect(await page.locator('main [data-consent-embed="ci-video"]').count() === 1 && await page.locator('main iframe').count() === 0, 'Loaded again without a click.');
         await context.close();
     });
 
@@ -115,16 +132,16 @@ if (process.env.QUIRE_CHECK_SENDS === '1') {
         const { context, page, errors } = await fresh();
         await page.goto(base + '/embed', { waitUntil: 'networkidle' });
         await page.locator('[data-consent-banner] [data-consent-reject]').click();
-        await page.locator('[data-consent-embed] [data-consent-embed-allow]').click();
+        await page.locator('[data-consent-embed="ci-video"] [data-consent-embed-allow]').click();
         await page.waitForFunction(() => document.documentElement.dataset.ciEmbed === '1', null, { timeout: 5000 });
         expect(/^[0-9a-f]{12}$/.test((await choice(context)).s['ci-video']), 'No "yes" kept for the service.');
         await page.reload({ waitUntil: 'networkidle' });
         await page.waitForFunction(() => document.documentElement.dataset.ciEmbed === '1', null, { timeout: 5000 });
-        expect(await page.locator('main [data-consent-embed]').count() === 0, 'The placeholder stays after allowing.');
+        expect(await page.locator('main [data-consent-embed="ci-video"]').count() === 0, 'The placeholder stays after allowing.');
         await page.locator('.consent__opener').click();
         await page.locator('[data-consent-dialog] [data-consent-service="ci-video"]').uncheck();
         await page.locator('[data-consent-dialog] [data-consent-save]').click();
-        expect(await page.locator('main [data-consent-embed="ci-video"]').count() === 1 && await page.locator('main iframe').count() === 0, 'Still loaded after withdrawing.');
+        expect(await page.locator('main [data-consent-embed="ci-video"]').count() === 1 && await page.locator('main iframe[data-ci-frame]').count() === 0, 'Still loaded after withdrawing.');
         // The embed's inline script is refused by design (the check above).
         const unexpected = errors.filter((error) => !error.startsWith('Refused to execute inline script'));
         expect(unexpected.length === 0, unexpected.join('; '));

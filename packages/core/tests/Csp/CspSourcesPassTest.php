@@ -72,6 +72,7 @@ final class CspSourcesPassTest extends TestCase
         $container = $this->container();
         $container->register(FixtureSources::class, FixtureSources::class);
         $container->setAlias(ThirdPartySourcesInterface::class, FixtureSources::class);
+        $this->guardEmbeds($container);
 
         $this->compile($container);
     }
@@ -83,6 +84,52 @@ final class CspSourcesPassTest extends TestCase
         $container->register(FixtureSources::class, FixtureSources::class)
             ->setDecoratedService(ThirdPartySourcesInterface::class)
             ->setArguments([new Reference('.inner')]);
+        $this->guardEmbeds($container);
+
+        $this->compile($container);
+    }
+
+    /**
+     * With quire/privacy's hosts in the policy, its guard must hold their embeds: every way of leaving
+     * the formatter without it.
+     *
+     * @return iterable<string, array{\Closure(ContainerBuilder): void}>
+     */
+    public static function noGuardWithPrivacy(): iterable
+    {
+        yield 'core\'s default in the slot' => [static function (ContainerBuilder $container): void {}];
+        yield 'the slot removed' => [static function (ContainerBuilder $container): void {
+            $container->removeAlias(EmbedGuardInterface::class);
+        }];
+        yield 'the slot and core\'s default removed' => [static function (ContainerBuilder $container): void {
+            $container->removeAlias(EmbedGuardInterface::class);
+            $container->removeDefinition(NoEmbedGuard::class);
+        }];
+        yield 'the formatter given core\'s default' => [static function (ContainerBuilder $container): void {
+            $container->register(FixtureGuard::class, FixtureGuard::class);
+            $container->setAlias(EmbedGuardInterface::class, FixtureGuard::class);
+            $container->getDefinition(Formatter::class)->setArgument('$embeds', new Reference(NoEmbedGuard::class));
+        }];
+        yield 'the formatter given core\'s default inline' => [static function (ContainerBuilder $container): void {
+            $container->register(FixtureGuard::class, FixtureGuard::class);
+            $container->setAlias(EmbedGuardInterface::class, FixtureGuard::class);
+            $container->getDefinition(Formatter::class)->setArgument('$embeds', new Definition(NoEmbedGuard::class));
+        }];
+    }
+
+    /**
+     * @param \Closure(ContainerBuilder): void $change
+     */
+    #[DataProvider('noGuardWithPrivacy')]
+    public function testWithQuirePrivacyOnlyItsGuardWillDo(\Closure $change): void
+    {
+        $container = $this->container();
+        $container->register(FixtureSources::class, FixtureSources::class);
+        $container->setAlias(ThirdPartySourcesInterface::class, FixtureSources::class);
+        $change($container);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessageIsOrContains('the formatter isn\'t given its guard of embeds');
 
         $this->compile($container);
     }
@@ -343,6 +390,12 @@ final class CspSourcesPassTest extends TestCase
         $this->expectExceptionMessageIsOrContains('OutsideGuard');
 
         $this->compile($container);
+    }
+
+    private function guardEmbeds(ContainerBuilder $container): void
+    {
+        $container->register(FixtureGuard::class, FixtureGuard::class);
+        $container->setAlias(EmbedGuardInterface::class, FixtureGuard::class);
     }
 
     /**

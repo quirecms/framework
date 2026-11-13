@@ -15,12 +15,13 @@ use Twig\Environment;
 /**
  * Holds what a trusted shortcode prints, when it embeds from a service visitors are asked about (a
  * video, a map), until the visitor allows it: in its place, one placeholder that says who it's from and
- * what loading it does, with the output inside, inert, for the consent loader to put back (doc 20,
+ * what loading it does, with the output inside as data (JSON), for the consent loader to put back (doc 20,
  * condition C-B).
  *
  * The site's policy allows a service's hosts for every visitor, so pages stay cacheable; for embeds,
  * this is what makes them wait. It fails closed: markup it can't read, a URL whose host it can't tell,
- * a frame's own document (srcdoc) or styles that may load something (url(), @import) are held too.
+ * a frame's own document (srcdoc), <noscript> (which browsers and this parser read differently) or
+ * styles that may load something (url(), @import) are held too.
  * Hosts of necessary services, the site's own URLs and hosts no service declares (which the policy
  * blocks anyway) are left as they are.
  *
@@ -29,7 +30,7 @@ use Twig\Environment;
 final readonly class EmbedGuard implements EmbedGuardInterface
 {
     /** What can load something from another site */
-    private const array ELEMENTS = ['iframe', 'frame', 'script', 'object', 'embed', 'video', 'audio', 'picture', 'source', 'track', 'img', 'image', 'input', 'link', 'style'];
+    private const array ELEMENTS = ['iframe', 'frame', 'script', 'object', 'embed', 'video', 'audio', 'picture', 'source', 'track', 'img', 'image', 'input', 'link', 'style', 'noscript'];
 
     /**
      * @param \Closure(): Environment $twig Later: Twig renders content, and content is formatted here
@@ -88,8 +89,10 @@ final readonly class EmbedGuard implements EmbedGuardInterface
             return $html;
         }
 
-        // As the parser read it: a stray "</template>" can't end the placeholder's template early.
-        return $this->placeholder(!$unknown && 1 === \count($services) ? array_first($services) : null, $first, $body->innerHTML);
+        // The output as it was printed, never as this parser wrote it back: browsers read some markup
+        // otherwise (e.g. <noscript>, with scripting on), and a rewritten attribute could end what holds
+        // it. The placeholder carries it as JSON, for the loader to read with the browser's own parser.
+        return $this->placeholder(!$unknown && 1 === \count($services) ? array_first($services) : null, $first, $html);
     }
 
     /**
@@ -99,7 +102,9 @@ final readonly class EmbedGuard implements EmbedGuardInterface
     {
         $name = strtolower($element->localName);
 
-        if ($element->hasAttribute('srcdoc')) {
+        // A frame's own document, and what browsers read as text but this parser as markup (or the
+        // other way round, when its attributes hold markup): what they'd load can't be told here.
+        if ($element->hasAttribute('srcdoc') || 'noscript' === $name) {
             return null;
         }
 
