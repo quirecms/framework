@@ -10,20 +10,17 @@ bin/console quire:extension:enable quire-analytics
 
 ## Google Analytics 4
 
-The site sets its measurement ID (Google Analytics: Admin, Data streams, the site's stream) in its own `extend.php`:
+In the admin, Settings, "Analytics": paste the site's measurement ID (Google Analytics: Admin, Data streams, the site's stream), e.g. `G-ABC123DEF4`, or `bin/console quire:settings:set quire-analytics.ga4_id G-ABC123DEF4`. Empty, Google Analytics is off: no question in the banner, none of Google's hosts in the policy, nothing in the privacy notice.
 
-```php
-return [
-    new Quire\Analytics\Extend\Analytics()->ga4('G-ABC123DEF4'),
-];
-```
-
-- **Only the site's `extend.php`.** A theme or an extension is used by many sites, and its ID would send all their visitors to one property, so the site refuses to build with one there. Changing the ID is a deploy, like any other service of the site.
-- **The ID is checked when the site is built:** `G-` and capital letters and digits.
+- **Who may set it:** those who manage settings and have the ability `quire-analytics.manage` (admins). It's the site's own setting: a theme or an extension can't set or switch it.
+- **It's checked:** `G-` and capital letters and digits.
+- **Changing it is in the activity log,** with who, when, and the ID before and after: it sends every visitor's data to another property.
+- **Turning it on** asks visitors about Google Analytics only; their other answers stand. A visitor who allowed Google Analytics before it was turned off counts as allowing it again when it's turned back on: consent is to the service as declared (its hosts, cookies, category), not to a property. Changing the ID doesn't ask again.
+- **Turning it off** takes effect with the next page: Quire's pages are sent with `Cache-Control: max-age=0, must-revalidate, private`, so browsers revalidate them and shared proxies don't keep them. If the site has an HTTP cache of its own in front (a CDN), pages it still holds load Google Analytics until they expire or are purged: purge it.
 - **What visitors are told**, in the banner, the cookie settings and the privacy notice: Google Analytics, run by Google Ireland Limited (with Google LLC in the United States), counts visits; it keeps `_ga` and `_ga_*` for 2 years.
 - **What loads:** gtag.js directly, never Tag Manager, whose container could add any script. The site's Content-Security-Policy allows scripts only from `https://www.googletagmanager.com/gtag/` (the tag, not a container), and Google's analytics hosts for its hits, so what a configuration on Google's side might add (advertising, other destinations) is blocked.
 - **Consent Mode v2, basic:** it loads only once the visitor allows analytics. Advertising is denied, and Google signals and ad personalisation are off.
-- **No tokens in the address.** The page's address and the referrer go without their fragment and without query parameters other than campaigns (`utm_*`): sign-in, reset and other links carry tokens and e-mail addresses. Keep others the site needs, e.g. its search's: `ga4('G-ABC123DEF4', keepParameters: ['q'])`.
+- **No tokens in the address.** The page's address and the referrer go without their fragment and without query parameters other than campaigns (`utm_*`): sign-in, reset and other links carry tokens and e-mail addresses. Keep others the site needs, e.g. its search's, in "Query parameters Google Analytics may see" (`quire-analytics.ga4_keep`, e.g. `q`).
 - **Withdrawing** stops it at once (Google's `ga-disable-` switch: nothing more is sent, not even cookieless hits) and removes `_ga` and `_ga_*` on the site's domain and its parent domains.
 
 ## What's never counted

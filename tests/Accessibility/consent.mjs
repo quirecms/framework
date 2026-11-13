@@ -233,9 +233,11 @@ if (process.env.QUIRE_CHECK_SENDS === '1') {
         const { context, page } = await fresh();
         await page.goto(base + '/embed', { waitUntil: 'networkidle' });
         await page.locator('[data-consent-banner] [data-consent-accept]').click();
-        // The stand-in ran: the one request to Google is done.
         await page.waitForFunction(() => window.ciGtag === 1, null, { timeout: 5000 });
-        const seen = googleRequests(page);
+        // The sign-in page's own requests: the video's frame on /embed is a page of the site too, and
+        // starts Google Analytics there, with the visitor's consent.
+        const seen = [];
+        page.on('request', (request) => GOOGLE.test(request.url()) && request.frame() === page.mainFrame() && request.frame().url().includes('/login') && seen.push(request.url()));
         await page.goto(base + '/login', { waitUntil: 'networkidle' });
         expect(await page.locator('#quire-consent-config').count() === 0 && seen.length === 0, `On the sign-in page: ${seen.join(', ')}`);
         await context.close();

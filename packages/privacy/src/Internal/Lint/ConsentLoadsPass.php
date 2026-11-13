@@ -45,7 +45,7 @@ final readonly class ConsentLoadsPass implements CompilerPassInterface
         }
 
         $projectDirectory = $container->getParameterBag()->all()['kernel.project_dir'] ?? '';
-        $problems = ConsentLoads::find(ConsentLoads::templates(array_keys($directories), \is_string($projectDirectory) ? $projectDirectory : ''), new Services($declarations)->askedAbout());
+        $problems = ConsentLoads::find(ConsentLoads::templates(array_keys($directories), \is_string($projectDirectory) ? $projectDirectory : ''), array_values(array_filter(new Services($declarations)->declared(), static fn (\Quire\Privacy\Service $service): bool => $service->category->needsConsent())));
 
         if ([] !== $problems) {
             throw new InvalidArgumentException(\sprintf("The site's templates load services visitors are asked about before they consent:\n- %s", implode("\n- ", $problems)));

@@ -104,6 +104,7 @@ jobs:
           # The site with services to ask about and Google Analytics (tests/Accessibility/consent-site), then its own extend.php back.
           docker compose exec -T php bin/console quire:extension:enable quire-privacy --no-interaction
           docker compose exec -T php bin/console quire:extension:enable quire-analytics --no-interaction
+          docker compose exec -T php bin/console quire:settings:set quire-analytics.ga4_id G-CITEST123
           cp extend.php "$RUNNER_TEMP/extend.php"
           cp tests/Accessibility/consent-site/extend.php extend.php
           cp -r tests/Accessibility/consent-site/assets/ci-consent assets/
