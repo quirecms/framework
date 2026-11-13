@@ -169,7 +169,7 @@ if (process.env.QUIRE_CHECK_SENDS === '1') {
     const layer = (page) => page.evaluate(() => (window.dataLayer ?? []).map((entry) => JSON.parse(JSON.stringify(Array.from(entry)))));
     const googleRequests = (page) => {
         const seen = [];
-        page.on('request', (request) => GOOGLE.test(request.url()) && seen.push(request.url()));
+        page.on('request', (request) => GOOGLE.test(request.url()) && seen.push(`${request.url()} (from ${request.frame().url()})`));
 
         return seen;
     };

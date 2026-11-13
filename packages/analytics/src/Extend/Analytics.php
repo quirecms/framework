@@ -88,7 +88,10 @@ final class Analytics implements ExtenderInterface
                     new Cookie('_ga_*', '2 years', 'Keeps the state of the visit.'),
                 ],
                 hosts: [
-                    'script-src' => ['https://*.googletagmanager.com'],
+                    // gtag.js and what it loads (/gtag/js, /gtag/destination), never a Tag Manager
+                    // container (/gtm.js), which could run any script: the policy allows these for every
+                    // visitor, so it must not allow more than the tag.
+                    'script-src' => ['https://www.googletagmanager.com/gtag/'],
                     'connect-src' => ['https://*.google-analytics.com', 'https://*.analytics.google.com', 'https://*.googletagmanager.com'],
                     'img-src' => ['https://*.google-analytics.com', 'https://*.googletagmanager.com'],
                 ],

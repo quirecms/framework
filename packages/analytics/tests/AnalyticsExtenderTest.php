@@ -7,6 +7,7 @@ namespace Quire\Analytics\Tests;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Quire\Analytics\Extend\Analytics;
+use Quire\Csp\Policy;
 use Quire\Extend\ExtenderContext;
 use Quire\Extend\ExtenderException;
 use Quire\Privacy\Services;
@@ -29,10 +30,35 @@ final class AnalyticsExtenderTest extends TestCase
         self::assertSame('Google Ireland Limited', $declaration['vendor']);
         self::assertStringContainsString('United States (Google LLC)', $declaration['purpose']);
         self::assertSame(['_ga', '_ga_*'], array_column($declaration['cookies'], 0));
-        self::assertSame(['https://*.googletagmanager.com'], $declaration['hosts']['script-src']);
+        self::assertSame(['https://www.googletagmanager.com/gtag/'], $declaration['hosts']['script-src']);
         self::assertSame('quire-analytics/ga4.js', $declaration['script']);
         self::assertSame(['measurement_id' => 'G-ABC123DEF4', 'keep' => 'q'], $declaration['config']);
         self::assertSame(ExtenderContext::SITE, $declaration['owner']);
+    }
+
+    /**
+     * @return iterable<string, array{string, bool}>
+     */
+    public static function scripts(): iterable
+    {
+        yield 'gtag.js' => ['https://www.googletagmanager.com/gtag/js?id=G-ABC123DEF4', true];
+        yield 'what gtag.js loads' => ['https://www.googletagmanager.com/gtag/destination?id=G-ABC123DEF4', true];
+        yield 'a Tag Manager container, anyone\'s' => ['https://www.googletagmanager.com/gtm.js?id=GTM-ATTACKER', false];
+        yield 'another of Google\'s hosts' => ['https://tagmanager.google.com/gtag/js', false];
+        yield 'a path only starting the same' => ['https://www.googletagmanager.com/gtagx/js', false];
+    }
+
+    /**
+     * The policy allows the tag for every visitor, consent or not, so it must allow nothing more: a
+     * container of Tag Manager would run any script after an injection anywhere on the site.
+     */
+    #[DataProvider('scripts')]
+    public function testThePolicyAllowsTheTagAndNoContainer(string $url, bool $allowed): void
+    {
+        $container = new ContainerBuilder();
+        new Analytics()->ga4('G-ABC123DEF4')->extend($this->context($container));
+
+        self::assertSame($allowed, array_any($this->declarations($container)[0]['hosts']['script-src'], static fn (string $source): bool => Policy::allows($source, $url)));
     }
 
     public function testWithoutAnIdNothingIsDeclared(): void
