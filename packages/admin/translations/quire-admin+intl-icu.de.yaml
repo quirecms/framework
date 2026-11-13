@@ -993,3 +993,5 @@
 'Confirm': 'Bestätigen'
 'Go back': 'Zurück'
 'You sign in without a password here: sign out, sign in again, and come back to do it.': 'Du meldest dich hier ohne Passwort an: Melde dich ab, wieder an, und komm dann zurück.'
+"{count, plural, one {The theme has a problem:} other {The theme has # problems:}}": "{count, plural, one {Das Theme hat ein Problem:} other {Das Theme hat # Probleme:}}"
+"{count, plural, one {# warning about the theme} other {# warnings about the theme}}": "{count, plural, one {# Warnung zum Theme} other {# Warnungen zum Theme}}"

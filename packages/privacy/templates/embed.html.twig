@@ -1,0 +1,35 @@
+{#
+    In place of what a trusted shortcode embeds from a service visitors are asked about (a video, a
+    map), until the visitor allows it. The embed is inside as JSON (data, never markup), for the consent
+    loader to put back:
+    "Load it" once, or "Always allow" the service (kept as the visitor's choice).
+
+    Variables: service (the service, or null when it can't be told: then only "Load it"), url and host (the
+    embed's address and its host, for visitors without JavaScript, or null), html (the embed), test (nothing loads).
+
+    Blocks: consent_embed_text, consent_embed_actions. Keep the data-consent-embed* attributes.
+#}
+{%- set domain = 'quire-privacy' -%}
+<div class="consent-embed" data-consent-embed="{{ service ? service.id : '' }}">
+    <div class="consent-embed__inner">
+        {% block consent_embed_text %}
+            <p class="consent-embed__text">
+                {%- if service -%}
+                    {{ 'This content is from {label}, run by {vendor}. Loading it sends {vendor} your address (IP), and lets them set cookies.'|trans({label: service.label, vendor: service.vendor}, domain) }}
+                {%- else -%}
+                    {{ 'This content is from another site. Loading it sends that site your address (IP), and lets it set cookies.'|trans({}, domain) }}
+                {%- endif -%}
+            </p>
+            {% if service and service.policyUrl %}<p class="consent-embed__text"><a href="{{ service.policyUrl }}" rel="noopener">{{ 'Their privacy policy'|trans({}, domain) }}</a></p>{% endif %}
+        {% endblock %}
+        {% if test %}<p class="consent-embed__text" data-consent-embed-test>{{ 'Test site: nothing is loaded.'|trans({}, domain) }}</p>{% endif %}
+        {% block consent_embed_actions %}
+            <div class="consent__actions" data-consent-embed-actions hidden>
+                <button type="button" class="consent__btn" data-consent-embed-load>{{ 'Load it'|trans({}, domain) }}</button>
+                {% if service %}<button type="button" class="consent__btn" data-consent-embed-allow>{{ 'Always allow {label}'|trans({label: service.label}, domain) }}</button>{% endif %}
+            </div>
+        {% endblock %}
+        {% if url and host %}<noscript><p class="consent-embed__text"><a href="{{ url }}" rel="noopener">{{ 'Open it on {host}'|trans({host: host}, domain) }}</a></p></noscript>{% endif %}
+    </div>
+    <script type="application/json" data-consent-embed-content>{{ html|json_encode(constant('JSON_HEX_TAG') b-or constant('JSON_HEX_AMP') b-or constant('JSON_HEX_APOS') b-or constant('JSON_HEX_QUOT') b-or constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_UNESCAPED_UNICODE'))|raw }}</script>
+</div>

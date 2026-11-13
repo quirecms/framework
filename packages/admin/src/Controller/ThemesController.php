@@ -8,6 +8,7 @@ use Quire\Admin\Security\ConfirmGuard;
 use Quire\Extension\ExtensionManifest;
 use Quire\Extension\Rebuild\RebuildFailedException;
 use Quire\Theme\Exception\ThemeException;
+use Quire\Theme\ThemeChecks;
 use Quire\Theme\ThemePreview;
 use Quire\Theme\Themes;
 use Quire\Theme\ThemeSwitcher;
@@ -46,6 +47,7 @@ final readonly class ThemesController
         private Environment $twig,
         private ThemePreview $preview,
         private ConfirmGuard $confirm,
+        private ThemeChecks $checks,
     ) {
     }
 
@@ -68,6 +70,8 @@ final readonly class ThemesController
                 'parent' => null === $theme->parent ? null : ($installed[$theme->parent]->title ?? $theme->parent),
                 'active' => $id === $this->themes->active()?->id,
                 'problem' => $problem,
+                // What "quire:theme:lint" finds, for the theme in use: e.g. a load before consent.
+                'checks' => $id === $this->themes->active()?->id ? $this->checks->run($id) : null,
                 'screenshot' => null !== $this->screenshotFile($theme),
                 // Already the site's look: nothing to preview.
                 'preview' => $id === $this->themes->active()?->id ? null : $this->preview->reason($id),

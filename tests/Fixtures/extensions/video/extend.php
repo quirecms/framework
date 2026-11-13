@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use Quire\Extend;
+use Quire\Fixtures\Video\VideoShortcode;
 use Quire\Privacy\Category;
 use Quire\Privacy\Cookie;
 use Quire\Privacy\Extend\Privacy;
@@ -42,4 +44,8 @@ return [
             purpose: 'Keeps spam out of the contact form.',
             hosts: ['script-src' => ['https://spam-check.example']],
         ),
+
+    // [[fixture_video id=…]]: a trusted shortcode embedding the video, held until the visitor allows it.
+    new Extend\Formatter()
+        ->shortcode('fixture_video', VideoShortcode::class, trusted: true),
 ];

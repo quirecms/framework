@@ -29,6 +29,7 @@ The declaration is the one source of what visitors read in the banner and the se
 - Browsers that send Global Privacy Control or Do Not Track count as rejecting.
 - Visitors are asked again when the services change (about what's new only), and when their choice expires.
 - Outside production, or on another domain than the site's own, visitors are asked as usual and nothing is sent ("test mode").
+- Embeds of trusted shortcodes from such a service (a video player) wait in a placeholder until the visitor loads them once or allows the service. A template that loads such a service directly stops the site from being built.
 - Each choice is kept as proof, by its random ID, with what the visitor was told; the admin's "Privacy and cookies" page looks it up. `[[privacy_services]]` lists the services in the site's privacy notice.
 
 Settings are under "Privacy and cookies" in the admin's settings. Themes restyle the banner with the `--quire-consent-*` custom properties, or override its blocks in `templates/extensions/quire_privacy/consent.html.twig`. See the [documentation](https://github.com/quirecms/framework/blob/main/docs/privacy.md).

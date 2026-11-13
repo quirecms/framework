@@ -214,6 +214,32 @@ html.consent-shown body {
     border-top: 1px solid var(--quire-consent-border);
 }
 
+/* An embed held until the visitor allows it (a video, a map): a box where it will be. */
+.consent-embed {
+    box-sizing: border-box;
+    display: grid;
+    place-items: center;
+    min-height: 12rem;
+    margin-block: 1rem;
+    padding: 1rem;
+    color: var(--quire-consent-text);
+    background: var(--quire-consent-background);
+    border: 1px solid var(--quire-consent-border);
+    border-radius: var(--quire-consent-radius);
+}
+
+.consent-embed__inner {
+    max-width: 36rem;
+}
+
+.consent-embed__text {
+    margin: 0 0 var(--quire-consent-gap);
+}
+
+.consent-embed [data-consent-embed-actions][hidden] {
+    display: none;
+}
+
 @media (max-width: 40rem) {
     .consent__btn {
         flex: 1 1 100%;

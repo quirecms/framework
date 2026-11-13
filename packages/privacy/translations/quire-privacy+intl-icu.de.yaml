@@ -111,3 +111,11 @@ Send outside production too: Auch außerhalb der Produktion senden
 "allowed": "erlaubt"
 "refused": "abgelehnt"
 "not asked": "nicht gefragt"
+# Embeds held until consent
+"This content is from {label}, run by {vendor}. Loading it sends {vendor} your address (IP), and lets them set cookies.": "Dieser Inhalt stammt von {label}, betrieben von {vendor}. Beim Laden erhält {vendor} Ihre Adresse (IP) und kann Cookies setzen."
+"This content is from another site. Loading it sends that site your address (IP), and lets it set cookies.": "Dieser Inhalt stammt von einer anderen Website. Beim Laden erhält sie Ihre Adresse (IP) und kann Cookies setzen."
+"Their privacy policy": "Deren Datenschutzerklärung"
+"Test site: nothing is loaded.": "Testseite: Es wird nichts geladen."
+"Load it": "Laden"
+"Always allow {label}": "{label} immer erlauben"
+"Open it on {host}": "Auf {host} öffnen"

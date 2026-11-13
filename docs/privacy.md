@@ -107,7 +107,20 @@ return [
 - **The script** is a JavaScript module among the extension's assets, started only once the visitor allows the service. It may export `start({config, consent})` (e.g. to load the vendor's script, whose host is declared) and `stop()`. `config` is the declaration's, the same for every visitor: never a secret.
 - Mistakes (a keyword as a host, a script that isn't an asset, a necessary service with a script, the same ID twice) are refused when the container is built, naming the extension.
 
-Don't load a vendor's script in a template: it would run before consent. Load it from the service's script.
+Don't load a vendor's script, stylesheet, font or frame by its URL in a template: it would load before consent. Load it from the service's script. The site refuses to build while a template of the site, its theme or an enabled extension loads a service visitors are asked about directly (a theme switch then rolls back and says why, and a deploy fails), and `quire:theme:lint` names the line. Only URLs written in templates are seen, not those made in Twig.
+
+## Embeds
+
+What a trusted shortcode prints (e.g. a video player's `<iframe>`) waits in a placeholder when it loads from a service visitors are asked about: the placeholder says who it's from, and that loading it sends them the visitor's address and lets them set cookies, with a link to their privacy policy. Visitors choose:
+
+- **Load it:** this embed, this time; nothing is kept.
+- **Always allow {service}:** a "yes" for the service, kept and logged like one given in the settings. Its embeds load at once from then on, and go back to their placeholder when the visitor withdraws.
+
+Without JavaScript, the placeholder links to the embed on the vendor's site. In test mode, nothing loads, and the placeholder says so. The placeholder is the same for every visitor, so pages stay cacheable.
+
+A shortcode needs nothing for this: its output passes through `quire/privacy`'s guard. Everything it printed goes into one placeholder, exactly as printed, as data (JSON) that the loader reads with the browser's own parser when the embed loads. When that's from several services, or from a URL whose host can't be told, or it has a frame's own document (`srcdoc`), a `<noscript>` (which browsers read differently with JavaScript on) or styles that load something (`url()`, `@import`), it's held too, and only "Load it" is offered. Hosts of necessary services, the site's own URLs and hosts no service declares (which the policy blocks anyway) are shown as they are. When the embed loads, its scripts run as they would on the page: one from a declared host runs, inline code is blocked by the policy.
+
+Editors can't embed by writing HTML: the sanitiser removes frames and scripts from content. Themes restyle the placeholder (`.consent-embed`, with the `--quire-consent-*` properties) or override `templates/extensions/quire_privacy/embed.html.twig`, keeping its `data-consent-embed*` attributes.
 
 ## In PHP and JavaScript
 
@@ -133,4 +146,5 @@ The choice is kept in the first-party cookie `quire_consent`: for each service, 
 
 - **Styles:** the banner inherits the page's font and uses the system's colours, so it fits a theme that styles nothing. A theme maps its look onto the `--quire-consent-*` custom properties (background, text, border, button colours, radius, gap, focus). Accepting and rejecting share one button style, `consent__btn`: there are no separate accept and reject styles.
 - **Blocks:** override `templates/extensions/quire_privacy/consent.html.twig` with `{% extends '@!quire_privacy/consent.html.twig' %}` and the blocks `consent_heading`, `consent_text`, `consent_actions`, `consent_details_link` or `consent_dialog`. Keep both actions on the first layer, with names.
+- **Checked:** `quire:theme:lint` and the admin's themes page render a theme's own banner with one kind of service and with several, and report it as an error unless the first layer has one accept and one reject button with the same classes, words, and neither hidden, and a way to the details (`[data-consent-open]`), and the settings have saving and rejecting. Comparing classes stands in for "they look the same": styles by ID or position can still tell them apart, so don't.
 - **The opener:** put `{{ quire_consent_settings() }}` where the theme wants "Cookie settings"; without it, it goes in the footer slot.

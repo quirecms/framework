@@ -106,7 +106,10 @@ jobs:
           cp extend.php "$RUNNER_TEMP/extend.php"
           cp tests/Accessibility/consent-site/extend.php extend.php
           cp -r tests/Accessibility/consent-site/assets/ci-consent assets/
+          # [[ci_video]], a trusted shortcode embedding the video, and [[ci_probe]], the C2c probe, on a page of their own.
+          mkdir -p src/Ci && cp tests/Accessibility/consent-site/src/*.php src/Ci/
           docker compose exec -T php bin/console cache:clear
+          docker compose exec -T php bin/console quire:content:create page "Embed" --body "$(printf 'A video:\n\n[[ci_video]]\n\nA probe:\n\n[[ci_probe]]')" --publish
           playwright=$(jq -r '.dependencies.playwright' tests/Accessibility/package.json)
           status=0
           docker run --rm --network quire_default -e QUIRE_CHECK_SERVER=php -v "$PWD/tests/Accessibility:/work" -w /work "mcr.microsoft.com/playwright:v${playwright}-noble" \
@@ -120,7 +123,7 @@ jobs:
           docker run --rm --network quire_default -e QUIRE_CHECK_SERVER=php -e QUIRE_CHECK_SENDS=1 -v "$PWD/tests/Accessibility:/work" -w /work "mcr.microsoft.com/playwright:v${playwright}-noble" \
             node consent.mjs https://quire.localhost || status=$?
           cp "$RUNNER_TEMP/extend.php" extend.php
-          rm -r assets/ci-consent
+          rm -r assets/ci-consent src/Ci
           exit "$status"
       - name: Show logs on failure
         if: failure()
