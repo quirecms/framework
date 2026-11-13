@@ -1,8 +1,8 @@
 {#
     The site's look: the installed themes, the one in use first, each with its screenshot, a preview of
     the site in it, and using it. Variables: themes (manifest, parent, active, problem, screenshot,
-    preview: why it can't be previewed, or null, checks: for the theme in use, what quire:theme:lint
-    finds, as errors and warnings), builtin (no theme is used), problem (why the theme
+    preview: why it can't be previewed, or null, checks: what quire:theme:lint finds, as errors and
+    warnings; for themes not in use, without the checks that run their code), builtin (no theme is used), problem (why the theme
     that's set can't be used), read_only (why it can't change).
 #}
 {% extends '@quire_admin/layout.html.twig' %}
