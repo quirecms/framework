@@ -48,7 +48,7 @@ final readonly class ThemeLinter
      *
      * @return array{templates: int, errors: list<string>, warnings: list<string>}
      */
-    public function lint(string $id, bool $render = true): array
+    public function lint(string $id, bool $render): array
     {
         try {
             $chain = ThemeChain::resolve($this->installed->themes(), $id, $this->extensions->resolve()->bootOrderIds());

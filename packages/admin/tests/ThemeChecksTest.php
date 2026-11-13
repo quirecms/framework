@@ -92,7 +92,7 @@ final class ThemeChecksTest extends AdminTestCase
         $linter = new ThemeLinter($this->service(Environment::class), $this->service(InstalledExtensions::class), $this->service(ExtensionManager::class), [$rendering, $reading]);
 
         $linter->lint('quire-fixture-head-tags', render: false);
-        $linter->lint('quire-fixture-inline-code');
+        $linter->lint('quire-fixture-inline-code', render: true);
 
         self::assertSame(['quire-fixture-inline-code'], $rendering->called, 'Only for the theme the admin uses, or that quire:theme:lint is asked about.');
         self::assertSame(['quire-fixture-head-tags', 'quire-fixture-inline-code'], $reading->called);
