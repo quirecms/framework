@@ -5,7 +5,7 @@
     "Load it" once, or "Always allow" the service (kept as the visitor's choice).
 
     Variables: service (the service, or null when it can't be told: then only "Load it"), url and host (the
-    embed's address and its host, for visitors without JavaScript, or null), html (the embed), test (nothing loads).
+    embed's address and its host, for visitors without JavaScript, or null), html (the embed), test (nothing loads). html is null for what can't be shown (not UTF-8).
 
     Blocks: consent_embed_text, consent_embed_actions. Keep the data-consent-embed* attributes.
 #}
@@ -23,13 +23,15 @@
             {% if service and service.policyUrl %}<p class="consent-embed__text"><a href="{{ service.policyUrl }}" rel="noopener">{{ 'Their privacy policy'|trans({}, domain) }}</a></p>{% endif %}
         {% endblock %}
         {% if test %}<p class="consent-embed__text" data-consent-embed-test>{{ 'Test site: nothing is loaded.'|trans({}, domain) }}</p>{% endif %}
+        {% if html is null %}<p class="consent-embed__text" data-consent-embed-broken>{{ 'This content can\'t be shown.'|trans({}, domain) }}</p>{% else %}
         {% block consent_embed_actions %}
             <div class="consent__actions" data-consent-embed-actions hidden>
                 <button type="button" class="consent__btn" data-consent-embed-load>{{ 'Load it'|trans({}, domain) }}</button>
                 {% if service %}<button type="button" class="consent__btn" data-consent-embed-allow>{{ 'Always allow {label}'|trans({label: service.label}, domain) }}</button>{% endif %}
             </div>
         {% endblock %}
+        {% endif %}
         {% if url and host %}<noscript><p class="consent-embed__text"><a href="{{ url }}" rel="noopener">{{ 'Open it on {host}'|trans({host: host}, domain) }}</a></p></noscript>{% endif %}
     </div>
-    <script type="application/json" data-consent-embed-content>{{ html|json_encode(constant('JSON_HEX_TAG') b-or constant('JSON_HEX_AMP') b-or constant('JSON_HEX_APOS') b-or constant('JSON_HEX_QUOT') b-or constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_UNESCAPED_UNICODE'))|raw }}</script>
+    {% if html is not null %}<script type="application/json" data-consent-embed-content>{{ html|json_encode(constant('JSON_HEX_TAG') b-or constant('JSON_HEX_AMP') b-or constant('JSON_HEX_APOS') b-or constant('JSON_HEX_QUOT') b-or constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_UNESCAPED_UNICODE') b-or constant('JSON_THROW_ON_ERROR'))|raw }}</script>{% endif %}
 </div>

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Quire\Privacy\Internal\Formatter;
 
+use Psr\Log\LoggerInterface;
 use Quire\Csp\Policy;
 use Quire\Formatter\EmbedGuardInterface;
 use Quire\Privacy\Internal\Theme\Banner;
@@ -40,6 +41,7 @@ final readonly class EmbedGuard implements EmbedGuardInterface
         private Banner $banner,
         #[AutowireServiceClosure('twig')]
         private \Closure $twig,
+        private ?LoggerInterface $logger = null,
     ) {
     }
 
@@ -49,6 +51,13 @@ final readonly class EmbedGuard implements EmbedGuardInterface
 
         if (1 !== preg_match($pattern, $html) || [] === $this->services->askedAbout()) {
             return $html;
+        }
+
+        if (!mb_check_encoding($html, 'UTF-8')) {
+            // It can't be carried as data (JSON is UTF-8), and can't be checked: held, and said so.
+            $this->logger?->warning('A trusted shortcode printed text that isn\'t UTF-8, so its embed can\'t be shown: visitors see that it\'s missing. Fix the shortcode\'s output.');
+
+            return $this->placeholder(null, null, null);
         }
 
         try {
@@ -238,7 +247,10 @@ final readonly class EmbedGuard implements EmbedGuardInterface
         return null;
     }
 
-    private function placeholder(?Service $service, ?string $url, string $html): string
+    /**
+     * @param string|null $html What it holds; null for what can't be shown
+     */
+    private function placeholder(?Service $service, ?string $url, ?string $html): string
     {
         return ($this->twig)()->render('@quire_privacy/embed.html.twig', [
             'service' => $service,

@@ -8,7 +8,11 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use Quire\Formatter\EmbedGuardInterface;
 use Quire\Formatter\Formatter;
 use Quire\Privacy\Internal\Formatter\EmbedGuard;
+use Quire\Privacy\Internal\Theme\Banner;
+use Quire\Privacy\Services;
 use Symfony\Component\DomCrawler\Crawler;
+use Symfony\Component\ErrorHandler\BufferingLogger;
+use Twig\Environment;
 
 /**
  * What trusted shortcodes embed from a service visitors are asked about waits in a placeholder until
@@ -163,6 +167,18 @@ final class EmbedGuardTest extends PrivacyTestCase
             $page = \Dom\HTMLDocument::createFromString('<!doctype html><body>'.$html, \LIBXML_NOERROR);
             self::assertCount(0, $page->querySelectorAll('iframe, script, [src]'), $format.': at most, text.');
         }
+    }
+
+    public function testOutputThatIsntUtf8IsHeldAndSaidSo(): void
+    {
+        $logger = new BufferingLogger();
+        $guard = new EmbedGuard($this->service(Services::class), $this->service(Banner::class), fn (): Environment => $this->service(Environment::class), $logger);
+
+        $box = new Crawler($guard->guard("<iframe src=\"https://player.video.example/1\" title=\"\xff\"></iframe>"))->filter('[data-consent-embed]');
+
+        self::assertCount(1, $box->filter('[data-consent-embed-broken]'), 'Visitors see that it\'s missing.');
+        self::assertCount(0, $box->filter('[data-consent-embed-content], [data-consent-embed-load]'), 'Nothing to load, and no button that does nothing.');
+        self::assertSame(['warning'], array_column($logger->cleanLogs(), 0), 'The owner hears of it.');
     }
 
     public function testQuirePrivacyFillsCoresSlot(): void

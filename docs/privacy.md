@@ -120,6 +120,8 @@ Without JavaScript, the placeholder links to the embed on the vendor's site. In 
 
 A shortcode needs nothing for this: its output passes through `quire/privacy`'s guard. Everything it printed goes into one placeholder, exactly as printed, as data (JSON) that the loader reads with the browser's own parser when the embed loads. When that's from several services, or from a URL whose host can't be told, or it has a frame's own document (`srcdoc`), a `<noscript>` (which browsers read differently with JavaScript on) or styles that load something (`url()`, `@import`), it's held too, and only "Load it" is offered. Hosts of necessary services, the site's own URLs and hosts no service declares (which the policy blocks anyway) are shown as they are. When the embed loads, its scripts run as they would on the page: one from a declared host runs, inline code is blocked by the policy.
 
+Output that isn't UTF-8 can't be carried or checked: its placeholder says the content can't be shown, and the site's log says so.
+
 Editors can't embed by writing HTML: the sanitiser removes frames and scripts from content. Themes restyle the placeholder (`.consent-embed`, with the `--quire-consent-*` properties) or override `templates/extensions/quire_privacy/embed.html.twig`, keeping its `data-consent-embed*` attributes.
 
 ## In PHP and JavaScript
