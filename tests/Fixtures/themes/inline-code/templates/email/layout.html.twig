@@ -1,0 +1,7 @@
+{# E-mails are styled inline: their mail client applies no Content-Security-Policy. #}
+<!DOCTYPE html>
+<html>
+<body style="margin: 0; font-family: sans-serif">
+    <table role="presentation" style="width: 100%"><tr><td>{% block content %}{% endblock %}</td></tr></table>
+</body>
+</html>
