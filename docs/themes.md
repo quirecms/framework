@@ -57,7 +57,7 @@ quire:
         theme: acme-dark
 ```
 
-Changing it at runtime is then refused; edit the configuration and deploy again.
+Changing it at runtime is then refused; edit the configuration and deploy again. To choose the theme in the admin again, stop pinning: see [Stop pinning](extensions.md#stop-pinning).
 
 ## Where templates come from
 
@@ -314,6 +314,8 @@ The site's pages get a Content-Security-Policy from Quire, which lets them load 
 - styles in its stylesheet, with classes, never `<style>` elements or `style` attributes;
 - fonts and images in `assets/` too, rather than from a font service or another site.
 
+E-mails (`templates/email/`) aren't pages: mail clients apply no such policy and ignore most stylesheets, so style them inline, and the policy's checks leave them out.
+
 Structured data (`<script type="application/ld+json">`) isn't code, and the importmap Quire prints is allowed by its hash. `quire:theme:lint` warns about each line the policy would block, and about each URL of another site a template loads that the policy doesn't allow. What else a site may load, and how to try a policy out first, is in [security.md](security.md).
 
 A service of another company that visitors are asked about (fonts from a font service, analytics, a video player) is declared through `quire/privacy` and loaded by the service's script, which runs once the visitor allows it: never by a URL in a template, which would load before they're asked. The site refuses to build with such a template (a theme switch rolls back and says why, a deploy fails), and `quire:theme:lint` names the line. See [Declaring a service](privacy.md#declaring-a-service).
@@ -360,7 +362,7 @@ public function __invoke(SeoTagsBuilding $event): void
 }
 ```
 
-A layout prints the page's `<title>` itself (the `title` block) and leaves the other tags to `quire_head()`: a description or canonical link written by hand would be on the page twice, and `quire:theme:lint` warns about it.
+A layout prints the page's `<title>` itself (the `title` block) and leaves the other tags to `quire_head()`: a description or canonical link written by hand would be on the page twice, and `quire:theme:lint` warns about it. Tags `quire_head()` prints only when something sets them, like `robots` or `og:image`, would be there twice on those pages: set them in a `SeoTagsBuilding` listener, as above (e.g. `noindex` on error pages, whose context has `status_code`).
 
 Pages without an image of their own share the site's: the setting `site.share_image`, a URL or a path on the site (1200 × 630 pixels works everywhere).
 
@@ -377,7 +379,7 @@ bin/console quire:theme:lint             # the site's theme
 bin/console quire:theme:lint acme-dark   # any installed theme
 ```
 
-It checks, without rendering a page, the templates the site would use with the theme: the theme's, its parents' where it has none, and Quire's built-in ones where neither has one. It reports templates that don't compile (including functions nothing provides, e.g. of an extension that isn't enabled), standard slots no template renders, files linked with `quire_asset()` that don't exist, cards that use the request, and a screenshot that's missing or not an image; it warns when no template calls `quire_head()`, when a template still uses its old name `quire_seo()`, when a template writes by hand a tag `quire_head()` prints (a description, canonical link, robots, Open Graph or Twitter tag), when a template has code the site's [Content-Security-Policy](#content-security-policy) blocks (an inline script or `<style>`, a `style` or `on…=` attribute, a `javascript:` link), when a template loads a URL of another site the policy doesn't allow, and when the theme has no screenshot or one of another size. With `quire/privacy`, it also reports a template that loads a service visitors are asked about directly, and a theme's own cookie banner that doesn't keep the choice fair (see [privacy.md](privacy.md#theming)). It exits with an error code when something is wrong, so it can run in CI.
+It checks, without rendering a page, the templates the site would use with the theme: the theme's, its parents' where it has none, and Quire's built-in ones where neither has one. It reports templates that don't compile (including functions nothing provides, e.g. of an extension that isn't enabled), standard slots no template renders, files linked with `quire_asset()` that don't exist, cards that use the request, and a screenshot that's missing or not an image; it warns when no template calls `quire_head()`, when a template still uses its old name `quire_seo()`, when a template writes by hand a tag `quire_head()` prints (a description, canonical link, robots, Open Graph or Twitter tag), when a template has code the site's [Content-Security-Policy](#content-security-policy) blocks (an inline script or `<style>`, a `style` or `on…=` attribute, a `javascript:` link; e-mails' templates aren't checked for these), when a template loads a URL of another site the policy doesn't allow, and when the theme has no screenshot or one of another size. With `quire/privacy`, it also reports a template that loads a service visitors are asked about directly, and a theme's own cookie banner that doesn't keep the choice fair (see [privacy.md](privacy.md#theming)). It exits with an error code when something is wrong, so it can run in CI.
 
 The admin's themes page shows what it finds for the theme in use.
 

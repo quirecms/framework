@@ -59,6 +59,7 @@ final class ThemeLintTest extends KernelTestCase
         self::assertStringContainsString('quire-fixture-head-tags: templates/layout.html.twig line 5: quire_seo() is now called quire_head(). The old name works until Quire 1.0.', $output);
         self::assertStringContainsString('quire-fixture-head-tags: templates/layout.html.twig line 6: prints <meta name="description"> itself, and quire_head() prints it too, so pages would have it twice.', $output);
         self::assertStringContainsString('quire-fixture-head-tags: templates/layout.html.twig line 7: prints <link rel="canonical"> itself', $output);
+        self::assertStringContainsString('quire-fixture-head-tags: templates/layout.html.twig line 8: prints <meta name="robots"> itself, and quire_head() prints it too on the pages where Quire, an extension or the theme sets it, so those would have it twice.', $output);
         self::assertStringNotContainsString('No template calls quire_head()', $output, 'quire_seo() still counts.');
     }
 
@@ -75,6 +76,7 @@ final class ThemeLintTest extends KernelTestCase
         self::assertStringContainsString($prefix.'17: a javascript: link', $output);
         self::assertStringNotContainsString($prefix.'8:', $output, 'Structured data isn\'t code.');
         self::assertStringNotContainsString($prefix.'9:', $output, 'A script from a file is fine.');
+        self::assertStringNotContainsString('email/', $output, 'E-mails are styled inline, under no policy.');
     }
 
     public function testThemesThatCantBeUsedFail(): void

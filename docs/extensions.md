@@ -94,6 +94,16 @@ quire:
 
 With `pinned: true`, the enable and disable commands refuse to make changes. To change the enabled extensions, edit the list and deploy again. The site's theme is then pinned too, with `theme:` next to `enabled:` (see [themes](themes.md#pinning-the-theme-in-production)).
 
+While the site is pinned, every time its migrations run (`quire:migrations:migrate`, on each start of its container and at installation) Quire records the pinned extensions and theme in the database. Nothing uses that record while it stays pinned.
+
+### Stop pinning
+
+To manage the extensions and the theme in the admin again, remove `pinned`, `enabled` and `theme` from the configuration and deploy. The site keeps what it ran pinned: the first time its migrations run unpinned, Quire enables the extensions it recorded (with those they require), disables any others, makes the recorded theme the site's theme, and rebuilds the site. It does this the way the admin would, so the changes are checked and in the audit log, and it does it once: from then on, the database decides.
+
+- **Run Quire 0.3.1 or later, pinned, at least once before you unpin**, so there's a record. A site that was installed pinned and unpinned on an earlier version has none: it comes up with no extension enabled, not even the admin, and on the default theme. `quire:about` warns about that; enable the extensions with `bin/console quire:extension:enable` and choose the theme with `bin/console quire:theme:use`.
+- When something recorded can't be carried over (an extension that's no longer installed is skipped and named; a theme that can't be used leaves the site on its current theme, and says why), the migrate command says so. When an extension can't be enabled, it fails and changes nothing, so the deploy fails rather than leaving the site half done.
+- Settings set by environment variables (`QUIRE_SETTING__…`) aren't part of pinning, and stay where they are: while one is set, the admin and `quire:settings:set` refuse to change that setting. To hand one to the admin, remove the variable, deploy, and set the value again in the admin or with `bin/console quire:settings:set`; in between, the setting has its default.
+
 ## Writing an extension
 
 ### Quick start

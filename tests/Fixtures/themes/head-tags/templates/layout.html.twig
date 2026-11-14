@@ -5,6 +5,7 @@
     {{ quire_seo() }}
     <meta name="description" content="{{ site.description }}">
     <link rel="canonical" href="{{ canonical_url|default('') }}">
+    <meta name="robots" content="noindex">
     {{ quire_slot('head') }}
 </head>
 <body>
