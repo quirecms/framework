@@ -61,6 +61,27 @@ final class SettingsFunctionalTest extends WebTestCase
         self::assertSame("false\n", $tester->getDisplay());
     }
 
+    public function testClearRemovesAStoredValueWhetherDeclaredOrNot(): void
+    {
+        $tester = $this->command('quire:settings:clear');
+        $settings = self::getContainer()->get(Settings::class);
+        $settings->set('quire-fixture-hello.shout', true);
+
+        self::assertSame(0, $tester->execute(['key' => 'quire-fixture-hello.shout']));
+        self::assertStringContainsString('quire-fixture-hello.shout has no stored value now.', $tester->getDisplay());
+        self::assertFalse($settings->getBool('quire-fixture-hello.shout'), 'A declared one falls back to its default.');
+
+        // A disabled extension's: nothing declares it, and its value waits in the database (a copy of a
+        // site must lose the original's measurement ID before anyone enables analytics there).
+        $connection = self::getContainer()->get(Connection::class);
+        $connection->executeStatement('INSERT INTO quire.setting (name, value, updated_at) VALUES (:name, :value, now())', ['name' => 'quire-analytics.ga4_id', 'value' => '"G-ORIGINAL1"']);
+
+        self::assertSame(0, $tester->execute(['key' => 'quire-analytics.ga4_id']));
+        self::assertFalse($connection->fetchOne('SELECT name FROM quire.setting WHERE name = :name', ['name' => 'quire-analytics.ga4_id']), 'Gone.');
+        self::assertSame(0, $tester->execute(['key' => 'quire-analytics.ga4_id']));
+        self::assertStringContainsString('quire-analytics.ga4_id had no stored value.', $tester->getDisplay());
+    }
+
     public function testSetCommandParsesValuesByType(): void
     {
         $tester = $this->command('quire:settings:set');
