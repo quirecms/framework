@@ -45,18 +45,24 @@ jobs:
           [ -f "docs/releases/$version.md" ] || { echo "::error::There are no release notes for $version: docs/releases/$version.md."; exit 1; }
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
-      # Nothing is published for a commit that hasn't passed CI on main (0.3.0's release didn't wait for it).
-      - name: CI passed on it
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: .github/ci-passed.sh "$GITHUB_SHA"
-
       - name: Set up PHP
         uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: '8.5'
           tools: composer
           coverage: none
+
+      # Nothing is published for a package Packagist doesn't know (a new one is submitted before its
+      # first tag), or knows from another repository than Split's: the feed would name versions that
+      # install from nowhere. First, before waiting for CI.
+      - name: Packagist has every package
+        run: php .github/packagist.php
+
+      # Nothing is published for a commit that hasn't passed CI on main (0.3.0's release didn't wait for it).
+      - name: CI passed on it
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: .github/ci-passed.sh "$GITHUB_SHA"
 
       # Only what the feed's script reads (symfony/yaml): no package's scripts or plugins run.
       - name: Install the dependencies
