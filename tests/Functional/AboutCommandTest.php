@@ -123,10 +123,51 @@ final class AboutCommandTest extends KernelTestCase
 
         self::assertSame(ServerContract::VERSION, $report['contract'], 'What a server relies on is there: e.g. that it can invite the first admin.');
         self::assertSame(['The storage disks couldn\'t be checked (Quire\Extension\Exception\ExtensionStateException): run "bin/console quire:storage:list" to see them.'], $report['warnings']);
+        self::assertNull($report['storage'], 'Not known: a tool treats it as such, not as no disks.');
+    }
+
+    public function testTheReportSaysWhereTheStoredFilesAre(): void
+    {
+        $storage = $this->report()['storage'];
+
+        self::assertNotNull($storage);
+        self::assertNotSame([], $storage, 'The test site has disks (its fixture extension\'s).');
+        self::assertSame(['local'], array_values(array_unique(array_column($storage, 'adapter'))));
+        self::assertStringStartsWith('local: ', (string) $storage[0]['location']);
+    }
+
+    public function testAnUnusedDiskIsReportedWithItsAdapter(): void
+    {
+        // A disk the site placed on S3 that no enabled extension declares: its adapter, though unused
+        $container = self::getContainer();
+        $disks = new StorageDisks([], new DiskFactory($container->get('router'), new UriSigner('test')), new ServiceLocator([]), '/tmp', ['acme-photos' => ['adapter' => 's3', 'public' => null, 'bucket' => 'photos']]);
+        $state = new class implements ExtensionStateStoreInterface {
+            public function enabledIds(): array
+            {
+                return [];
+            }
+
+            public function readOnlyReason(): ?string
+            {
+                return null;
+            }
+
+            public function enable(array $ids): void
+            {
+            }
+
+            public function disable(array $ids): void
+            {
+            }
+        };
+        $container->set(InstalledDisks::class, new InstalledDisks($disks, $container->get(InstalledExtensions::class), $state, $container->get(OfflineBoot::class)));
+
+        $dormant = array_values(array_filter($container->get(SiteReport::class)->report()['storage'] ?? [], static fn (array $disk): bool => 'acme-photos' === $disk['name']));
+        self::assertSame([['name' => 'acme-photos', 'adapter' => 's3', 'public' => null, 'location' => null, 'in_use' => false]], $dormant);
     }
 
     /**
-     * @return array{contract: int, quire: array{version: string, reference: ?string}, php: string, symfony: string, environment: string, site: array{title: ?string, locale: ?string, timezone: ?string, url: ?string, installed: ?bool}, extensions: list<array{id: string, package: string, version: string, type: string, status: string}>, theme: ?string, migrations: array{executed: ?int, pending: ?int}, health: array{status: string, checks: array<string, array{status: string, message?: string}>}, warnings: list<string>}
+     * @return array{contract: int, quire: array{version: string, reference: ?string}, php: string, symfony: string, environment: string, site: array{title: ?string, locale: ?string, timezone: ?string, url: ?string, installed: ?bool}, extensions: list<array{id: string, package: string, version: string, type: string, status: string}>, theme: ?string, storage: list<array{name: string, adapter: string, public: ?bool, location: ?string, in_use: bool}>|null, migrations: array{executed: ?int, pending: ?int}, health: array{status: string, checks: array<string, array{status: string, message?: string}>}, warnings: list<string>}
      */
     private function report(): array
     {
