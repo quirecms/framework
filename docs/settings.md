@@ -44,6 +44,12 @@ bin/console quire:settings:set acme-reviews.per_page 50
 bin/console quire:settings:set acme-reviews.tags '["php", "cms"]'
 ```
 
+A disabled extension's settings are kept, and apply again when it's enabled. `quire:settings:clear` removes a stored value, declared or not: a declared setting goes back to its default, and a disabled extension's is gone. Use it, for example, on a copy of a site that mustn't keep the original's analytics ID:
+
+```bash
+bin/console quire:settings:clear quire-analytics.ga4_id
+```
+
 Values are checked against the setting's type:
 
 | Type | Accepted values |
