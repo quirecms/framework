@@ -248,7 +248,7 @@ The site's `Dockerfile` builds on Quire's runtime images, so a site doesn't comp
 - **`ghcr.io/quirecms/runtime:8.5-builder`**: FrankenPHP's PHP 8.5 with Quire's extensions (`apcu`, `intl`, `opcache`, `pdo_pgsql`, `zip`), Composer, the PostgreSQL client tools and PHP's production settings. The site installs its packages and compiles its assets on it; development runs on it, with Xdebug added.
 - **`ghcr.io/quirecms/runtime:8.5`**: Debian slim with FrankenPHP, PHP, the same extensions, `pg_dump` and `pg_restore`, and nothing else. The production image is this, with the site.
 
-They're rebuilt every week from PHP's, FrankenPHP's and Debian's latest images, so **rebuilding a site (`build --pull`) brings their security fixes**, without a Quire release. Each build is signed with Sigstore by Quire's workflow (`runtime.yaml` in quirecms/framework), and also tagged with its date (`8.5-20261102`), to build on exactly that one. Check a signature with:
+They're rebuilt every week from PHP's, FrankenPHP's and Debian's latest images, so **rebuilding a site (`build --pull`) brings their security fixes**, without a Quire release. Each build is signed with Sigstore by Quire's workflow (`runtime.yaml` in quirecms/framework), and also tagged with its date (`8.5-20261102`), to build on exactly that one. A tag moves to a new build only once that build is signed and its signature checks out, so a site built while the images are being rebuilt gets the previous build, never one without a signature. Check a signature with:
 
 ```bash
 cosign verify ghcr.io/quirecms/runtime:8.5 \

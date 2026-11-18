@@ -5,7 +5,8 @@ name: Runtime
 # and :8.5, for x86_64 and arm64, with their SBOM and build provenance, signed with Sigstore (keyless:
 # the signature says this workflow made them, from main). Rebuilt every week, so PHP's, FrankenPHP's
 # and Debian's security fixes reach sites at their next build, and whenever runtime/ changes. Each
-# build also keeps a dated tag (8.5-20261028, 8.5-builder-20261028).
+# build also keeps a dated tag (8.5-20261028, 8.5-builder-20261028). A tag moves to a build only once
+# it's signed and its signature checks out.
 on:
   push:
     branches:
@@ -65,7 +66,10 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       # The upstream images' current tags, pulled fresh: their security fixes are the point.
-      - name: Build and push the image
+      # Pushed by its digest only, with no tag: the tags move to it once it's signed (below), so a
+      # tag never names a build without a signature. Quire Server refuses to build on one, and a
+      # site building in between (the night's updates start at 03:00 UTC) failed (2026-11-18).
+      - name: Build and push the image (by digest, untagged)
         id: build
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
@@ -74,10 +78,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           pull: true
           no-cache: true
-          push: true
-          tags: |
-            ${{ env.IMAGE }}:${{ matrix.tag }}
-            ${{ env.IMAGE }}:${{ matrix.tag }}-${{ steps.date.outputs.date }}
+          outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
           labels: |
             org.opencontainers.image.title=Quire runtime (${{ matrix.image }})
             org.opencontainers.image.description=PHP with Quire's extensions, FrankenPHP and the PostgreSQL tools, which Quire sites build on.
@@ -93,4 +94,50 @@ jobs:
           cosign-release: v3.1.4
 
       - name: Sign the image
-        run: cosign sign --yes "$IMAGE@${{ steps.build.outputs.digest }}"
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: cosign sign --yes "$IMAGE@$DIGEST"
+
+      # As Quire Server checks it before building on it: this workflow's identity, from main.
+      - name: Check its signature
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+          IDENTITY: https://github.com/${{ github.repository }}/.github/workflows/runtime.yaml@refs/heads/main
+        run: >-
+          cosign verify "$IMAGE@$DIGEST"
+          --certificate-identity "$IDENTITY"
+          --certificate-oidc-issuer https://token.actions.githubusercontent.com
+          >/dev/null
+
+      # Only now do the tags name this build: the dated one first, then the one sites build on. With one
+      # source, imagetools copies the index as it is, so a tag names the very digest that was signed.
+      # Each tag is read back; one that names another digest (a registry that re-serialized the index)
+      # is put back where it was, and the job fails. A dated tag that didn't exist before has nowhere to
+      # go back to: it's left on that unsigned digest, which Quire Server refuses, and :8.5 isn't moved.
+      - name: Tag it
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+          TAG: ${{ matrix.tag }}
+          DATE: ${{ steps.date.outputs.date }}
+        run: |
+          digest_of() {
+            docker buildx imagetools inspect "$IMAGE:$1" --format '{{.Manifest.Digest}}' 2>/dev/null || true
+          }
+          move() {
+            previous=$(digest_of "$1")
+            docker buildx imagetools create --tag "$IMAGE:$1" "$IMAGE@$DIGEST"
+            tagged=$(digest_of "$1")
+            [ "$tagged" = "$DIGEST" ] && return 0
+            echo "::error::$IMAGE:$1 names ${tagged:-nothing readable}, not the signed $DIGEST"
+            if [ -n "$previous" ]; then
+              docker buildx imagetools create --tag "$IMAGE:$1" "$IMAGE@$previous" || true
+              restored=$(digest_of "$1")
+              [ "$restored" = "$previous" ] && echo "::error::$IMAGE:$1 is back on $previous" \
+                || echo "::error::$IMAGE:$1 couldn't be put back on $previous: it names ${restored:-nothing readable}"
+            else
+              echo "::error::$IMAGE:$1 didn't exist before: it stays on that digest, which has no signature"
+            fi
+            exit 1
+          }
+          move "$TAG-$DATE"
+          move "$TAG"
