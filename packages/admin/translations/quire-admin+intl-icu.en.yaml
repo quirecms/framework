@@ -581,6 +581,7 @@
 'mode.board': 'In motion'
 'mode.calendar': 'Calendar'
 'check.core.alt-text': 'Image without a description'
+'check.core.external-images': 'Image from another site'
 'check.core.links': 'Broken link'
 'check.core.excerpt': 'No excerpt'
 'check.core.title-length': 'Long title'

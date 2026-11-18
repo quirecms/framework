@@ -37,6 +37,17 @@ final class ChecksTest extends AdminTestCase
         self::assertStringContainsString('There\'s no excerpt', $crawler->filter('.checks')->text());
     }
 
+    public function testAnImageFromAnotherSiteIsAWarningWithTheWayOut(): void
+    {
+        $this->signIn('editor');
+        $post = $this->service(ContentWriter::class)->create(new CreateContent('post', 'Stage', body: "Intro.\n\n![The stage](https://tournament.example/stage.jpg)\n", excerpt: 'Short.'));
+
+        $crawler = $this->client->request('GET', '/admin/content/post/'.$post->id);
+
+        self::assertSelectorTextSame('.checks__summary', 'No errors, 1 warning.');
+        self::assertSame(['Warning: The image https://tournament.example/stage.jpg is on another site (tournament.example): visitors see a link to it instead, since loading it would send that site their address. Copy the image into the site to show it. Line 3 (Images are on the site, not loaded from others)'], $this->findings($crawler));
+    }
+
     public function testErrorsBlockPublishing(): void
     {
         $this->setSetting(ContentChecker::LEVELS_SETTING, ['core.alt-text' => 'error']);
