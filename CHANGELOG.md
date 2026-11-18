@@ -4,6 +4,24 @@ Every release of Quire, newest first: what it brings, the security fixes, and wh
 
 <!-- Made from docs/releases/<version>.md by "php .github/feed.php --changelog > CHANGELOG.md": change those files, not this one. A test checks it's up to date. -->
 
+## [0.3.2](https://github.com/quirecms/framework/releases/tag/v0.3.2)
+
+A site says where its stored files are, and a setting's value can be removed whatever declares it, for tools that copy a site (Quire Server 0.6's restore as a new site).
+
+- **`quire:about` reports the site's storage disks:** its JSON has `storage`, each disk the site has files on (in use, a disabled extension's, and one the site placed that no extension declares) with its adapter (`local`, `s3` or `service`), whether it's public, where its files are and whether it's in use; `null` when the disks can't be read. A tool that copies a site uses it to tell a copy on the original's bucket, where the copy would change the original's files.
+- **`quire:settings:clear <key>`** removes a setting's stored value: a declared one goes back to its default, and a disabled extension's, which nothing declares while it's off, is gone instead of applying again once it's enabled. For example, a copy of a site loses the original's analytics ID with `quire:settings:clear quire-analytics.ga4_id`.
+- **A disk's location never shows credentials:** an S3 endpoint given with a user and password in its address (`https://key:secret@host`) is shown without them, in `quire:storage:list` and `quire:about`.
+- **Releases check Packagist first:** a version tag publishes nothing unless Packagist has every package Split pushes, under its name and from its repository (`.github/packagist.php`, also run before tagging).
+
+### Known limits
+
+- **The admin's own pages limit scripts less than the site's:** their security policy restricts frames, plugins and the base address, not where scripts come from (as in 0.2).
+- **The German and Macedonian texts of quire/privacy and quire/analytics are drafts** until a native speaker checks them.
+
+### Upgrading
+
+A patch release: sites on `^0.3` take it with their next update. Nothing to do, and no migration.
+
 ## [0.3.1](https://github.com/quirecms/framework/releases/tag/v0.3.1)
 
 A site that stops pinning keeps its admin and its theme, and the admin says why a change couldn't be made.
