@@ -30,10 +30,10 @@
                 {% else %}{{ 'Changes to “{title}”'|trans({title: item.title}, 'quire-admin') }}{% endif %}
             </h1>
             <p class="review-bar__detail">
-                {{ state }} · {{ 'saved {when}'|trans({when: pending.updatedAt|quire_admin_when}, 'quire-admin')|raw }}
+                {{ state }} · {{ 'saved {when}'|quire_trans_html({when: pending.updatedAt|quire_admin_when}, 'quire-admin') }}
                 · {% if conflicts is empty %}<span class="review-bar__clean">{{ 'merges cleanly with what’s live'|trans({}, 'quire-admin') }}</span>{% else %}<span class="review-bar__conflict">{{ 'conflicts with what’s live'|trans({}, 'quire-admin') }}</span>{% endif %}
                 · {{ to_check == 0 ? 'checks pass'|trans({}, 'quire-admin') : '{count, plural, one {# check to look at} other {# checks to look at}}'|trans({count: to_check}, 'quire-admin') }}
-                {% if pending.publishAt %}· {{ 'goes live {when}'|trans({when: pending.publishAt|quire_admin_when}, 'quire-admin')|raw }}{% endif %}
+                {% if pending.publishAt %}· {{ 'goes live {when}'|quire_trans_html({when: pending.publishAt|quire_admin_when}, 'quire-admin') }}{% endif %}
             </p>
         </div>
         <div class="review-bar__actions">
@@ -74,7 +74,7 @@
                     <caption class="q-sr">{{ 'Changes to the text'|trans({}, 'quire-admin') }}</caption>
                     <thead>
                         <tr>
-                            <th scope="col">{{ 'What’s live · {date}'|trans({date: '<time datetime="' ~ live_at|date('c') ~ '">' ~ live_at|date('j M', timezone)|e ~ '</time>'}, 'quire-admin')|raw }}</th>
+                            <th scope="col">{{ 'What’s live · {date}'|quire_trans_html({date: live_at|quire_admin_day(timezone)}, 'quire-admin') }}</th>
                             <th scope="col">{{ own ? 'Your version'|trans({}, 'quire-admin') : (author ? '{name}’s version'|trans({name: author}, 'quire-admin') : 'The changes'|trans({}, 'quire-admin')) }}</th>
                         </tr>
                     </thead>

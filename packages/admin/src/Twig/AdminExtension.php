@@ -125,6 +125,21 @@ final readonly class AdminExtension
     }
 
     /**
+     * A day, e.g. "14 Nov", in a <time> with the exact time: HTML for quire_trans_html's parameters.
+     */
+    #[AsTwigFilter(name: 'quire_admin_day')]
+    public function day(\DateTimeInterface $at, ?string $timezone = null): Markup
+    {
+        $local = \DateTimeImmutable::createFromInterface($at);
+
+        if (null !== $timezone && '' !== $timezone) {
+            $local = $local->setTimezone(new \DateTimeZone($timezone));
+        }
+
+        return new Markup(\sprintf('<time datetime="%s">%s</time>', htmlspecialchars($at->format('c'), \ENT_QUOTES), htmlspecialchars($local->format('j M'), \ENT_QUOTES)), 'UTF-8');
+    }
+
+    /**
      * A time as people say it, e.g. "2 h ago" or "Tue 09:00", in a <time> with the exact time.
      */
     #[AsTwigFilter(name: 'quire_admin_when')]
