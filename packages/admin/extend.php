@@ -22,6 +22,7 @@ use Quire\Admin\Dashboard\Inbox\ReportOnlyInbox;
 use Quire\Admin\Dashboard\Inbox\ScheduledChecksInbox;
 use Quire\Admin\Extend\Admin;
 use Quire\Admin\Preferences\AdminPreferences;
+use Quire\Admin\Setup;
 use Quire\Extend;
 use Symfony\Component\Routing\Requirement\Requirement;
 
@@ -31,6 +32,14 @@ use Symfony\Component\Routing\Requirement\Requirement;
  * with Extend\Routes(group: 'admin'), and menu entries and dashboard widgets with Admin.
  */
 return [
+    // A new site's first steps: the admin's home page and a theme's empty home page show the same list,
+    // which other extensions add to as the admin does
+    new Extend\SetupSteps()
+        ->step('quire-admin.site-name', Setup\SiteNameStep::class, priority: 400)
+        ->step('quire-admin.first-post', Setup\FirstPostStep::class, priority: 300)
+        ->step('quire-admin.invite', Setup\InviteStep::class, priority: 200)
+        ->step('quire-admin.theme', Setup\ThemeStep::class, priority: 100),
+
     new Extend\Services()
         ->autoload('Quire\\Admin\\', __DIR__.'/src', exclude: [__DIR__.'/src/Extend', __DIR__.'/src/Navigation/MenuItem.php', __DIR__.'/src/Content/{ListState,NextStep}.php', __DIR__.'/src/Content/Job/ApplyToMatching.php']),
 

@@ -496,6 +496,17 @@ final readonly class PriceCheck implements ContentCheckInterface
 
 The item a check gets may not be saved: it's what would be published, e.g. while it's being written. Checks run while editing, so keep them quick, and they must not change anything.
 
+#### `Extend\SetupSteps`
+
+Steps of setting a new site up, which the admin's home page and a theme's empty home page show from one list (`Quire\Setup\SetupSteps`): e.g. "Connect your shop".
+
+```php
+new Extend\SetupSteps()
+    ->step('acme-shop.connect', ConnectShopStep::class, priority: 50),
+```
+
+A step is a service implementing `Quire\Setup\SetupStepInterface`. Its `step()` returns a `SetupStep` (id, title, text, done, url, action) for the person looking, or null when it isn't theirs to take. "Done" is read from the site each time, never stored, so a step comes back when what it did is undone. Higher priorities come first; the admin's own steps use 400 to 100. Visitors get no steps, and a page that shows them is made private and never stored.
+
 #### `Extend\Actions`
 
 Adds **actions**: things people do with the site, e.g. approve a review or refund an order. Admin interfaces offer them, APIs run them and the audit log describes them, each with who may do it and the console command that does the same. Core's own are in the catalogue too: `content.transition`, `content.review_changes`, `user.invite`, `role.grant`, `setting.set` and more (list them with `Quire\Action\Actions::ids()`).
