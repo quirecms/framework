@@ -336,6 +336,11 @@ main {
     accent-color: var(--color-accent);
 }
 
+/* What a page marks hidden stays hidden, whatever display a rule gives it: e.g. "Show" beside a password until its script runs */
+[hidden] {
+    display: none !important;
+}
+
 button,
 .button {
     display: inline-block;
