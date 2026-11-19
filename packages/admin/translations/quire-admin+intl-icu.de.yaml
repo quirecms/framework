@@ -611,6 +611,7 @@
 'Or publish them on': 'Oder veröffentlichen am'
 'Publish': 'Veröffentlichen'
 'Publish changes now': 'Änderungen jetzt veröffentlichen'
+'Nothing was published: {problem}': 'Nichts wurde veröffentlicht: {problem}'
 'Reply': 'Antworten'
 'Resolve': 'Erledigt'
 'Resolved': 'Erledigt'

@@ -47,7 +47,7 @@ final class AdminRedesignTest extends AdminTestCase
         self::assertSame(['Removed: TBC', 'Added: Eastfield, Port Rovers'], $crawler->filter('.review-diff__row--change')->last()->filter('del, ins')->each(static fn (Crawler $mark): string => $mark->text()));
         $this->client->submit($crawler->selectButton('Approve')->form());
         $crawler = $this->client->followRedirect();
-        $this->client->submit($crawler->selectButton('Publish the changes')->form());
+        $this->client->submit($crawler->selectButton('Publish changes now')->form());
         self::assertStringEndsWith('Group D: Eastfield, Port Rovers', (string) $this->service(ContentRepository::class)->find($post->id)?->body);
 
         // The intent bar: the plan first, then done.
