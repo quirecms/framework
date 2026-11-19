@@ -51,7 +51,7 @@ Build it to see what new sites get: `.github/skeleton.sh /tmp/skeleton`. A test 
 
 ## Making changes
 
-1. Fork the repository and create a branch from `main`, named after what it does, e.g. `fix-health-check-timeout` or `add-settings-extender`.
+1. Fork the repository and create a branch from `main`, named `<kind>/<slug>` (see [below](#pull-requests-commits-and-branches)), e.g. `fix/health-check-timeout` or `feat/settings-extender`.
 2. Make your change, with tests (see below).
 3. Run all checks:
 
@@ -82,31 +82,30 @@ Build it to see what new sites get: `.github/skeleton.sh /tmp/skeleton`. A test 
 - Tests that compare times (an item's publication, a backup's) assume the machine's clock doesn't jump. On WSL2, when tests fail now and then for no reason, check that the clock isn't being stepped back (`journalctl | grep 'Clock change detected'`) and that Windows syncs its own time.
 - Changes to the default theme's templates or CSS must keep it accessible: CI checks it with axe-core (see "Accessibility" in [docs/themes.md](docs/themes.md#accessibility) to run the same check locally).
 
-### Commit messages
+## Pull requests, commits and branches
 
-- Write the subject line in the imperative, e.g. "Add settings extender", not "Added settings extender". Keep it under about 72 characters.
-- Use the body to explain *why* the change is needed, if that isn't obvious.
-- Pull requests are usually squash-merged, so the pull request title and description become the final commit message. Write them with that in mind.
+These follow the conventions every YorvoLabs repository shares.
 
-## Pull requests
+1. **The title is the squash commit's subject:** imperative, one sentence, at most 72 characters, no trailing period: "Add the settings extender", not "Added the settings extender" or "Settings: the extender is added". It says what the code does, with no reference in it: "Refuse a release whose tag isn't signed". No type prefixes (`feat:` and the like); only Dependabot's `chore:` stays, so dependency updates can be filtered. A release's pull request is titled `Release X.Y.Z`, and the one that moves `main` to the next minor version `Start X.Y`.
+2. **The description is the squash commit's body,** under the headings of the template: **Why** (required), **What changes** (bullets, behavior rather than files), **Tested** (what ran, and what didn't, NOT RUN with the reason) and **Refs** (only what anyone can open: `Fixes #123`, a pull request, a published advisory, an RFC or upstream documentation; left out when there's none). Its checklist is this repository's.
+3. **Nothing internal in public text:** titles, descriptions, commit messages, branch names, tag messages, release notes and `CHANGELOG.md` describe what the code changes and why, for someone outside the project. They never carry internal tracking codes or decision numbers, people's names or who decided or approved what, or paths outside the repository.
+4. **Commits on a branch** are free-form: they're squashed when merging. Please push new commits instead of force-pushing, so the review is easier to follow. Add `Co-authored-by` only for a human co-author.
+5. **Branches are named `<kind>/<slug>`,** where the kind is `feat`, `fix`, `docs`, `chore`, `ci` or `security`, and the slug is lowercase with hyphens and says what the change is: `fix/health-check-timeout`, `feat/translated-html`. `release/` is kept for maintenance branches (6); a release is prepared on `chore/release-X.Y.Z`.
+6. **Tags and release branches:** a release tag is `vX.Y.Z`, or `vX.Y.Z-rc.N` for a release candidate, with no other labels; annotated, SSH-signed by a key in `.github/release-signers`, with the message `Quire X.Y.Z`, on a commit of `main` that passed CI. The Release and Split workflows refuse any other tag, before anything that can publish runs. Releases come from `main`; `release/X.Y` is created from `vX.Y.0` only when an older minor needs a fix after `main` has moved on (fixed on `main` first, then `git cherry-pick -x`).
+7. **Security fixes under embargo** are made in the repository's private security-advisory fork, never on a public branch, with a neutral title, description and branch: no advisory ID and no description of the attack until the advisory is published. Report a vulnerability as [SECURITY.md](SECURITY.md) says.
+8. **What a release publishes:** a GitHub release titled `Quire X.Y.Z` (a pre-release for `-rc.N`), with the release's notes; `CHANGELOG.md` in the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format, with `## [X.Y.Z] - YYYY-MM-DD` headings; and its release feed, signed with Sigstore. Before 1.0, a minor release may break things and a patch only fixes them; a release's "Upgrading" says what someone running a site must do.
 
-A good pull request:
-
-- does one thing; unrelated changes go in separate pull requests;
-- explains what it changes and why, and links the related issue (`Fixes #123`);
-- includes tests, and documentation updates when behaviour visible to users changes;
-- passes CI.
-
-A maintainer will review it. We may ask for changes. Please push new commits instead of force-pushing, so the review is easier to follow; we squash them when merging.
+A good pull request does one thing (unrelated changes go in separate pull requests), includes tests and the documentation for behavior users see, and passes CI. A maintainer will review it, and may ask for changes. Changes to how Quire is released (`.github/release-signers`, the workflows and the scripts they check a release with) need a code owner's review (`.github/CODEOWNERS`).
 
 ## Releases
 
-All packages are released together, with the same version, from a tag of this repository: tagging a commit of `main` with `v0.1.0` gives that version to every package. The workflow "Split" copies `main` and each tag to the packages' repositories (`.github/split.json` lists them; `.github/split.sh main` shows what it would push, without pushing). Before tagging, check that Packagist has every package Split pushes, from the repository Split pushes it to: `docker compose exec php php .github/packagist.php` (a new package, like `quire/analytics` in 0.3.0, is submitted at https://packagist.org/packages/submit once its repository has `main`). The release workflow checks it first, and publishes nothing when it fails. A tag publishes nothing until CI has passed on `main` for its commit: both workflows wait for it (`.github/ci-passed.sh`, 45 minutes at most) and stop if it failed. Then re-run CI's run for that commit ("Run workflow" by hand doesn't count), and the two workflows once it has passed.
+All packages are released together, with the same version, from a tag of this repository: tagging a commit of `main` with `v0.1.0` gives that version to every package. Tag with `git tag -s v0.1.0 -m "Quire 0.1.0"`, signed by a key in `.github/release-signers` as `main` has it (`.github/verify-tag.sh v0.1.0` checks a tag the way the workflows do). The workflow "Split" copies `main` and each tag to the packages' repositories (`.github/split.json` lists them; `.github/split.sh main` shows what it would push, without pushing). Before tagging, check that Packagist has every package Split pushes, from the repository Split pushes it to: `docker compose exec php php .github/packagist.php` (a new package, like `quire/analytics` in 0.3.0, is submitted at https://packagist.org/packages/submit once its repository has `main`). The release workflow checks it first, and publishes nothing when it fails. A tag publishes nothing until CI has passed on `main` for its commit: both workflows wait for it (`.github/ci-passed.sh`, 45 minutes at most) and stop if it failed. Then re-run CI's run for that commit ("Run workflow" by hand doesn't count), and the two workflows once it has passed.
 
 Every release has its notes in `docs/releases/<version>.md`, written before it's tagged (the release fails without them). They start with a header that tools read:
 
 ```markdown
 ---
+date: 2026-11-19               # the day it's released: CHANGELOG.md's heading
 security:                      # the advisories this release fixes; [] for none
   - id: GHSA-2c3f-4g5h-6j7m    # or a CVE
     severity: high             # low, moderate, high or critical

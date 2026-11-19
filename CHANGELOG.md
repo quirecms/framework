@@ -1,10 +1,10 @@
 # Changelog
 
-Every release of Quire, newest first: what it brings, the security fixes, and what to do when updating. Each release's date is on its [GitHub release](https://github.com/quirecms/framework/releases).
+Every release of Quire, newest first: what it brings, the security fixes, and what to do when updating. The format is [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Quire follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html): before 1.0, a minor release may break things and a patch only fixes them.
 
 <!-- Made from docs/releases/<version>.md by "php .github/feed.php --changelog > CHANGELOG.md": change those files, not this one. A test checks it's up to date. -->
 
-## [0.3.2](https://github.com/quirecms/framework/releases/tag/v0.3.2)
+## [0.3.2] - 2026-11-19
 
 A site says where its stored files are, and a setting's value can be removed whatever declares it, for tools that copy a site (Quire Server 0.6's restore as a new site).
 
@@ -22,7 +22,7 @@ A site says where its stored files are, and a setting's value can be removed wha
 
 A patch release: sites on `^0.3` take it with their next update. Nothing to do, and no migration.
 
-## [0.3.1](https://github.com/quirecms/framework/releases/tag/v0.3.1)
+## [0.3.1] - 2026-11-14
 
 A site that stops pinning keeps its admin and its theme, and the admin says why a change couldn't be made.
 
@@ -43,7 +43,7 @@ A site that stops pinning keeps its admin and its theme, and the admin says why 
 A patch release: sites on `^0.3` take it with their next update. It has one new migration in Quire itself, run when the site starts, which adds a table for what a pinned site runs.
 - A site whose extensions are pinned (`quire.extensions.pinned: true`) and that means to stop pinning: update to 0.3.1 while still pinned, and let it start once, before removing the pin (see "Stop pinning" in docs/extensions.md).
 
-## [0.3.0](https://github.com/quirecms/framework/releases/tag/v0.3.0)
+## [0.3.0] - 2026-11-13
 
 Visitors are asked before another company's service runs, Google Analytics comes in that way, and owners see how their site is set up.
 
@@ -83,7 +83,7 @@ What changes for sites, themes and extensions:
 - Extensions whose `extend.php` adds a compiler pass (`Extend\Services::compilerPass()`): passes never ran before, and do now. Check what yours does; passes after "before removing" are refused.
 - quire/privacy and quire/analytics are new packages: `composer require "quire/privacy:^0.3" "quire/analytics:^0.3"` when a site needs them, then enable them in the admin. Sites run by Quire Server can't add packages yet; that comes with a Quire Server release.
 
-## [0.2.2](https://github.com/quirecms/framework/releases/tag/v0.2.2)
+## [0.2.2] - 2026-11-10
 
 A site with a theme or an extension of its own builds for production, and the ones Quire makes install.
 
@@ -96,7 +96,7 @@ A site with a theme or an extension of its own builds for production, and the on
 A patch release: sites on `^0.2` take it with their next update, with no new migrations. The skeleton's `Dockerfile` changed: sites run by Quire Server get it with the update unless they edited theirs (then the update shows the difference to merge); other sites can take it from https://github.com/quirecms/skeleton/blob/v0.2.2/Dockerfile.
 - A theme or extension made with `quire:make:theme` or `quire:make:extension` on 0.2.0 or 0.2.1 requires `quire/core` `^0.1@dev`: change it to `^0.2` (and `quire/testing` the same) in its `composer.json`.
 
-## [0.2.1](https://github.com/quirecms/framework/releases/tag/v0.2.1)
+## [0.2.1] - 2026-11-10
 
 Nobody finds out who has an account by trying to sign in or register.
 
@@ -109,7 +109,7 @@ Nobody finds out who has an account by trying to sign in or register.
 A patch release: sites on `^0.2` take it with their next update, with no new migrations and no change to the skeleton's files.
 - Sites with registration on (`quire.auth.registration`) and email confirmation off (`quire.auth.email_verification`): registration closes, and the sign-in page no longer links to it, until confirmation is turned on (`bin/console quire:settings:set quire.auth.email_verification true`). Without confirmation, the form had to say whether an address already had an account.
 
-## [0.2.0](https://github.com/quirecms/framework/releases/tag/v0.2.0)
+## [0.2.0] - 2026-11-10
 
 People editing together keep each other's changes, nobody can give out more than they hold, and a backup says when it lacks a file.
 
@@ -143,7 +143,7 @@ What changes for the people and scripts that use a site:
 
 For extensions: permission rules now get the item in every question about one (editing, publishing, reviewing, deleting), as `Quire\Content\Action\ContentAccess` asks them. A rule that decided without it still works; one that refused when it had no item now sees one. Extensions' list actions are offered only on items the user may edit.
 
-## [0.1.2](https://github.com/quirecms/framework/releases/tag/v0.1.2)
+## [0.1.2] - 2026-10-28
 
 Sites build on Quire's runtime images, and each release comes with a signed feed.
 
@@ -155,7 +155,7 @@ Sites build on Quire's runtime images, and each release comes with a signed feed
 
 Sites run by Quire Server get the new `Dockerfile` with this update, unless they edited theirs (then the update shows the difference to merge). Other sites can take it from the skeleton (https://github.com/quirecms/skeleton/blob/v0.1.2/Dockerfile) and build again with `docker compose --env-file prod.env build --pull`; their own Caddyfile, PHP settings and entry point don't change.
 
-## [0.1.1](https://github.com/quirecms/framework/releases/tag/v0.1.1)
+## [0.1.1] - 2026-10-27
 
 Quire sites can now be managed by Quire Server, and run behind another web server.
 
@@ -167,7 +167,7 @@ Quire sites can now be managed by Quire Server, and run behind another web serve
 
 Nothing to do: sites update with `composer update "quire/*"`. To install with an invitation or run behind a proxy, see docs/docker.md.
 
-## [0.1.0](https://github.com/quirecms/framework/releases/tag/v0.1.0)
+## [0.1.0] - 2026-10-27
 
 The first release of Quire, the extensible CMS for PHP, built on Symfony.
 
@@ -178,3 +178,13 @@ The first release of Quire, the extensible CMS for PHP, built on Symfony.
 - **Running a site:** background jobs, storage on a volume or S3, backups of the database and files in one file, and a production setup with Docker (`compose.prod.yaml`, secrets in `prod.env`, security headers by default).
 
 Start a site with `composer create-project quire/skeleton my-site` (see docs/docker.md).
+
+[0.3.2]: https://github.com/quirecms/framework/releases/tag/v0.3.2
+[0.3.1]: https://github.com/quirecms/framework/releases/tag/v0.3.1
+[0.3.0]: https://github.com/quirecms/framework/releases/tag/v0.3.0
+[0.2.2]: https://github.com/quirecms/framework/releases/tag/v0.2.2
+[0.2.1]: https://github.com/quirecms/framework/releases/tag/v0.2.1
+[0.2.0]: https://github.com/quirecms/framework/releases/tag/v0.2.0
+[0.1.2]: https://github.com/quirecms/framework/releases/tag/v0.1.2
+[0.1.1]: https://github.com/quirecms/framework/releases/tag/v0.1.1
+[0.1.0]: https://github.com/quirecms/framework/releases/tag/v0.1.0

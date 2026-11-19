@@ -39,7 +39,7 @@ final class FeedTest extends TestCase
         $this->files($this->repository, [
             'composer.json' => '{"require": {"php": ">=8.5.0"}}',
             'compose.yaml' => "services:\n  database:\n    image: postgres:\${POSTGRES_VERSION:-17}-alpine\n",
-            'docs/releases/0.1.0.md' => "---\nsecurity: []\nupgrade: null\n---\nThe first release.\n",
+            'docs/releases/0.1.0.md' => "---\ndate: 2026-10-01\nsecurity: []\nupgrade: null\n---\nThe first release.\n",
         ]);
         $this->git($this->repository, ['init', '-q', '-b', 'main']);
         $this->commit($this->repository, 'v0.1.0', '2026-10-01T12:00:00+00:00');
@@ -49,6 +49,7 @@ final class FeedTest extends TestCase
             'packages/core/src/Runtime/ServerContract.php' => "<?php\nfinal class ServerContract\n{\n    public const int VERSION = 1;\n}\n",
             'docs/releases/0.1.1.md' => <<<'MD'
                 ---
+                date: 2026-10-20
                 security:
                   - id: GHSA-2c3f-4g5h-6j7m
                     severity: high
@@ -161,13 +162,13 @@ final class FeedTest extends TestCase
 
     public function testNotesOfAReleaseThatIsNotTaggedAreRefused(): void
     {
-        $this->files($this->repository, ['docs/releases/0.1.2.md' => "---\nsecurity: []\nupgrade: null\n---\nSoon.\n"]);
+        $this->files($this->repository, ['docs/releases/0.1.2.md' => "---\ndate: 2026-10-01\nsecurity: []\nupgrade: null\n---\nSoon.\n"]);
         $this->refused('has no tag v0.1.2', version: '0.1.2');
     }
 
     public function testLaterReleasesAreLeftOut(): void
     {
-        $this->files($this->repository, ['docs/releases/0.2.0.md' => "---\nsecurity: []\nupgrade: null\n---\nLater.\n"]);
+        $this->files($this->repository, ['docs/releases/0.2.0.md' => "---\ndate: 2026-10-01\nsecurity: []\nupgrade: null\n---\nLater.\n"]);
         self::assertSame(['0.1.1', '0.1.0'], array_column($this->feed()['releases'], 'version'));
     }
 
@@ -177,16 +178,19 @@ final class FeedTest extends TestCase
     public static function badNotes(): iterable
     {
         yield 'no header' => ["Just notes.\n", 'must start with its header'];
-        yield 'an unknown key' => ["---\nsecurity: []\nupgrade: null\nbreaking: true\n---\nNotes.\n", 'not "breaking"'];
-        yield 'no security key' => ["---\nupgrade: null\n---\nNotes.\n", 'exactly "security"'];
-        yield 'security not a list' => ["---\nsecurity: yes\nupgrade: null\n---\nNotes.\n", 'must be a list'];
-        yield 'an advisory without a summary' => ["---\nsecurity:\n  - {id: GHSA-2c3f-4g5h-6j7m, severity: high, package: quire/core}\nupgrade: null\n---\nNotes.\n", 'needs "summary"'];
-        yield 'an advisory that is not one' => ["---\nsecurity:\n  - {id: 'BUG-1', severity: high, package: quire/core, summary: x}\nupgrade: null\n---\nNotes.\n", 'isn\'t a GitHub advisory'];
-        yield 'an unknown severity' => ["---\nsecurity:\n  - {id: CVE-2026-12345, severity: urgent, package: quire/core, summary: x}\nupgrade: null\n---\nNotes.\n", 'its severity is one of'];
-        yield 'a package that is not Quire\'s' => ["---\nsecurity:\n  - {id: CVE-2026-12345, severity: low, package: symfony/http-kernel, summary: x}\nupgrade: null\n---\nNotes.\n", 'one of Quire\'s'];
-        yield 'an empty upgrade' => ["---\nsecurity: []\nupgrade: ''\n---\nNotes.\n", '"upgrade" is text, or null'];
-        yield 'no notes' => ["---\nsecurity: []\nupgrade: null\n---\n\n", 'has no notes'];
-        yield 'not YAML' => ["---\nsecurity: [\nupgrade: null\n---\nNotes.\n", 'isn\'t YAML'];
+        yield 'an unknown key' => ["---\ndate: 2026-10-01\nsecurity: []\nupgrade: null\nbreaking: true\n---\nNotes.\n", 'not "breaking"'];
+        yield 'no security key' => ["---\ndate: 2026-10-01\nupgrade: null\n---\nNotes.\n", 'exactly "date" (YYYY-MM-DD), "security"'];
+        yield 'security not a list' => ["---\ndate: 2026-10-01\nsecurity: yes\nupgrade: null\n---\nNotes.\n", 'must be a list'];
+        yield 'an advisory without a summary' => ["---\ndate: 2026-10-01\nsecurity:\n  - {id: GHSA-2c3f-4g5h-6j7m, severity: high, package: quire/core}\nupgrade: null\n---\nNotes.\n", 'needs "summary"'];
+        yield 'an advisory that is not one' => ["---\ndate: 2026-10-01\nsecurity:\n  - {id: 'BUG-1', severity: high, package: quire/core, summary: x}\nupgrade: null\n---\nNotes.\n", 'isn\'t a GitHub advisory'];
+        yield 'an unknown severity' => ["---\ndate: 2026-10-01\nsecurity:\n  - {id: CVE-2026-12345, severity: urgent, package: quire/core, summary: x}\nupgrade: null\n---\nNotes.\n", 'its severity is one of'];
+        yield 'a package that is not Quire\'s' => ["---\ndate: 2026-10-01\nsecurity:\n  - {id: CVE-2026-12345, severity: low, package: symfony/http-kernel, summary: x}\nupgrade: null\n---\nNotes.\n", 'one of Quire\'s'];
+        yield 'an empty upgrade' => ["---\ndate: 2026-10-01\nsecurity: []\nupgrade: ''\n---\nNotes.\n", '"upgrade" is text, or null'];
+        yield 'no notes' => ["---\ndate: 2026-10-01\nsecurity: []\nupgrade: null\n---\n\n", 'has no notes'];
+        yield 'no date' => ["---\nsecurity: []\nupgrade: null\n---\nNotes.\n", 'exactly "date"'];
+        yield 'a date that is not one' => ["---\ndate: 2026-02-30\nsecurity: []\nupgrade: null\n---\nNotes.\n", '"date" is the day'];
+        yield 'a date that is a time' => ["---\ndate: '2026-10-01 12:00'\nsecurity: []\nupgrade: null\n---\nNotes.\n", '"date" is the day'];
+        yield 'not YAML' => ["---\ndate: 2026-10-01\nsecurity: [\nupgrade: null\n---\nNotes.\n", 'isn\'t YAML'];
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('badNotes')]
@@ -224,7 +228,9 @@ final class FeedTest extends TestCase
         $changelog = $process->getOutput();
 
         self::assertStringStartsWith("# Changelog\n", $changelog);
-        self::assertStringContainsString("## [0.1.1](https://github.com/quirecms/framework/releases/tag/v0.1.1)\n\nDrafts stay drafts.", $changelog);
+        self::assertStringContainsString("## [0.1.1] - 2026-10-20\n\nDrafts stay drafts.", $changelog, 'Keep a Changelog\'s heading, with the date the notes give.');
+        self::assertStringContainsString("## [0.1.0] - 2026-10-01\n", $changelog);
+        self::assertStringEndsWith("\n\n[0.1.1]: https://github.com/quirecms/framework/releases/tag/v0.1.1\n[0.1.0]: https://github.com/quirecms/framework/releases/tag/v0.1.0\n", $changelog, 'Each version links to its release.');
         self::assertStringContainsString("### Security fixes\n\n- **GHSA-2c3f-4g5h-6j7m**", $changelog, 'One level under the version.');
         self::assertStringContainsString("### Upgrading\n\nRun `composer update \"quire/*\"`.", $changelog);
         preg_match_all('/^## \[([^\]]+)\]/m', $changelog, $versions);
