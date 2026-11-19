@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Quire\Privacy\Tests;
 
 use Quire\Csp\ThirdPartySourcesInterface;
+use Quire\Privacy\Category;
 use Quire\Privacy\Internal\ServiceSources;
 use Quire\Privacy\PrivacySettings;
 use Symfony\Component\DomCrawler\Crawler;
@@ -70,6 +71,41 @@ final class BannerTest extends PrivacyTestCase
         self::assertStringNotContainsString('</', $this->home()->filter('#quire-consent-config')->html(), 'Tags in the data are escaped.');
     }
 
+    public function testTheConsentStateIsNeverPrintedByTheServerWhateverTheCookieSays(): void
+    {
+        $choices = [
+            'none' => null,
+            'all allowed' => ['fixture-video' => 'r1', 'fixture-fonts' => 'r1'],
+            'all refused' => ['fixture-video' => false, 'fixture-fonts' => false],
+            'broken' => 'not a choice',
+        ];
+
+        foreach ($choices as $case => $choice) {
+            $this->client->getCookieJar()->clear();
+
+            if (null !== $choice) {
+                $value = \is_array($choice) ? rtrim(strtr(base64_encode(json_encode(['v' => 1, 'id' => 'x', 't' => time(), 'r' => 'r', 's' => $choice], \JSON_THROW_ON_ERROR)), '+/', '-_'), '=') : $choice;
+                $this->client->getCookieJar()->set(new \Symfony\Component\BrowserKit\Cookie('quire_consent', $value));
+            }
+
+            $state = $this->home()->filter('footer [data-consent-state]');
+            self::assertCount(1, $state, $case);
+            self::assertSame('', trim($state->text()), $case.': empty as printed (R13.1, R13.3); only the loader fills it.');
+            self::assertNotNull($state->attr('hidden'), $case);
+            self::assertNull($state->attr('role'), $case.': a state, not a live region (R13.4).');
+            self::assertNull($state->attr('aria-live'), $case);
+        }
+
+        $config = $this->config($this->home());
+        self::assertSame('{category} off', $config['messages']['stateOff'] ?? null, 'Its words, for the loader.');
+        $categories = array_values(array_unique(array_column($config['services'], 'category')));
+        self::assertNotSame([], $categories);
+
+        foreach ($categories as $category) {
+            self::assertSame(Category::from($category)->label(), $config['categories'][$category] ?? null, 'The categories\' own labels, for every category asked about.');
+        }
+    }
+
     public function testThePolicyAllowsTheServicesHostsButNotOnPasswordForms(): void
     {
         $this->client->request('GET', '/');
@@ -104,11 +140,11 @@ final class BannerTest extends PrivacyTestCase
     }
 
     /**
-     * @return array{v: int, test: bool, revision: string, services: list<array{id: string, script: string, config: array<string, mixed>, cookies: list<string>}>, messages: array{off: string}}
+     * @return array{v: int, test: bool, revision: string, services: list<array{id: string, script: string, category: string, config: array<string, mixed>, cookies: list<string>}>, messages: array{off: string, stateOn?: string, stateOff?: string}, categories?: array<string, string>}
      */
     private function config(Crawler $crawler): array
     {
-        /** @var array{v: int, test: bool, revision: string, services: list<array{id: string, script: string, config: array<string, mixed>, cookies: list<string>}>, messages: array{off: string}} $config */
+        /** @var array{v: int, test: bool, revision: string, services: list<array{id: string, script: string, category: string, config: array<string, mixed>, cookies: list<string>}>, messages: array{off: string, stateOn?: string, stateOff?: string}, categories?: array<string, string>} $config */
         $config = json_decode($crawler->filter('script#quire-consent-config')->text(), true, flags: \JSON_THROW_ON_ERROR);
 
         return $config;

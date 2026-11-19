@@ -105,9 +105,16 @@
 {% endblock %}
 <p class="consent__status" data-consent-status role="status" aria-live="polite"></p>
 {% if not preview|default(false) %}
+{# What the footer says of each category, in one place: the labels are the categories' own #}
+{% set category_labels = {} %}
+{% for group in categories %}{% set category_labels = category_labels|merge({(group.category.value): group.category.label|trans({}, domain)}) %}{% endfor %}
 <script type="application/json" id="quire-consent-config">{{ config|merge({messages: {
     saved: 'Your choice is saved.'|trans({}, domain),
     off: '{label} is off.'|trans({label: '{label}'}, domain),
-}})|json_encode(constant('JSON_HEX_TAG') b-or constant('JSON_HEX_AMP') b-or constant('JSON_HEX_APOS') b-or constant('JSON_HEX_QUOT') b-or constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_THROW_ON_ERROR'))|raw }}</script>
+    stateOn: '{category} on'|trans({category: '{category}'}, domain),
+    stateOff: '{category} off'|trans({category: '{category}'}, domain),
+    stateSome: '{category} partly on'|trans({category: '{category}'}, domain),
+    stateSeparator: ' · ',
+}, categories: category_labels})|json_encode(constant('JSON_HEX_TAG') b-or constant('JSON_HEX_AMP') b-or constant('JSON_HEX_APOS') b-or constant('JSON_HEX_QUOT') b-or constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_THROW_ON_ERROR'))|raw }}</script>
 <script type="module" src="{{ loader }}"></script>
 {% endif %}

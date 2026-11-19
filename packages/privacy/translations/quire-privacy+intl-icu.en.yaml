@@ -120,3 +120,6 @@ Send outside production too: Send outside production too
 "Always allow {label}": "Always allow {label}"
 "Open it on {host}": "Open it on {host}"
 "This content can't be shown.": "This content can't be shown."
+"{category} on": "{category} on"
+"{category} off": "{category} off"
+"{category} partly on": "{category} partly on"

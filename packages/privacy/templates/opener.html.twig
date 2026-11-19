@@ -1,2 +1,5 @@
-{#- The "Cookie settings" opener: reopens the visitor's choice on every page. Hidden until the consent loader runs. -#}
-<button type="button" class="consent__opener" data-consent-open hidden>{{ 'Cookie settings'|trans({}, 'quire-privacy') }}</button>
+{#- The "Cookie settings" opener: reopens the visitor's choice on every page. Hidden until the consent loader runs.
+    Beside it, the visitor's choice as it stands (e.g. "Analytics off"): empty and hidden as printed, whatever the
+    visitor's cookie says, and filled only by the loader from the choice it decides with (R13.1–R13.5).
+    Not a live region: it's a state, not news. -#}
+<button type="button" class="consent__opener" data-consent-open hidden>{{ 'Cookie settings'|trans({}, 'quire-privacy') }}</button><span class="consent__state" data-consent-state hidden></span>
