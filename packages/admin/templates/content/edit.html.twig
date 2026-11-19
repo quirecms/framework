@@ -59,7 +59,7 @@
                 {%- elseif item.status == 'published' -%}
                     {{ 'Live · what you see is what visitors see'|trans({}, 'quire-admin') }}
                 {%- elseif item.status == 'scheduled' and item.publishedAt -%}
-                    {{ 'Scheduled · goes live {when}'|trans({when: item.publishedAt|quire_admin_when}, 'quire-admin')|raw }}
+                    {{ 'Scheduled · goes live {when}'|quire_trans_html({when: item.publishedAt|quire_admin_when}, 'quire-admin') }}
                 {%- else -%}
                     {{ ('status.' ~ item.status)|trans({}, 'quire-admin') }} · {{ 'only those who edit content see it'|trans({}, 'quire-admin') }}
                 {%- endif -%}
@@ -68,10 +68,10 @@
                 {% if changes and pending %}
                     {{ 'Visitors see the published version until you publish these'|trans({}, 'quire-admin') }}
                     {%- if pending.state.value == 'in_review' %} · {{ 'waiting for a review'|trans({}, 'quire-admin') }}{% elseif pending.state.value == 'changes_requested' %} · {{ 'changes were asked for'|trans({}, 'quire-admin') }}{% elseif pending.state.value == 'approved' %} · {{ 'approved'|trans({}, 'quire-admin') }}{% endif %}
-                    {%- if pending.publishAt %} · {{ 'to be published {when}'|trans({when: pending.publishAt|quire_admin_when}, 'quire-admin')|raw }}{% endif %}
-                    · <span data-content-editor-target="status" role="status">{{ 'saved {when}'|trans({when: pending.updatedAt|quire_admin_when}, 'quire-admin')|raw }}</span>
+                    {%- if pending.publishAt %} · {{ 'to be published {when}'|quire_trans_html({when: pending.publishAt|quire_admin_when}, 'quire-admin') }}{% endif %}
+                    · <span data-content-editor-target="status" role="status">{{ 'saved {when}'|quire_trans_html({when: pending.updatedAt|quire_admin_when}, 'quire-admin') }}</span>
                 {% elseif item %}
-                    {{ 'saved {when}'|trans({when: item.updatedAt|quire_admin_when}, 'quire-admin')|raw }}
+                    {{ 'saved {when}'|quire_trans_html({when: item.updatedAt|quire_admin_when}, 'quire-admin') }}
                     {% if changes %}· <span data-content-editor-target="status" role="status">{{ 'changes you make are saved as you write, and published when you publish them'|trans({}, 'quire-admin') }}</span>{% endif %}
                 {% endif %}
             </p>
@@ -371,7 +371,7 @@
                         <ul class="q-list">
                             {% for earlier in changes.earlier %}
                                 <li>
-                                    <a href="{{ path('quire_admin_content_changes', {type: type.id, id: item.id, pending: earlier.id}) }}">{{ 'Changes of {when}'|trans({when: earlier.updatedAt|quire_admin_when}, 'quire-admin')|raw }}</a>
+                                    <a href="{{ path('quire_admin_content_changes', {type: type.id, id: item.id, pending: earlier.id}) }}">{{ 'Changes of {when}'|quire_trans_html({when: earlier.updatedAt|quire_admin_when}, 'quire-admin') }}</a>
                                     <span class="q-meta">{{ ('changes.' ~ earlier.state.value)|trans({}, 'quire-admin') }}</span>
                                 </li>
                             {% endfor %}

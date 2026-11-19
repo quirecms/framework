@@ -57,6 +57,60 @@ final class TranslationsTest extends TestCase
     }
 
     /**
+     * Every file, English too, one per test: ICU's own reading of each message.
+     *
+     * @return iterable<string, array{string}>
+     */
+    public static function files(): iterable
+    {
+        $files = Finder::create()->files()->in(TestInstallation::projectDir().'/packages/*/translations')->name('*+intl-icu.*.yaml');
+
+        foreach ($files as $file) {
+            yield basename(\dirname($file->getPath())).'/'.$file->getFilename() => [$file->getPathname()];
+        }
+    }
+
+    /**
+     * Every message is valid ICU MessageFormat in its language, and every plural, select and
+     * selectordinal has its "other": a message ICU can't read throws where it's shown (ARC-0063's lint,
+     * for every package, not only those a site has enabled, which "lint:translations" sees).
+     */
+    #[DataProvider('files')]
+    public function testEveryMessageIsValidIcu(string $file): void
+    {
+        $locale = (string) preg_replace('/^.*\.([a-z]{2,3}(?:_[A-Z]{2})?)\.yaml$/', '$1', $file);
+        $messages = Yaml::parseFile($file);
+        self::assertIsArray($messages);
+        $invalid = [];
+
+        foreach ($messages as $key => $message) {
+            if (!\is_string($message)) {
+                $invalid[] = $key.' (not text)';
+
+                continue;
+            }
+
+            try {
+                $formatter = new \MessageFormatter($locale, $message);
+            } catch (\IntlException) {
+                $formatter = null;
+            }
+
+            if (!$formatter instanceof \MessageFormatter) {
+                $invalid[] = (string) $key;
+
+                continue;
+            }
+
+            if (1 === preg_match('/,\s*(?:plural|select|selectordinal)\s*,/', $message) && 1 !== preg_match('/(?:^|[\s}])other\s*\{/', $message)) {
+                $invalid[] = $key.' (no "other")';
+            }
+        }
+
+        self::assertSame([], $invalid, 'Not valid ICU MessageFormat.');
+    }
+
+    /**
      * @return list<string> The names of the values a message fills in, e.g. ["count", "title"]
      */
     private function arguments(string $message): array

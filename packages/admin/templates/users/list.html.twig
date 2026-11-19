@@ -75,7 +75,7 @@
                                     <td data-label="{{ 'Status'|trans({}, 'quire-admin') }}">
                                         <span class="people-status people-status--{{ row.status }}">
                                             {%- if row.status == 'invited' -%}
-                                                {{ 'Invited {when}'|trans({when: row.invitation.sentAt|quire_admin_when}, 'quire-admin')|raw }}
+                                                {{ 'Invited {when}'|quire_trans_html({when: row.invitation.sentAt|quire_admin_when}, 'quire-admin') }}
                                             {%- elseif row.status == 'expired' -%}
                                                 {{ 'Invitation expired'|trans({}, 'quire-admin') }}
                                             {%- else -%}

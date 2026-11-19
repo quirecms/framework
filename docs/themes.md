@@ -345,6 +345,14 @@ Quire's pages are in the site's language (`site.locale`), and an item's page in 
 {{ 'Page {page} of {count}'|trans({ page: 2, count: 5 }, 'acme-dark') }}
 ```
 
+**A translation is text, never HTML.** Print it with `|trans`, which Twig escapes. When a message needs HTML in a value (a `<time>`, a link), give that value as HTML the code made, a `Markup` (e.g. from `quire_admin_when` in the admin), and print the message with `quire_trans_html`: the translation is escaped, and only those values go in as they are.
+
+```twig
+{{ 'Updated {when}'|quire_trans_html({when: when_markup}, 'acme-dark') }}
+```
+
+Never `|trans(…)|raw`: a translation someone wrote carelessly, or on purpose, would then be markup and script on every page that shows it. A test refuses it in Quire's own templates.
+
 The translations go in the theme's `translations/` directory, in ICU MessageFormat, one file per language: `acme-dark+intl-icu.en.yaml` (the English texts as they are, which other languages fall back to) and e.g. `acme-dark+intl-icu.de.yaml`. Extensions do the same with their ID as the domain. When several have the same text, the active theme's translation wins over its parent's, and the site's own `translations/` win over all of them, so a site can change any wording.
 
 Set `<html dir="{{ site.direction }}">` and use logical CSS properties (`margin-inline-start` rather than `margin-left`), and the theme works for right-to-left languages too.
