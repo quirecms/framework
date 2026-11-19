@@ -7,7 +7,9 @@ namespace App\Tests\Integration;
 use Psr\Container\ContainerInterface;
 use Psr\Log\AbstractLogger;
 use Quire\Fixtures\Hello\Formatter\GreetingShortcode;
+use Quire\Formatter\CompiledText;
 use Quire\Formatter\Exception\UnknownFormatException;
+use Quire\Formatter\FormatContext;
 use Quire\Formatter\Formatter;
 use Quire\Formatter\Internal\StructureMark;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -109,6 +111,16 @@ final class FormatterTest extends KernelTestCase
         $forged = $this->formatter->compile("Hi \u{E000}0\u{E001} [[greeting]]", 'markdown');
         self::assertCount(1, $forged->shortcodes);
         self::assertSame('<p>Hi 0 <strong>Hello, world!</strong></p>', trim($this->formatter->expand($forged)));
+
+        // Character references decode to the markers after the source is cleaned: in Markdown, and in its raw HTML
+        foreach (['Hi &#xE000;0&#xE001; [[greeting]]', 'Hi <span>&#57344;0&#57345;</span> [[greeting]]'] as $source) {
+            $compiled = $this->formatter->compile($source, 'markdown');
+            $expanded = $this->formatter->expand($compiled);
+            self::assertSame(1, substr_count($expanded, 'Hello, world!'), $source.': the one shortcode, rendered once.');
+            self::assertStringNotContainsString(FormatContext::PLACEHOLDER_START, $expanded, $source);
+            self::assertStringNotContainsString(FormatContext::PLACEHOLDER_START, $compiled->htmlWithoutShortcodes(), $source);
+            self::assertSame($expanded, $this->formatter->expand(CompiledText::fromArray($compiled->toArray())), $source.': the same from the cache.');
+        }
 
         $html = $this->formatter->render('<a href="/x" title="[[embed id=1]]">link</a>', 'html');
         self::assertSame('<a href="/x" title="">link</a>', $html, 'Output can\'t break out of an attribute.');
@@ -253,7 +265,7 @@ final class FormatterTest extends KernelTestCase
 
         self::assertSame([['id' => 'h-results', 'text' => 'Results', 'level' => 2], ['id' => 'h-group-a', 'text' => 'Group A', 'level' => 3]], $compiled->headings, 'Without the footnote\'s number or its hidden "Note".');
         self::assertStringContainsString('aria-label="Link to the section “Results”"', $compiled->html);
-        self::assertSame($compiled->headings, \Quire\Formatter\CompiledText::fromArray($compiled->toArray())->headings, 'Cached with the render.');
+        self::assertSame($compiled->headings, CompiledText::fromArray($compiled->toArray())->headings, 'Cached with the render.');
     }
 
     public function testAnExcerptHasOnlyTheWordsAReaderReads(): void
