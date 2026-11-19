@@ -42,3 +42,15 @@ time {
         overflow: hidden !important;
     }
 }
+
+/*
+ * The default theme: a post's breadcrumb names its month, and its kicker its date. On a phone they share a
+ * line, so their masks would follow the month's and the date's length; each takes a whole line instead.
+ */
+.entry nav.crumbs,
+.entry .kicker,
+.list-head .meta {
+    display: block !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+}
