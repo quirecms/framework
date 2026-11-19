@@ -202,7 +202,7 @@ return [
 ];
 ```
 
-Quire runs `extend.php` while it builds the application, in boot order. The result is compiled and cached, so extensions add no work to each request.
+Quire runs `extend.php` while it builds the application, in boot order. The result is compiled and cached, so extensions add no work to each request. The order of the extenders in the list doesn't matter: a class that `Extend\Services::autoload()` (or `Extend\Routes::controllers()`) finds keeps what other extenders made of it, before or after, such as being a check, a listener or a job's handler.
 
 Mistakes are reported with the extension's ID and how to fix them:
 
