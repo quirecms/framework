@@ -8,7 +8,7 @@ import { test, expect } from '@playwright/test';
 
 const screens = {
     'theme-home': '/',
-    'theme-archive': '/?page=2',
+    'theme-archive': '/blog?page=2',
     'theme-post': '/blog/spring-draw-all-groups',
     'theme-page': '/about',
     'theme-404': '/_error/404',

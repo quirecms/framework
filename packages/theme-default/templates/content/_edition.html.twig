@@ -82,8 +82,9 @@
             </section>
         {% endif %}
     {% endif %}
-    {#- The one way into the archive: the home page has no pager. When the list is the home page (its one
-        address, "/"), the archive goes on from page 2: page 1's posts are this edition -#}
+    {#- The one way into the archive: the home page has no pager. With site.homepage = edition the list has its own
+        address and starts at page 1. With "listing", the list is the home page (its one address, "/"), so the
+        archive goes on from page 2: page 1's posts are this edition -#}
     {% set archive_url = quire_listing_url(type.id) != quire_home_url() ? quire_listing_url(type.id) : (page.pageCount > 1 ? quire_listing_url(type.id, 2) : null) %}
     {% if archive_url %}<p class="to-archive"><a class="btn" href="{{ archive_url }}">{{ type.id == 'post' ? 'All posts'|trans({}, domain) : type.pluralLabel }} <span class="arrow" aria-hidden="true">→</span></a></p>{% endif %}
     {% if dated %}{{ include('partials/months.html.twig') }}{% endif %}

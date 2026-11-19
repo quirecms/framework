@@ -32,6 +32,9 @@
                         {{- sentence.after }}
                     {% endfor %}
                 </p>
+                {% for sentence in part.sentences|filter(sentence => sentence.entry.warning) %}
+                    <p class="q-notice q-notice--warning">{{ sentence.entry.warning }}</p>
+                {% endfor %}
                 {% for sentence in part.sentences|filter(sentence => not sentence.entry.environment) %}
                     {% set entry = sentence.entry %}
                     {% set id = 'edit-' ~ sentence.control %}
@@ -39,12 +42,17 @@
                         <form method="post" action="{{ path('quire_admin_settings_save', {group: part.group}) }}">
                             <input type="hidden" name="_token" value="{{ csrf_token('quire_admin_site') }}">
                             <input type="hidden" name="back" value="{{ back }}">
+                            {# The ids the control's aria-describedby names, as on the settings' own page (only one of the two is on a page) #}
+                            {% set notes %}
+                                {% if entry.help %}<p class="q-help" id="{{ sentence.control }}-help">{{ entry.help }}</p>{% endif %}
+                                {% if entry.warning %}<p class="q-notice q-notice--warning" id="{{ sentence.control }}-warning">{{ entry.warning }}</p>{% endif %}
+                            {% endset %}
                             {% if entry.fieldset %}
-                                <fieldset class="q-field"><legend>{{ entry.label }}</legend>{{ entry.html }}</fieldset>
+                                <fieldset class="q-field"{% if entry.help %} aria-describedby="{{ sentence.control }}-help"{% endif %}><legend>{{ entry.label }}</legend>{{ notes }}{{ entry.html }}</fieldset>
                             {% else %}
                                 <div class="q-field">
                                     <label for="{{ sentence.control }}" class="settings-doc__label">{{ entry.label }}</label>
-                                    {% if entry.help %}<p class="q-help">{{ entry.help }}</p>{% endif %}
+                                    {{ notes }}
                                     {{ entry.html }}
                                 </div>
                             {% endif %}

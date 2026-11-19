@@ -145,8 +145,8 @@ final class PermalinksTest extends WebTestCase
         $this->client->request('GET', '/?page=2');
         self::assertSame(['Oldest'], $this->client->getCrawler()->filter('article h2')->each(static fn ($h2): string => $h2->text()));
 
-        $this->assertRedirects('/blog', '/', 'The list has one URL: the homepage.');
-        $this->assertRedirects('/blog?page=2', '/?page=2');
+        $this->assertRedirects('/blog', '/', 'The list has one URL: the homepage, while the setting says so.', 302);
+        $this->assertRedirects('/blog?page=2', '/?page=2', status: 302);
         $this->assertRedirects('/?page=1', '/');
 
         foreach (['/?page=3', '/?page=0', '/?page=two'] as $url) {
@@ -164,7 +164,7 @@ final class PermalinksTest extends WebTestCase
 
         $this->client->request('GET', '/');
         self::assertSelectorTextSame('h1', 'Welcome');
-        $this->assertRedirects('/welcome', '/', 'The page has one URL: the homepage.');
+        $this->assertRedirects('/welcome', '/', 'The page has one URL: the homepage, while the setting says so.', 302);
 
         $this->client->request('GET', '/blog');
         self::assertResponseIsSuccessful();

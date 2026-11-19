@@ -237,6 +237,7 @@
 'Requires': 'Benötigt'
 'Save settings': 'Einstellungen speichern'
 'Set by the environment variable {name}, so it can''t be changed here.': 'Gesetzt durch die Umgebungsvariable {name}; hier nicht änderbar.'
+'The homepage is set to be an edition, but the theme in use draws none, so the homepage is the list.': 'Als Startseite ist eine Ausgabe eingestellt, aber das verwendete Theme zeichnet keine; die Startseite ist daher die Liste.'
 'Settings': 'Einstellungen'
 'The setting is back to its default.': 'Die Einstellung ist auf ihren Standard zurückgesetzt.'
 'The site is rebuilt, which takes a few seconds.': 'Die Website wird neu aufgebaut; das dauert einige Sekunden.'

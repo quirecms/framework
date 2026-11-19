@@ -8,7 +8,7 @@ New sites use `quire/theme-default` (ID `quire-theme-default`): plain semantic H
 
 What it shows:
 
-- **The home page** is the edition: the newest post leads, then the rest of its week by day ("This week", at most three a day), then the earlier posts by month, and "All posts". It has no pager. When the home page shows the post list (`site.homepage` = `listing`), that list has one address, the home page's, so "All posts" goes on from page 2.
+- **The home page** is the edition: the newest post leads, then the rest of its week by day ("This week", at most three a day), then the earlier posts by month, and "All posts". It has no pager. With `site.homepage` = `edition`, "All posts" is the list at its own address (`/blog`) from page 1. With `listing` (the default), that list has one address, the home page's, so "All posts" goes on from page 2.
 - **"All posts"**, the archive: every post by month, with the pager (page numbers past five pages) and "Jump to a month". Each month links to the list page where it starts, and the months on the page say so.
 - **A post**: where it lives (Posts › its month), the date and reading time, "On this page" from three headings up, footnotes in the margin, results tables as one row per match on phones, its public history ("Updated", "Corrected", with the author's notes for readers), then Newer and Older. It names no author until authors choose a public name (YorvoID).
 - **A page**: its breadcrumb, when it was last updated, and the pages in its section.
@@ -172,6 +172,8 @@ acme-dark/
 ```
 
 `screenshot` is a picture of a page of a site with the theme, 1200 × 900 pixels (PNG, JPEG or WebP), which admin interfaces show when people choose a theme.
+
+`supports` lists what the theme draws beyond the templates every theme has. Today that's one thing, `"edition"`: its `content/list.html.twig` lays out a front page when `edition` is true (`site.homepage` = `edition`), unlike the list at its own address. A child theme inherits it from its parent. A site can only choose an edition with a theme that declares it. If a site with an edition switches to a theme that doesn't, the homepage is served as the list (as with `listing`), so the same list never has two addresses.
 
 `extra.quire` takes the same keys as an extension's (see [extensions](extensions.md#the-extraquire-manifest)), with `requires` listing extensions the theme needs, plus a `theme` section:
 
