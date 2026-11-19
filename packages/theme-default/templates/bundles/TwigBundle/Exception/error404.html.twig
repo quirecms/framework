@@ -8,5 +8,6 @@
 {% block content %}
     <h1>{{ 'Page not found'|trans({}, 'quire-theme-default') }}</h1>
     <p>{{ "The page you're looking for doesn't exist or has moved."|trans({}, 'quire-theme-default') }}</p>
+    {% if quire_slot_filled('error404.suggestions') %}{{ quire_slot('error404.suggestions', {path: app.request.pathInfo}) }}{% endif %}
     <p><a href="{{ quire_home_url() }}">{{ 'Go to the homepage'|trans({}, 'quire-theme-default') }}</a></p>
 {% endblock %}

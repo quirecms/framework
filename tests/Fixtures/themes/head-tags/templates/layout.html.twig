@@ -13,7 +13,7 @@
     <header>{{ quire_slot('header.nav') }}</header>
     <main>{% block content %}{% endblock %}</main>
     {{ quire_slot('sidebar') }}
-    <footer>{{ quire_slot('footer') }}</footer>
+    <footer>{{ quire_slot('footer') }}{% if quire_slot_filled('error404.suggestions') %}{{ quire_slot('error404.suggestions', {path: app.request.pathInfo}) }}{% endif %}</footer>
     {{ quire_slot('body_end') }}
 </body>
 </html>

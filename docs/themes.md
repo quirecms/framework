@@ -229,6 +229,7 @@ Every theme renders these standard slots, so extensions work with any theme. Qui
 | `content.footer` | At the end of the item, e.g. comments | `content` |
 | `sidebar` | The sidebar, when the theme has one | none |
 | `footer` | The site footer | none |
+| `error404.suggestions` | On the "page not found" page: pages the visitor may have meant, as links (an SEO extension fills it). Render it only when it's filled: `{% if quire_slot_filled('error404.suggestions') %}{{ quire_slot('error404.suggestions', {path: app.request.pathInfo}) }}{% endif %}` | `path`, the requested path (print it escaped) |
 
 The admin interface renders `admin.head` in its `<head>`: the stylesheets and scripts of the group `admin` (see [extensions](extensions.md#extendassets)). Themes don't render it.
 
@@ -253,7 +254,11 @@ Every template, of a theme, an extension or the site, has:
 | `quire_head()` | In the `<head>`: the page's description, canonical URL, Open Graph and Twitter tags, structured data, and the tags extensions add, each once (see [SEO](#seo)). It was called `quire_seo()` before 0.3; the old name works until 1.0. |
 | `date\|quire_date(style)` | A date written the way the page's language writes it, e.g. "March 4, 2025" or "4. März 2025"; styles `long` (default), `medium`, `short`, `full` |
 | `app.request.locale` | The page's language: the site's, or a content item's own, e.g. for `<html lang="…">` |
-| `quire_content()`, `quire_url()`, `quire_listing_url()`, `quire_home_url()`, `quire_body()`, `quire_excerpt()` | Content and URLs (see [content](content.md)) |
+| `quire_content()`, `quire_url()`, `quire_listing_url()`, `quire_home_url()`, `quire_body()`, `quire_excerpt()` | Content and URLs (see [content](content.md)). Queries also read around an item, with the visitor's visibility: `quire_content('page').ancestorsOf(page)` (a breadcrumb, the top one first), `.siblingsOf(page)`, `quire_content('post').newerThan(post).first()` and `.olderThan(post).first()` (the neighbors; equal dates are broken by the id, so none is skipped) |
+| `quire_navigation()` | The site's navigation: by default the visible top-level pages in their order (a menus extension can give another), each `item.title`, `item.url`, `item.content` and `item.current` (`'page'`, `'section'` when the page shown is below it, or false). Read once per request |
+| `quire_latest(limit)` | The latest published items of the listable types, from a cache dropped when an item is published, changed or trashed: for pages bots hit most, such as "page not found" |
+| `quire_loads_only_from_this_site()` | Whether the page loads nothing from other sites, decided by the very Content-Security-Policy Quire sends (enforced, no other hosts, schemes or report endpoints), the page's head (no cross-site `preconnect` and the like) and the active theme's templates (no address of another site): for a sentence such as "This site loads nothing from other companies", which then can't drift from what browsers do. A proxy that replaces Quire's header isn't covered |
+| `quire_trans_html(message, parameters, domain)` | A translated message with HTML in its parameters (see [languages](#languages)) |
 
 ## What the renderer prints
 
@@ -266,6 +271,21 @@ An item's text (`quire_body(item)`) comes from Quire's renderer, the same for ev
 - **Images from other sites that the page's security policy blocks** are a link, not a broken picture: `<figure class="ext-image">` (an image alone in its paragraph) or `<span class="ext-image">` (in text), with `.ext-image__icon`, `.ext-image__alt` (its description), `.ext-image__why` and a link to the image. The editor's checks warn about them; copying the image into the site shows it.
 
 Its texts ("Note 1", "Link to the section …") are in the item's own language. HTML an author writes goes through the sanitiser first, and none of this can come from it: the author's `role` attributes are dropped, and the author's own ids get a namespace, `u-…` (with their `#…` links), so no id an author writes can be a heading's, a footnote's, the theme's or one a script looks up.
+
+## The page bar
+
+The bars only their viewer sees (previewing a theme, seeing the site as someone else) come from core, above the theme's page. A theme gives them its look with these CSS custom properties, set on `:root` or `body`; each has core's value when the theme sets none. They're a contract, versioned like the rest of the template API:
+
+| Property | Core's value |
+|---|---|
+| `--quire-bar-background` | `#1d1a24` |
+| `--quire-bar-color` | `#fff` |
+| `--quire-bar-button-background` | `#f0b04a` |
+| `--quire-bar-button-color` | `#1d1a24` |
+| `--quire-bar-font` | `600 15px/1.4 system-ui, sans-serif` |
+| `--quire-bar-radius` | `999px` |
+
+Keep the contrast of text and button at 4.5:1 at least.
 
 ## Theme settings
 
@@ -310,7 +330,7 @@ They're added to the [`head` slot](#slots), so the layout only has to render it.
 <img src="{{ quire_asset('theme/logo.svg') }}" alt="{{ site.title }}">
 ```
 
-A stylesheet can refer to its neighbours with relative URLs (`url('fonts/inter.woff2')`), and a script can import its neighbours with relative paths (`import './menu-toggle.js'`); AssetMapper versions those too. `quire_asset()` raises an error for a file that doesn't exist, rather than linking to nothing.
+A stylesheet can refer to its neighbors with relative URLs (`url('fonts/inter.woff2')`), and a script can import its neighbors with relative paths (`import './menu-toggle.js'`); AssetMapper versions those too. `quire_asset()` raises an error for a file that doesn't exist, rather than linking to nothing.
 
 A theme's scripts import npm packages by name when it lists them in `extra.quire.importmap` of its `composer.json`, e.g. `{"@hotwired/stimulus": "3.2.2"}`: sites download them, so don't copy libraries into `assets/`. See [JavaScript packages](extensions.md#javascript-packages).
 
@@ -389,6 +409,8 @@ Pages without an image of their own share the site's: the setting `site.share_im
 To show how an item will look in search results and when shared before it's published, e.g. in an admin interface, `Quire\Theme\ContentPreviews` gives its tags without a page (`seo()`), and its card as the theme draws it, alone (`card()`), or as a page of its own with the theme's stylesheets and no scripts, for a sandboxed iframe (`cardDocument()`).
 
 ## Error pages
+
+A theme's `error404.html.twig` that fails (a query, a template error) gives a plain "Page not found" with status 404, never a 500, and the failure is logged. List posts there with `quire_latest()`, which is cached, and render the `error404.suggestions` slot only when it's filled (`quire_slot_filled`): an SEO extension puts the pages the visitor may have meant there, as links.
 
 A theme provides the pages for errors in `templates/bundles/TwigBundle/Exception/`: `error404.html.twig` for addresses where nothing is published, `error.html.twig` for everything else, as in any Symfony application. They're shown in production; development shows the error itself. The default theme has both.
 

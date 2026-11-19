@@ -274,6 +274,43 @@ final class ContentQueryTest extends KernelTestCase
         $this->assertInvalid('Unknown relation "nope".', fn (): ContentQuery => $this->content->query('page')->with('nope'));
     }
 
+    public function testAncestorsSiblingsAndNeighborsAreReadInTheQueryWithItsVisibility(): void
+    {
+        $about = $this->published('About', type: 'page');
+        $team = $this->published('Team', type: 'page', parent: $about, position: 2);
+        $people = $this->published('People', type: 'page', parent: $team);
+        $this->published('History', type: 'page', parent: $about, position: 1);
+        $this->create('Draft sibling', type: 'page', parent: $about);
+
+        self::assertSame(['About', 'Team'], $this->titles($this->content->query('page')->ancestorsOf($people)), 'The top one first, the item itself left out.');
+        self::assertSame([], $this->titles($this->content->query('page')->ancestorsOf($about)));
+        self::assertSame(['History'], $this->titles($this->content->query('page')->siblingsOf($team)), 'Visitors don\'t see the draft sibling, and the item isn\'t its own.');
+
+        $draft = $this->create('Draft parent', type: 'page');
+        $hidden = $this->published('Under a draft', type: 'page', parent: $draft);
+        self::assertSame([], $this->titles($this->content->query('page')->ancestorsOf($hidden)), 'An ancestor visitors can\'t see isn\'t in the breadcrumb.');
+
+        $first = $this->published('First', at: '-3 hours');
+        $tieA = $this->published('Tie A', at: '2026-01-01 10:00:00');
+        $tieB = $this->published('Tie B', at: '2026-01-01 10:00:00');
+        $last = $this->published('Last', at: '-1 hour');
+        $this->create('Draft post');
+
+        $order = [$tieA->id < $tieB->id ? 'Tie A' : 'Tie B', $tieA->id < $tieB->id ? 'Tie B' : 'Tie A'];
+        [$older, $newer] = $order;
+        $olderItem = 'Tie A' === $older ? $tieA : $tieB;
+        $newerItem = 'Tie A' === $older ? $tieB : $tieA;
+
+        self::assertSame($newer, $this->content->query('post')->newerThan($olderItem)->first()?->title, 'Equal dates: the id decides, so none is skipped or repeated.');
+        self::assertSame($older, $this->content->query('post')->olderThan($newerItem)->first()?->title);
+        self::assertSame('First', $this->content->query('post')->newerThan($newerItem)->first()?->title);
+        self::assertSame('Last', $this->content->query('post')->newerThan($first)->first()?->title);
+        self::assertNull($this->content->query('post')->newerThan($last)->first(), 'The draft is never a neighbor.');
+        self::assertSame('First', $this->content->query('post')->olderThan($last)->first()?->title);
+
+        self::assertSame('Team', trim($this->render("{{ quire_content('page').ancestorsOf(quire_content('page').where('slug', 'people').first()).limit(5).get()|last.title }}")), 'Templates can read them.');
+    }
+
     public function testTranslationsAndExtensionRelations(): void
     {
         $english = $this->published('Hello');
