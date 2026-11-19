@@ -120,3 +120,6 @@ Send outside production too: Испраќај и надвор од продук�
 "Always allow {label}": "Секогаш дозволи {label}"
 "Open it on {host}": "Отвори на {host}"
 "This content can't be shown.": "Оваа содржина не може да се прикаже."
+"{category} on": "{category}: вклучено"
+"{category} off": "{category}: исклучено"
+"{category} partly on": "{category}: делумно вклучено"

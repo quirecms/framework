@@ -316,6 +316,31 @@ await check('"Reject all" keeps a refusal of every service, hides the banner, mo
     await context.close();
 });
 
+await check('the visitor\'s choice shows beside "Cookie settings" once made, from the choice itself, and is no live region', async () => {
+    const { context, page } = await fresh();
+    await page.goto(base + '/', { waitUntil: 'networkidle' });
+    const state = page.locator('[data-consent-state]');
+    // Before a choice: nothing (R13.3)
+    expect((await state.textContent()) === '' && !(await state.isVisible()), `Shown before a choice: "${await state.textContent()}"`);
+    expect((await state.getAttribute('role')) === null && (await state.getAttribute('aria-live')) === null, 'A live region (R13.4).');
+
+    await page.locator('[data-consent-banner] [data-consent-reject]').click();
+    const refused = (await state.textContent()) ?? '';
+    expect(await state.isVisible(), 'Hidden after "Reject all".');
+    expect(refused.split(' · ').every((part) => / off$/.test(part)) && refused.length > 0, `After "Reject all": "${refused}"`);
+
+    // Changed in the dialog: it follows at once, from the same choice (R13.2)
+    await page.locator('.consent__opener').click();
+    await page.locator('[data-consent-dialog] [data-consent-accept]').click();
+    const allowed = (await state.textContent()) ?? '';
+    expect(allowed.split(' · ').every((part) => / on$/.test(part) && !/ partly on$/.test(part)), `After "Accept all": "${allowed}"`);
+
+    // And on the next page, without a choice being made again
+    await page.reload({ waitUntil: 'networkidle' });
+    expect((await state.textContent()) === allowed, `After a reload: "${await state.textContent()}"`);
+    await context.close();
+});
+
 await check('each choice is logged as proof, by the ID the dialog shows', async () => {
     const { context, page } = await fresh();
     await page.goto(base + '/', { waitUntil: 'networkidle' });
@@ -349,6 +374,8 @@ await check('"Cookie settings" reopens the choice; saving one service keeps it, 
     const kept = await choice(context);
     expect(/^[0-9a-f]{12}$/.test(kept.s['ci-video']) && kept.s['ci-fonts'] === false, `Kept: ${JSON.stringify(kept.s)}`);
     expect(await page.evaluate(() => window.quire.consent.allows('ci-video') && window.quire.consent.allows('marketing') && !window.quire.consent.allows('ci-fonts')), 'window.quire.consent disagrees.');
+    const state = (await page.locator('[data-consent-state]').textContent()) ?? '';
+    expect(state.includes('Marketing on') && / off/.test(state), `The footer says "${state}" after one service was allowed.`);
     await context.close();
 });
 
@@ -395,6 +422,8 @@ await check('Global Privacy Control: no banner, everything off, and the dialog s
     expect(await page.locator('[data-consent-service="ci-video"]').isDisabled(), 'The switches can be changed.');
     expect(!(await page.locator('[data-consent-dialog] [data-consent-accept]').isVisible()), '"Accept all" is offered.');
     expect(await page.evaluate(() => !window.quire.consent.allows('ci-video')), 'A service is allowed.');
+    const said = (await page.locator('[data-consent-state]').textContent()) ?? '';
+    expect(said !== '' && said.split(' · ').every((part) => / off$/.test(part)), `The footer says "${said}" under the signal.`);
     await context.close();
 });
 

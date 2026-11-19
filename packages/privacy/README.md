@@ -26,6 +26,7 @@ The declaration is the one source of what visitors read in the banner and the se
 
 - The banner asks only about the categories in use: with one, by its name ("Accept analytics cookies", "Reject analytics cookies"); with more, "Accept all", "Reject all" and "Choose cookies". Accepting and rejecting look the same, and nothing is switched on in advance.
 - "Cookie settings" reopens the visitor's choice on every page: in the theme's footer, or where the theme puts `{{ quire_consent_settings() }}`.
+- Beside it, the visitor's choice as it stands, e.g. "Analytics off" (`<span class="consent__state" data-consent-state>`, one entry per category, joined by " · "). The page prints it empty and hidden whatever the visitor's cookie says, so pages stay the same for everyone and cacheable; the loader fills it from the very choice it decides with, at once and on every change. Before a choice it stays empty; under Global Privacy Control it says everything is off. It isn't a live region: a state, not news. Its words are the categories' labels with "{category} on" and "{category} off", in this package's translations.
 - Browsers that send Global Privacy Control or Do Not Track count as rejecting.
 - Visitors are asked again when the services change (about what's new only), and when their choice expires.
 - Outside production, or on another domain than the site's own, visitors are asked as usual and nothing is sent ("test mode").

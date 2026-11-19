@@ -301,9 +301,38 @@ function start(config) {
         }
 
         embeds(withdrawn.map((service) => service.id));
+        showState();
         document.dispatchEvent(new CustomEvent('quire:consent', {detail: {allowed: now, withdrawn: withdrawn.map((service) => service.id)}}));
 
         return withdrawn;
+    }
+
+    // The visitor's choice beside "Cookie settings", from the very choice that decides what loads (the
+    // same `allowed`), never re-read from the cookie (R13.2). Empty and hidden before a choice (R13.3);
+    // under a privacy signal (Global Privacy Control), everything is off, and it says so. A state, not
+    // news: no live region (R13.4).
+    function showState() {
+        const states = document.querySelectorAll('[data-consent-state]');
+
+        if (states.length === 0) {
+            return;
+        }
+
+        const categories = [...new Set(services.map((service) => service.category))];
+        const text = choice === null && !signal ? '' : categories.map((category) => {
+            const label = config.categories?.[category] ?? category;
+            // Choices are per service (the dialog has a switch for each), so a category can be mixed: "on"
+            // only when all its services are allowed, "off" when none is, and "some on" between
+            const answers = services.filter((service) => service.category === category).map((service) => allowed(service.id));
+            const message = answers.every(Boolean) ? config.messages.stateOn : (answers.some(Boolean) ? config.messages.stateSome : config.messages.stateOff);
+
+            return message.replace('{category}', label);
+        }).join(config.messages.stateSeparator ?? ' · ');
+
+        for (const state of states) {
+            state.textContent = text;
+            state.hidden = text === '';
+        }
     }
 
     // Puts back the embeds of services the visitor allows, and holds again those of services withdrawn.

@@ -120,3 +120,6 @@ Send outside production too: Auch außerhalb der Produktion senden
 "Always allow {label}": "{label} immer erlauben"
 "Open it on {host}": "Auf {host} öffnen"
 "This content can't be shown.": "Dieser Inhalt kann nicht angezeigt werden."
+"{category} on": "{category}: an"
+"{category} off": "{category}: aus"
+"{category} partly on": "{category}: teilweise an"
