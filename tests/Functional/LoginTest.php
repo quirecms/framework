@@ -73,6 +73,36 @@ final class LoginTest extends WebTestCase
         self::assertResponseHeaderSame('X-Frame-Options', 'DENY');
     }
 
+    public function testAPasswordCanBeShownWithJavaScriptAndStaysAPlainFieldWithout(): void
+    {
+        $crawler = $this->client->request('GET', '/login');
+
+        $toggle = $crawler->filter('input#password + button[data-quire-password-toggle]');
+        self::assertCount(1, $toggle, 'A button right after the field.');
+        self::assertSame('button', $toggle->attr('type'), 'It never submits the form.');
+        self::assertSame('password', $toggle->attr('aria-controls'));
+        self::assertSame('false', $toggle->attr('aria-pressed'));
+        self::assertSame('Show password', $toggle->attr('aria-label'));
+        self::assertNotNull($toggle->attr('hidden'), 'Hidden until its script runs: without JavaScript, a plain password field.');
+        self::assertSame(['_password', 'current-password'], [$crawler->filter('input#password')->attr('name'), $crawler->filter('input#password')->attr('autocomplete')], 'The field is as it was.');
+        self::assertSame(['false', 'none', 'off'], [$crawler->filter('input#password')->attr('spellcheck'), $crawler->filter('input#password')->attr('autocapitalize'), $crawler->filter('input#password')->attr('autocorrect')], 'Shown as text, it\'s never sent to a spell checker\'s service.');
+
+        $script = (string) $crawler->filter('script[type=module][src*="show-password"]')->attr('src');
+        self::assertMatchesRegularExpression('#^/assets/quire/show-password-[\w-]+\.js$#', $script, 'A file of the site, versioned (no inline script).');
+    }
+
+    public function testAFailedSignInMarksItsFields(): void
+    {
+        $this->signIn('nobody@example.com', 'wrong password');
+        $crawler = $this->client->followRedirect();
+
+        foreach (['username', 'password'] as $field) {
+            self::assertSame('true', $crawler->filter('input#'.$field)->attr('aria-invalid'), $field);
+            self::assertSame('sign-in-error', $crawler->filter('input#'.$field)->attr('aria-describedby'), $field);
+        }
+        self::assertNull($this->client->request('GET', '/login')->filter('input#password')->attr('aria-invalid'), 'Not before an attempt.');
+    }
+
     public function testSigningInAndOut(): void
     {
         $ada = $this->user('ada');
