@@ -35,4 +35,30 @@ final class HomepageWarningTest extends AdminTestCase
         $this->settings()->set('site.homepage', 'listing');
         self::assertCount(0, $this->client->request('GET', '/admin/settings')->filter('.q-notice--warning'), 'The list as the homepage is what the site serves.');
     }
+
+    /**
+     * A screen reader reads a control's help and warning by the ids its aria-describedby names: each is on
+     * the page, in the settings document's small forms as on each group's page.
+     */
+    public function testEveryIdTheSettingsControlsAreDescribedByIsOnThePage(): void
+    {
+        $this->signIn('admin');
+        $document = $this->client->request('GET', '/admin/settings');
+        $groups = $document->filter('.settings-doc__title')->each(static fn (Crawler $h2): string => substr((string) $h2->attr('id'), \strlen('part-')));
+        self::assertContains('site', $groups);
+
+        foreach (['/admin/settings', ...array_map(static fn (string $group): string => '/admin/settings/'.$group, $groups)] as $path) {
+            $crawler = $this->client->request('GET', $path);
+            $described = $crawler->filter('[aria-describedby]');
+            self::assertGreaterThan(0, $described->count(), $path);
+
+            $described->each(static function (Crawler $element) use ($crawler, $path): void {
+                foreach (explode(' ', (string) $element->attr('aria-describedby')) as $id) {
+                    self::assertCount(1, $crawler->filter('[id="'.$id.'"]'), $path.': "'.$id.'", which '.$element->attr('id').' is described by.');
+                }
+            });
+        }
+
+        self::assertSame('setting-site-homepage-help setting-site-homepage-warning', $document->filter('#edit-setting-site-homepage #setting-site-homepage')->attr('aria-describedby'), 'The small form\'s control is described by its help and the warning.');
+    }
 }
