@@ -613,6 +613,7 @@
 'Or publish them on': 'Or publish them on'
 'Publish': 'Publish'
 'Publish changes now': 'Publish changes now'
+'Nothing was published: {problem}': 'Nothing was published: {problem}'
 'Reply': 'Reply'
 'Resolve': 'Resolve'
 'Resolved': 'Resolved'

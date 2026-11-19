@@ -27,6 +27,8 @@ use Quire\Content\Revision\PendingRevision;
 use Quire\Content\Revision\PendingRevisionComments;
 use Quire\Content\Revision\PendingRevisionRepository;
 use Quire\Content\Revision\PendingRevisionWriter;
+use Quire\Content\Revision\PublicChangeKind;
+use Quire\Content\Revision\PublicNote;
 use Quire\Content\Revision\Review;
 use Quire\Content\Revision\Revision;
 use Quire\Content\Revision\RevisionRepository;
@@ -124,7 +126,14 @@ final readonly class ContentChangesController
                         throw new AccessDeniedHttpException($can);
                     }
 
-                    $this->writer->publishPendingRevision($revision->id, $expected, $actor);
+                    try {
+                        $note = $this->publicNote($request);
+                    } catch (InvalidContentException $e) {
+                        // Said at the field, with what was written kept: nothing is published
+                        return $this->changesPage($definition, $item, $revision, Response::HTTP_UNPROCESSABLE_ENTITY, errors: $e->violations);
+                    }
+
+                    $this->writer->publishPendingRevision($revision->id, $expected, $actor, $note);
                     $flash->add('success', $this->translator->trans('The changes are published.', [], 'quire-admin'));
 
                     return $this->toEditor($definition, $item);
@@ -336,9 +345,23 @@ final readonly class ContentChangesController
     }
 
     /**
-     * @param array<string, string>|null $conflicts
+     * What readers are told about the changes, from the publish popover: nothing, or an update or a
+     * correction with its note (the editor's "Publish changes" asks the same).
+     *
+     * @throws InvalidContentException when a kind is chosen without a note, or the note is too long
      */
-    private function changesPage(ContentTypeDefinition $type, Content $item, PendingRevision $revision, int $status = Response::HTTP_OK, ?array $conflicts = null): Response
+    private function publicNote(Request $request): ?PublicNote
+    {
+        $kind = PublicChangeKind::tryFrom($request->request->getString('public_kind'));
+
+        return null === $kind ? null : new PublicNote($kind, $request->request->getString('public_note'));
+    }
+
+    /**
+     * @param array<string, string>|null $conflicts
+     * @param array<string, string>      $errors
+     */
+    private function changesPage(ContentTypeDefinition $type, Content $item, PendingRevision $revision, int $status = Response::HTTP_OK, ?array $conflicts = null, array $errors = []): Response
     {
         $reviews = $this->pending->reviews($revision->id);
         $merge = $this->pending->merge($revision, $item);
@@ -396,6 +419,7 @@ final readonly class ContentChangesController
             'can_publish' => $this->changes->canPublish($item, $revision),
             'may_discard' => $this->changes->mayDiscard($item, $revision),
             'timezone' => $this->settings->getString('site.timezone'),
+            'errors' => $errors,
         ]), $status);
     }
 

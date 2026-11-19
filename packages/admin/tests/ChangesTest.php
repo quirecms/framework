@@ -60,6 +60,7 @@ final class ChangesTest extends AdminTestCase
         $crawler = $this->client->request('GET', $this->editor($post));
         $this->client->submit($this->button($crawler, 'save'), ['body' => str_replace('9 to 5', '9 to 6', self::BODY)]);
         $crawler = $this->client->followRedirect();
+        self::assertCount(1, $crawler->filter('button[value=publish_changes]'), 'One button publishes: the popover\'s, beside what to tell readers.');
 
         // A correction says what was wrong
         $crawler = $this->client->submit($this->button($crawler, 'publish_changes'), ['public_kind' => 'correction', 'public_note' => ' ']);
@@ -129,8 +130,20 @@ final class ChangesTest extends AdminTestCase
         self::assertSame(['Editor approved Good catch.'], $crawler->filter('.conversation__entry')->each(static fn (Crawler $li): string => trim((string) preg_replace('/\s+/', ' ', $li->filter('strong')->text().' approved '.$li->filter('.conversation__body')->text()))));
         self::assertStringContainsString('approved', $crawler->filter('.conversation__who')->text());
 
-        $this->client->submit($crawler->selectButton('Publish the changes')->form());
+        // Publishing asks what to tell readers, as the editor's "Publish changes" does
+        self::assertSame('publish-changes-popover', $crawler->selectButton('Publish the changes')->attr('popovertarget'));
+        $crawler = $this->client->submit($this->button($crawler, 'publish'), ['public_kind' => 'update', 'public_note' => '']);
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorTextSame('#public_note-error', 'Say what changed, in a sentence for readers.');
+        self::assertSelectorTextContains('.q-notice--error', 'Nothing was published');
+        self::assertSame('true', $crawler->filter('#public_note')->attr('aria-invalid'));
+        self::assertSame('update', $crawler->filter('input[name=public_kind]:checked')->attr('value'), 'What was chosen is kept.');
+        self::assertSame(self::BODY, $this->live($post)->body, 'Nothing is published without it.');
+
+        $this->client->submit($this->button($crawler, 'publish'), ['public_kind' => 'update', 'public_note' => 'Open an hour longer.']);
         self::assertSame(str_replace('9 to 5', '9 to 6', self::BODY), $this->live($post)->body);
+        $history = $this->service(PublicHistory::class)->of($this->live($post));
+        self::assertSame([['update', 'Open an hour longer.']], array_map(static fn (\Quire\Content\Revision\PublicChange $change): array => [$change->kind->value, $change->note], $history));
     }
 
     public function testWhenTheSiteAsksForApprovalNobodyApprovesTheirOwnChanges(): void

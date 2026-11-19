@@ -2,7 +2,7 @@
     Reviewing changes to a published item that aren't published yet (a pending revision): what's live and
     the changes side by side, the conversation about them, what the checks found, and what the user may do.
     Variables: type, item, pending, state, diff, rows, conversation, check_list, to_check, live_at, conflicts, checks,
-    reviews, names, own, may_review, may_approve, can_publish, may_discard, timezone.
+    reviews, names, own, may_review, may_approve, can_publish, may_discard, timezone, errors (public_note, when the note for readers was refused).
 #}
 {% extends '@quire_admin/layout.html.twig' %}
 {% import '@quire_admin/content/edit.html.twig' as editor %}
@@ -42,11 +42,19 @@
                 {% if may_approve %}<button type="submit" form="review-form" class="q-btn" name="intent" value="approve">{{ 'Approve'|trans({}, 'quire-admin') }}</button>{% endif %}
             {% endif %}
             {% if can_publish is same as(true) %}
-                <button type="submit" form="review-form" class="q-btn{% if may_review %} q-btn--soft{% endif %}" name="intent" value="publish">{{ 'Publish the changes'|trans({}, 'quire-admin') }}</button>
+                <button type="button" class="q-btn{% if may_review %} q-btn--soft{% endif %}" popovertarget="publish-changes-popover">{{ 'Publish the changes'|trans({}, 'quire-admin') }}</button>
+                <div class="editor-popover q-card" id="publish-changes-popover" popover>
+                    <h2 class="editor-popover__title">{{ 'Publish the changes'|trans({}, 'quire-admin') }}</h2>
+                    {{ include('@quire_admin/content/_reader_note.html.twig', {form: 'review-form'}) }}
+                    <button type="submit" form="review-form" class="q-btn" name="intent" value="publish">{{ 'Publish changes now'|trans({}, 'quire-admin') }}</button>
+                </div>
             {% endif %}
         </div>
     </header>
 
+    {% if errors.public_note is defined %}
+        <p class="q-notice q-notice--error">{{ 'Nothing was published: {problem}'|trans({problem: errors.public_note}, 'quire-admin') }}</p>
+    {% endif %}
     {% if pending.publishProblem %}
         <p class="q-notice q-notice--error">{{ 'These changes couldn\'t be published at their time: {problem}'|trans({problem: pending.publishProblem}, 'quire-admin') }}</p>
     {% endif %}
