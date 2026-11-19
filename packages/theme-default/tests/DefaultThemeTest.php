@@ -94,6 +94,80 @@ final class DefaultThemeTest extends ExtensionTestCase
         self::assertSame(['August 2025, on this page'], $crawler->filter('nav.months a[aria-current]')->each(static fn (Crawler $a): string => (string) $a->attr('aria-label')));
     }
 
+    public function testWithTheEditionHomepageAllPostsIsTheListFromPageOne(): void
+    {
+        $this->setSetting('quire.content.per_page', 2);
+        $this->publish('post', 'In October', 'Older.', '2025-10-20 10:00');
+        $this->publish('post', 'The lead', 'Newest.', '2025-11-14 10:00');
+        $this->publish('post', 'Oldest', 'First.', '2025-08-01 10:00');
+        $this->setSetting('site.homepage', 'edition');
+
+        $crawler = $this->client->request('GET', '/');
+        self::assertSelectorTextSame('.lead h2 a', 'The lead');
+        self::assertSame('/blog', $crawler->filter('.to-archive a')->attr('href'), '"All posts" opens the list at its first page.');
+        self::assertSame('/blog#m-2025-11', $crawler->filter('nav.months a')->first()->attr('href'));
+
+        $crawler = $this->client->request('GET', '/blog');
+        self::assertSelectorTextSame('main h1', 'All posts');
+        self::assertSelectorTextSame('.pager .count', 'Page 1 of 2');
+        self::assertSame(['The lead', 'In October'], $crawler->filter('.earlier .row h3 a')->each(static fn (Crawler $a): string => $a->text()), 'The archive lists the edition\'s posts too.');
+
+        $crawler = $this->client->request('GET', '/blog/the-lead');
+        self::assertSame('/blog', $crawler->filter('nav.crumbs a')->first()->attr('href'));
+        self::assertSame('/blog#m-2025-11', $crawler->filter('nav.crumbs a')->last()->attr('href'));
+
+        // Two pages, two addresses: the edition's own and the list's own
+        $crawler = $this->client->request('GET', '/');
+        self::assertSame('http://localhost/', $crawler->filter('head link[rel=canonical]')->attr('href'), 'The edition is a page of its own, not the list\'s first.');
+        $crawler = $this->client->request('GET', '/blog');
+        self::assertSame('http://localhost/blog', $crawler->filter('head link[rel=canonical]')->attr('href'));
+        $this->client->request('GET', '/?page=2');
+        self::assertResponseRedirects('/blog?page=2', 302, 'The edition has no pages: they\'re the list\'s (temporary: it follows a setting).');
+        $this->client->request('GET', '/?page=1');
+        self::assertResponseRedirects('/', 302);
+
+        // The list keeps an address while the homepage is its edition, both ways
+        foreach ([['quire.listings.post', '', 'whose list needs an address of its own'], ['site.homepage', 'listing', null], ['quire.listings.post', '', null], ['site.homepage', 'edition', 'set "quire.listings.post" first']] as [$key, $value, $fails]) {
+            try {
+                $this->setSetting($key, $value);
+                self::assertNull($fails, $key.' should fail.');
+            } catch (\Quire\Settings\Exception\InvalidSettingValueException $e) {
+                self::assertNotNull($fails, $e->getMessage());
+                self::assertStringContainsString($fails, $e->getMessage());
+            }
+        }
+    }
+
+    public function testSwitchingTheHomepageBothWaysLeavesNoRedirectLoop(): void
+    {
+        $this->setSetting('quire.content.per_page', 1);
+        $this->publish('post', 'Older', 'A.', '-2 days');
+        $this->publish('post', 'Newer', 'B.', '-1 day');
+
+        // Each address a browser may have kept a redirect for, in either mode, ends on a page
+        $addresses = ['/', '/?page=2', '/blog', '/blog?page=2'];
+
+        foreach (['edition', 'listing', 'edition'] as $mode) {
+            $this->setSetting('site.homepage', $mode);
+
+            foreach ($addresses as $address) {
+                $seen = [];
+                $this->client->request('GET', $address);
+
+                while ($this->client->getResponse()->isRedirection()) {
+                    $status = $this->client->getResponse()->getStatusCode();
+                    $location = (string) $this->client->getResponse()->headers->get('Location');
+                    self::assertNotContains($location, $seen, \sprintf('%s loops in %s mode.', $address, $mode));
+                    self::assertSame(302, $status, \sprintf('%s → %s follows the homepage setting: never kept for good.', $address, $location));
+                    $seen[] = $location;
+                    $this->client->request('GET', $location);
+                }
+
+                self::assertResponseIsSuccessful(\sprintf('%s in %s mode.', $address, $mode));
+            }
+        }
+    }
+
     public function testAMonthSplitAcrossPagesIsContinued(): void
     {
         $this->setSetting('quire.content.per_page', 1);

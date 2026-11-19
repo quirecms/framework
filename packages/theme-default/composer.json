@@ -33,7 +33,8 @@
             "title": "Default",
             "description": "Accessible, responsive, light and dark. Use it as it is, or as the parent of your own theme.",
             "theme": {
-                "screenshot": "screenshot.png"
+                "screenshot": "screenshot.png",
+                "supports": ["edition"]
             }
         },
         "branch-alias": {

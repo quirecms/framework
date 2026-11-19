@@ -161,6 +161,29 @@ final class ThemesTest extends ExtensionTestCase
         self::assertStringContainsString('The theme is pinned in configuration', $this->console('quire:theme:use', ['id' => 'quire-fixture-base'], 1));
     }
 
+    public function testAnEditionWithAThemeThatDrawsNoneIsServedAsTheList(): void
+    {
+        $themes = $this->service(Themes::class);
+        self::assertFalse($themes->supports('edition'), 'Neither fixture theme declares it.');
+
+        try {
+            $this->setSetting('site.homepage', 'edition');
+            self::fail('A theme that draws no edition can\'t be given one.');
+        } catch (\Quire\Settings\Exception\InvalidSettingValueException $e) {
+            self::assertStringContainsString('draws no edition', $e->getMessage());
+        }
+
+        // A site that chose an edition, then switched to this theme: the same list never gets two addresses
+        $this->service(\Doctrine\DBAL\Connection::class)->executeStatement("INSERT INTO quire.setting (name, value, updated_at) VALUES ('site.homepage', '\"edition\"', now()) ON CONFLICT (name) DO UPDATE SET value = EXCLUDED.value");
+        $this->publish('A post');
+
+        $this->client->request('GET', '/');
+        self::assertResponseIsSuccessful();
+        $this->client->request('GET', '/blog');
+        self::assertResponseRedirects('/', 302, 'The list has one address, as with "listing".');
+        self::assertStringContainsString('draws none', $this->console('quire:permalink:list'));
+    }
+
     private function publish(string $title, string $body = ''): Content
     {
         $writer = $this->service(ContentWriter::class);

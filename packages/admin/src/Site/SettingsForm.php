@@ -45,7 +45,7 @@ final readonly class SettingsForm
     ];
 
     /** Settings that only say something when another has a value, e.g. the homepage's page when it shows one */
-    private const array ONLY_WHEN = ['site.homepage_listing' => ['site.homepage', 'listing'], 'site.homepage_page' => ['site.homepage', 'page'], 'site.homepage_route' => ['site.homepage', 'route']];
+    private const array ONLY_WHEN = ['site.homepage_listing' => ['site.homepage', ['listing', 'edition']], 'site.homepage_page' => ['site.homepage', ['page']], 'site.homepage_route' => ['site.homepage', ['route']]];
 
     /** Settings with pages of their own */
     private const array ELSEWHERE = [Themes::SETTING, Permissions::SETTING, Permissions::ROLES_SETTING];
@@ -174,7 +174,7 @@ final readonly class SettingsForm
                 $definition = $entry['definition'];
                 [$on, $when] = self::ONLY_WHEN[$definition->key] ?? [null, null];
 
-                if (null !== $on && $this->settings->get($on) !== $when) {
+                if (null !== $on && !\in_array($this->settings->get($on), $when ?? [], true)) {
                     continue;
                 }
 

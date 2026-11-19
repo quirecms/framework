@@ -4,8 +4,9 @@
     the archive ("All posts"), with no pager. Elsewhere it's the archive: every post by month, with the pager.
 
     Variables: type (the content type), page (iterate it for the items; page.page, page.pageCount,
-    page.perPage), is_home (whether it's the homepage), previous_url, next_url (null when there's no such
-    page), canonical_url.
+    page.perPage), is_home (whether it's the homepage), edition (true when the homepage is the type's
+    edition, site.homepage = edition, and the list has its own address), previous_url, next_url (null
+    when there's no such page), canonical_url.
 #}
 {% extends 'layout.html.twig' %}
 {% import 'partials/rows.html.twig' as rows %}

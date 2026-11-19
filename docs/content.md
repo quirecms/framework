@@ -261,8 +261,11 @@ The homepage shows one of these, set with `site.homepage`:
 | `site.homepage` | Shows |
 |-----------------|-------|
 | `listing` (default) | The list of the type in `site.homepage_listing`, `post` by default. Its own URL (`/blog`) then redirects to the homepage. |
+| `edition` | An edition of the newest items of the type in `site.homepage_listing`: the first page of its list, which the theme lays out as a front page (the default theme leads with the newest post). The list keeps its own URL (`/blog`) from page 1, so the type must have one; `/?page=2` redirects to `/blog?page=2`. It needs a theme that draws an edition (`"supports": ["edition"]`, see [themes](themes.md#writing-a-theme)), as the default theme does; with one that doesn't, the homepage is the list, as with `listing`. The homepage's canonical URL is its own. Templates get `edition` set to true. |
 | `page` | The page in `site.homepage_page`, given by ID or path, e.g. `home`. The page's own URL then redirects to the homepage. |
 | `route` | The page of an extension or of the application: the route name in `site.homepage_route`. The route must not need parameters. |
+
+The redirects these modes make (`/blog` to `/` with `listing`, a page's own URL to `/` with `page`, `/?page=2` to `/blog?page=2` with `edition`) are temporary, "302 Found": they follow a setting, so browsers don't keep them after it changes. Each page's canonical URL tells search engines which address is its own.
 
 ```bash
 bin/console quire:settings:set site.homepage_page home
