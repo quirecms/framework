@@ -50,7 +50,7 @@ final class DefaultThemeTest extends ExtensionTestCase
         $crawler = $this->client->request('GET', '/blog/middle');
 
         self::assertSame(['Posts', 'February 2025'], $crawler->filter('nav.crumbs a')->each(static fn (Crawler $a): string => $a->text()));
-        self::assertSame('/#m-2025-02', $crawler->filter('nav.crumbs a')->last()->attr('href'), 'The month on the list page where it starts (the list is the home page here).');
+        self::assertSame('/blog#m-2025-02', $crawler->filter('nav.crumbs a')->last()->attr('href'), 'The month on the list page where it starts.');
         self::assertSame(['#h-one', '#h-two', '#h-three'], $crawler->filter('nav.toc--wide a')->each(static fn (Crawler $a): string => (string) $a->attr('href')), 'Three headings: "On this page", from the very HTML shown.');
         self::assertCount(1, $crawler->filter('nav.toc--wide li.sub'));
         self::assertSelectorTextSame('nav.next .newer .next__title', 'Last');
@@ -62,8 +62,10 @@ final class DefaultThemeTest extends ExtensionTestCase
         self::assertCount(0, $crawler->filter('nav.next .older a'));
     }
 
-    public function testTheHomePageIsTheEditionAndAllPostsTheArchive(): void
+    public function testWithTheListHomepageTheEditionLeadsAndTheArchiveGoesOnFromPageTwo(): void
     {
+        // The default before the edition was: sites installed then keep it
+        $this->setSetting('site.homepage', 'listing');
         $this->setSetting('quire.content.per_page', 4);
         $this->publish('post', 'In September', 'Old.', '2025-09-20 10:00');
         $this->publish('post', 'In October', 'Older.', '2025-10-20 10:00');
@@ -100,7 +102,7 @@ final class DefaultThemeTest extends ExtensionTestCase
         $this->publish('post', 'In October', 'Older.', '2025-10-20 10:00');
         $this->publish('post', 'The lead', 'Newest.', '2025-11-14 10:00');
         $this->publish('post', 'Oldest', 'First.', '2025-08-01 10:00');
-        $this->setSetting('site.homepage', 'edition');
+        self::assertSame('edition', $this->settings()->get('site.homepage'), 'The default for new sites.');
 
         $crawler = $this->client->request('GET', '/');
         self::assertSelectorTextSame('.lead h2 a', 'The lead');
@@ -174,7 +176,7 @@ final class DefaultThemeTest extends ExtensionTestCase
         $this->publish('post', 'Late March', 'B.', '2025-03-20 10:00');
         $this->publish('post', 'Early March', 'A.', '2025-03-02 10:00');
 
-        $this->client->request('GET', '/?page=2');
+        $this->client->request('GET', '/blog?page=2');
 
         self::assertSelectorTextSame('.month__head', 'March 2025 continued');
     }
