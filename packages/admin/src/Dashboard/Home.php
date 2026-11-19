@@ -7,8 +7,6 @@ namespace Quire\Admin\Dashboard;
 use Quire\Admin\Audit\AuditEntries;
 use Quire\Admin\Content\ContentLists;
 use Quire\Admin\Controller\SettingsController;
-use Quire\Admin\Controller\ThemesController;
-use Quire\Admin\Controller\UsersController;
 use Quire\Admin\Twig\RelativeTime;
 use Quire\Audit\AuditLog;
 use Quire\Audit\AuditQuery;
@@ -21,9 +19,9 @@ use Quire\Content\Revision\ReviewState;
 use Quire\Content\Status;
 use Quire\Jobs\JobStatus;
 use Quire\Settings\Settings;
-use Quire\Theme\Themes;
+use Quire\Setup\SetupStep;
+use Quire\Setup\SetupSteps;
 use Quire\User\CurrentUser;
-use Quire\User\UserRepository;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
@@ -54,6 +52,7 @@ final readonly class Home
 
     public function __construct(
         private ContentLists $lists,
+        private SetupSteps $setup,
         private ContentRepository $content,
         private PendingRevisionRepository $pending,
         private CheckResults $checks,
@@ -62,7 +61,6 @@ final readonly class Home
         private JobStatus $jobs,
         private BackupLog $backups,
         private Settings $settings,
-        private UserRepository $users,
         private CurrentUser $currentUser,
         private Security $security,
         private RelativeTime $time,
@@ -280,64 +278,19 @@ final readonly class Home
 
     /**
      * A new site's first steps, those the user may take, while some aren't done; null once they all are,
-     * or when the user may take none.
+     * or when the user may take none. The same list a theme's empty home page shows (SetupSteps), which
+     * extensions add to as the admin does.
      *
      * @return array{steps: list<array{title: string, text: string, done: bool, url: ?string, action: ?string}>, done: int}|null
      */
     public function firstSteps(): ?array
     {
-        $steps = [];
+        $pending = $this->setup->pending();
 
-        if ($this->security->isGranted(SettingsController::ABILITY)) {
-            $named = 'default' !== $this->settings->source('site.title');
-            $steps[] = [
-                'title' => $this->translator->trans('Name your site', [], 'quire-admin'),
-                'text' => $named
-                    ? $this->translator->trans('“{title}”, in {locale}, {timezone} time.', ['title' => $this->settings->getString('site.title'), 'locale' => \Locale::getDisplayLanguage($this->settings->getString('site.locale'), $this->translator->getLocale()), 'timezone' => $this->time->timezone()->getName()], 'quire-admin')
-                    : $this->translator->trans('Its name, language and time zone.', [], 'quire-admin'),
-                'done' => $named,
-                'url' => $this->urls->generate('quire_admin_settings', ['group' => 'site']),
-                'action' => $this->translator->trans('Name it', [], 'quire-admin'),
-            ];
-        }
-
-        $types = $this->lists->listableTypes();
-
-        if ([] !== $types) {
-            $written = array_any($types, fn (\Quire\Content\Type\ContentTypeDefinition $type): bool => $this->lists->query($type, withTrashed: true)->limit(1)->count() > 0);
-            $first = $types[0];
-            $steps[] = [
-                'title' => $this->translator->trans('Write your first post', [], 'quire-admin'),
-                'text' => $this->translator->trans('A title is enough to start. It stays a draft until you publish it.', [], 'quire-admin'),
-                'done' => $written,
-                'url' => $this->urls->generate('quire_admin_content_new', ['type' => $first->id]),
-                'action' => $this->translator->trans('Start writing', [], 'quire-admin'),
-            ];
-        }
-
-        if ($this->security->isGranted(UsersController::ABILITY)) {
-            $steps[] = [
-                'title' => $this->translator->trans('Invite someone to help', [], 'quire-admin'),
-                'text' => $this->translator->trans('They get an email to choose their own password.', [], 'quire-admin'),
-                'done' => $this->users->search(limit: 1)['total'] > 1,
-                'url' => $this->urls->generate('quire_admin_user_new'),
-                'action' => $this->translator->trans('Invite', [], 'quire-admin'),
-            ];
-        }
-
-        if ($this->security->isGranted(ThemesController::ABILITY)) {
-            $steps[] = [
-                'title' => $this->translator->trans('Choose a look', [], 'quire-admin'),
-                'text' => $this->translator->trans('See your site in each installed theme before you switch.', [], 'quire-admin'),
-                'done' => 'default' !== $this->settings->source(Themes::SETTING),
-                'url' => $this->urls->generate('quire_admin_themes'),
-                'action' => $this->translator->trans('Browse themes', [], 'quire-admin'),
-            ];
-        }
-
-        $done = \count(array_filter($steps, static fn (array $step): bool => $step['done']));
-
-        return [] === $steps || $done === \count($steps) ? null : ['steps' => $steps, 'done' => $done];
+        return null === $pending ? null : [
+            'steps' => array_map(static fn (SetupStep $step): array => ['title' => $step->title, 'text' => $step->text, 'done' => $step->done, 'url' => $step->url, 'action' => $step->action], $pending['steps']),
+            'done' => $pending['done'],
+        ];
     }
 
     /**
