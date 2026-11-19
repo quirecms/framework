@@ -1,13 +1,30 @@
 {#
     The page for addresses where nothing is published. Shown in production; development shows the error.
+    If anything here fails (a query, a template error), core shows a plain "Page not found" with status 404,
+    never a 500. The suggestions slot is quire/seo's ("did you mean"); empty, it renders nothing.
 #}
 {% extends 'layout.html.twig' %}
+{% import 'partials/identity.html.twig' as identity %}
+{% import 'partials/rows.html.twig' as rows %}
+{% set domain = 'quire-theme-default' %}
 
-{% block title %}{{ 'Page not found'|trans({}, 'quire-theme-default') }} – {{ site.title }}{% endblock %}
+{% block title %}{{ 'Page not found'|trans({}, domain) }} – {{ site.title }}{% endblock %}
 
 {% block content %}
-    <h1>{{ 'Page not found'|trans({}, 'quire-theme-default') }}</h1>
-    <p>{{ "The page you're looking for doesn't exist or has moved."|trans({}, 'quire-theme-default') }}</p>
-    {% if quire_slot_filled('error404.suggestions') %}{{ quire_slot('error404.suggestions', {path: app.request.pathInfo}) }}{% endif %}
-    <p><a href="{{ quire_home_url() }}">{{ 'Go to the homepage'|trans({}, 'quire-theme-default') }}</a></p>
+    {% set latest = quire_latest(3) %}
+    <div class="container status status--404">
+        <div>
+            <p class="kicker"><span class="accent">404</span></p>
+            <h1>{{ 'Page not found'|trans({}, domain) }}</h1>
+            <p class="lede-sm">{{ 'There’s nothing at {path}.'|quire_trans_html({path: identity.asked(app.request ? app.request.pathInfo : '')}, domain) }}</p>
+            {% if quire_slot_filled('error404.suggestions') %}{{ quire_slot('error404.suggestions', {path: app.request ? app.request.pathInfo : ''}) }}{% endif %}
+            <div class="actions">{% if latest is not empty and (latest|first).type == 'post' %}<a class="btn" href="{{ quire_listing_url('post') }}">{{ 'All posts'|trans({}, domain) }}</a>{% endif %}<a class="btn" href="{{ quire_home_url() }}">{{ 'Go to the homepage'|trans({}, domain) }}</a></div>
+        </div>
+        {{ identity.cover('2d1e', '404') }}
+    </div>
+    {% if latest is not empty %}
+        <div class="container"><div class="section-head"><h2>{{ 'Latest posts'|trans({}, domain) }}</h2></div>
+            <div class="earlier earlier--dated"><ol class="rows">{% for item in latest %}{{ rows.row(item, null, theme.settings.show_dates, true) }}{% endfor %}</ol></div>
+        </div>
+    {% endif %}
 {% endblock %}

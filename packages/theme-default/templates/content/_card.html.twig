@@ -1,13 +1,22 @@
 {#
-    An item in a list: its title, date and excerpt. Lists show each item with it, and the admin shows it
-    alone as a preview, so it uses only item, type, site and theme, never the request. Child themes
-    override just this to change how lists look.
+    An item in a list, as a row: the day number, title, excerpt, and the date for screen readers. The home
+    page, "All posts" and the 404 page show each item with it, and the admin shows it alone as a preview, so
+    it uses only item, type, site and theme, never the request. Child themes override just this to change
+    how lists look.
+
+    Variables: item, type; from lists also dated (whether dates show), with_month (the month beside the day,
+    where no month heading says it) and in_list (rendered inside the list's <ol>).
 #}
-<article class="card">
-    <h2><a href="{{ quire_url(item) }}">{{ item.title }}</a></h2>
-    {% if item.publishedAt and type.has('scheduling') and theme.settings.show_dates %}
-        <p class="entry-meta"><time datetime="{{ item.publishedAt|date('c') }}">{{ item.publishedAt|quire_date }}</time></p>
-    {% endif %}
-    {% set excerpt = quire_excerpt(item) %}
-    {% if excerpt %}<p>{{ excerpt }}</p>{% endif %}
-</article>
+{% set dated = (dated ?? (type.has('scheduling') and theme.settings.show_dates)) and item.publishedAt %}
+{% set excerpt = item.excerpt ?: quire_excerpt(item, 160) %}
+{% if not (in_list ?? false) %}<ol class="rows">{% endif %}
+<li class="row{{ dated ? '' : ' row--undated' }}">
+    {% if dated %}<p class="daynum" aria-hidden="true">{{ item.publishedAt|quire_date('day') }}{% if with_month ?? false %}<small>{{ item.publishedAt|quire_date('month') }}</small>{% endif %}</p>{% endif %}
+    <div>
+        <h3><a href="{{ quire_url(item) }}">{{ item.title }}</a></h3>
+        {% if excerpt %}<p class="ex">{{ excerpt }}</p>{% endif %}
+        {% if dated %}<p class="visually-hidden"><time datetime="{{ item.publishedAt|date('c') }}">{{ item.publishedAt|quire_date }}</time></p>{% endif %}
+    </div>
+    <span></span>
+</li>
+{% if not (in_list ?? false) %}</ol>{% endif %}

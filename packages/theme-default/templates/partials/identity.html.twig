@@ -1,0 +1,36 @@
+{#
+    The site's generated identity: a monogram from its name, and covers whose look comes from an item's id.
+    Decorative: always aria-hidden. A logo replaces the monogram once Quire can store one (quire/media).
+#}
+
+{# Two initials of the name, skipping small words ("Tournament News" → TN, "Bread and Butter" → BB) #}
+{% macro monogram(title, size = null) -%}
+    {%- set small = ['and', 'of', 'the', 'for', 'a', 'an', '&', 'und', 'der', 'die', 'das', 'и', 'на'] -%}
+    {%- set words = title|split(' ')|filter(word => word != '' and word|lower not in small) -%}
+    {%- set words = words|length > 0 ? words : [title|default('Q')] -%}
+    <span class="monogram{{ size ? ' monogram--' ~ size }}" aria-hidden="true">{{ words|slice(0, 2)|map(word => word|first|upper)|join }}</span>
+{%- endmacro %}
+
+{# Pattern, density, angle, glyph place and tint from four hex digits of the id (a UUID): no two items alike, the same item always the same #}
+{% macro cover_classes(id) -%}
+    {%- set hex = (id|replace({'-': ''})|lower ~ '0000')|slice(0, 4) -%}
+    {%- set value = {'0': 0, '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, 'a': 10, 'b': 11, 'c': 12, 'd': 13, 'e': 14, 'f': 15} -%}
+    {%- set a = value[hex[0:1]] ?? 0 -%}
+    c-{{ a % 8 }} d-{{ a >= 8 ? 1 : 0 }} r-{{ value[hex[1:1]] is defined ? hex[1:1] : '0' }} g-{{ value[hex[2:1]] is defined ? hex[2:1] : '0' }} t-{{ (value[hex[3:1]] ?? 0) % 4 }}
+{%- endmacro %}
+
+{# A cover: the pattern with a large glyph (the title's first letters, or a number such as 404) #}
+{% macro cover(id, glyph, class = '') -%}
+    <div class="cover {{ _self.cover_classes(id) }}{{ class ? ' ' ~ class }}" aria-hidden="true"><p class="glyph">{{ glyph }}</p></div>
+{%- endmacro %}
+
+{# The first word's first two letters ("Venue update" → Ve) #}
+{% macro glyph(title) -%}
+    {%- set word = title|split(' ')|filter(word => word != '')|first|default('Q') -%}
+    {{- word|first|upper ~ word|slice(1, 1) -}}
+{%- endmacro %}
+
+{% macro credit() %}<a href="https://quirecms.com">Quire</a>{% endmacro %}
+
+{# The address someone asked for, set apart so a typo is easy to see #}
+{% macro asked(path) %}<span class="asked">{{ path }}</span>{% endmacro %}

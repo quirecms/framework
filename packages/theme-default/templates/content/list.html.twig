@@ -1,22 +1,71 @@
 {#
-    A list of items of one content type, e.g. the blog, one page at a time.
+    A list of items of one content type, one page at a time. On the homepage it's the edition: the
+    newest post leads, then the rest of its week by day, then the earlier ones by month, and one way into
+    the archive ("All posts"), with no pager. Elsewhere it's the archive: every post by month, with the pager.
 
-    Variables: type (the content type), page (iterate it for the items; page.page, page.pageCount),
-    is_home (whether it's the homepage), previous_url, next_url (null when there's no such page),
-    canonical_url.
+    Variables: type (the content type), page (iterate it for the items; page.page, page.pageCount,
+    page.perPage), is_home (whether it's the homepage), previous_url, next_url (null when there's no such
+    page), canonical_url.
 #}
 {% extends 'layout.html.twig' %}
+{% import 'partials/rows.html.twig' as rows %}
+{% set domain = 'quire-theme-default' %}
+{% set dated = type.has('scheduling') and theme.settings.show_dates %}
+{% set items = page.items %}
+{% set edition = is_home and page.page == 1 %}
+{% set archive_title = type.id == 'post' ? 'All posts'|trans({}, domain) : type.pluralLabel %}
 
-{% block title %}{{ is_home ? site.title : type.pluralLabel ~ ' – ' ~ site.title }}{% endblock %}
+{% block title %}{{ edition ? site.title : archive_title ~ ' – ' ~ site.title }}{% endblock %}
 
 {% block content %}
-    <h1{% if is_home %} class="visually-hidden"{% endif %}>{{ is_home ? site.title : type.pluralLabel }}</h1>
-
-    {% for item in page %}
-        {{ include(['content/' ~ type.id ~ '/_card.html.twig', 'content/_card.html.twig'], {item: item, type: type}) }}
+    {% if items is empty %}
+        {% if is_home %}
+            {{ include('partials/welcome.html.twig') }}
+        {% else %}
+            <div class="container"><header class="list-head"><h1>{{ archive_title }}</h1></header><p>{{ 'Nothing here yet.'|trans({}, domain) }}</p></div>
+        {% endif %}
     {% else %}
-        <p>{{ 'Nothing here yet.'|trans({}, 'quire-theme-default') }}</p>
-    {% endfor %}
+        {#- Each month with items, newest first: where in the list it starts, and so on which page (one query) -#}
+        {% set months = {} %}
+        {% if dated %}
+            {% set counts = quire_content(type.id).locale(site.locale).countBy('published_at', 'month', 1200) %}
+            {% set before = 0 %}
+            {% for key in counts|keys|sort|reverse %}
+                {% set months = months|merge({(key ~ ''): {start: before, page: (before // page.perPage) + 1}}) %}
+                {% set before = before + counts[key] %}
+            {% endfor %}
+        {% endif %}
+        {% set shown = items|filter(item => item.publishedAt)|map(item => item.publishedAt|date('Y-m'))|reduce((carry, key) => key in carry ? carry : carry|merge([key]), []) %}
 
-    {{ include('partials/pagination.html.twig') }}
+        {% if edition %}
+            {{ include('content/_edition.html.twig') }}
+        {% else %}
+            <div class="container">
+                <header class="list-head">
+                    <h1>{{ archive_title }}</h1>
+                    {% set newest = (items|first).publishedAt %}
+                    {% set oldest = (items|last).publishedAt %}
+                    <p class="meta">{{ 'Page {page} of {count}'|trans({page: page.page, count: page.pageCount}, domain) }}{% if dated and newest and oldest %} · {{ newest|date('Y-m') == oldest|date('Y-m') ? newest|quire_date('month-year') : '{newest} to {oldest}'|trans({newest: newest|quire_date('month-year'), oldest: oldest|quire_date('month-year')}, domain) }}{% endif %}</p>
+                </header>
+                {% if dated %}
+                    <section class="earlier" aria-label="{{ archive_title }}">
+                        {% for key in shown %}
+                            {% set continued = (months[key].page ?? page.page) < page.page %}
+                            <section class="month" aria-labelledby="m-{{ key }}">
+                                <h2 class="month__head" id="m-{{ key }}">{{ date(key ~ '-15')|quire_date('month-year') }}{% if continued %} <small>{{ 'continued'|trans({}, domain) }}</small>{% endif %}</h2>
+                                <ol class="rows">{% for item in items|filter(item => item.publishedAt and item.publishedAt|date('Y-m') == key) %}{{ rows.row(item, type) }}{% endfor %}</ol>
+                            </section>
+                        {% endfor %}
+                        {% if items|filter(item => not item.publishedAt)|length > 0 %}
+                            <ol class="rows">{% for item in items|filter(item => not item.publishedAt) %}{{ rows.row(item, type, false) }}{% endfor %}</ol>
+                        {% endif %}
+                    </section>
+                {% else %}
+                    <section class="earlier no-dates" aria-label="{{ archive_title }}"><ol class="rows">{% for item in items %}{{ rows.row(item, type, false) }}{% endfor %}</ol></section>
+                {% endif %}
+                {{ include('partials/pagination.html.twig') }}
+                {% if dated %}{{ include('partials/months.html.twig') }}{% endif %}
+            </div>
+        {% endif %}
+    {% endif %}
 {% endblock %}

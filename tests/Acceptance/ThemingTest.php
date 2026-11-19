@@ -41,7 +41,7 @@ final class ThemingTest extends TestCase
         self::assertSame('Thanks for reading "Hello world"', $post->filter('article.entry .fixture-after-body')->text(), 'The fixture extension\'s fragment, after the body.');
         self::assertSame('Like "Hello world"', $post->filter('article.entry .fixture-likes')->text(), 'And its second fragment, by priority.');
         self::assertCount(1, $post->filter('.skip-link'), 'The default theme\'s layout.');
-        self::assertCount(1, $home->filter('main .card'), 'The default theme\'s list.');
+        self::assertCount(1, $home->filter('main .lead'), 'The default theme\'s list: the newest post leads.');
     }
 
     public function testTheChildThemeOverridesOneTemplate(): void
