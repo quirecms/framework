@@ -4,6 +4,60 @@ Every release of Quire, newest first: what it brings, the security fixes, and wh
 
 <!-- Made from docs/releases/<version>.md by "php .github/feed.php --changelog > CHANGELOG.md": change those files, not this one. A test checks it's up to date. -->
 
+## [0.4.0] - 2026-11-20
+
+The default theme is rebuilt around an edition, an archive and richer posts, themes get what they need to show a page's place in the site, and readers can be told what changed in a post.
+
+- **The default theme, rebuilt:** the homepage is an edition: the newest post leads, the rest of its week follows by day, then earlier posts by month. "All posts" is the archive, in months, with a pager and "Jump to a month". Posts get a breadcrumb, reading time, "On this page", footnotes in the margin, the changes told to readers, and Newer/Older. Pages get a breadcrumb, "Last updated" and their section. The empty homepage shows visitors "Nothing here yet." and the owner the setup steps; the 404 page offers the latest posts. Fonts (Newsreader, Inter and Source Serif 4, with Cyrillic) are served by the site itself. Every list uses one row, the admin's preview included. A new setting, `show_credit`, hides "Runs on Quire" in the footer. See docs/themes.md, "The default theme".
+- **The homepage can be an edition** (`site.homepage`, in Settings): `/` shows the edition and the post list keeps its own address from page 1. New sites start with it; a theme says it supports it with `extra.quire.theme.supports: ["edition"]`, and a site whose theme doesn't is served the list, which the setting then says. The redirects that follow the setting are temporary (302), so changing it back is never cached by browsers.
+- **Telling readers what changed:** publishing changes in the admin, from the editor or the changes page, asks what to tell readers: nothing, "Updated" or "Corrected", with a note (a correction says what was wrong). The notes are kept for the item's life, apart from the editors' revisions, and themes show them with `quire_history(item)`. See docs/content.md, "Telling readers what changed".
+- **What a theme can read around a page:** an item's ancestors, siblings and its newer and older neighbors (`ContentQuery`), the site's navigation (`quire_navigation()`), the latest published items from a cache (`quire_latest()`), a page's sections (`quire_headings(item)`), the setup steps for the person looking (`quire_setup_steps()`), and whether a page loads only from its own site (`quire_loads_only_from_this_site()`). `quire_date` takes parts (`month-year`, `day-month`, `weekday-day`, …), and `quire.content.per_page` is readable. See docs/themes.md.
+- **The renderer gives every theme its structure:** headings get ids (`h-…`) and a link beside them, footnotes are set after their first reference, tables are named, keyboard-scrollable regions whose cells say their column, code blocks are named regions, and task-list boxes are named "Done" or "Still to come". An image from another site that the page's security policy blocks becomes a link with its description, and a new check warns about it while editing. None of it can be forged from an author's markup. Excerpts and meta descriptions leave out what the renderer adds. See docs/themes.md, "What the renderer prints".
+- **Setup steps are one list:** the admin's home and a theme's empty homepage show the same steps, and extensions add theirs with `Extend\SetupSteps`. See docs/extensions.md.
+- **The account pages:** a "Show" button beside the password on sign-in, register and the new-password page, which only its script reveals, so without JavaScript the field is a plain password field. The field is a password field again before its form is sent, and is never sent to a browser's spell-checking service. After a failed sign-in, both fields are marked invalid and point to the error.
+- **Beside "Cookie settings", the visitor's choice** as it stands ("Analytics off · Marketing on"), filled in the browser by the consent script, so pages stay cacheable.
+- **A theme's error page that fails** gives a plain page with its own status (a 404 stays a 404), and the error is logged.
+
+### Changed in a way that can break a site
+
+- **The default theme's markup and CSS are new.** A child theme or a site's own CSS that targets its old classes needs checking; the card is now a row (`content/_card.html.twig`).
+- **Content's HTML:** heading ids start with `h-`, and an author's own ids get `u-` (their `#` links follow); an author's `role` attributes are dropped. Footnotes are no longer a list at the end. Tables and code blocks are wrapped in a region.
+- **`quire_trans_html` escapes the translated message**, and every parameter but the HTML the code made (a Twig `Markup`). A translation that carried its own HTML shows it as text.
+- **`quire:theme:lint` requires the `error404.suggestions` slot** in a theme's 404 page.
+- **`quire` and `core` are reserved:** no extension or theme may use them as its ID.
+- **A page whose policy loads only from its own site** sends no cross-site preconnect, prefetch or preload in its `Link` headers: they're dropped and logged.
+
+### Security
+
+- **Only a tag the maintainer signed makes a release.** The Release and Split workflows refuse a tag that isn't `vX.Y.Z` or `vX.Y.Z-rc.N`, annotated and signed by a key in `.github/release-signers` as `main` has it, before anything that can publish runs. Before, anyone who could push a tag could have them publish it.
+- **Translations can't carry HTML into a page:** see `quire_trans_html` above. A test refuses a translation printed raw in any of Quire's templates, and every message is checked with ICU's own parser.
+- **A shortcode can't be made to render twice:** an author could write a shortcode's placeholder as character references, so a shortcode of the same text rendered again where they put it. Placeholders now carry a random mark for each text, which no author can write.
+
+### Fixed
+
+- **An extension's checks, actions, head tags, shortcodes, listeners, job handlers and controllers work whatever the order of its extenders.** `Extend\Services::autoload()` (and `Extend\Routes::controllers()`) after the extender that registered one replaced its service, so it silently did nothing. A class that already has a service now keeps it.
+
+### Known limits
+
+- **The admin's own pages limit scripts less than the site's:** their security policy restricts frames, plugins and the base address, not where scripts come from (as in 0.3).
+- **The German and Macedonian texts of quire/privacy and quire/analytics are drafts** until a native speaker checks them. The new default theme is in English and German.
+- **Changes published on a schedule, or by saving an item directly, have no note for readers:** the note is asked for when changes are published in the admin, from the editor or the changes page.
+- **No author's name on posts yet:** accounts have no public display name.
+
+### Upgrading
+
+A new minor version: sites require `^0.3`, so they move to it only when told. Two migrations run with the update: one adds the table for the notes readers see about published changes, the other keeps the homepage of every site that already has users as it is.
+- Sites run by Quire Server: `quire-server site:update <site> --to=0.4.0` (server contract 2, unchanged).
+- Other sites: `composer require "quire/core:^0.4" "quire/admin:^0.4" "quire/theme-default:^0.4"` (and `"quire/privacy:^0.4" "quire/analytics:^0.4"` where they're installed, `composer require --dev "quire/testing:^0.4"` where it's used), then `bin/console quire:migrations:migrate`. The skeleton's files didn't change.
+- Extensions and themes: require `"quire/core": "^0.4"`.
+
+What changes for sites, themes and extensions:
+- **The default theme looks different.** A site on it gets the new design at the update: check its pages, and a child theme's templates and CSS, which may target what changed (a list item is now a row, see "Changed in a way that can break a site").
+- **The homepage stays as it was.** A site that already has users keeps the post list at `/`. To have the new edition instead: in Settings, set Homepage to "an edition of the newest content" (it needs a theme that supports it, as the default one does).
+- **Themes must have the `error404.suggestions` slot** in their 404 page to pass `quire:theme:lint`.
+- **Translations are text.** A template that printed a translation with `|trans|raw` to keep HTML in it should use `quire_trans_html` with the HTML as a parameter.
+- **Content's HTML changes** (headings, footnotes, tables, code, images from other sites): a theme's CSS that targets the old markup, or a link to an author's own `id` in a page, should be checked. Rendered HTML is made again by itself after the update.
+
 ## [0.3.2] - 2026-11-19
 
 A site says where its stored files are, and a setting's value can be removed whatever declares it, for tools that copy a site (Quire Server 0.6's restore as a new site).
@@ -179,6 +233,7 @@ The first release of Quire, the extensible CMS for PHP, built on Symfony.
 
 Start a site with `composer create-project quire/skeleton my-site` (see docs/docker.md).
 
+[0.4.0]: https://github.com/quirecms/framework/releases/tag/v0.4.0
 [0.3.2]: https://github.com/quirecms/framework/releases/tag/v0.3.2
 [0.3.1]: https://github.com/quirecms/framework/releases/tag/v0.3.1
 [0.3.0]: https://github.com/quirecms/framework/releases/tag/v0.3.0
