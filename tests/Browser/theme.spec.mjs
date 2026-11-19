@@ -6,6 +6,11 @@
  */
 import { test, expect } from '@playwright/test';
 
+// Playwright applies screenshot.css as an inline style, which the theme's policy (style-src 'self') refuses:
+// without this, its rules (each masked line takes a whole line) never reach these pages, and a mask follows
+// the length of the date it hides.
+test.use({ bypassCSP: true });
+
 const screens = {
     'theme-home': '/',
     'theme-archive': '/blog?page=2',
