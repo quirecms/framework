@@ -1,0 +1,38 @@
+{#
+    The homepage before the first post. A visitor sees a calm, finished page ("Nothing here yet."); the
+    owner sees the setup steps they may take, ticked from the site's real state, the same list as the
+    admin's (quire_setup_steps(): null for visitors and once every step is done; the page is then the
+    viewer's alone, private and never stored).
+#}
+{% import 'partials/identity.html.twig' as identity %}
+{% set domain = 'quire-theme-default' %}
+{% set setup = quire_setup_steps() %}
+<div class="container welcome">
+    {% if setup %}
+        {% set left = setup.steps|length - setup.done %}
+        <div>
+            <p class="kicker"><span class="accent">{{ 'Your site is ready'|trans({}, domain) }}</span></p>
+            <h1>{{ '{count, plural, one {One thing to do first} other {# things to do first}}'|trans({count: left}, domain) }}</h1>
+            <p class="done-line"><span aria-hidden="true">✓</span> {{ 'Quire is installed'|trans({}, domain) }}</p>
+            <p class="lede">{{ 'This is your public site. Visitors see “Nothing here yet.” until you publish something.'|trans({}, domain) }}</p>
+            <ol class="steps">
+                {% for step in setup.steps %}
+                    <li{% if step.done %} class="done"{% endif %}><span><span class="t">{{ step.title }}{% if step.done %}<span class="visually-hidden"> ({{ 'done'|trans({}, domain) }})</span>{% endif %}</span><span class="w">{{ step.text }}</span></span>{% if step.url and not step.done %}<a href="{{ step.url }}">{{ step.action ?: step.title }}</a>{% endif %}</li>
+                {% endfor %}
+            </ol>
+        </div>
+        <aside class="identity-card" aria-labelledby="identity-heading">
+            <h2 id="identity-heading">{{ 'Already yours'|trans({}, domain) }}</h2>
+            <div class="mark">{{ identity.monogram(site.title, 'lg') }}<div><b>{{ site.title }}</b><p>{{ 'A mark made from your site’s name'|trans({}, domain) }}</p></div></div>
+            <p>{{ 'Your accent color sets the mark, links, buttons and highlights everywhere. Every color is readable in light and dark.'|trans({}, domain) }}</p>
+        </aside>
+    {% else %}
+        <div>
+            <h1>{{ 'Nothing here yet.'|trans({}, domain) }}</h1>
+            <p class="lede">{{ 'This site has just been set up. Its first posts will appear here.'|trans({}, domain) }}</p>
+        </div>
+        {% set initials = identity.monogram(site.title)|striptags|trim %}
+        {# The site has no id: its cover's look comes from its name's length, so it stays the same until the name changes #}
+        <div>{{ identity.cover('%04x'|format((site.title|length * 40503) % 65536), initials, 'cover--mark') }}</div>
+    {% endif %}
+</div>

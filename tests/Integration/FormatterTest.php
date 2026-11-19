@@ -29,7 +29,7 @@ final class FormatterTest extends KernelTestCase
         $html = $this->markdown("## Getting started\n\n- [x] Done\n- ~~old~~\n\n| a |\n|---|\n| 1 |\n\n```php\necho 1;\n```\n\nVisit https://quirecms.com");
 
         self::assertStringContainsString('<h2 id="h-getting-started">Getting started</h2>', $html, 'Heading ids are prefixed, so they never meet a theme\'s own.');
-        self::assertStringContainsString('<input checked="" disabled="" type="checkbox"> Done', $html);
+        self::assertStringContainsString('<li data-task="done" data-state="Done"><input checked="" disabled="" type="checkbox" aria-label="Done"> Done', $html);
         self::assertStringContainsString('<del>old</del>', $html);
         self::assertStringContainsString('<td role="cell" data-label="a" data-kind="num">1</td>', $html);
         self::assertStringContainsString('<code class="language-php">echo 1;', $html);
@@ -245,6 +245,33 @@ final class FormatterTest extends KernelTestCase
     {
         self::assertStringContainsString('<pre role="region" tabindex="0" aria-label="Code: php"><code class="language-php">', $this->markdown("```php\necho 1;\n```"));
         self::assertStringContainsString('<pre role="region" tabindex="0" aria-label="Code"><code>', $this->markdown('    indented'));
+    }
+
+    public function testTheHeadingsComeWithTheRenderNamedAsAReaderReadsThem(): void
+    {
+        $compiled = $this->formatter->compile("## Results[^1]\n\nText.\n\n### Group A\n\n[^1]: Provisional.", 'markdown', 'content');
+
+        self::assertSame([['id' => 'h-results', 'text' => 'Results', 'level' => 2], ['id' => 'h-group-a', 'text' => 'Group A', 'level' => 3]], $compiled->headings, 'Without the footnote\'s number or its hidden "Note".');
+        self::assertStringContainsString('aria-label="Link to the section “Results”"', $compiled->html);
+        self::assertSame($compiled->headings, \Quire\Formatter\CompiledText::fromArray($compiled->toArray())->headings, 'Cached with the render.');
+    }
+
+    public function testAnExcerptHasOnlyTheWordsAReaderReads(): void
+    {
+        $renderer = self::getContainer()->get(\Quire\Content\ContentRenderer::class);
+        $item = new \Quire\Content\Content('01a1ef40-0000-7000-8000-000000000001', 'post', 'published', 'en', null, 'T', 't', '/t', null, 0, null, "## Results\n\nTwo goals.[^1]\n\n[^1]: A note.", 'markdown', [], null, 1, new \DateTimeImmutable(), new \DateTimeImmutable(), new \DateTimeImmutable(), null);
+
+        self::assertSame('Results Two goals.', $renderer->excerpt($item), 'No "#" beside the heading, no note, no "Note 1".');
+    }
+
+    public function testTaskListBoxesAreAStateNamedInTheItemsLanguage(): void
+    {
+        $html = $this->markdown("- [x] Tickets on sale\n- [ ] Group D venue");
+        $page = new \Symfony\Component\DomCrawler\Crawler($html);
+
+        self::assertSame(['Done', 'Still to come'], $page->filter('li > input[type=checkbox][disabled]')->each(static fn (\Symfony\Component\DomCrawler\Crawler $box): string => (string) $box->attr('aria-label')), 'A box without a name fails WCAG 4.1.2.');
+        self::assertSame(['done', 'open'], $page->filter('li[data-task]')->each(static fn (\Symfony\Component\DomCrawler\Crawler $item): string => (string) $item->attr('data-task')));
+        self::assertSame(['Done', 'Still to come'], $page->filter('li[data-task]')->each(static fn (\Symfony\Component\DomCrawler\Crawler $item): string => (string) $item->attr('data-state')), 'For the theme to write, out of the text.');
     }
 
     public function testAnAuthorsMarkupCantPassForTheRenderersOrTakeItsIds(): void

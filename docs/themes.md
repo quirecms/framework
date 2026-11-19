@@ -4,21 +4,34 @@ A theme decides how the site looks: it's a Composer package of templates and ass
 
 ## The default theme
 
-New sites use `quire/theme-default` (ID `quire-theme-default`): plain semantic HTML and CSS, no JavaScript, responsive, with a light and a dark look that follows the visitor's system setting. It meets WCAG 2.2 AA: every colour combination has at least 4.5:1 contrast, it has a skip link, landmarks and visible focus, and it's checked with axe. It writes right-to-left languages mirrored, and it comes in English and German.
+New sites use `quire/theme-default` (ID `quire-theme-default`): plain semantic HTML and CSS, responsive, with a light and a dark look that follows the visitor's system setting. It meets WCAG 2.2 AA (contrast of at least 4.5:1, a skip link, landmarks, visible focus; checked with axe, and at 320 pixels with text at 200% nothing scrolls sideways but code and wide tables). It writes right-to-left languages mirrored, comes in English and German, and its fonts (Newsreader, Inter, and Source Serif 4 for Cyrillic, all under the SIL Open Font License) are served by the site, preloaded, and never swapped in while someone reads.
+
+What it shows:
+
+- **The home page** is the edition: the newest post leads, then the rest of its week by day ("This week", at most three a day), then the earlier posts by month, and "All posts". It has no pager. When the home page shows the post list (`site.homepage` = `listing`), that list has one address, the home page's, so "All posts" goes on from page 2.
+- **"All posts"**, the archive: every post by month, with the pager (page numbers past five pages) and "Jump to a month". Each month links to the list page where it starts, and the months on the page say so.
+- **A post**: where it lives (Posts › its month), the date and reading time, "On this page" from three headings up, footnotes in the margin, results tables as one row per match on phones, its public history ("Updated", "Corrected", with the author's notes for readers), then Newer and Older. It names no author until authors choose a public name (YorvoID).
+- **A page**: its breadcrumb, when it was last updated, and the pages in its section.
+- **The empty home page**: "Nothing here yet." for visitors; the setup steps for its owner (`quire_setup_steps()`).
+- **Errors**: "Page not found" with the address asked for, quire/seo's suggestions when it's installed, and the latest posts; the error page reads nothing from the database.
+- **The site's mark**: a monogram made from the site's name, in the accent color, until Quire can store a logo.
 
 Its settings:
 
 | Setting | Values | Default |
 |---------|--------|---------|
-| `theme.quire-theme-default.accent` | `blue`, `green`, `purple`, `orange`, `red`: the colour of links and highlights | `blue` |
-| `theme.quire-theme-default.show_dates` | Whether posts show their date | `true` |
+| `theme.quire-theme-default.accent` | `blue`, `green`, `purple`, `orange`, `red`: the color of links and highlights | `blue` |
+| `theme.quire-theme-default.show_dates` | Whether posts show their date. Without dates the home page has no week and no months | `true` |
+| `theme.quire-theme-default.show_credit` | Whether "Runs on Quire" shows at the bottom of every page | `true` |
 
 To change more, make a child theme with `"parent": "quire-theme-default"` (see [Writing a theme](#writing-a-theme)), or override single templates in the site's `templates/`. Its stylesheet is built on CSS custom properties, so a few lines restyle it:
 
 ```css
 /* assets/styles/app.css of the site, or a child theme's stylesheet */
-:root { --font-body: Georgia, serif; --measure: 40rem; }
+:root { --font-read: Georgia, serif; --measure: 40rem; }
 ```
+
+How a list shows each post is its card, `content/_card.html.twig` (a row: day, title, excerpt). The home page, "All posts" and the 404 page all use it, and the admin shows it alone; it gets `dated`, `with_month` and `in_list` from lists, and must work without them. The layout has a `ribbon` block above the whole site (the preview notice) and takes `minimal: true` from pages that must render when the site can't (no navigation, nothing from the database).
 
 Its templates are the reference for writing your own: each one starts with a comment listing the variables, blocks and slots it has.
 
@@ -252,15 +265,16 @@ Every template, of a theme, an extension or the site, has:
 | `quire_extension_enabled(id)` | Whether an extension is enabled, e.g. to show a link to its page |
 | `quire_asset(path)` | The versioned URL of an [asset](#assets), e.g. `quire_asset('theme/logo.svg')` |
 | `quire_head()` | In the `<head>`: the page's description, canonical URL, Open Graph and Twitter tags, structured data, and the tags extensions add, each once (see [SEO](#seo)). It was called `quire_seo()` before 0.3; the old name works until 1.0. |
-| `date\|quire_date(style)` | A date written the way the page's language writes it, e.g. "March 4, 2025" or "4. März 2025"; styles `long` (default), `medium`, `short`, `full` |
+| `date\|quire_date(style)` | A date written the way the page's language writes it, e.g. "March 4, 2025" or "4. März 2025"; styles `long` (default), `medium`, `short`, `full`, with the time `long-time`, or parts in the language's own order: `month-year` ("November 2026"), `month` ("Nov"), `day-month` ("November 13"), `day-month-short` ("Nov 13"), `weekday-day` ("Wed, Nov 11"), `day` ("03") |
 | `app.request.locale` | The page's language: the site's, or a content item's own, e.g. for `<html lang="…">` |
 | `quire_content()`, `quire_url()`, `quire_listing_url()`, `quire_home_url()`, `quire_body()`, `quire_excerpt()` | Content and URLs (see [content](content.md)). Queries also read around an item, with the visitor's visibility: `quire_content('page').ancestorsOf(page)` (a breadcrumb, the top one first), `.siblingsOf(page)`, `quire_content('post').newerThan(post).first()` and `.olderThan(post).first()` (the neighbors; equal dates are broken by the id, so none is skipped) |
 | `quire_navigation()` | The site's navigation: by default the visible top-level pages in their order (a menus extension can give another), each `item.title`, `item.url`, `item.content` and `item.current` (`'page'`, `'section'` when the page shown is below it, or false). Read once per request |
 | `quire_history(item)` | A published item's public history, newest first: each `change.kind` (`update` or `correction`, `change.isCorrection()`), `change.note` (what its author told readers) and `change.publishedAt`. Only what was published with a note for readers, never the editors' own revision messages; add the item's own "Published" date as its first entry. Show "Corrected …" in the byline from the latest correction |
+| `quire_headings(item)` | The item's sections for an "On this page" list: each heading (h2 to h4) of its text with `id`, `text` and `level`, read from the very HTML `quire_body()` prints |
 | `quire_latest(limit)` | The latest published items of the listable types, from a cache dropped when an item is published, changed or trashed: for pages bots hit most, such as "page not found" |
 | `quire_loads_only_from_this_site()` | Whether the page loads nothing from other sites, decided by the very Content-Security-Policy Quire sends (enforced, no other hosts, schemes or report endpoints), the page's head (no cross-site `preconnect` and the like) and the active theme's templates (no address of another site): for a sentence such as "This site loads nothing from other companies", which then can't drift from what browsers do. A proxy that replaces Quire's header isn't covered |
 | `quire_setup_steps()` | The site's setup steps the person looking may take, while some aren't done (`{steps, done}`, each step's `title`, `text`, `done`, `url`, `action`), or null for visitors and once all are: for an empty home page that helps its owner start. The same list as the admin's home page. A page that shows them is the viewer's alone: private, never stored |
-| `quire_trans_html(message, parameters, domain)` | A translated message with HTML in its parameters (see [languages](#languages)) |
+| `message|quire_trans_html(parameters, domain)` | A translated message with HTML in its parameters (see [languages](#languages)) |
 
 ## What the renderer prints
 
@@ -269,6 +283,7 @@ An item's text (`quire_body(item)`) comes from Quire's renderer, the same for ev
 - **Headings** get an id prefixed with `h-` (`<h2 id="h-how-it-works">`), so they never meet a theme's own ids, and a link beside them: `<div class="heading-row"><h2 id="h-…">…</h2><a class="heading-anchor" href="#h-…" aria-label="Link to the section “…”">#</a></div>`. The link is outside the heading, so the heading's name stays its own.
 - **Footnotes** (`text[^1]` with `[^1]: the note`) are set right after their first reference, not in a list at the end: `<sup><a href="#fn-1" aria-label="Note 1" id="fnref-1">1</a></sup><span class="footnote" id="fn-1" role="note"><b><span class="visually-hidden">Note </span>1</b> the note</span>`. Put `.footnote` in the margin on wide screens and leave it in place on narrow ones; define `.visually-hidden`. Only editors' text has footnotes, never visitors' comments.
 - **Tables** are in `<div class="table" role="region" tabindex="0">`, named by the heading before them (`aria-labelledby`) or "Table N", so a wide one scrolls by keyboard. They keep their roles (`table`, `rowgroup`, `row`, `columnheader`, `rowheader`, `cell`) when CSS changes their display. Every cell has `data-label`, its column's header, for a label-above-value layout; the first cell of a body row is a row header (`<th scope="row">`); a column's cells, header included, say what it holds with `data-kind`: `num` (numbers: "4,200", "−3", "12%") or `pair` (pairs of numbers: "2–1"), and nothing for text or mixed columns; the table has `data-columns`. These kinds are the contract: a new one comes only with a Quire release that says so. Choose a layout with a container query and these attributes, e.g. `table:has(td[data-kind="pair"])` for results.
+- **Task lists** (`- [x] Done`) are a state, not controls: each box is disabled and named by its state ("Done", "Still to come"), and its item has `data-task="done"` or `"open"` and the state's words, in the item's language, in `data-state` (write them with `content: attr(data-state) / ""`, so screen readers don't hear them twice; as an attribute they never reach feeds or excerpts).
 - **Code blocks** are `<pre role="region" tabindex="0" aria-label="Code: php">`.
 - **Images from other sites that the page's security policy blocks** are a link, not a broken picture: `<figure class="ext-image">` (an image alone in its paragraph) or `<span class="ext-image">` (in text), with `.ext-image__icon`, `.ext-image__alt` (its description), `.ext-image__why` and a link to the image. The editor's checks warn about them; copying the image into the site shows it.
 

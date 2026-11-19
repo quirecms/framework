@@ -1,14 +1,24 @@
 {#
-    The page for other errors. Shown in production; development shows the error.
+    The page for other errors. Shown in production; development shows the error. Nothing here reads the
+    database (no navigation, no posts), so it renders when the site can't.
 
     Variables: status_code, status_text
 #}
 {% extends 'layout.html.twig' %}
+{% import 'partials/identity.html.twig' as identity %}
+{% set minimal = true %}
+{% set domain = 'quire-theme-default' %}
 
-{% block title %}{{ 'Something went wrong'|trans({}, 'quire-theme-default') }} – {{ site.title }}{% endblock %}
+{% block title %}{{ 'Something went wrong'|trans({}, domain) }} – {{ site.title }}{% endblock %}
 
 {% block content %}
-    <h1>{{ 'Something went wrong'|trans({}, 'quire-theme-default') }}</h1>
-    <p>{{ 'Please try again in a moment.'|trans({}, 'quire-theme-default') }}</p>
-    <p><a href="{{ quire_home_url() }}">{{ 'Go to the homepage'|trans({}, 'quire-theme-default') }}</a></p>
+    <div class="container status">
+        {{ identity.cover('6db9', status_code|default(500)) }}
+        <div>
+            <p class="kicker"><span class="accent">{{ status_code|default(500) }}</span>{% if status_text|default('') %} · {{ status_text }}{% endif %}</p>
+            <h1>{{ 'Something went wrong'|trans({}, domain) }}</h1>
+            <p class="lede">{{ 'Please try again in a moment.'|trans({}, domain) }}</p>
+            <div class="actions"><a class="btn btn--solid" href="{{ app.request ? app.request.requestUri : quire_home_url() }}">{{ 'Try again'|trans({}, domain) }}</a><a class="btn" href="{{ quire_home_url() }}">{{ 'Go to the homepage'|trans({}, domain) }}</a></div>
+        </div>
+    </div>
 {% endblock %}

@@ -86,7 +86,7 @@ jobs:
           # extensions change) add and remove interfaces, which aborts its page loads.
           playwright=$(jq -r '.dependencies.playwright' tests/Accessibility/package.json)
           docker run --rm --network quire_default -e QUIRE_CHECK_SERVER=php -v "$PWD/tests/Accessibility:/work" -w /work "mcr.microsoft.com/playwright:v${playwright}-noble" \
-            sh -c 'npm ci --no-audit --no-fund && node check.mjs https://quire.localhost / /blog/hello-world /about /login /register /forgot-password /verify-email'
+            sh -c 'npm ci --no-audit --no-fund && node check.mjs https://quire.localhost / "/?page=2" /blog/hello-world /blog/spring-draw-all-groups /about /venues/harbour-arena /login /register /forgot-password /verify-email'
       - name: Check the admin's accessibility (WCAG 2.2 AA, with axe-core)
         run: |
           docker compose exec -T php bin/console quire:extension:enable quire-admin --no-interaction

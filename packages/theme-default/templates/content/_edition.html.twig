@@ -1,0 +1,90 @@
+{#
+    The homepage's edition, included by content/list.html.twig: the newest post leads; "This week" lists
+    the rest of the lead's week by day (at most three a day; the others move to Earlier, so none is lost);
+    Earlier groups the remaining posts by month. No "today" or "now": the week is the lead's, so a cached
+    copy can be late, never wrong. With dates off: no week and no months, the next three posts as a plain
+    list, then the rest.
+
+    Variables: those of content/list.html.twig, with items, dated, months and shown.
+#}
+{% import 'partials/rows.html.twig' as rows %}
+{% set domain = 'quire-theme-default' %}
+{% set lead = items|first %}
+{% set rest = items|slice(1) %}
+
+{% set week = [] %}
+{% if dated and lead.publishedAt %}
+    {% set week_start = date(lead.publishedAt|date('Y-m-d'))|date_modify('-6 days') %}
+    {% set per_day = {} %}
+    {% for item in rest|reverse %}
+        {% if item.publishedAt and item.publishedAt >= week_start %}
+            {% set day = item.publishedAt|date('Y-m-d') %}
+            {% if (per_day[day] ?? 0) < 3 %}
+                {% set week = week|merge([item]) %}
+                {% set per_day = per_day|merge({(day ~ ''): (per_day[day] ?? 0) + 1}) %}
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+{% elseif not dated %}
+    {% set week = rest|slice(0, 3) %}
+{% endif %}
+{% set week_ids = week|map(item => item.id) %}
+{% set earlier = rest|filter(item => item.id not in week_ids) %}
+
+<h1 class="visually-hidden">{{ site.title }}</h1>
+{#- "Jump to a month" lands on a month's heading; a month whose posts all lead or are in the week has none, so it lands here -#}
+{% set earlier_months = earlier|filter(item => item.publishedAt)|map(item => item.publishedAt|date('Y-m')) %}
+{% for key in shown|filter(key => key not in earlier_months) %}<span id="m-{{ key }}"></span>{% endfor %}
+<div class="container front">
+    <section class="lead lead--text" aria-labelledby="lead-heading">
+        <p class="kicker"><span class="accent">{{ 'Latest'|trans({}, domain) }}{% if dated and lead.publishedAt %} · <time datetime="{{ lead.publishedAt|date('c') }}">{{ lead.publishedAt|quire_date('full') }}</time>{% endif %}</span> · {{ rows.reading_time(lead) }}</p>
+        <h2 id="lead-heading"><a href="{{ quire_url(lead) }}">{{ lead.title }}</a></h2>
+        {% set standfirst = lead.excerpt ?: quire_excerpt(lead, 220) %}
+        {% if standfirst %}<p class="standfirst">{{ standfirst }}</p>{% endif %}
+        <a class="readmore" href="{{ quire_url(lead) }}">{{ 'Read the story'|trans({}, domain) }} <span class="visually-hidden">{{ lead.title }}</span><span class="arrow" aria-hidden="true">→</span></a>
+    </section>
+
+    {% if week is not empty %}
+        {% if dated %}
+            <section class="week" aria-labelledby="week-heading">
+                {#- The seven days up to the lead's, said as dates: "This week" would be wrong on a site that last posted months ago -#}
+                <div class="week__head"><h2 id="week-heading">{{ '{start} – {end}'|trans({start: week_start|quire_date('day-month-short'), end: lead.publishedAt|quire_date('day-month-short')}, domain) }}</h2></div>
+                <ol>
+                    {% for day in week|map(item => item.publishedAt|date('Y-m-d'))|reduce((carry, key) => key in carry ? carry : carry|merge([key]), []) %}
+                        {% set on_day = week|filter(item => item.publishedAt|date('Y-m-d') == day) %}
+                        <li class="week__day"><span class="week__date"><time datetime="{{ day }}">{{ (on_day|first).publishedAt|quire_date('weekday-day') }}</time></span><ul class="week__items">{% for item in on_day %}<li><a href="{{ quire_url(item) }}">{{ item.title }}</a></li>{% endfor %}</ul></li>
+                    {% endfor %}
+                </ol>
+            </section>
+        {% else %}
+            <section class="week week--plain" aria-labelledby="week-heading">
+                <div class="week__head"><h2 id="week-heading">{{ 'Also new'|trans({}, domain) }}</h2></div>
+                <ul class="plain-list">{% for item in week %}<li><a href="{{ quire_url(item) }}">{{ item.title }}</a><span class="when">{{ rows.reading_time(item) }}</span></li>{% endfor %}</ul>
+            </section>
+        {% endif %}
+    {% endif %}
+</div>
+
+<div class="container">
+    {% if earlier is not empty %}
+        {% if dated %}
+            <section class="earlier" aria-labelledby="earlier-heading"><div class="section-head"><h2 id="earlier-heading">{{ 'Earlier'|trans({}, domain) }}</h2></div>
+                {% for key in earlier|filter(item => item.publishedAt)|map(item => item.publishedAt|date('Y-m'))|reduce((carry, key) => key in carry ? carry : carry|merge([key]), []) %}
+                    <section class="month" aria-labelledby="m-{{ key }}">
+                        <h3 class="month__head" id="m-{{ key }}">{{ date(key ~ '-15')|quire_date('month-year') }}</h3>
+                        <ol class="rows">{% for item in earlier|filter(item => item.publishedAt and item.publishedAt|date('Y-m') == key) %}{{ rows.row(item, type) }}{% endfor %}</ol>
+                    </section>
+                {% endfor %}
+            </section>
+        {% else %}
+            <section class="earlier no-dates" aria-labelledby="earlier-heading"><div class="section-head"><h2 id="earlier-heading">{{ 'Earlier'|trans({}, domain) }}</h2></div>
+                <ol class="rows">{% for item in earlier %}{{ rows.row(item, type, false) }}{% endfor %}</ol>
+            </section>
+        {% endif %}
+    {% endif %}
+    {#- The one way into the archive: the home page has no pager. When the list is the home page (its one
+        address, "/"), the archive goes on from page 2: page 1's posts are this edition -#}
+    {% set archive_url = quire_listing_url(type.id) != quire_home_url() ? quire_listing_url(type.id) : (page.pageCount > 1 ? quire_listing_url(type.id, 2) : null) %}
+    {% if archive_url %}<p class="to-archive"><a class="btn" href="{{ archive_url }}">{{ type.id == 'post' ? 'All posts'|trans({}, domain) : type.pluralLabel }} <span class="arrow" aria-hidden="true">→</span></a></p>{% endif %}
+    {% if dated %}{{ include('partials/months.html.twig') }}{% endif %}
+</div>

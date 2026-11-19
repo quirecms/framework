@@ -1,16 +1,65 @@
 # The default theme's texts, in ICU MessageFormat. Translate them in a file per language, e.g.
 # quire-theme-default+intl-icu.fr.yaml; a site overrides them in its own translations/ directory.
-'Skip to content': 'Skip to content'
-'Main': 'Main'
-'Sidebar': 'Sidebar'
-'Pages': 'Pages'
-'Newer': 'Newer'
-'Older': 'Older'
-'Page {page} of {count}': 'Page {page} of {count}'
-'Nothing here yet.': 'Nothing here yet.'
-'Powered by {name}': 'Powered by {name}'
-'Page not found': 'Page not found'
-"The page you're looking for doesn't exist or has moved.": "The page you're looking for doesn't exist or has moved."
-'Go to the homepage': 'Go to the homepage'
-'Something went wrong': 'Something went wrong'
-'Please try again in a moment.': 'Please try again in a moment.'
+"Something went wrong": "Something went wrong"
+"Please try again in a moment.": "Please try again in a moment."
+"Try again": "Try again"
+"Go to the homepage": "Go to the homepage"
+"Page not found": "Page not found"
+"All posts": "All posts"
+"Latest posts": "Latest posts"
+"There’s nothing at {path}.": "There’s nothing at {path}."
+"Latest": "Latest"
+"Read the story": "Read the story"
+"Also new": "Also new"
+"Earlier": "Earlier"
+"Nothing here yet.": "Nothing here yet."
+"Page {page} of {count}": "Page {page} of {count}"
+"{newest} to {oldest}": "{newest} to {oldest}"
+"continued": "continued"
+"Corrected": "Corrected"
+"Updated": "Updated"
+"Preview": "Preview"
+"Breadcrumb": "Breadcrumb"
+"Last updated {date}": "Last updated {date}"
+"History": "History"
+"Corrected {date}": "Corrected {date}"
+"Updated {date}": "Updated {date}"
+"{count, plural, one {# change} other {# changes}}": "{count, plural, one {# change} other {# changes}}"
+"On this page": "On this page"
+"History of this page": "History of this page"
+"History of this post": "History of this post"
+"{count, plural, one {# section} other {# sections}}": "{count, plural, one {# section} other {# sections}}"
+"In this section": "In this section"
+"updated {date}": "updated {date}"
+"Also in {section}": "Also in {section}"
+"Also in this section": "Also in this section"
+"Published": "Published"
+"{count, plural, one {Show # earlier change} other {Show # earlier changes}}": "{count, plural, one {Show # earlier change} other {Show # earlier changes}}"
+"More posts": "More posts"
+"Newer": "Newer"
+"Older": "Older"
+"More from {month}": "More from {month}"
+"Skip to content": "Skip to content"
+"{site}, home page": "{site}, home page"
+"Main": "Main"
+"More": "More"
+"Sidebar": "Sidebar"
+"From {site} · {url}": "From {site} · {url}"
+"Pages": "Pages"
+"This site": "This site"
+"Sign in": "Sign in"
+"Runs on {quire}": "Runs on {quire}"
+"Jump to a month": "Jump to a month"
+"{month}, on this page": "{month}, on this page"
+"Page {page}": "Page {page}"
+"{minutes} min read": "{minutes} min read"
+"Your site is ready": "Your site is ready"
+"{count, plural, one {One thing to do first} other {# things to do first}}": "{count, plural, one {One thing to do first} other {# things to do first}}"
+"Quire is installed": "Quire is installed"
+"This is your public site. Visitors see “Nothing here yet.” until you publish something.": "This is your public site. Visitors see “Nothing here yet.” until you publish something."
+"done": "done"
+"Already yours": "Already yours"
+"A mark made from your site’s name": "A mark made from your site’s name"
+"Your accent color sets the mark, links, buttons and highlights everywhere. Every color is readable in light and dark.": "Your accent color sets the mark, links, buttons and highlights everywhere. Every color is readable in light and dark."
+"This site has just been set up. Its first posts will appear here.": "This site has just been set up. Its first posts will appear here."
+"{start} – {end}": "{start} – {end}"

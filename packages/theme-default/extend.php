@@ -14,6 +14,7 @@ return [
         ->stylesheet('quire-theme-default/style.css'),
 
     new Extend\Settings()
-        ->define('theme.quire-theme-default.accent', 'enum', 'blue', label: 'Accent colour', help: 'The colour of links and highlights. Every choice is readable in light and dark mode.', group: 'appearance', choices: ['blue', 'green', 'purple', 'orange', 'red'])
-        ->define('theme.quire-theme-default.show_dates', 'bool', true, label: 'Show dates', help: 'Show the publication date of posts.', group: 'appearance'),
+        ->define('theme.quire-theme-default.accent', 'enum', 'blue', label: 'Accent color', help: 'The color of links and highlights. Every choice is readable in light and dark mode.', group: 'appearance', choices: ['blue', 'green', 'purple', 'orange', 'red'])
+        ->define('theme.quire-theme-default.show_dates', 'bool', true, label: 'Show dates', help: 'Show the publication date of posts. Without dates, the home page has no "This week" and no months.', group: 'appearance')
+        ->define('theme.quire-theme-default.show_credit', 'bool', true, label: 'Show "Runs on Quire"', help: 'The credit at the bottom of every page.', group: 'appearance'),
 ];

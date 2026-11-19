@@ -1,15 +1,64 @@
 # German texts of the default theme. The English texts in the templates are the keys.
-'Skip to content': 'Zum Inhalt springen'
-'Main': 'Hauptnavigation'
-'Sidebar': 'Seitenleiste'
-'Pages': 'Seiten'
-'Newer': 'Neuere'
-'Older': 'Ältere'
-'Page {page} of {count}': 'Seite {page} von {count}'
-'Nothing here yet.': 'Hier gibt es noch nichts.'
-'Powered by {name}': 'Betrieben mit {name}'
-'Page not found': 'Seite nicht gefunden'
-"The page you're looking for doesn't exist or has moved.": 'Die gesuchte Seite gibt es nicht oder sie wurde verschoben.'
-'Go to the homepage': 'Zur Startseite'
-'Something went wrong': 'Etwas ist schiefgelaufen'
-'Please try again in a moment.': 'Bitte versuchen Sie es gleich noch einmal.'
+"Something went wrong": "Etwas ist schiefgelaufen"
+"Please try again in a moment.": "Bitte versuchen Sie es gleich noch einmal."
+"Try again": "Noch einmal versuchen"
+"Go to the homepage": "Zur Startseite"
+"Page not found": "Seite nicht gefunden"
+"All posts": "Alle Beiträge"
+"Latest posts": "Neueste Beiträge"
+"There’s nothing at {path}.": "Unter {path} gibt es nichts."
+"Latest": "Neu"
+"Read the story": "Weiterlesen"
+"Also new": "Ebenfalls neu"
+"Earlier": "Früher"
+"Nothing here yet.": "Hier gibt es noch nichts."
+"Page {page} of {count}": "Seite {page} von {count}"
+"{newest} to {oldest}": "{newest} bis {oldest}"
+"continued": "Fortsetzung"
+"Corrected": "Korrigiert"
+"Updated": "Aktualisiert"
+"Preview": "Vorschau"
+"Breadcrumb": "Brotkrumennavigation"
+"Last updated {date}": "Zuletzt aktualisiert am {date}"
+"History": "Verlauf"
+"Corrected {date}": "Korrigiert am {date}"
+"Updated {date}": "Aktualisiert am {date}"
+"{count, plural, one {# change} other {# changes}}": "{count, plural, one {# Änderung} other {# Änderungen}}"
+"On this page": "Auf dieser Seite"
+"History of this page": "Verlauf dieser Seite"
+"History of this post": "Verlauf dieses Beitrags"
+"{count, plural, one {# section} other {# sections}}": "{count, plural, one {# Abschnitt} other {# Abschnitte}}"
+"In this section": "In diesem Bereich"
+"updated {date}": "aktualisiert am {date}"
+"Also in {section}": "Ebenfalls in {section}"
+"Also in this section": "Ebenfalls in diesem Bereich"
+"Published": "Veröffentlicht"
+"{count, plural, one {Show # earlier change} other {Show # earlier changes}}": "{count, plural, one {# frühere Änderung zeigen} other {# frühere Änderungen zeigen}}"
+"More posts": "Weitere Beiträge"
+"Newer": "Neuere"
+"Older": "Ältere"
+"More from {month}": "Mehr aus {month}"
+"Skip to content": "Zum Inhalt springen"
+"{site}, home page": "{site}, Startseite"
+"Main": "Hauptnavigation"
+"More": "Mehr"
+"Sidebar": "Seitenleiste"
+"From {site} · {url}": "Von {site} · {url}"
+"Pages": "Seiten"
+"This site": "Diese Website"
+"Sign in": "Anmelden"
+"Runs on {quire}": "Betrieben mit {quire}"
+"Jump to a month": "Zu einem Monat springen"
+"{month}, on this page": "{month}, auf dieser Seite"
+"Page {page}": "Seite {page}"
+"{minutes} min read": "{minutes} Min. Lesezeit"
+"Your site is ready": "Ihre Website ist bereit"
+"{count, plural, one {One thing to do first} other {# things to do first}}": "{count, plural, one {Eine Sache zuerst} other {# Dinge zuerst}}"
+"Quire is installed": "Quire ist installiert"
+"This is your public site. Visitors see “Nothing here yet.” until you publish something.": "Das ist Ihre öffentliche Website. Besucher sehen „Hier gibt es noch nichts.“, bis Sie etwas veröffentlichen."
+"done": "erledigt"
+"Already yours": "Schon Ihres"
+"A mark made from your site’s name": "Ein Zeichen aus dem Namen Ihrer Website"
+"Your accent color sets the mark, links, buttons and highlights everywhere. Every color is readable in light and dark.": "Ihre Akzentfarbe bestimmt das Zeichen, Links, Schaltflächen und Hervorhebungen überall. Jede Farbe ist hell und dunkel gut lesbar."
+"This site has just been set up. Its first posts will appear here.": "Diese Website wurde gerade eingerichtet. Ihre ersten Beiträge erscheinen hier."
+"{start} – {end}": "{start} – {end}"

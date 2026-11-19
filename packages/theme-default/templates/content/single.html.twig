@@ -1,5 +1,7 @@
 {#
-    A content item: a post, a page, or an item of a type an extension adds.
+    A content item: a post, a page, or an item of a type an extension adds. The layout follows the item's
+    shape, never a setting: three headings or more give "On this page", footnotes sit in the margin, a wide
+    table takes the full width (CSS on what the renderer prints).
 
     Variables: content (the item), type (its content type), body (the body as HTML), canonical_url,
     preview (true when the item isn't published and the viewer may preview it), and anything
@@ -8,29 +10,132 @@
     content.footer, each with { content }
 #}
 {% extends 'layout.html.twig' %}
+{% import 'partials/rows.html.twig' as rows %}
+{% set domain = 'quire-theme-default' %}
+{% set dated = type.has('scheduling') and theme.settings.show_dates and content.publishedAt %}
+{% set is_page = type.has('hierarchical') %}
+{% set history = preview|default(false) ? [] : quire_history(content) %}
+{% set headings = quire_headings(content) %}
+{% set contents = headings|length >= 3 %}
+
+{# One entry of the public history #}
+{% macro change(change, domain) %}<li{% if change.isCorrection() %} class="is-correction"{% endif %}><span class="type">{{ change.isCorrection() ? 'Corrected'|trans({}, domain) : 'Updated'|trans({}, domain) }}</span> <time datetime="{{ change.publishedAt|date('c') }}">{{ change.publishedAt|quire_date('long-time') }}</time>{% if change.note %}<p>{{ change.note }}</p>{% endif %}</li>{% endmacro %}
 
 {% block title %}{{ content.title }} – {{ site.title }}{% endblock %}
 
+{% block ribbon %}
+    {% if preview|default(false) %}
+        <div class="ribbon ribbon--notice" role="status"><div class="container"><span class="tag">{{ 'Preview'|trans({}, domain) }}</span><p>{{ 'Preview: this isn\'t published, so only people who may see unpublished content see it.'|trans({}, 'quire') }}</p></div></div>
+    {% endif %}
+{% endblock %}
+
 {% block content %}
+    {#- Where the post lives in the archive: the list page its month starts on (one count query) -#}
+    {% set month_url = null %}
+    {% if dated and type.has('listable') %}
+        {% set key = content.publishedAt|date('Y-m') %}
+        {% set newer_months = quire_content(type.id).locale(site.locale).countBy('published_at', 'month', 1200)|filter((count, month) => month > key) %}
+        {% set month_url = quire_listing_url(type.id, ((newer_months|reduce((carry, count) => carry + count, 0)) // min(100, max(1, quire_setting('quire.content.per_page')))) + 1) ~ '#m-' ~ key %}
+    {% endif %}
+
     <article class="entry">
-        {% if preview|default(false) %}
-            <p class="notice" role="status">{{ 'Preview: this isn\'t published, so only people who may see unpublished content see it.'|trans({}, 'quire') }}</p>
-        {% endif %}
-        <header class="entry-header">
+        <header class="container article-head"><div class="inner">
+            {% if is_page %}
+                {% set ancestors = quire_content(type.id).ancestorsOf(content) %}
+                {% if ancestors|length > 0 %}
+                    <nav class="crumbs" aria-label="{{ 'Breadcrumb'|trans({}, domain) }}">{% for ancestor in ancestors %}<a href="{{ quire_url(ancestor) }}">{{ ancestor.title }}</a> <span aria-hidden="true">›</span> {% endfor %}<span aria-current="page">{{ content.title }}</span></nav>
+                {% endif %}
+            {% elseif type.has('listable') %}
+                <nav class="crumbs crumbs--article" aria-label="{{ 'Breadcrumb'|trans({}, domain) }}"><a href="{{ quire_listing_url(type.id) }}">{{ type.pluralLabel }}</a>{% if month_url %} <span aria-hidden="true">›</span> <a href="{{ month_url }}">{{ content.publishedAt|quire_date('month-year') }}</a>{% endif %}</nav>
+            {% endif %}
+
+            {% if not is_page %}
+                <p class="kicker">{% if dated %}<time datetime="{{ content.publishedAt|date('c') }}">{{ content.publishedAt|quire_date }}</time> · {% endif %}{{ rows.reading_time(content) }}</p>
+            {% endif %}
             {{ quire_slot('content.before_title', { content }) }}
             <h1>{{ content.title }}</h1>
-            {% if content.publishedAt and type.has('scheduling') and theme.settings.show_dates %}
-                <p class="entry-meta"><time datetime="{{ content.publishedAt|date('c') }}">{{ content.publishedAt|quire_date }}</time></p>
+            {% if content.excerpt %}<p class="standfirst">{{ content.excerpt }}</p>{% endif %}
+
+            {#- No author's name until authors choose a public one (YorvoID); the byline says how the post changed -#}
+            {% set latest = history|first %}
+            {% if is_page %}
+                <p class="page-meta"><span>{{ 'Last updated {date}'|trans({date: content.updatedAt|quire_date}, domain) }}</span>{% if history is not empty %}<span aria-hidden="true">·</span><a href="#history">{{ 'History'|trans({}, domain) }}</a>{% endif %}</p>
+            {% elseif latest %}
+                {% set correction = history|filter(change => change.isCorrection())|first %}
+                <p class="byline"><span><a href="#history">{{ correction ? 'Corrected {date}'|trans({date: correction.publishedAt|quire_date('day-month')}, domain) : 'Updated {date}'|trans({date: latest.publishedAt|quire_date('day-month')}, domain) }}{% if history|length > 1 %} · {{ '{count, plural, one {# change} other {# changes}}'|trans({count: history|length}, domain) }}{% endif %}</a></span></p>
             {% endif %}
             {{ quire_slot('content.after_title', { content }) }}
-        </header>
+        </div></header>
 
-        {{ quire_slot('content.before_body', { content }) }}
-        <div class="prose">{{ body|raw }}</div>
-        {{ quire_slot('content.after_body', { content }) }}
+        <div class="container article-body">
+            {% if contents %}
+                <nav class="toc toc--wide" aria-labelledby="toc-heading"><p class="toc-title kicker" id="toc-heading">{{ 'On this page'|trans({}, domain) }}</p>
+                    <ol>{% for heading in headings %}<li{% if heading.level > 2 %} class="sub"{% endif %}><a href="#{{ heading.id }}">{{ heading.text }}</a></li>{% endfor %}{% if history is not empty %}<li><a href="#history">{{ is_page ? 'History of this page'|trans({}, domain) : 'History of this post'|trans({}, domain) }}</a></li>{% endif %}</ol>
+                </nav>
+            {% else %}
+                {#- The contents column stays, empty, so the text keeps its place in the middle -#}
+                <div></div>
+            {% endif %}
+            <div>
+                {% if contents %}
+                    <nav class="toc toc--phone" aria-label="{{ 'On this page'|trans({}, domain) }}"><details><summary>{{ 'On this page'|trans({}, domain) }} <span class="meta">· {{ '{count, plural, one {# section} other {# sections}}'|trans({count: headings|length + (history is empty ? 0 : 1)}, domain) }}</span></summary>
+                        <ol>{% for heading in headings %}<li{% if heading.level > 2 %} class="sub"{% endif %}><a href="#{{ heading.id }}">{{ heading.text }}</a></li>{% endfor %}{% if history is not empty %}<li><a href="#history">{{ is_page ? 'History of this page'|trans({}, domain) : 'History of this post'|trans({}, domain) }}</a></li>{% endif %}</ol>
+                    </details></nav>
+                {% endif %}
+                {{ quire_slot('content.before_body', { content }) }}
+                <div class="prose">{{ body|raw }}</div>
+                {{ quire_slot('content.after_body', { content }) }}
+
+                {% if is_page and not preview|default(false) %}
+                    {% set children = quire_content(type.id).childrenOf(content) %}
+                    {% if children|length > 0 %}
+                        <section class="in-section" aria-labelledby="section-heading"><h2 id="section-heading">{{ 'In this section'|trans({}, domain) }}</h2>
+                            <ul class="section-map">{% for child in children %}<li><a href="{{ quire_url(child) }}"><h3>{{ child.title }}</h3>{% if child.excerpt %}<p>{{ child.excerpt }}</p>{% endif %}<span class="sub">{{ 'updated {date}'|trans({date: child.updatedAt|quire_date('day-month-short')}, domain) }}</span></a></li>{% endfor %}</ul>
+                        </section>
+                    {% elseif content.parentId %}
+                        {% set siblings = quire_content(type.id).siblingsOf(content) %}
+                        {% set parent = ancestors|last %}
+                        {% if siblings|length > 0 %}
+                            <section class="in-section" aria-labelledby="section-heading"><h2 id="section-heading">{{ parent ? 'Also in {section}'|trans({section: parent.title}, domain) : 'Also in this section'|trans({}, domain) }}</h2>
+                                <ul>{% for sibling in siblings %}<li><a href="{{ quire_url(sibling) }}"><b>{{ sibling.title }}</b>{% if sibling.excerpt %}<span>{{ sibling.excerpt }}</span>{% endif %}</a></li>{% endfor %}</ul>
+                            </section>
+                        {% endif %}
+                    {% endif %}
+                {% endif %}
+            </div>
+            <div class="margin"></div>
+
+            {% if history is not empty %}
+                {#- Newest first, ending at "Published"; the three newest show, the rest behind one disclosure -#}
+                <div class="after"><section class="history" id="history" aria-labelledby="history-heading">
+                    <h2 id="history-heading">{{ is_page ? 'History of this page'|trans({}, domain) : 'History of this post'|trans({}, domain) }}{% if history|length > 1 %} <span class="meta">· {{ '{count, plural, one {# change} other {# changes}}'|trans({count: history|length}, domain) }}</span>{% endif %}</h2>
+                    {% set published %}{% if content.publishedAt %}<li><span class="type">{{ 'Published'|trans({}, domain) }}</span> <time datetime="{{ content.publishedAt|date('c') }}">{{ content.publishedAt|quire_date('long-time') }}</time></li>{% endif %}{% endset %}
+                    <ol>{% for change in history|slice(0, 3) %}{{ _self.change(change, domain) }}{% endfor %}{% if history|length <= 3 %}{{ published }}{% endif %}</ol>
+                    {% if history|length > 3 %}
+                        <details class="more"><summary>{{ '{count, plural, one {Show # earlier change} other {Show # earlier changes}}'|trans({count: history|length - 3}, domain) }}</summary>
+                            <ol>{% for change in history|slice(3) %}{{ _self.change(change, domain) }}{% endfor %}{{ published }}</ol>
+                        </details>
+                    {% endif %}
+                </section></div>
+            {% endif %}
+        </div>
+
+        {% if not is_page and type.has('listable') and content.publishedAt and not preview|default(false) %}
+            {% set newer = quire_content(type.id).locale(content.locale).newerThan(content).first() %}
+            {% set older = quire_content(type.id).locale(content.locale).olderThan(content).first() %}
+            <div class="container">
+                {% if newer or older %}
+                    <nav class="next" aria-label="{{ 'More posts'|trans({}, domain) }}">
+                        <div class="newer">{% if newer %}<a href="{{ quire_url(newer) }}"><span class="arrow" aria-hidden="true">←</span><div><p class="kicker">{{ 'Newer'|trans({}, domain) }}</p><b class="next__title">{{ newer.title }}</b></div></a>{% endif %}</div>
+                        <div class="older">{% if older %}<a href="{{ quire_url(older) }}"><div><p class="kicker">{{ 'Older'|trans({}, domain) }}</p><b class="next__title">{{ older.title }}</b></div><span class="arrow" aria-hidden="true">→</span></a>{% endif %}</div>
+                    </nav>
+                {% endif %}
+                <p class="browse"><a href="{{ quire_listing_url(type.id) }}">{{ type.id == 'post' ? 'All posts'|trans({}, domain) : type.pluralLabel }}</a>{% if month_url %}<a href="{{ month_url }}">{{ 'More from {month}'|trans({month: content.publishedAt|quire_date('month-year')}, domain) }}</a>{% endif %}</p>
+            </div>
+        {% endif %}
 
         {% if quire_slot_filled('content.footer') %}
-            <footer class="entry-footer">{{ quire_slot('content.footer', { content }) }}</footer>
+            <footer class="container entry-footer">{{ quire_slot('content.footer', { content }) }}</footer>
         {% endif %}
     </article>
 {% endblock %}

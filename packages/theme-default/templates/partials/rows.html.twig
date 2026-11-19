@@ -1,0 +1,16 @@
+{#
+    What the home page, "All posts" and the 404 page say of a post: one row component (the card), and its
+    reading time.
+#}
+
+{# Minutes of reading, from the text's words at 230 a minute, at least 1 #}
+{% macro reading_time(item) -%}
+    {%- set words = item.body|striptags|replace({"\n": ' ', "\t": ' '})|split(' ')|filter(word => word != '')|length -%}
+    {{- '{minutes} min read'|trans({minutes: max(1, (words / 230)|round(0, 'ceil'))}, 'quire-theme-default') -}}
+{%- endmacro %}
+
+{# One item in a list, through its card (content/<type>/_card.html.twig, or content/_card.html.twig) #}
+{% macro row(item, type, dated = true, with_month = false) -%}
+    {{- include(['content/' ~ item.type ~ '/_card.html.twig', 'content/_card.html.twig'], {item: item, type: type, dated: dated, with_month: with_month, in_list: true}) -}}
+{%- endmacro %}
+
