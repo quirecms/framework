@@ -27,6 +27,10 @@ use Quire\Content\Exception\PendingRevisionConflictException;
 use Quire\Content\Revision\PendingRevision;
 use Quire\Content\Revision\PendingRevisionRepository;
 use Quire\Content\Revision\PendingRevisionWriter;
+use Quire\Content\Revision\PublicChange;
+use Quire\Content\Revision\PublicChangeKind;
+use Quire\Content\Revision\PublicHistory;
+use Quire\Content\Revision\PublicNote;
 use Quire\Content\Revision\ReviewState;
 use Quire\Content\Revision\RevisionRepository;
 use Quire\Content\Revision\Verdict;
@@ -519,6 +523,54 @@ final class PendingRevisionsTest extends KernelTestCase
     private function recorded(): array
     {
         return $this->events;
+    }
+
+    public function testPublishingChangesCanTellReadersAndOnlyThatIsPublic(): void
+    {
+        $post = $this->published();
+        $history = self::getContainer()->get(PublicHistory::class);
+
+        $pending = $this->pending->create($post->id);
+        $pending = $this->pending->update(new UpdatePendingRevision($pending->id, $pending->version)->message('Fixed the hours, Bob asked')->body(str_replace('9 to 5', '9 to 6', self::BODY)));
+        $this->writer->publishPendingRevision($pending->id, $pending->version, null, new PublicNote(PublicChangeKind::Correction, "  We're open until 6, not 5.  "));
+
+        $pending = $this->pending->create($post->id);
+        $pending = $this->pending->update(new UpdatePendingRevision($pending->id, $pending->version)->title('Opening hours'));
+        $this->writer->publishPendingRevision($pending->id, $pending->version);
+
+        $pending = $this->pending->create($post->id);
+        $pending = $this->pending->update(new UpdatePendingRevision($pending->id, $pending->version)->body(self::BODY."\n\nHolidays too."));
+        $after = $this->writer->publishPendingRevision($pending->id, $pending->version, null, new PublicNote(PublicChangeKind::Update, 'Added the holidays.'));
+
+        $changes = $history->of($after);
+        self::assertSame([['update', 'Added the holidays.'], ['correction', "We're open until 6, not 5."]], array_map(static fn (PublicChange $change): array => [$change->kind->value, $change->note], $changes), 'Newest first, the note tidied; a change published without one isn\'t in it.');
+        self::assertTrue($changes[1]->isCorrection());
+        self::assertNotContains('Fixed the hours, Bob asked', array_map(static fn (PublicChange $change): string => $change->note, $changes), 'The editors\' own message never is.');
+
+        $this->writer->transition($after->id, $after->version, Status::UNPUBLISH);
+        self::assertSame([], $history->of($this->content($post)), 'An item visitors can\'t see has no public history.');
+
+        // Who wrote a note is forgotten with them; what readers were told stays
+        $bob = self::getContainer()->get(UserWriter::class)->create(new CreateUser('Bob', 'bob@example.com', roles: ['editor']));
+        $other = $this->published();
+        $pending = $this->pending->create($other->id);
+        $pending = $this->pending->update(new UpdatePendingRevision($pending->id, $pending->version)->title('Hours, again'));
+        $this->writer->publishPendingRevision($pending->id, $pending->version, $bob->id, new PublicNote(PublicChangeKind::Update, 'Renamed.'));
+        self::getContainer()->get(UserWriter::class)->delete($bob->id);
+        self::assertSame([['Renamed.', null]], $this->connection->fetchAllNumeric('SELECT note, author_id FROM quire.content_public_change WHERE content_id = ?', [$other->id]));
+
+        $this->assertInvalidNote(PublicChangeKind::Correction, '   ', 'A correction says what was wrong and what it says now.');
+        $this->assertInvalidNote(PublicChangeKind::Update, str_repeat('a', 501), 'A note for readers is 500 characters at most.');
+    }
+
+    private function assertInvalidNote(PublicChangeKind $kind, string $note, string $message): void
+    {
+        try {
+            new PublicNote($kind, $note);
+            self::fail('The note was taken.');
+        } catch (InvalidContentException $e) {
+            self::assertSame($message, $e->violations['public_note'] ?? null);
+        }
     }
 
     private function published(): Content

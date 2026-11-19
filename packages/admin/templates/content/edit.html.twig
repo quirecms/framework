@@ -102,6 +102,17 @@
                     <div data-content-editor-target="checks">{{ include('@quire_admin/content/_checks.html.twig') }}</div>
                     {% if changes %}
                         {% if changes.can_publish is same as(true) %}
+                            <fieldset class="q-field editor-popover__readers">
+                                <legend>{{ 'For readers'|trans({}, 'quire-admin') }}</legend>
+                                {% set kind = app.request.request.get('public_kind', '') %}
+                                {% for value, label in {'': 'Nothing to tell them'|trans({}, 'quire-admin'), update: 'Updated: something added or brought up to date'|trans({}, 'quire-admin'), correction: 'Corrected: something was wrong'|trans({}, 'quire-admin')} %}
+                                    <label class="q-choice"><input type="radio" name="public_kind" value="{{ value }}" form="editor-form"{% if kind == value %} checked{% endif %}> {{ label }}</label>
+                                {% endfor %}
+                                <label for="public_note">{{ 'What changed, for readers'|trans({}, 'quire-admin') }}</label>
+                                {% if errors.public_note is defined %}<p class="q-error" id="public_note-error">{{ errors.public_note }}</p>{% endif %}
+                                <textarea id="public_note" name="public_note" form="editor-form" rows="3" maxlength="500" aria-describedby="public_note-help{% if errors.public_note is defined %} public_note-error{% endif %}"{% if errors.public_note is defined %} aria-invalid="true"{% endif %}>{{ app.request.request.get('public_note', '') }}</textarea>
+                                <p class="q-help" id="public_note-help">{{ 'Readers see it in the post\'s history, with the date. For a correction, say what was wrong and what it says now, e.g. "An earlier version listed Old Town Field." Your own notes for editors stay in the version history.'|trans({}, 'quire-admin') }}</p>
+                            </fieldset>
                             <button type="submit" form="editor-form" class="q-btn" name="intent" value="publish_changes">{{ 'Publish changes now'|trans({}, 'quire-admin') }}</button>
                         {% elseif pending %}
                             <p class="q-help">{{ changes.can_publish }}</p>

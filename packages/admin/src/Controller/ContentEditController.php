@@ -27,6 +27,8 @@ use Quire\Content\Revision\PendingRevision;
 use Quire\Content\Revision\PendingRevisionComments;
 use Quire\Content\Revision\PendingRevisionRepository;
 use Quire\Content\Revision\PendingRevisionWriter;
+use Quire\Content\Revision\PublicChangeKind;
+use Quire\Content\Revision\PublicNote;
 use Quire\Content\Revision\Revision;
 use Quire\Content\Revision\RevisionRepository;
 use Quire\Content\Status;
@@ -423,7 +425,7 @@ final readonly class ContentEditController
 
         try {
             $message = match ($intent) {
-                'publish_changes' => $this->publishChanges($item, $pending, $actor),
+                'publish_changes' => $this->publishChanges($item, $pending, $actor, $this->publicNote($request)),
                 'submit' => $this->submitChanges($pending, $actor),
                 'schedule_changes' => $this->scheduleChanges($item, $pending, $this->publishAt($request), $actor),
                 'unschedule_changes' => $this->scheduleChanges($item, $pending, null, $actor),
@@ -452,7 +454,20 @@ final readonly class ContentEditController
      * @throws MergeConflictException
      * @throws InvalidContentException
      */
-    private function publishChanges(Content $item, PendingRevision $pending, ?string $actor): string
+    /**
+     * What readers are told about the change, from the publish popover: nothing, or an update or a
+     * correction with its note.
+     *
+     * @throws InvalidContentException when a kind is chosen without a note, or the note is too long
+     */
+    private function publicNote(Request $request): ?PublicNote
+    {
+        $kind = PublicChangeKind::tryFrom((string) $request->request->get('public_kind', ''));
+
+        return null === $kind ? null : new PublicNote($kind, (string) $request->request->get('public_note', ''));
+    }
+
+    private function publishChanges(Content $item, PendingRevision $pending, ?string $actor, ?PublicNote $note = null): string
     {
         $can = $this->changes->canPublish($item, $pending);
 
@@ -460,7 +475,7 @@ final readonly class ContentEditController
             throw new AccessDeniedHttpException($can);
         }
 
-        $this->writer->publishPendingRevision($pending->id, $pending->version, $actor);
+        $this->writer->publishPendingRevision($pending->id, $pending->version, $actor, $note);
 
         return $this->translator->trans('Your changes are published.', [], 'quire-admin');
     }
