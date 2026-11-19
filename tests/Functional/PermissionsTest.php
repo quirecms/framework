@@ -9,6 +9,7 @@ use Quire\Content\Command\CreateContent;
 use Quire\Content\Content;
 use Quire\Content\ContentRepository;
 use Quire\Content\ContentWriter;
+use Quire\Content\Query\LatestPublished;
 use Quire\Content\Status;
 use Quire\Permission\Permissions;
 use Quire\User\CreateUser;
@@ -18,6 +19,7 @@ use Quire\User\UserWriter;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Security\Core\Authentication\Token\NullToken;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
 use Symfony\Component\Security\Core\Authorization\AccessDecisionManagerInterface;
 
@@ -178,6 +180,27 @@ final class PermissionsTest extends WebTestCase
         $this->client->loginUser($this->user('moderator', ['moderator']));
         $this->client->request('GET', '/blog/members-news');
         self::assertResponseStatusCodeSame(403, 'Signed-in users without the ability are refused.');
+    }
+
+    public function testTheCachedLatestListIsAVisitorsWhoeverMakesIt(): void
+    {
+        $this->permissions->revoke('guest', ['content.post.view']);
+        $this->permissions->grant('member', ['content.post.view']);
+        $this->publish('Members news');
+        $member = $this->user('member', ['member']);
+        $tokens = self::getContainer()->get(TokenStorageInterface::class);
+        $latest = self::getContainer()->get(LatestPublished::class);
+        $latest->forget();
+
+        // A member's 404 fills the cache…
+        $tokens->setToken(new UsernamePasswordToken($member, 'main', $member->getRoles()));
+        self::assertSame([], $latest->items(5, 'en'), 'Made as a visitor sees it, not as the member whose request made it.');
+        self::assertSame($member, $tokens->getToken()?->getUser(), 'The member is signed in again after.');
+
+        // …and a visitor's 404 shows what it holds
+        $tokens->setToken(null);
+        self::assertSame([], $latest->items(5, 'en'), 'No members-only item reaches a visitor.');
+        $latest->forget();
     }
 
     /**
