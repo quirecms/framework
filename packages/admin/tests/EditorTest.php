@@ -69,7 +69,7 @@ final class EditorTest extends AdminTestCase
         // The live preview, as the editor's script asks for it.
         $token = (string) $crawler->filter('main input[name=_token]')->attr('value');
         $this->client->request('POST', '/admin/content/post/preview', ['_token' => $token, 'body' => '# Title']);
-        self::assertSame('<h1 id="preview-title">Title</h1>', trim((string) $this->client->getResponse()->getContent()), 'Its IDs aren\'t the form\'s, e.g. "title".');
+        self::assertSame('<h1 id="preview-h-title">Title</h1>', trim((string) $this->client->getResponse()->getContent()), 'Its IDs aren\'t the form\'s, e.g. "title".');
 
         $this->client->request('POST', '/admin/content/post/preview', ['_token' => 'forged', 'body' => '# Title']);
         self::assertResponseStatusCodeSame(403);

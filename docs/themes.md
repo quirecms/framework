@@ -255,6 +255,18 @@ Every template, of a theme, an extension or the site, has:
 | `app.request.locale` | The page's language: the site's, or a content item's own, e.g. for `<html lang="…">` |
 | `quire_content()`, `quire_url()`, `quire_listing_url()`, `quire_home_url()`, `quire_body()`, `quire_excerpt()` | Content and URLs (see [content](content.md)) |
 
+## What the renderer prints
+
+An item's text (`quire_body(item)`) comes from Quire's renderer, the same for every theme. A theme styles what it prints, and decides nothing from the words: these classes, roles and attributes are the contract.
+
+- **Headings** get an id prefixed with `h-` (`<h2 id="h-how-it-works">`), so they never meet a theme's own ids, and a link beside them: `<div class="heading-row"><h2 id="h-…">…</h2><a class="heading-anchor" href="#h-…" aria-label="Link to the section “…”">#</a></div>`. The link is outside the heading, so the heading's name stays its own.
+- **Footnotes** (`text[^1]` with `[^1]: the note`) are set right after their first reference, not in a list at the end: `<sup><a href="#fn-1" aria-label="Note 1" id="fnref-1">1</a></sup><span class="footnote" id="fn-1" role="note"><b><span class="visually-hidden">Note </span>1</b> the note</span>`. Put `.footnote` in the margin on wide screens and leave it in place on narrow ones; define `.visually-hidden`. Only editors' text has footnotes, never visitors' comments.
+- **Tables** are in `<div class="table" role="region" tabindex="0">`, named by the heading before them (`aria-labelledby`) or "Table N", so a wide one scrolls by keyboard. They keep their roles (`table`, `rowgroup`, `row`, `columnheader`, `rowheader`, `cell`) when CSS changes their display. Every cell has `data-label`, its column's header, for a label-above-value layout; the first cell of a body row is a row header (`<th scope="row">`); a column's cells, header included, say what it holds with `data-kind`: `num` (numbers: "4,200", "−3", "12%") or `pair` (pairs of numbers: "2–1"), and nothing for text or mixed columns; the table has `data-columns`. These kinds are the contract: a new one comes only with a Quire release that says so. Choose a layout with a container query and these attributes, e.g. `table:has(td[data-kind="pair"])` for results.
+- **Code blocks** are `<pre role="region" tabindex="0" aria-label="Code: php">`.
+- **Images from other sites that the page's security policy blocks** are a link, not a broken picture: `<figure class="ext-image">` (an image alone in its paragraph) or `<span class="ext-image">` (in text), with `.ext-image__icon`, `.ext-image__alt` (its description), `.ext-image__why` and a link to the image. The editor's checks warn about them; copying the image into the site shows it.
+
+Its texts ("Note 1", "Link to the section …") are in the item's own language. HTML an author writes goes through the sanitiser first, and none of this can come from it: the author's `role` attributes are dropped, and the author's own ids get a namespace, `u-…` (with their `#…` links), so no id an author writes can be a heading's, a footnote's, the theme's or one a script looks up.
+
 ## Theme settings
 
 A theme declares its settings, such as colours or toggles, in its `extend.php`. Their keys start with `theme.`, the theme's ID and a dot:

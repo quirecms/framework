@@ -648,7 +648,7 @@ final readonly class GalleryShortcode implements ShortcodeInterface
 | `content` | Content written by editors | markdown, text, html | Everything safe: headings (with anchors), tables, images, all shortcodes |
 | `comment` | Text written by visitors | markdown, text | Paragraphs, emphasis, links (marked `rel="nofollow ugc"`), lists, quotes, code. No images or shortcodes. |
 
-Profile options: `formats`, `shortcodes` (names, or `['*']`), `sanitizer` (`rich` or `basic`), `headingAnchors`, `images`, `rawHtml` (let Markdown contain HTML, still sanitised) and `linkRel`.
+Profile options: `formats`, `shortcodes` (names, or `['*']`), `sanitizer` (`rich` or `basic`), `headingAnchors`, `images`, `rawHtml` (let Markdown contain HTML, still sanitised), `linkRel` and `footnotes` (CommonMark footnotes, set beside their references; core's `content` profile has them, never give them to visitors' text). A `rich` profile also gets the structure every theme relies on (see "What the renderer prints" in docs/themes.md).
 
 Render text with `Quire\Formatter\Formatter`, and content with `Quire\Content\ContentRenderer`, which caches:
 

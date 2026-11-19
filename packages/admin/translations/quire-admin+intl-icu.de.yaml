@@ -579,6 +579,7 @@
 'mode.board': 'In Bewegung'
 'mode.calendar': 'Kalender'
 'check.core.alt-text': 'Bild ohne Beschreibung'
+'check.core.external-images': 'Bild von einer anderen Website'
 'check.core.links': 'Defekter Link'
 'check.core.excerpt': 'Kein Auszug'
 'check.core.title-length': 'Langer Titel'
