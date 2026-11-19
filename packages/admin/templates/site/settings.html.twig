@@ -31,6 +31,7 @@
             {% if entry.fieldset %}<fieldset class="q-field" aria-describedby="{{ id }}-help">{% else %}<div class="q-field form-field--{{ entry.definition.type.value }}">{% endif %}
                 {% if entry.fieldset %}<legend>{{ entry.label }}</legend>{% else %}<label for="{{ id }}">{{ entry.label }}</label>{% endif %}
                 {% if entry.help %}<p class="q-help" id="{{ id }}-help">{{ entry.help }}</p>{% endif %}
+                {% if entry.warning %}<p class="q-notice q-notice--warning" id="{{ id }}-warning">{{ entry.warning }}</p>{% endif %}
                 {% if entry.error %}<p class="q-error" id="{{ id }}-error">{{ entry.error }}</p>{% endif %}
                 {% if entry.environment %}
                     <p class="q-notice q-notice--warning">{{ 'Set by the environment variable {name}, so it can\'t be changed here.'|trans({name: entry.environment}, 'quire-admin') }}</p>

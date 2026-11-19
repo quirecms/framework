@@ -32,6 +32,9 @@
                         {{- sentence.after }}
                     {% endfor %}
                 </p>
+                {% for sentence in part.sentences|filter(sentence => sentence.entry.warning) %}
+                    <p class="q-notice q-notice--warning">{{ sentence.entry.warning }}</p>
+                {% endfor %}
                 {% for sentence in part.sentences|filter(sentence => not sentence.entry.environment) %}
                     {% set entry = sentence.entry %}
                     {% set id = 'edit-' ~ sentence.control %}
@@ -45,6 +48,7 @@
                                 <div class="q-field">
                                     <label for="{{ sentence.control }}" class="settings-doc__label">{{ entry.label }}</label>
                                     {% if entry.help %}<p class="q-help">{{ entry.help }}</p>{% endif %}
+                                    {% if entry.warning %}<p class="q-notice q-notice--warning">{{ entry.warning }}</p>{% endif %}
                                     {{ entry.html }}
                                 </div>
                             {% endif %}

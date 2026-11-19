@@ -239,6 +239,7 @@
 'Requires': 'Requires'
 'Save settings': 'Save settings'
 'Set by the environment variable {name}, so it can''t be changed here.': 'Set by the environment variable {name}, so it can''t be changed here.'
+'The homepage is set to be an edition, but the theme in use draws none, so the homepage is the list.': 'The homepage is set to be an edition, but the theme in use draws none, so the homepage is the list.'
 'Settings': 'Settings'
 'The setting is back to its default.': 'The setting is back to its default.'
 'The site is rebuilt, which takes a few seconds.': 'The site is rebuilt, which takes a few seconds.'

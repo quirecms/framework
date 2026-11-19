@@ -33,7 +33,7 @@ use Twig\Markup;
  *
  * @internal
  *
- * @phpstan-type Entry array{definition: SettingDefinition, label: string, help: ?string, html: Markup, source: string, environment: ?string, sensitive: bool, error: ?string, fieldset: bool}
+ * @phpstan-type Entry array{definition: SettingDefinition, label: string, help: ?string, warning: ?string, html: Markup, source: string, environment: ?string, sensitive: bool, error: ?string, fieldset: bool}
  */
 final readonly class SettingsForm
 {
@@ -59,6 +59,7 @@ final readonly class SettingsForm
         private InstalledExtensions $installed,
         private SettingAccess $access,
         private Security $security,
+        private Themes $themes,
     ) {
     }
 
@@ -123,7 +124,8 @@ final readonly class SettingsForm
 
             $source = $this->settings->source($key);
             $value = \array_key_exists($key, $values) ? $values[$key] : $this->settings->get($key);
-            $describedBy = array_filter([null !== $definition->help ? $this->id($key).'-help' : null, isset($errors[$key]) ? $this->id($key).'-error' : null]);
+            $warning = $this->warning($key, $value);
+            $describedBy = array_filter([null !== $definition->help ? $this->id($key).'-help' : null, null !== $warning ? $this->id($key).'-warning' : null, isset($errors[$key]) ? $this->id($key).'-error' : null]);
             $control = new FieldControl(
                 name: 'settings['.$key.']',
                 id: $this->id($key),
@@ -135,6 +137,7 @@ final readonly class SettingsForm
                 'definition' => $definition,
                 'label' => $this->translator->trans($definition->label ?? $key, [], $definition->owner),
                 'help' => null === $definition->help ? null : $this->translator->trans($definition->help, [], $definition->owner),
+                'warning' => $warning,
                 'html' => match (true) {
                     ContentChecker::LEVELS_SETTING === $key => $this->checkLevels($value, $control),
                     $definition->sensitive => new Markup(\sprintf('<input type="password" %s value="" autocomplete="new-password">', $control->attributes()), 'UTF-8'),
@@ -150,6 +153,19 @@ final readonly class SettingsForm
         }
 
         return $entries;
+    }
+
+    /**
+     * What the site does other than the setting says, e.g. an edition as the homepage with a theme that
+     * draws none, which serves the list instead (as "quire:permalink:list" warns).
+     */
+    private function warning(string $key, mixed $value): ?string
+    {
+        if ('site.homepage' === $key && 'edition' === $value && !$this->themes->supports('edition')) {
+            return $this->translator->trans('The homepage is set to be an edition, but the theme in use draws none, so the homepage is the list.', [], 'quire-admin');
+        }
+
+        return null;
     }
 
     /**
