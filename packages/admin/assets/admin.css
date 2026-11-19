@@ -218,7 +218,7 @@
 
     /* Notes in the margin: under the text, or beside it at their lines */
     .editor-notes { display: grid; gap: var(--q-space-3); margin: var(--q-space-5) 0 0; padding: 0; list-style: none; }
-    .editor-note { padding: var(--q-space-3) var(--q-space-4); border: 1px solid var(--q-line); border-left: 4px solid var(--q-warn); border-radius: var(--q-radius); background: var(--q-raised); box-shadow: var(--shadow-2, 0 2px 8px rgb(0 0 0 / 0.06)); font-size: 0.9375rem; }
+    .editor-note { padding: var(--q-space-3) var(--q-space-4); border: 1px solid var(--q-line); border-left: 4px solid var(--q-warn); border-radius: var(--q-radius); background: var(--q-raised); box-shadow: var(--shadow-2, 0 2px 8px rgb(0 0 0 / 0.06)); font-size: 0.9375rem; overflow-wrap: anywhere; }
     .editor-note p { margin: 0 0 var(--q-space-2); }
     .editor-note--error { border-left-color: var(--q-danger); }
     .editor-note--comment { border-left-color: var(--q-review); }
@@ -493,7 +493,7 @@
     .review-form__send { display: flex; justify-content: flex-end; margin: 0; }
     .review-form .q-help { margin: 0; }
     .review-checks { display: grid; gap: var(--q-space-2); margin: 0; padding: 0; list-style: none; }
-    .review-checks li { display: grid; grid-template-columns: 1.25rem minmax(0, 1fr); gap: var(--q-space-2); }
+    .review-checks li { display: grid; grid-template-columns: 1.25rem minmax(0, 1fr); gap: var(--q-space-2); overflow-wrap: anywhere; }
     .review-checks__pass > span { color: var(--q-accent); font-weight: 700; }
     .review-checks__warning > span:first-child { color: var(--q-warning, #a15c00); font-weight: 800; }
     .review-checks__error > span:first-child { color: var(--q-danger); font-weight: 800; }
