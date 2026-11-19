@@ -9,7 +9,8 @@ on:
     branches:
       - main
     tags:
-      - 'v*'
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+'
 
 permissions:
   contents: read
@@ -20,8 +21,30 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # A version tag reaches Packagist from here, so it's split only when it's signed by a key in
+  # .github/release-signers (ADR-0010): checked in a job of its own, which never sees the GitHub App's
+  # credentials. Main's pushes have nothing to check.
+  signed:
+    name: Signed by a release signer
+    if: github.repository == 'quirecms/framework'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: The tag is signed by a key in .github/release-signers
+        if: startsWith(github.ref, 'refs/tags/')
+        run: .github/verify-tag.sh "$GITHUB_REF_NAME"
+
   split:
     name: Split packages
+    needs: signed
     if: github.repository == 'quirecms/framework'
     # Holds the GitHub App's credentials, which only main and version tags can use.
     environment: split
@@ -58,6 +81,15 @@ jobs:
           repositories: ${{ steps.repositories.outputs.names }}
           permission-contents: write
           permission-workflows: write
+      # What's pushed is $GITHUB_REF as this checkout has it: a tag moved since the signed job checked it
+      # would be pushed unchecked. Main isn't checked: when it moves meanwhile, its newer run splits it.
+      - name: Still the commit checked
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          if [ "$(git rev-parse HEAD)" != "$GITHUB_SHA" ] || [ "$(git rev-parse "$GITHUB_REF^{commit}")" != "$GITHUB_SHA" ]; then
+            echo "::error::$GITHUB_REF no longer names $GITHUB_SHA, the commit checked: nothing is pushed."
+            exit 1
+          fi
       - name: Split and push
         run: .github/split.sh "$GITHUB_REF" --push
         env:

@@ -74,7 +74,7 @@ function at(string $root, string $version, string $path): ?string
 }
 
 /**
- * @return array{security: list<array{id: string, severity: string, package: string, summary: string}>, upgrade: ?string, notes: string}
+ * @return array{date: string, security: list<array{id: string, severity: string, package: string, summary: string}>, upgrade: ?string, notes: string}
  */
 function notes(string $file): array
 {
@@ -91,13 +91,21 @@ function notes(string $file): array
     }
 
     if (!is_array($header)) {
-        fail($file.': its header must be "security" and "upgrade".');
+        fail($file.': its header must be "date", "security" and "upgrade".');
     }
 
-    $unknown = array_diff(array_keys($header), ['security', 'upgrade']);
+    $unknown = array_diff(array_keys($header), ['date', 'security', 'upgrade']);
 
-    if ([] !== $unknown || !array_key_exists('security', $header) || !array_key_exists('upgrade', $header)) {
-        fail($file.': its header must be exactly "security" (a list, [] for none) and "upgrade" (text, or null)'.([] === $unknown ? '' : '; not "'.implode('", "', $unknown).'"').'.');
+    if ([] !== $unknown || !array_key_exists('date', $header) || !array_key_exists('security', $header) || !array_key_exists('upgrade', $header)) {
+        fail($file.': its header must be exactly "date" (YYYY-MM-DD), "security" (a list, [] for none) and "upgrade" (text, or null)'.([] === $unknown ? '' : '; not "'.implode('", "', $unknown).'"').'.');
+    }
+
+    // The day it's released, as CHANGELOG.md's heading says it (Keep a Changelog). Read as written: YAML
+    // turns an unquoted date into a time, and one that doesn't exist (2026-02-30) into the next month's.
+    $date = preg_match('/^date:[ \t]*([\'"]?)(\d{4}-\d{2}-\d{2})\1[ \t]*$/m', $parts[1], $match) ? $match[2] : null;
+
+    if (null === $date || (DateTimeImmutable::createFromFormat('!Y-m-d', $date) ?: null)?->format('Y-m-d') !== $date) {
+        fail($file.': "date" is the day it\'s released, as YYYY-MM-DD.');
     }
 
     if (!is_array($header['security']) || !array_is_list($header['security'])) {
@@ -144,14 +152,14 @@ function notes(string $file): array
         fail($file.' has no notes under its header.');
     }
 
-    return ['security' => $security, 'upgrade' => null === $header['upgrade'] ? null : trim($header['upgrade']), 'notes' => $text];
+    return ['date' => $date, 'security' => $security, 'upgrade' => null === $header['upgrade'] ? null : trim($header['upgrade']), 'notes' => $text];
 }
 
 /**
  * A release's text: its notes, then its security fixes and upgrade notes under headings of the level
  * given (the GitHub release's are "##", CHANGELOG.md's "###", under each version's "##").
  *
- * @param array{security: list<array{id: string, severity: string, package: string, summary: string}>, upgrade: ?string, notes: string} $notes
+ * @param array{date: string, security: list<array{id: string, severity: string, package: string, summary: string}>, upgrade: ?string, notes: string} $notes
  */
 function text(array $notes, string $heading = '##'): string
 {
@@ -169,8 +177,8 @@ function text(array $notes, string $heading = '##'): string
 }
 
 /**
- * CHANGELOG.md: every release's text, newest first, from docs/releases. No dates: a release's notes are
- * written before it's tagged, and its date is its tag's (on its GitHub release).
+ * CHANGELOG.md, as Keep a Changelog 1.1 has it: every release's text, newest first, from docs/releases,
+ * under "## [X.Y.Z] - YYYY-MM-DD" (the date its notes give), and each version's link at the end.
  */
 function changelog(string $root): string
 {
@@ -178,13 +186,16 @@ function changelog(string $root): string
     $versions = array_values(array_filter($versions, static fn (string $version): bool => 1 === preg_match(VERSION, $version)));
     usort($versions, static fn (string $a, string $b): int => version_compare($b, $a));
 
-    $text = "# Changelog\n\nEvery release of Quire, newest first: what it brings, the security fixes, and what to do when updating. Each release's date is on its [GitHub release](https://github.com/quirecms/framework/releases).\n\n<!-- Made from docs/releases/<version>.md by \"php .github/feed.php --changelog > CHANGELOG.md\": change those files, not this one. A test checks it's up to date. -->\n";
+    $text = "# Changelog\n\nEvery release of Quire, newest first: what it brings, the security fixes, and what to do when updating. The format is [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and Quire follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html): before 1.0, a minor release may break things and a patch only fixes them.\n\n<!-- Made from docs/releases/<version>.md by \"php .github/feed.php --changelog > CHANGELOG.md\": change those files, not this one. A test checks it's up to date. -->\n";
+    $links = '';
 
     foreach ($versions as $version) {
-        $text .= sprintf("\n## [%s](https://github.com/quirecms/framework/releases/tag/v%s)\n\n%s\n", $version, $version, text(notes($root.'/docs/releases/'.$version.'.md'), '###'));
+        $notes = notes($root.'/docs/releases/'.$version.'.md');
+        $text .= sprintf("\n## [%s] - %s\n\n%s\n", $version, $notes['date'], text($notes, '###'));
+        $links .= sprintf("[%s]: https://github.com/quirecms/framework/releases/tag/v%s\n", $version, $version);
     }
 
-    return $text;
+    return '' === $links ? $text : $text."\n".$links;
 }
 
 /**
