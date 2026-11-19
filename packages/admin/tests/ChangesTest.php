@@ -11,6 +11,7 @@ use Quire\Content\ContentRepository;
 use Quire\Content\ContentWriter;
 use Quire\Content\Revision\PendingRevision;
 use Quire\Content\Revision\PendingRevisionRepository;
+use Quire\Content\Revision\PublicHistory;
 use Quire\Content\Revision\ReviewState;
 use Quire\Content\Status;
 use Quire\Permission\Permissions;
@@ -50,6 +51,30 @@ final class ChangesTest extends AdminTestCase
         self::assertSelectorTextSame('.q-notice--success', 'Your changes are published.');
         self::assertSame('Opening times', $this->live($post)->title);
         self::assertSame([], $this->pendingOf($post));
+    }
+
+    public function testPublishingChangesCanTellReadersWhatChanged(): void
+    {
+        $this->signIn('editor');
+        $post = $this->published();
+        $crawler = $this->client->request('GET', $this->editor($post));
+        $this->client->submit($this->button($crawler, 'save'), ['body' => str_replace('9 to 5', '9 to 6', self::BODY)]);
+        $crawler = $this->client->followRedirect();
+
+        // A correction says what was wrong
+        $crawler = $this->client->submit($this->button($crawler, 'publish_changes'), ['public_kind' => 'correction', 'public_note' => ' ']);
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorTextSame('#public_note-error', 'A correction says what was wrong and what it says now.');
+        self::assertSame('true', $crawler->filter('#public_note')->attr('aria-invalid'));
+        self::assertSame(self::BODY, $this->live($post)->body, 'Nothing is published without it.');
+
+        $this->client->submit($this->button($crawler, 'publish_changes'), ['public_kind' => 'correction', 'public_note' => 'We\'re open until 6, not 5.']);
+        $this->client->followRedirect();
+        self::assertSelectorTextSame('.q-notice--success', 'Your changes are published.');
+
+        $history = $this->service(PublicHistory::class)->of($this->live($post));
+        self::assertCount(1, $history);
+        self::assertSame(['correction', 'We\'re open until 6, not 5.'], [$history[0]->kind->value, $history[0]->note]);
     }
 
     public function testAutosaving(): void
