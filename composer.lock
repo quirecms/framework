@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b199468f592ba77fedac5300b6e2001f",
+    "content-hash": "d770f164056e9d904adbcaf94e4968da",
     "packages": [
         {
             "name": "composer/semver",
@@ -2150,18 +2150,18 @@
         },
         {
             "name": "quire/admin",
-            "version": "0.3.x-dev",
+            "version": "0.4.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/admin",
-                "reference": "18713887261e0d17fb6a67b0cb819f5e18f32595"
+                "reference": "c841bfd9d406a5faa7f74d9e93f7ce0b18121e08"
             },
             "require": {
                 "php": ">=8.5",
-                "quire/core": "^0.3"
+                "quire/core": "^0.4"
             },
             "require-dev": {
-                "quire/testing": "^0.3"
+                "quire/testing": "^0.4"
             },
             "type": "quire-extension",
             "extra": {
@@ -2199,7 +2199,7 @@
                     }
                 },
                 "branch-alias": {
-                    "dev-main": "0.3.x-dev"
+                    "dev-main": "0.4.x-dev"
                 }
             },
             "autoload": {
@@ -2239,11 +2239,11 @@
         },
         {
             "name": "quire/core",
-            "version": "0.3.x-dev",
+            "version": "0.4.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/core",
-                "reference": "00b9b18f7be352a65fb39c8fdacce8e4b00181ad"
+                "reference": "f83360b48a7e9458c056d18d00bfda59cadae72b"
             },
             "require": {
                 "doctrine/dbal": "^4.2",
@@ -2289,7 +2289,7 @@
             "type": "symfony-bundle",
             "extra": {
                 "branch-alias": {
-                    "dev-main": "0.3.x-dev"
+                    "dev-main": "0.4.x-dev"
                 }
             },
             "autoload": {
@@ -2330,18 +2330,18 @@
         },
         {
             "name": "quire/theme-default",
-            "version": "0.3.x-dev",
+            "version": "0.4.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/theme-default",
-                "reference": "cf8eed6fa7129e33947954924a3e00d2f4003856"
+                "reference": "918ebb1a02a2d4fbdc66a7286d282423898e4f78"
             },
             "require": {
                 "php": ">=8.5",
-                "quire/core": "^0.3"
+                "quire/core": "^0.4"
             },
             "require-dev": {
-                "quire/testing": "^0.3"
+                "quire/testing": "^0.4"
             },
             "type": "quire-theme",
             "extra": {
@@ -2356,7 +2356,7 @@
                     }
                 },
                 "branch-alias": {
-                    "dev-main": "0.3.x-dev"
+                    "dev-main": "0.4.x-dev"
                 }
             },
             "autoload-dev": {
@@ -9107,19 +9107,19 @@
         },
         {
             "name": "quire/analytics",
-            "version": "0.3.x-dev",
+            "version": "0.4.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/analytics",
-                "reference": "8b250f8aabb956a2000cf09df7389655c9440a47"
+                "reference": "8293668186be86c5d509df99d03761d88a9db422"
             },
             "require": {
                 "php": ">=8.5",
-                "quire/core": "^0.3",
-                "quire/privacy": "^0.3"
+                "quire/core": "^0.4",
+                "quire/privacy": "^0.4"
             },
             "require-dev": {
-                "quire/testing": "^0.3"
+                "quire/testing": "^0.4"
             },
             "type": "quire-extension",
             "extra": {
@@ -9131,7 +9131,7 @@
                     ]
                 },
                 "branch-alias": {
-                    "dev-main": "0.3.x-dev"
+                    "dev-main": "0.4.x-dev"
                 }
             },
             "autoload": {
@@ -9174,18 +9174,18 @@
         },
         {
             "name": "quire/privacy",
-            "version": "0.3.x-dev",
+            "version": "0.4.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/privacy",
-                "reference": "a6bda404c04fde655db4f8460f9b058c7a914a79"
+                "reference": "df4bd8003ac3a7c7c13691bdbbfda4e2eab50ffc"
             },
             "require": {
                 "php": ">=8.5",
-                "quire/core": "^0.3"
+                "quire/core": "^0.4"
             },
             "require-dev": {
-                "quire/testing": "^0.3"
+                "quire/testing": "^0.4"
             },
             "type": "quire-extension",
             "extra": {
@@ -9194,7 +9194,7 @@
                     "description": "Asks visitors before a service of another company runs: analytics, videos, fonts. Without such a service, it shows nothing."
                 },
                 "branch-alias": {
-                    "dev-main": "0.3.x-dev"
+                    "dev-main": "0.4.x-dev"
                 }
             },
             "autoload": {
@@ -9237,17 +9237,17 @@
         },
         {
             "name": "quire/testing",
-            "version": "0.3.x-dev",
+            "version": "0.4.x-dev",
             "dist": {
                 "type": "path",
                 "url": "packages/testing",
-                "reference": "55114c5b386b15a55c3adfa63d76ee547030cde7"
+                "reference": "f80e80679e9201a21f72e921b12394a6cc2404a0"
             },
             "require": {
                 "doctrine/doctrine-bundle": "^3.0",
                 "php": ">=8.5",
                 "phpunit/phpunit": "^13.4",
-                "quire/core": "^0.3",
+                "quire/core": "^0.4",
                 "symfony/browser-kit": "^8.1",
                 "symfony/css-selector": "^8.1",
                 "symfony/filesystem": "^8.1",
@@ -9258,7 +9258,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-main": "0.3.x-dev"
+                    "dev-main": "0.4.x-dev"
                 }
             },
             "autoload": {
@@ -11183,5 +11183,5 @@
         "ext-iconv": "*"
     },
     "platform-dev": {},
-    "plugin-api-version": "2.9.0"
+    "plugin-api-version": "2.11.0"
 }
