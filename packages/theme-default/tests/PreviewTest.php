@@ -71,6 +71,22 @@ final class PreviewTest extends ExtensionTestCase
         self::assertStringStartsWith('Scheduled for March 4, 2030', $crawler->filter('main .kicker')->text());
     }
 
+    public function testTheOwnersEmptyHomeSaysWhoseItIs(): void
+    {
+        $crawler = $this->client->request('GET', '/');
+        self::assertCount(0, $crawler->filter('.ribbon--notice'), 'A visitor gets the calm empty home.');
+        self::assertCount(0, $crawler->filter('ol.steps'));
+
+        $this->client->loginUser($this->user('ada', ['admin']));
+        $crawler = $this->client->request('GET', '/');
+
+        self::assertSame('Only you see this', $crawler->filter('.ribbon--notice .tag')->text());
+        self::assertSame('You’re signed in as Ada, who may change this site.', $crawler->filter('.ribbon--notice p')->text());
+        self::assertSame('/admin', $crawler->filter('.ribbon--notice a')->attr('href'));
+        self::assertGreaterThan(0, $crawler->filter('ol.steps li')->count(), 'The steps, ticked from the site\'s state.');
+        self::assertSame('Already yours', $crawler->filter('.identity-card h2')->text());
+    }
+
     /**
      * @param list<string> $roles
      */

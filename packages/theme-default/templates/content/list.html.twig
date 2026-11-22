@@ -18,6 +18,14 @@
 
 {% block title %}{{ edition ? site.title : archive_title ~ ' – ' ~ site.title }}{% endblock %}
 
+{% block ribbon %}
+    {#- The owner's empty home is theirs alone (private, no-store): it says whose it is, and where to change it -#}
+    {% if is_home|default(false) and items is empty and quire_setup_steps() and app.user %}
+        {% set who = app.user.displayName ?? app.user.userIdentifier %}
+        <div class="ribbon ribbon--notice" role="region" aria-label="{{ 'Only you see this'|trans({}, domain) }}"><div class="container"><span class="tag">{{ 'Only you see this'|quire_trans({}, domain) }}</span><p>{{ 'You’re signed in as {name}, who may change this site.'|quire_trans({name: who}, domain) }}</p>{% if quire_extension_enabled('quire-admin') %}<a href="{{ path('quire_admin_dashboard') }}">{{ 'Open the admin'|quire_trans({}, domain) }}</a>{% endif %}</div></div>
+    {% endif %}
+{% endblock %}
+
 {% block content %}
     {% if items is empty %}
         {% if is_home %}
