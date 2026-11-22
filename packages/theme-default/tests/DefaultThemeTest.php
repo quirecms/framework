@@ -171,6 +171,27 @@ final class DefaultThemeTest extends ExtensionTestCase
         }
     }
 
+    public function testTheMonthJumpShowsThisPagesYearAndOneLinkPerOtherYear(): void
+    {
+        $this->setSetting('quire.content.per_page', 1);
+        $this->publish('post', 'Spring', 'A.', '2025-04-10 10:00');
+        $this->publish('post', 'Winter', 'B.', '2025-01-10 10:00');
+        $this->publish('post', 'Late last year', 'C.', '2024-12-10 10:00');
+        $this->publish('post', 'Autumn last year', 'D.', '2024-10-10 10:00');
+
+        $crawler = $this->client->request('GET', '/blog?page=2');
+        $nav = $crawler->filter('nav.months');
+
+        self::assertSame(['2025'], $nav->filter('.yr')->each(static fn (Crawler $li): string => $li->text()), 'The year of this page, as a label.');
+        self::assertSame(['Apr', 'Jan', '2024'], $nav->filter('a')->each(static fn (Crawler $a): string => $a->text()), 'Its months, then one link for each other year: one row, however many years.');
+        self::assertSame(['/blog?page=3#m-2024-12', 'All of 2024'], [$nav->filter('a.yr-link')->attr('href'), $nav->filter('a.yr-link')->attr('aria-label')], 'To that year\'s newest month.');
+        self::assertSame('Jan', $nav->filter('a[aria-current]')->text());
+        self::assertSame('On this page', $nav->filter('.months__legend')->text(), 'The filled chip, said in words.');
+
+        $crawler = $this->client->request('GET', '/blog?page=4');
+        self::assertSame(['2025', 'Dec', 'Oct'], $crawler->filter('nav.months a')->each(static fn (Crawler $a): string => $a->text()), 'From an older page, the newer year is the one link.');
+    }
+
     public function testAMonthSplitAcrossPagesIsContinued(): void
     {
         $this->setSetting('quire.content.per_page', 1);
