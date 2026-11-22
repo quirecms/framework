@@ -35,15 +35,16 @@ for (const [name, path] of Object.entries(screens)) {
 
 // A rule whose selector the browser can't read is dropped without a word: the pager's numbers once lost all
 // their styles that way ("[data-kind="num"]bers"). Every block of the theme's stylesheet must become a rule.
-test('every rule of the theme\'s stylesheet is one the browser reads', async ({ page }, testInfo) => {
+test('every rule of the theme\'s and the banner\'s stylesheets is one the browser reads', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'light', 'The same in every look');
     await page.goto('/', { waitUntil: 'networkidle' });
 
     const sheets = await page.evaluate(async () => {
-        const count = (rules) => [...rules].reduce((n, rule) => n + 1 + (rule.cssRules ? count(rule.cssRules) : 0), 0);
+        // A layer order statement ("@layer a, b;") is a rule without a block
+        const count = (rules) => [...rules].reduce((n, rule) => n + (rule instanceof CSSLayerStatementRule ? 0 : 1) + (rule.cssRules ? count(rule.cssRules) : 0), 0);
         const results = [];
         for (const link of document.querySelectorAll('link[rel=stylesheet]')) {
-            if (!link.href.includes('quire-theme-default/')) {
+            if (!link.href.includes('quire-theme-default/') && !link.href.includes('quire-privacy/')) {
                 continue;
             }
             // Blocks in the source, without comments and strings (a "{" in content: "…" isn't one)

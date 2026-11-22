@@ -3,6 +3,12 @@
  * (docs/themes.md, "What the renderer prints"): .footnote, .table > table with data-kind and data-columns,
  * .heading-row, .ext-image, .consent__state, .password-toggle. Fonts: fonts/FONTS.md (OFL).
  */
+/* Every Quire stylesheet declares the same order of its layers, so a theme's rules win over an extension's base
+   styles whatever order the pages load them in, and the site's and a child theme's own CSS, unlayered, win
+   over all of them. Its !important rules (hidden, visually hidden, reduced motion, print) stay as they are: a child's
+   !important can't undo them. */
+@layer quire-core, quire-privacy, quire-theme-default;
+@layer quire-theme-default {
 /*
  * The design.
  *
@@ -427,6 +433,9 @@ input[aria-invalid="true"] { border-color: var(--danger); border-width: 2px; }
 .consent__actions { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; }
 .consent__btn { font: inherit; font-weight: 650; min-block-size: 44px; padding: 0 1.1rem; border-radius: 999px; border: 1.5px solid var(--ink); background: var(--paper); color: var(--ink); cursor: pointer; }
 .consent__btn:hover { box-shadow: 0 0 0 3px var(--tint-2); }
+/* Accepting and rejecting are the same width (equal weight): wide enough for one line in English */
+.consent--bar .consent__btn { flex: 0 1 16rem; }
+.consent-dialog__actions .consent__btn { flex: 0 1 11rem; }
 .consent__link { font: inherit; background: none; border: 0; color: var(--accent); text-decoration: underline; text-underline-offset: 0.18em; font-weight: 650; padding: 0 0.4rem; min-block-size: 44px; cursor: pointer; }
 .consent--corner { inset-inline: auto 1.25rem; inset-block-end: 1.25rem; max-inline-size: 25rem; margin: 0; }
 .consent--corner .consent__inner { grid-template-columns: auto minmax(0, 1fr); }
@@ -659,7 +668,8 @@ del.change { text-decoration-color: #b42318; text-decoration-thickness: 2px; bac
 .auth--card .auth__form { padding: 2.25rem clamp(1.25rem, 5vw, 3rem) 2.5rem; }
 .site-footer li a { min-inline-size: 24px; }
 .consent__inner { grid-template-columns: auto minmax(0, 1fr); }
-.consent__actions { grid-column: 2; }
+/* the banner's, not the dialog's footer (the same class) */
+.consent__inner > .consent__actions { grid-column: 2; }
 @media (max-width: 60rem) {
     .lead--text { grid-template-columns: minmax(0, 1fr); gap: 1.75rem; padding-block: 1.75rem 2rem; }
     .lead--text .lead__main h2 { font-size: 2.3rem; }
@@ -670,7 +680,7 @@ del.change { text-decoration-color: #b42318; text-decoration-thickness: 2px; bac
     .row { grid-template-columns: 2.75rem minmax(0, 1fr) auto; }
     .plate { inline-size: 4.25rem; block-size: 3.75rem; }
     .plate__score { font-size: 1.5rem; }
-    .consent__actions { grid-column: 1; }
+    .consent__inner > .consent__actions { grid-column: 1; }
 }
 .lead .lead__also h2.kicker { font-family: var(--font-ui); font-size: var(--step--1); line-height: 1.4; letter-spacing: 0.07em; font-weight: 650; color: var(--muted); margin: 0 0 0.75rem; }
 .auth__strip, .plate { --ang: 135deg; --cell: 1; --cx: 100%; --cy: 0%; }
@@ -1109,3 +1119,5 @@ a:not(.btn):active { background: var(--tint-1); }
 [id^="m-"]:empty { display: block; scroll-margin-block-start: 1rem; }
 /* A row without a date (dates off, a draft in the admin's preview): no day column */
 .rows .row.row--undated { grid-template-columns: minmax(0, 1fr) auto; }
+
+}
