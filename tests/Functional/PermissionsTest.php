@@ -11,6 +11,7 @@ use Quire\Content\ContentRepository;
 use Quire\Content\ContentWriter;
 use Quire\Content\Query\LatestPublished;
 use Quire\Content\Status;
+use Quire\Http\ErrorReference;
 use Quire\Permission\Permissions;
 use Quire\User\CreateUser;
 use Quire\User\Exception\InvalidUserException;
@@ -167,6 +168,7 @@ final class PermissionsTest extends WebTestCase
         $this->client->request('GET', '/blog/members-news');
         self::assertResponseRedirects('http://localhost/login', message: 'Visitors are asked to sign in…');
         self::assertSame('http://localhost/blog/members-news', $this->client->getRequest()->getSession()->get('_security.main.target_path'), '…and come back afterwards.');
+        self::assertNull(self::getContainer()->get(ErrorReference::class)->current(), 'Asked to sign in isn\'t a server error: no reference to quote.');
         $this->client->request('GET', '/');
         self::assertResponseRedirects('http://localhost/login', message: 'So is a list of them.');
         self::assertSame([], self::getContainer()->get(ContentRepository::class)->query('post')->get(), 'Queries leave out what visitors may not see.');
@@ -180,6 +182,7 @@ final class PermissionsTest extends WebTestCase
         $this->client->loginUser($this->user('moderator', ['moderator']));
         $this->client->request('GET', '/blog/members-news');
         self::assertResponseStatusCodeSame(403, 'Signed-in users without the ability are refused.');
+        self::assertNull(self::getContainer()->get(ErrorReference::class)->current(), 'Nor is a 403.');
     }
 
     public function testTheCachedLatestListIsAVisitorsWhoeverMakesIt(): void

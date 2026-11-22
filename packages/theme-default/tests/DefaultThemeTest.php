@@ -8,6 +8,7 @@ use Quire\Content\Command\CreateContent;
 use Quire\Content\Content;
 use Quire\Content\ContentWriter;
 use Quire\Content\Status;
+use Quire\Http\ErrorReference;
 use Quire\Testing\ExtensionTestCase;
 use Symfony\Component\DomCrawler\Crawler;
 use Twig\Environment;
@@ -296,6 +297,14 @@ final class DefaultThemeTest extends ExtensionTestCase
         self::assertSame('Something went wrong', $page->filter('h1')->text());
         self::assertCount(0, $page->filter('nav.site-nav'), 'Nothing read from the database.');
         self::assertCount(0, $page->filter('.row'));
+        self::assertSame('500 · Server error', $page->filter('.kicker')->text(), 'Not Symfony\'s "Internal Server Error".');
+        self::assertCount(0, $page->filter('.reference'), 'No reference until the failure has one.');
+        self::assertCount(0, $page->filter('.foot-site'), 'No empty "This site" in the minimal footer.');
+
+        $code = $this->service(ErrorReference::class)->make();
+        $page = new Crawler($twig->render('@Twig/Exception/error.html.twig', ['status_code' => 500, 'status_text' => 'Internal Server Error']));
+        self::assertSame($code, $page->filter('.reference code')->text(), 'The reference the failure was logged with, to quote.');
+        self::assertCount(1, $page->filter('.reference time[datetime]'));
     }
 
     private function publish(string $type, string $title, string $body = '', string $publishedAt = '-1 hour', ?string $locale = null): Content

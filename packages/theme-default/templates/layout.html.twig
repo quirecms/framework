@@ -84,10 +84,12 @@
             {% if navigation|length > 0 %}
                 <div><h2>{{ 'Pages'|trans({}, domain) }}</h2><ul>{% for item in navigation %}<li><a href="{{ item.url }}">{{ item.title }}</a></li>{% endfor %}</ul></div>
             {% endif %}
+            {% if not minimal %}
             <div class="foot-site"><h2>{{ 'This site'|trans({}, domain) }}</h2>
                 {{ quire_slot('footer') }}
-                {% if not minimal %}<ul><li><a href="{{ path('quire_login') }}">{{ 'Sign in'|trans({}, domain) }}</a></li></ul>{% endif %}
+                <ul><li><a href="{{ path('quire_login') }}">{{ 'Sign in'|trans({}, domain) }}</a></li></ul>
             </div>
+            {% endif %}
         </div>
         <div class="container base">
             {% block footer_base %}
