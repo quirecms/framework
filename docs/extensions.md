@@ -165,6 +165,7 @@ Every key is optional.
 | `requires` | `[]` | IDs of extensions that must be enabled for this one to run. They're enabled automatically, after confirmation. |
 | `optional` | `[]` | IDs of extensions that, when enabled, load before this one. Use it when your extension integrates with another but works without it. |
 | `importmap` | `{}` | npm packages that your scripts import, with exact versions, e.g. `{"@hotwired/turbo": "8.0.23"}`. See [JavaScript packages](#javascript-packages). |
+| `translations` | English texts, bundled, in the domain of your ID | What your texts are and how other languages reach sites, e.g. `{"version": 1, "delivery": "hub", "domains": ["acme-shop"]}`. See [Texts and languages](#texts-and-languages). |
 
 `requires` and `optional` list extension **IDs** (`acme-comments`), not package names (`acme/comments`). Also add required extensions to your Composer `require` section, so Composer installs them.
 
@@ -1048,6 +1049,30 @@ final class RejectSpam
     }
 }
 ```
+
+### Texts and languages
+
+Your extension's texts are in its own translation domain, its ID: `translations/acme-shop+intl-icu.en.yaml`, in ICU MessageFormat, and one file per language next to it (`acme-shop+intl-icu.de.yaml`). Keep to your own domain: a file in another package's domain (`quire-admin+intl-icu.en.yaml`, say) would change that package's texts, and Quire's tests of its own packages refuse it. The admin takes what it shows about your extension from your domain too: the title of your group of settings (`settings.group.acme-shop`) and your [activity log entries](audit.md).
+
+Language codes are canonical, as ICU writes them: `mk`, `pt_BR`, `sr_Latn`.
+
+`extra.quire.translations` says what your texts are, in a format the translation hub reads too:
+
+```json
+"translations": {"version": 1, "source": "en", "delivery": "bundled", "domains": ["acme-shop"]}
+```
+
+- `version`: `1`, the version of this format. A version Quire doesn't know is refused.
+- `source`: the language your texts are written in; `en` if left out.
+- `delivery`: `bundled` (the default) when your translations ship in your package; `hub` when they come from the translation hub as language packages, one per language and version line of yours. A bundled package's texts are never replaced by a language package.
+- `domains`: your domains; your ID if left out. With `hub`, list them. `quire` and `quire-…` are Quire's own packages', and Symfony's (`messages`, `security`, `validators`) no package's.
+
+A language package (Composer type `quire-translation`) is data: one language of one package, for one version line of it (`0.5` before 1.0, `2` from 1.0 on), with only `translations/<domain>+intl-icu.<language>.yaml` files of plain texts. Quire loads it over the package's own texts and under the themes' and the site's, so a theme or a site can still change any wording. It's left out, never stopping the site, when it doesn't fit, and `quire:about` says why:
+- it carries code (`autoload`, `bin`, `scripts`) or a file that isn't one of its texts;
+- a text isn't plain (a YAML tag, a number);
+- the package it translates isn't installed, is on another version line, or ships its own translations (`bundled`);
+- it names a domain of another package;
+- another language package translates the same package into the same language.
 
 ### Recording actions in the audit log
 

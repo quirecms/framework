@@ -20,7 +20,7 @@ final class PreferencesTest extends AdminTestCase
 
         self::assertSame('preferences', $crawler->filter('dialog#preferences')->attr('data-controller'), 'A sheet on every page.');
         self::assertSame('/admin/preferences', $crawler->selectLink('Your preferences')->attr('href'), 'A page of its own without JavaScript.');
-        self::assertSame(['Like the site', 'Deutsch', 'English'], $crawler->filter('dialog input[name=language]')->each(static fn ($input): string => $input->closest('label')?->text() ?? ''));
+        self::assertSame(['Like the site', 'Deutsch', 'English', 'Македонски'], $crawler->filter('dialog input[name=language]')->each(static fn ($input): string => $input->closest('label')?->text() ?? ''));
 
         // Saved as they're changed, with JavaScript.
         $this->client->request('POST', '/admin/preferences', ['_token' => (string) $crawler->filter('form.prefs input[name=_token]')->attr('value'), 'theme' => 'dark', 'text' => 'lg', 'contrast' => 'high', 'motion' => 'reduce', 'density' => 'compact', 'hood_shown' => '1'], server: ['HTTP_X_QUIRE_REQUEST' => 'fetch']);

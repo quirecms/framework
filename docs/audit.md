@@ -96,10 +96,10 @@ $this->audit->record(
 
 The signed-in user, where it happened and the group are added for you. Pass `actorId` when nobody is signed in but someone is responsible, e.g. who scheduled what a job does now, and `coalesce: true` for actions repeated often, like saving.
 
-The admin describes an entry with the translation `audit.<action>` of the domain `quire-admin`, with the parameter `subject` (the name) and one per detail; add it to your extension's `translations/` directory:
+The admin describes an entry with the translation `audit.<action>` of your extension's own domain (its ID), with the parameter `subject` (the name) and one per detail; add it to your extension's `translations/` directory:
 
 ```yaml
-# translations/quire-admin+intl-icu.en.yaml
+# translations/acme-shop+intl-icu.en.yaml
 'audit.acme-shop.order_refunded': 'Refunded {amount} for {subject}'
 ```
 
