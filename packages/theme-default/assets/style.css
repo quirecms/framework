@@ -598,12 +598,12 @@ del.change { text-decoration-color: #b42318; text-decoration-thickness: 2px; bac
 .prose > p.dropcap { display: flow-root; }
 .big-mark { color: var(--accent); margin-block-end: 1rem; display: block; }
 :lang(ar) .cover .glyph { font-style: normal !important; letter-spacing: 0; inset-block-end: 0.05em; }
-.pager--numbers [data-kind="num"]bers { display: flex; gap: 0.35rem; list-style: none; margin: 0; padding: 0; justify-content: center; align-items: center; }
-.pager--numbers [data-kind="num"]bers a { display: inline-grid; place-items: center; min-inline-size: 44px; min-block-size: 44px; border-radius: 999px; border: 1px solid var(--rule); color: var(--ink); text-decoration: none; font-variant-numeric: tabular-nums; }
-.pager--numbers [data-kind="num"]bers a[aria-current] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.pager--numbers .numbers { display: flex; gap: 0.35rem; list-style: none; margin: 0; padding: 0; justify-content: center; align-items: center; }
+.pager--numbers .numbers a { display: inline-grid; place-items: center; min-inline-size: 44px; min-block-size: 44px; border-radius: 999px; border: 1px solid var(--rule); color: var(--ink); text-decoration: none; font-variant-numeric: tabular-nums; }
+.pager--numbers .numbers a[aria-current] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 @media (max-width: 30rem) { .site-nav { overflow: visible; } .site-nav ul { flex-wrap: wrap; } .site-nav { flex-wrap: wrap; } }
-.pager--numbers [data-kind="num"]bers { flex-wrap: wrap; }
-@media (max-width: 60rem) { .pager--numbers { grid-template-columns: minmax(0, 1fr) auto; } .pager--numbers .newer { display: none; } .pager--numbers [data-kind="num"]bers { justify-content: flex-start; } }
+.pager--numbers .numbers { flex-wrap: wrap; }
+@media (max-width: 60rem) { .pager--numbers { grid-template-columns: minmax(0, 1fr) auto; } .pager--numbers .newer { display: none; } .pager--numbers .numbers { justify-content: flex-start; } }
 .alert a { display: inline-block; padding-block: 0.2rem; }
 @media (max-width: 30rem) { .nav-more { inline-size: 100%; } .nav-more ul { position: static; box-shadow: none; min-inline-size: 0; margin-block-start: 0.25rem; } }
 .cover .glyph { inset-block-end: -0.06em; }
@@ -829,7 +829,7 @@ a:not(.btn):active { background: var(--tint-1); }
 .week__more a { display: inline-flex; align-items: center; min-block-size: 24px; }
 /* v6 shape-aware layout (IDEA-0015): a wide table takes the content width; the theme decides from the content */
 @media (min-width: 60.01rem) {
-    .article-body:has(.table:has(> table:is([data-columns="6"], [data-columns="7"], [data-columns="8"], [data-columns="9"], [data-columns="10"]))) > div:nth-child(2), .shape-data > div:nth-child(2) { grid-column: 1 / -1; }
+    .article-body:has(.table > table:is([data-columns="6"], [data-columns="7"], [data-columns="8"], [data-columns="9"], [data-columns="10"])) > div:nth-child(2), .shape-data > div:nth-child(2) { grid-column: 1 / -1; }
     .shape-data .prose > :not(.table:has(> table:is([data-columns="6"], [data-columns="7"], [data-columns="8"], [data-columns="9"], [data-columns="10"]))) { max-inline-size: var(--measure); margin-inline: auto; }
     .shape-data .prose .table:has(> table:is([data-columns="6"], [data-columns="7"], [data-columns="8"], [data-columns="9"], [data-columns="10"])) table { display: table; inline-size: 100%; }
     .shape-data .margin { display: none; }
@@ -911,7 +911,7 @@ a:not(.btn):active { background: var(--tint-1); }
     .week__items li::before, .history li::before { forced-color-adjust: none; background: CanvasText; box-shadow: none; }
     .is-next .week__items li::before { background: Canvas; border: 2px solid CanvasText; }
     .week__day::before { border-color: CanvasText; }
-    .months a[aria-current], .pager--numbers [data-kind="num"]bers a[aria-current] { border: 2px solid Highlight; }
+    .months a[aria-current], .pager--numbers .numbers a[aria-current] { border: 2px solid Highlight; }
     .monogram { border: 2px solid CanvasText; }
     .ribbon--core .tag, .consent__state, .ribbon--notice .tag { border: 1px solid CanvasText; }
     ins { text-decoration: underline; } del.change { text-decoration: line-through; }

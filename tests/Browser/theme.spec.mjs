@@ -32,3 +32,30 @@ for (const [name, path] of Object.entries(screens)) {
         });
     });
 }
+
+// A rule whose selector the browser can't read is dropped without a word: the pager's numbers once lost all
+// their styles that way ("[data-kind="num"]bers"). Every block of the theme's stylesheet must become a rule.
+test('every rule of the theme\'s stylesheet is one the browser reads', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'light', 'The same in every look');
+    await page.goto('/', { waitUntil: 'networkidle' });
+
+    const sheets = await page.evaluate(async () => {
+        const count = (rules) => [...rules].reduce((n, rule) => n + 1 + (rule.cssRules ? count(rule.cssRules) : 0), 0);
+        const results = [];
+        for (const link of document.querySelectorAll('link[rel=stylesheet]')) {
+            if (!link.href.includes('quire-theme-default/')) {
+                continue;
+            }
+            // Blocks in the source, without comments and strings (a "{" in content: "…" isn't one)
+            const source = (await (await fetch(link.href)).text()).replace(/\/\*[\s\S]*?\*\//g, '').replace(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g, '""');
+            results.push({ href: new URL(link.href).pathname, blocks: (source.match(/\{/g) ?? []).length, rules: count(link.sheet.cssRules) });
+        }
+
+        return results;
+    });
+
+    expect(sheets.length, 'the theme\'s stylesheet is on the page').toBeGreaterThan(0);
+    for (const sheet of sheets) {
+        expect(sheet.rules, `${sheet.href}: rules the browser read, against blocks in the file`).toBe(sheet.blocks);
+    }
+});
