@@ -8,8 +8,15 @@ use PHPUnit\Framework\TestCase;
 use Quire\Testing\TestInstallation;
 use Quire\Testing\TestKernel;
 use Quire\Translation\Internal\ArtifactLoader;
+use Quire\Translation\Internal\ArtifactWarningsListener;
 use Quire\Translation\Internal\TranslationArtifactsPass;
 use Quire\Translation\TranslationArtifacts;
+use Symfony\Bundle\FrameworkBundle\Console\Application;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Event\ConsoleTerminateEvent;
+use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Output\BufferedOutput;
+use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Translation\Loader\LoaderInterface;
 use Symfony\Component\Translation\MessageCatalogue;
 use Symfony\Contracts\Translation\TranslatorInterface;
@@ -112,6 +119,34 @@ final class TranslationArtifactsTest extends TestCase
 
         self::assertSame(['acme/hub-shop-mk'], array_values(array_map(static fn (array $a): string => $a['name'], array_filter($artifacts, static fn (array $a): bool => 'loaded' === $a['status']))));
         self::assertCount(10, $artifacts);
+    }
+
+    public function testQuireAboutListsThemAndWarnsOfThoseLeftOut(): void
+    {
+        $tester = new CommandTester(new Application($this->kernel('quire-fixture-child'))->find('quire:about'));
+        $tester->execute(['--format' => 'json']);
+        /** @var array{translations: list<array{name: string, status: string, reason: ?string}>, warnings: list<string>} $report */
+        $report = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+
+        self::assertSame(['acme/hub-shop-mk' => 'loaded', 'acme/hub-shop-de' => 'ignored'], \array_slice(array_column($report['translations'], 'status', 'name'), 0, 2));
+        self::assertContains('The language package "acme/hub-shop-de" isn\'t loaded: It\'s for acme/hub-shop 0.4; 0.5.2 is installed.', $report['warnings']);
+        self::assertCount(9, array_filter($report['warnings'], static fn (string $warning): bool => str_starts_with($warning, 'The language package')), 'Each one left out, and only those.');
+    }
+
+    public function testBuildingTheSiteSaysWhichAreLeftOut(): void
+    {
+        $listener = new ArtifactWarningsListener([['name' => 'acme/shop-mk', 'status' => 'loaded', 'reason' => null], ['name' => 'acme/shop-de', 'status' => 'ignored', 'reason' => 'It\'s for acme/shop 0.4; 0.5.2 is installed.']]);
+        $said = static function (string $command, int $exitCode) use ($listener): string {
+            $output = new BufferedOutput();
+            $listener(new ConsoleTerminateEvent(new Command($command), new ArrayInput([]), $output, $exitCode));
+
+            return trim((string) preg_replace('/\s+/', ' ', $output->fetch()));
+        };
+
+        self::assertStringContainsString('The language package "acme/shop-de" isn\'t loaded: It\'s for acme/shop 0.4', $said('cache:clear', 0));
+        self::assertStringNotContainsString('acme/shop-mk', $said('cache:warmup', 0));
+        self::assertSame('', $said('quire:about', 0), 'Only when the site is built.');
+        self::assertSame('', $said('cache:clear', 1), 'Not over a failed build\'s own error.');
     }
 
     private function translator(string $theme): TranslatorInterface
