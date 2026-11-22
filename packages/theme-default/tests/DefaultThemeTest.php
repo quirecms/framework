@@ -35,6 +35,7 @@ final class DefaultThemeTest extends ExtensionTestCase
         self::assertSelectorTextSame('main .kicker time[datetime="2025-03-04T10:00:00+00:00"]', 'March 4, 2025');
         self::assertSelectorTextContains('main .kicker', '1 min read');
         self::assertSelectorTextSame('main .prose em', 'text');
+        self::assertSelectorExists('main .prose.prose--opening', 'A post opens with a drop cap (its first paragraph, in CSS).');
         self::assertSelectorExists('html[lang=en][dir=ltr]');
         self::assertSelectorExists('body.accent-blue');
         self::assertCount(1, $crawler->filter('head link[rel=stylesheet][href^="/assets/quire-theme-default/style-"]'));
@@ -319,6 +320,7 @@ final class DefaultThemeTest extends ExtensionTestCase
         self::assertCount(0, $crawler->filter('.article-body .section-map'), 'As wide as the page, not in the text\'s column.');
         self::assertSame('In this section', $crawler->filter('.section-index h2')->text(), 'Named for screen readers.');
         self::assertSelectorTextContains('.page-meta', 'Last updated');
+        self::assertSelectorNotExists('.prose--opening', 'A page doesn\'t.');
 
         $crawler = $this->client->request('GET', '/about/rules');
         self::assertSame(['About'], $crawler->filter('nav.crumbs a')->each(static fn (Crawler $a): string => $a->text()));

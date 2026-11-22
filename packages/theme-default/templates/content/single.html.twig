@@ -87,7 +87,8 @@
                     </details></nav>
                 {% endif %}
                 {{ quire_slot('content.before_body', { content }) }}
-                <div class="prose">{{ body|raw }}</div>
+                {#- A post's first paragraph opens with a drop cap; a page's doesn't (v7) -#}
+                <div class="prose{{ is_page ? '' : ' prose--opening' }}">{{ body|raw }}</div>
                 {{ quire_slot('content.after_body', { content }) }}
 
                 {% set children = is_page and not preview|default(false) ? quire_content(type.id).childrenOf(content).get() : [] %}

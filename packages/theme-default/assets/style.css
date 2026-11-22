@@ -249,7 +249,7 @@ main:focus { outline: none; }
 
 .prose { font-family: var(--font-read); font-size: var(--step-1); line-height: 1.68; }
 .prose > :first-child { margin-block-start: 0; }
-.prose > p.dropcap::first-letter { float: inline-start; font-size: 4.1em; line-height: 0.8; font-weight: 700; margin-inline-end: 0.08em; margin-block-start: 0.06em; color: var(--accent); }
+.prose--opening > p:first-child:not(:lang(ar), :lang(fa), :lang(ur))::first-letter { float: inline-start; font-size: 4.1em; line-height: 0.8; font-weight: 700; margin-inline-end: 0.08em; margin-block-start: 0.06em; color: var(--accent); }
 .prose p, .prose ul, .prose ol, .prose blockquote, .prose pre, .prose .table > table, .prose figure { margin-block: 0 1.15em; }
 .prose h2 { font-size: 1.75rem; line-height: 1.2; margin-block: 2em 0.6em; letter-spacing: -0.015em; }
 .prose h3 { font-size: 1.3rem; margin-block: 1.6em 0.4em; }
@@ -599,7 +599,8 @@ del.change { text-decoration-color: #b42318; text-decoration-thickness: 2px; bac
 .cover .glyph { letter-spacing: -0.06em; }
 .cover--mark { aspect-ratio: 4 / 3; }
 .cover--mark .glyph { font-size: 38cqi; inset-inline-start: 8%; font-style: normal; }
-.prose > p.dropcap { display: flow-root; }
+/* a drop cap needs letters that stand alone: not for scripts that join them (Arabic, Persian, Urdu) */
+.prose--opening > p:first-child:not(:lang(ar), :lang(fa), :lang(ur)) { display: flow-root; }
 .big-mark { color: var(--accent); margin-block-end: 1rem; display: block; }
 :lang(ar) .cover .glyph { font-style: normal !important; letter-spacing: 0; inset-block-end: 0.05em; }
 .pager--numbers .numbers { display: flex; gap: 0.35rem; list-style: none; margin: 0; padding: 0; justify-content: center; align-items: center; }
