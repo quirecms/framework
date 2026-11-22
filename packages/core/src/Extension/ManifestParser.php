@@ -6,7 +6,6 @@ namespace Quire\Extension;
 
 use Quire\Extension\Exception\ExtensionDiscoveryException;
 use Quire\Extension\Exception\InvalidManifestException;
-use Quire\Translation\Locales;
 use Quire\Translation\TranslationDelivery;
 use Quire\Translation\TranslationsDeclaration;
 
@@ -244,7 +243,7 @@ final class ManifestParser
     private function translations(string $name, array $manifest, string $id): TranslationsDeclaration
     {
         if (!\array_key_exists('translations', $manifest)) {
-            return new TranslationsDeclaration([$id]);
+            return new TranslationsDeclaration($name, [$id]);
         }
 
         $declared = $manifest['translations'];
@@ -261,43 +260,34 @@ final class ManifestParser
         }
 
         // The hub reads this too: a format Quire doesn't know is refused, never guessed at
-        if (TranslationsDeclaration::VERSION !== ($declared['version'] ?? null)) {
-            throw InvalidManifestException::forPackage($name, \sprintf('"extra.quire.translations.version" must be %d, the version of the format this Quire reads; got %s. A newer format needs a newer Quire.', TranslationsDeclaration::VERSION, json_encode($declared['version'] ?? null)));
+        $version = $declared['version'] ?? null;
+        $source = $declared['source'] ?? 'en';
+        $delivery = \is_string($declared['delivery'] ?? 'bundled') ? TranslationDelivery::tryFrom($declared['delivery'] ?? 'bundled') : null;
+
+        if (!\is_int($version)) {
+            throw InvalidManifestException::forPackage($name, \sprintf('"extra.quire.translations.version" must be %d, the version of the format this Quire reads; got %s.', TranslationsDeclaration::VERSION, json_encode($version)));
         }
 
-        $source = $declared['source'] ?? 'en';
-
-        if (!\is_string($source) || !Locales::isCanonical($source)) {
+        if (!\is_string($source)) {
             throw InvalidManifestException::forPackage($name, \sprintf('"extra.quire.translations.source" must be the language the texts are written in, as a code such as "en" or "pt_BR"; got %s.', json_encode($source)));
         }
-
-        $delivery = \is_string($declared['delivery'] ?? 'bundled') ? TranslationDelivery::tryFrom($declared['delivery'] ?? 'bundled') : null;
 
         if (null === $delivery) {
             throw InvalidManifestException::forPackage($name, \sprintf('"extra.quire.translations.delivery" must be "bundled" or "hub"; got %s.', json_encode($declared['delivery'])));
         }
 
-        if (TranslationDelivery::Hub === $delivery && !\array_key_exists('domains', $declared)) {
-            throw InvalidManifestException::forPackage($name, \sprintf('"extra.quire.translations.domains" must list the domains of a package whose texts come from the hub, e.g. %s.', $example));
-        }
+        $domains = TranslationDelivery::Hub === $delivery ? ($declared['domains'] ?? []) : ($declared['domains'] ?? [$id]);
 
-        $domains = $declared['domains'] ?? [$id];
-
-        if (!\is_array($domains) || !array_is_list($domains) || [] === $domains) {
+        if (!\is_array($domains) || array_filter($domains, \is_string(...)) !== $domains) {
             throw InvalidManifestException::forPackage($name, \sprintf('"extra.quire.translations.domains" must be a list of translation domains, e.g. ["%s"].', $id));
         }
 
-        foreach ($domains as $domain) {
-            if (!\is_string($domain) || 1 !== preg_match(TranslationsDeclaration::DOMAIN_PATTERN, $domain)) {
-                throw InvalidManifestException::forPackage($name, \sprintf('"extra.quire.translations.domains" lists %s, which is not a domain: lowercase letters, digits and single hyphens, e.g. "%s".', json_encode($domain), $id));
-            }
-
-            if (!TranslationsDeclaration::mayHave($name, $domain)) {
-                throw InvalidManifestException::forPackage($name, \sprintf('"extra.quire.translations.domains" lists "%s", which is %s.', $domain, \in_array($domain, TranslationsDeclaration::SYMFONY_DOMAINS, true) ? 'one of Symfony\'s own domains' : 'reserved for Quire\'s own packages'));
-            }
+        // The declaration checks the rest itself, so one made elsewhere can't skip it
+        try {
+            return new TranslationsDeclaration($name, array_values(array_unique($domains)), $delivery, $source, $version);
+        } catch (\InvalidArgumentException $e) {
+            throw InvalidManifestException::forPackage($name, $e->getMessage());
         }
-
-        return new TranslationsDeclaration(array_values(array_unique($domains)), $delivery, $source);
     }
 
     /**

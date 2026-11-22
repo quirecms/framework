@@ -51,7 +51,7 @@ final readonly class ExtensionManifest
      */
     public function translations(): TranslationsDeclaration
     {
-        return $this->translations ?? new TranslationsDeclaration([$this->id]);
+        return $this->translations ?? new TranslationsDeclaration($this->packageName, [$this->id]);
     }
 
     /**

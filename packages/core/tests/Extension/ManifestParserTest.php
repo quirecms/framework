@@ -110,14 +110,21 @@ final class ManifestParserTest extends TestCase
     public function testReadsWhatAPackageSaysAboutItsTexts(): void
     {
         $default = $this->parse($this->package('acme/reviews'))?->translations();
-        self::assertEquals(new TranslationsDeclaration(['acme-reviews']), $default, 'English, bundled, in the domain of its ID.');
+        self::assertEquals(new TranslationsDeclaration('acme/reviews', ['acme-reviews']), $default, 'English, bundled, in the domain of its ID.');
 
         $hub = $this->parse($this->package('acme/reviews', ['extra' => ['quire' => ['translations' => ['version' => 1, 'source' => 'pt_BR', 'delivery' => 'hub', 'domains' => ['acme-reviews', 'acme-stars', 'acme-stars']]]]]))?->translations();
-        self::assertEquals(new TranslationsDeclaration(['acme-reviews', 'acme-stars'], TranslationDelivery::Hub, 'pt_BR'), $hub);
+        self::assertEquals(new TranslationsDeclaration('acme/reviews', ['acme-reviews', 'acme-stars'], TranslationDelivery::Hub, 'pt_BR'), $hub);
 
         $this->composer->addPackage('quire/comments');
         $quire = $this->parse($this->package('quire/comments', ['extra' => ['quire' => ['translations' => ['version' => 1, 'domains' => ['quire-comments']]]]]))?->translations();
         self::assertSame(['quire-comments'], $quire?->domains, 'Quire\'s own packages may have "quire-…" domains.');
+    }
+
+    public function testADeclarationMadeInCodeIsCheckedToo(): void
+    {
+        $this->expectExceptionMessageIsOrContains('lists "quire", which is reserved for Quire\'s own packages');
+
+        new TranslationsDeclaration('acme/reviews', ['quire'], TranslationDelivery::Hub);
     }
 
     public function testAcceptsAnEmptyManifestObject(): void
