@@ -111,9 +111,31 @@ final class InstalledExtensions implements ResetInterface
             $manifests[$manifest->id] = $manifest;
         }
 
+        $this->oneOwnerPerDomain($manifests);
         ksort($manifests);
 
         return $manifests;
+    }
+
+    /**
+     * A translation domain is one package's (core's "quire" is core's): two with the same one would each
+     * change the other's texts, and a language package for one would reach into the other.
+     *
+     * @param array<string, ExtensionManifest> $manifests
+     */
+    private function oneOwnerPerDomain(array $manifests): void
+    {
+        $owners = ['quire' => 'quire/core'];
+
+        foreach ($manifests as $manifest) {
+            foreach ($manifest->translations()->domains as $domain) {
+                if (isset($owners[$domain])) {
+                    throw new ExtensionDiscoveryException(\sprintf('The packages "%s" and "%s" both declare the translation domain "%s". A domain is one package\'s; change "extra.quire.translations.domains" in one of them.', $owners[$domain], $manifest->packageName, $domain));
+                }
+
+                $owners[$domain] = $manifest->packageName;
+            }
+        }
     }
 
     /**
