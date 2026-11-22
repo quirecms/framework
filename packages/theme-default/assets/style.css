@@ -856,6 +856,8 @@ a:not(.btn):active { background: var(--tint-1); }
 .browse { display: flex; flex-wrap: wrap; gap: 0.5rem 1.75rem; margin: -2.5rem 0 4rem; font-weight: 650; }
 .browse a { display: inline-flex; align-items: center; min-block-size: 44px; }
 .browse a::before { content: "↑"; margin-inline-end: 0.4rem; font-weight: 400; color: var(--muted); }
+/* alone (a preview has no Newer and Older): under its own rule */
+.browse:only-child { margin-block-start: 3rem; padding-block-start: 2rem; border-block-start: 2px solid var(--ink); }
 .browse a + a::before { content: "→"; }
 [dir="rtl"] .browse a + a::before { content: "←"; }
 

@@ -19,13 +19,17 @@
 {% set contents = headings|length >= 3 %}
 
 {# One entry of the public history #}
+{# A phrase in bold, as HTML a translated message may hold (quire_trans_html) #}
+{% macro strong(text) %}<b>{{ text }}</b>{% endmacro %}
 {% macro change(change, domain) %}<li{% if change.isCorrection() %} class="is-correction"{% endif %}><span class="type">{{ change.isCorrection() ? 'Corrected'|trans({}, domain) : 'Updated'|trans({}, domain) }}</span> <time datetime="{{ change.publishedAt|date('c') }}">{{ change.publishedAt|quire_date('long-time') }}</time>{% if change.note %}<p>{{ change.note }}</p>{% endif %}</li>{% endmacro %}
 
 {% block title %}{{ content.title }} – {{ site.title }}{% endblock %}
 
 {% block ribbon %}
     {% if preview|default(false) %}
-        <div class="ribbon ribbon--notice" role="status"><div class="container"><span class="tag">{{ 'Preview'|trans({}, domain) }}</span><p>{{ 'Preview: this isn\'t published, so only people who may see unpublished content see it.'|trans({}, 'quire') }}</p></div></div>
+        {#- Above the whole site, so it can't be taken for content; "Edit in the admin" only for those who may edit it -#}
+        {% set may_edit = quire_extension_enabled('quire-admin') and (is_granted('content.' ~ content.type ~ '.edit_any', content) or is_granted('content.' ~ content.type ~ '.edit_own', content)) %}
+        <div class="ribbon ribbon--notice" role="status"><div class="container"><span class="tag">{{ 'Preview'|trans({}, domain) }}</span><p>{{ '{not_published} so only people who may see unpublished content see it.'|quire_trans_html({not_published: _self.strong('This isn’t published,'|trans({}, domain))}, domain) }}</p>{% if may_edit %}<a href="{{ path('quire_admin_content_edit', {type: content.type, id: content.id}) }}">{{ 'Edit in the admin'|trans({}, domain) }}</a>{% endif %}</div></div>
     {% endif %}
 {% endblock %}
 
@@ -50,7 +54,7 @@
             {% endif %}
 
             {% if not is_page %}
-                <p class="kicker">{% if dated %}<time datetime="{{ content.publishedAt|date('c') }}">{{ content.publishedAt|quire_date }}</time> · {% endif %}{{ rows.reading_time(content) }}</p>
+                <p class="kicker">{% if preview|default(false) %}{{ content.publishedAt ? 'Scheduled for {date}'|trans({date: content.publishedAt|quire_date('long-time')}, domain) : 'Draft · not scheduled'|trans({}, domain) }} · {% elseif dated %}<time datetime="{{ content.publishedAt|date('c') }}">{{ content.publishedAt|quire_date }}</time> · {% endif %}{{ rows.reading_time(content) }}</p>
             {% endif %}
             {{ quire_slot('content.before_title', { content }) }}
             <h1>{{ content.title }}</h1>
@@ -128,6 +132,10 @@
             </section>
         {% endif %}
 
+        {% if not is_page and type.has('listable') and preview|default(false) %}
+            {#- A preview has no neighbours yet: only the way back to the list -#}
+            <div class="container"><p class="browse"><a href="{{ quire_listing_url(type.id) }}">{{ type.id == 'post' ? 'All posts'|trans({}, domain) : type.pluralLabel }}</a></p></div>
+        {% endif %}
         {% if not is_page and type.has('listable') and content.publishedAt and not preview|default(false) %}
             {% set newer = quire_content(type.id).locale(content.locale).newerThan(content).first() %}
             {% set older = quire_content(type.id).locale(content.locale).olderThan(content).first() %}
