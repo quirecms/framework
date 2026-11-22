@@ -86,13 +86,9 @@
                 <div class="prose">{{ body|raw }}</div>
                 {{ quire_slot('content.after_body', { content }) }}
 
-                {% if is_page and not preview|default(false) %}
-                    {% set children = quire_content(type.id).childrenOf(content) %}
-                    {% if children|length > 0 %}
-                        <section class="in-section" aria-labelledby="section-heading"><h2 id="section-heading">{{ 'In this section'|trans({}, domain) }}</h2>
-                            <ul class="section-map">{% for child in children %}<li><a href="{{ quire_url(child) }}"><h3>{{ child.title }}</h3>{% if child.excerpt %}<p>{{ child.excerpt }}</p>{% endif %}<span class="sub">{{ 'updated {date}'|trans({date: child.updatedAt|quire_date('day-month-short')}, domain) }}</span></a></li>{% endfor %}</ul>
-                        </section>
-                    {% elseif content.parentId %}
+                {% set children = is_page and not preview|default(false) ? quire_content(type.id).childrenOf(content).get() : [] %}
+                {% if is_page and not preview|default(false) and children is empty %}
+                    {% if content.parentId %}
                         {% set siblings = quire_content(type.id).siblingsOf(content) %}
                         {% set parent = ancestors|last %}
                         {% if siblings|length > 0 %}
@@ -119,6 +115,18 @@
                 </section></div>
             {% endif %}
         </div>
+
+        {% if children is not empty %}
+            {#- A parent page's map of its section, as wide as the page: each child with its line, its own sections and when it was updated, in one query for the counts -#}
+            {% set sections = quire_content(type.id).where('parent_id', 'in', children|map(child => child.id)).countBy('parent_id') %}
+            <section class="container section-index" aria-labelledby="section-heading"><h2 id="section-heading" class="visually-hidden">{{ 'In this section'|trans({}, domain) }}</h2>
+                <ul class="section-map">{% for child in children %}
+                    {%- set line = child.excerpt ?: quire_excerpt(child, 120) -%}
+                    {%- set count = sections[child.id] ?? 0 -%}
+                    <li><a href="{{ quire_url(child) }}"><h3>{{ child.title }}</h3>{% if line %}<p>{{ line }}</p>{% endif %}<span class="sub">{% if count > 0 %}{{ '{count, plural, one {# section} other {# sections}}'|trans({count: count}, domain) }} · {% endif %}{{ 'updated {date}'|trans({date: child.updatedAt|quire_date('day-month-short')}, domain) }}</span></a></li>
+                {%- endfor %}</ul>
+            </section>
+        {% endif %}
 
         {% if not is_page and type.has('listable') and content.publishedAt and not preview|default(false) %}
             {% set newer = quire_content(type.id).locale(content.locale).newerThan(content).first() %}

@@ -284,20 +284,31 @@ final class DefaultThemeTest extends ExtensionTestCase
     {
         $writer = $this->service(ContentWriter::class);
         $about = $this->publish('page', 'About', 'Us.');
-        foreach (['Venues', 'Rules'] as $title) {
-            $child = $writer->create(new CreateContent('page', $title, body: 'Text.', parentId: $about->id));
-            $writer->transition($child->id, $child->version, Status::PUBLISH, new \DateTimeImmutable('-1 hour'));
+        $children = [];
+        foreach (['Venues' => 'Four grounds, and how to get there.', 'Rules' => 'The cup\'s rules, in full.'] as $title => $body) {
+            $child = $writer->create(new CreateContent('page', $title, body: $body, parentId: $about->id));
+            $children[$title] = $writer->transition($child->id, $child->version, Status::PUBLISH, new \DateTimeImmutable('-1 hour'));
         }
+        $ground = $writer->create(new CreateContent('page', 'Harbour Arena', body: 'Text.', parentId: $children['Venues']->id));
+        $writer->transition($ground->id, $ground->version, Status::PUBLISH, new \DateTimeImmutable('-1 hour'));
 
         $crawler = $this->client->request('GET', '/about');
         self::assertSame(['Venues', 'Rules'], $crawler->filter('.section-map h3')->each(static fn (Crawler $h): string => $h->text()));
+        self::assertSame(['Four grounds, and how to get there.', 'The cup\'s rules, in full.'], $crawler->filter('.section-map p')->each(static fn (Crawler $p): string => $p->text()), 'Each child\'s line: its excerpt, or the start of its text.');
+        self::assertStringStartsWith('1 section · updated', $crawler->filter('.section-map .sub')->first()->text(), 'Venues has a section of its own.');
+        self::assertStringStartsWith('updated', $crawler->filter('.section-map .sub')->last()->text());
+        self::assertCount(0, $crawler->filter('.article-body .section-map'), 'As wide as the page, not in the text\'s column.');
+        self::assertSame('In this section', $crawler->filter('.section-index h2')->text(), 'Named for screen readers.');
         self::assertSelectorTextContains('.page-meta', 'Last updated');
 
-        $crawler = $this->client->request('GET', '/about/venues');
+        $crawler = $this->client->request('GET', '/about/rules');
         self::assertSame(['About'], $crawler->filter('nav.crumbs a')->each(static fn (Crawler $a): string => $a->text()));
-        self::assertSelectorTextSame('nav.crumbs [aria-current=page]', 'Venues');
-        self::assertSelectorTextSame('.in-section h2', 'Also in About');
-        self::assertSame(['Rules'], $crawler->filter('.in-section b')->each(static fn (Crawler $b): string => $b->text()));
+        self::assertSelectorTextSame('nav.crumbs [aria-current=page]', 'Rules');
+        self::assertSelectorTextSame('.in-section h2', 'Also in About', 'A page without sections of its own shows its siblings.');
+        self::assertSame(['Venues'], $crawler->filter('.in-section b')->each(static fn (Crawler $b): string => $b->text()));
+
+        $crawler = $this->client->request('GET', '/about/venues');
+        self::assertSame(['Harbour Arena'], $crawler->filter('.section-map h3')->each(static fn (Crawler $h): string => $h->text()), 'One with sections shows its own map.');
     }
 
     public function testTheThemeHasItsOwnErrorPages(): void

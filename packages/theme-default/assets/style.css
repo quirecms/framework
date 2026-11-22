@@ -554,7 +554,9 @@ del.change { text-decoration-color: #b42318; text-decoration-thickness: 2px; bac
 /* page meta and section map */
 .page-meta { display: flex; justify-content: center; gap: 0.5rem 1rem; flex-wrap: wrap; font-size: var(--step--1); color: var(--muted); margin: 0; }
 .page-meta a { color: var(--ink); font-weight: 650; display: inline-block; padding-block: 0.25rem; }
-.section-map { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.75rem; list-style: none; margin: 0 0 4rem; padding: 0; }
+.section-index { margin-block: 3.5rem 4rem; }
+.section-index .section-map { border-block-start: 2px solid var(--ink); padding-block-start: 2rem; }
+.section-map { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2.5rem 2.75rem; list-style: none; margin: 0; padding: 0; }
 .section-map a { color: var(--ink); text-decoration: none; display: grid; gap: 0.6rem; }
 .section-map :is(h2, h3) { font-family: var(--font-read); font-size: 1.45rem; margin: 0.4rem 0 0; }
 .section-map a:hover h2 { text-decoration: underline; text-decoration-color: var(--accent); }
