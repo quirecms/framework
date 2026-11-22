@@ -4,6 +4,11 @@
  * theme maps its own look onto the --quire-consent-* properties. Accepting and rejecting share one
  * button style, so neither is ever the call to action.
  */
+/* Every Quire stylesheet declares the same order of its layers, so a theme's rules win over an extension's base
+   styles whatever order the pages load them in, and the site's and a child theme's own CSS, unlayered, win
+   over all of them. A theme styles the banner through the --quire-consent-* properties, or its classes. */
+@layer quire-core, quire-privacy, quire-theme-default;
+@layer quire-privacy {
 :root {
     --quire-consent-background: Canvas;
     --quire-consent-text: CanvasText;
@@ -61,6 +66,24 @@ html.consent-shown body {
 .consent-dialog__heading {
     margin: 0 0 0.5rem;
     font-size: 1.125rem;
+}
+/* The heading and the button that closes the dialog (a ✕, named "Close"), on one row */
+.consent-dialog__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    gap: var(--quire-consent-gap);
+}
+.consent-dialog__close {
+    flex: none;
+    inline-size: 2.75rem;
+    block-size: 2.75rem;
+    font: inherit;
+    color: var(--quire-consent-button-text);
+    background: var(--quire-consent-button-background);
+    border: 2px solid var(--quire-consent-button-border);
+    border-radius: 50%;
+    cursor: pointer;
 }
 
 .consent__text {
@@ -267,4 +290,6 @@ html.consent-shown body {
         transform: translateY(1rem);
         opacity: 0;
     }
+}
+
 }

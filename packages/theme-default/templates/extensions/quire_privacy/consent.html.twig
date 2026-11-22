@@ -1,0 +1,5 @@
+{# quire/privacy's banner with the site's mark: it belongs to this site, not to a cookie vendor (v7). #}
+{% extends '@!quire_privacy/consent.html.twig' %}
+{% import 'partials/identity.html.twig' as identity %}
+
+{% block consent_mark %}{{ identity.monogram(site.title) }}{% endblock %}

@@ -18,12 +18,20 @@
 
 {% block title %}{{ edition ? site.title : archive_title ~ ' – ' ~ site.title }}{% endblock %}
 
+{% block ribbon %}
+    {#- The owner's empty home is theirs alone (private, no-store): it says whose it is, and where to change it -#}
+    {% if is_home|default(false) and items is empty and quire_setup_steps() and app.user %}
+        {% set who = app.user.displayName ?? app.user.userIdentifier %}
+        <div class="qd-ribbon qd-ribbon--notice" role="region" aria-label="{{ 'Only you see this'|trans({}, domain) }}"><div class="qd-container"><span class="qd-tag">{{ 'Only you see this'|quire_trans({}, domain) }}</span><p>{{ 'You’re signed in as {name}, who may change this site.'|quire_trans({name: who}, domain) }}</p>{% if quire_extension_enabled('quire-admin') %}<a href="{{ path('quire_admin_dashboard') }}">{{ 'Open the admin'|quire_trans({}, domain) }}</a>{% endif %}</div></div>
+    {% endif %}
+{% endblock %}
+
 {% block content %}
     {% if items is empty %}
         {% if is_home %}
             {{ include('partials/welcome.html.twig') }}
         {% else %}
-            <div class="container"><header class="list-head"><h1>{{ archive_title }}</h1></header><p>{{ 'Nothing here yet.'|trans({}, domain) }}</p></div>
+            <div class="qd-container"><header class="qd-list-head"><h1>{{ type.id == 'post' ? 'All posts'|quire_trans({}, domain) : type.pluralLabel }}</h1></header><p>{{ 'Nothing here yet.'|quire_trans({}, domain) }}</p></div>
         {% endif %}
     {% else %}
         {#- Each month with items, newest first: where in the list it starts, and so on which page (one query) -#}
@@ -41,28 +49,28 @@
         {% if edition %}
             {{ include('content/_edition.html.twig') }}
         {% else %}
-            <div class="container">
-                <header class="list-head">
-                    <h1>{{ archive_title }}</h1>
+            <div class="qd-container">
+                <header class="qd-list-head">
+                    <h1>{{ type.id == 'post' ? 'All posts'|quire_trans({}, domain) : type.pluralLabel }}</h1>
                     {% set newest = (items|first).publishedAt %}
                     {% set oldest = (items|last).publishedAt %}
-                    <p class="meta">{{ 'Page {page} of {count}'|trans({page: page.page, count: page.pageCount}, domain) }}{% if dated and newest and oldest %} · {{ newest|date('Y-m') == oldest|date('Y-m') ? newest|quire_date('month-year') : '{newest} to {oldest}'|trans({newest: newest|quire_date('month-year'), oldest: oldest|quire_date('month-year')}, domain) }}{% endif %}</p>
+                    <p class="qd-meta">{{ 'Page {page} of {count}'|quire_trans({page: page.page, count: page.pageCount}, domain) }}{% if dated and newest and oldest %} · {{ newest|date('Y-m') == oldest|date('Y-m') ? newest|quire_date('month-year') : '{newest} to {oldest}'|quire_trans({newest: newest|quire_date('month-year'), oldest: oldest|quire_date('month-year')}, domain) }}{% endif %}</p>
                 </header>
                 {% if dated %}
-                    <section class="earlier" aria-label="{{ archive_title }}">
+                    <section class="qd-earlier" aria-label="{{ archive_title }}">
                         {% for key in shown %}
                             {% set continued = (months[key].page ?? page.page) < page.page %}
-                            <section class="month" aria-labelledby="m-{{ key }}">
-                                <h2 class="month__head" id="m-{{ key }}">{{ date(key ~ '-15')|quire_date('month-year') }}{% if continued %} <small>{{ 'continued'|trans({}, domain) }}</small>{% endif %}</h2>
-                                <ol class="rows">{% for item in items|filter(item => item.publishedAt and item.publishedAt|date('Y-m') == key) %}{{ rows.row(item, type) }}{% endfor %}</ol>
+                            <section class="qd-month" aria-labelledby="m-{{ key }}">
+                                <h2 class="qd-month__head" id="m-{{ key }}">{{ date(key ~ '-15')|quire_date('month-year') }}{% if continued %} <small>{{ 'continued'|quire_trans({}, domain) }}</small>{% endif %}</h2>
+                                <ol class="qd-rows">{% for item in items|filter(item => item.publishedAt and item.publishedAt|date('Y-m') == key) %}{{ rows.row(item, type) }}{% endfor %}</ol>
                             </section>
                         {% endfor %}
                         {% if items|filter(item => not item.publishedAt)|length > 0 %}
-                            <ol class="rows">{% for item in items|filter(item => not item.publishedAt) %}{{ rows.row(item, type, false) }}{% endfor %}</ol>
+                            <ol class="qd-rows">{% for item in items|filter(item => not item.publishedAt) %}{{ rows.row(item, type, false) }}{% endfor %}</ol>
                         {% endif %}
                     </section>
                 {% else %}
-                    <section class="earlier no-dates" aria-label="{{ archive_title }}"><ol class="rows">{% for item in items %}{{ rows.row(item, type, false) }}{% endfor %}</ol></section>
+                    <section class="qd-earlier qd-no-dates" aria-label="{{ archive_title }}"><ol class="qd-rows">{% for item in items %}{{ rows.row(item, type, false) }}{% endfor %}</ol></section>
                 {% endif %}
                 {{ include('partials/pagination.html.twig') }}
                 {% if dated %}{{ include('partials/months.html.twig') }}{% endif %}

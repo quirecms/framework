@@ -35,50 +35,50 @@
 {#- "Jump to a month" lands on a month's heading; a month whose posts all lead or are in the week has none, so it lands here -#}
 {% set earlier_months = earlier|filter(item => item.publishedAt)|map(item => item.publishedAt|date('Y-m')) %}
 {% for key in shown|filter(key => key not in earlier_months) %}<span id="m-{{ key }}"></span>{% endfor %}
-<div class="container front">
-    <section class="lead lead--text" aria-labelledby="lead-heading">
-        <p class="kicker"><span class="accent">{{ 'Latest'|trans({}, domain) }}{% if dated and lead.publishedAt %} · <time datetime="{{ lead.publishedAt|date('c') }}">{{ lead.publishedAt|quire_date('full') }}</time>{% endif %}</span> · {{ rows.reading_time(lead) }}</p>
+<div class="qd-container qd-front">
+    <section class="qd-lead qd-lead--text" aria-labelledby="lead-heading">
+        <p class="qd-kicker"><span class="qd-accent">{{ 'Latest'|quire_trans({}, domain) }}{% if dated and lead.publishedAt %} · <time datetime="{{ lead.publishedAt|date('c') }}">{{ lead.publishedAt|quire_date('full') }}</time>{% endif %}</span> · {{ rows.reading_time(lead) }}</p>
         <h2 id="lead-heading"><a href="{{ quire_url(lead) }}">{{ lead.title }}</a></h2>
         {% set standfirst = lead.excerpt ?: quire_excerpt(lead, 220) %}
-        {% if standfirst %}<p class="standfirst">{{ standfirst }}</p>{% endif %}
-        <a class="readmore" href="{{ quire_url(lead) }}">{{ 'Read the story'|trans({}, domain) }} <span class="visually-hidden">{{ lead.title }}</span><span class="arrow" aria-hidden="true">→</span></a>
+        {% if standfirst %}<p class="qd-standfirst">{{ standfirst }}</p>{% endif %}
+        <a class="qd-readmore" href="{{ quire_url(lead) }}">{{ 'Read the story'|quire_trans({}, domain) }} <span class="visually-hidden">{{ lead.title }}</span><span class="qd-arrow" aria-hidden="true">→</span></a>
     </section>
 
     {% if week is not empty %}
         {% if dated %}
-            <section class="week" aria-labelledby="week-heading">
+            <section class="qd-week" aria-labelledby="week-heading">
                 {#- The seven days up to the lead's, said as dates: "This week" would be wrong on a site that last posted months ago -#}
-                <div class="week__head"><h2 id="week-heading">{{ '{start} – {end}'|trans({start: week_start|quire_date('day-month-short'), end: lead.publishedAt|quire_date('day-month-short')}, domain) }}</h2></div>
+                <div class="qd-week__head"><h2 id="week-heading">{{ '{start} – {end}'|quire_trans({start: week_start|quire_date('day-month-short'), end: lead.publishedAt|quire_date('day-month-short')}, domain) }}</h2></div>
                 <ol>
                     {% for day in week|map(item => item.publishedAt|date('Y-m-d'))|reduce((carry, key) => key in carry ? carry : carry|merge([key]), []) %}
                         {% set on_day = week|filter(item => item.publishedAt|date('Y-m-d') == day) %}
-                        <li class="week__day"><span class="week__date"><time datetime="{{ day }}">{{ (on_day|first).publishedAt|quire_date('weekday-day') }}</time></span><ul class="week__items">{% for item in on_day %}<li><a href="{{ quire_url(item) }}">{{ item.title }}</a></li>{% endfor %}</ul></li>
+                        <li class="qd-week__day"><span class="qd-week__date"><time datetime="{{ day }}">{{ (on_day|first).publishedAt|quire_date('weekday-day') }}</time></span><ul class="qd-week__items">{% for item in on_day %}<li><a href="{{ quire_url(item) }}">{{ item.title }}</a></li>{% endfor %}</ul></li>
                     {% endfor %}
                 </ol>
             </section>
         {% else %}
-            <section class="week week--plain" aria-labelledby="week-heading">
-                <div class="week__head"><h2 id="week-heading">{{ 'Also new'|trans({}, domain) }}</h2></div>
-                <ul class="plain-list">{% for item in week %}<li><a href="{{ quire_url(item) }}">{{ item.title }}</a><span class="when">{{ rows.reading_time(item) }}</span></li>{% endfor %}</ul>
+            <section class="qd-week qd-week--plain" aria-labelledby="week-heading">
+                <div class="qd-week__head"><h2 id="week-heading">{{ 'Also new'|quire_trans({}, domain) }}</h2></div>
+                <ul class="qd-plain-list">{% for item in week %}<li><a href="{{ quire_url(item) }}">{{ item.title }}</a><span class="qd-when">{{ rows.reading_time(item) }}</span></li>{% endfor %}</ul>
             </section>
         {% endif %}
     {% endif %}
 </div>
 
-<div class="container">
+<div class="qd-container">
     {% if earlier is not empty %}
         {% if dated %}
-            <section class="earlier" aria-labelledby="earlier-heading"><div class="section-head"><h2 id="earlier-heading">{{ 'Earlier'|trans({}, domain) }}</h2></div>
+            <section class="qd-earlier" aria-labelledby="earlier-heading"><div class="qd-section-head"><h2 id="earlier-heading">{{ 'Earlier'|quire_trans({}, domain) }}</h2></div>
                 {% for key in earlier|filter(item => item.publishedAt)|map(item => item.publishedAt|date('Y-m'))|reduce((carry, key) => key in carry ? carry : carry|merge([key]), []) %}
-                    <section class="month" aria-labelledby="m-{{ key }}">
-                        <h3 class="month__head" id="m-{{ key }}">{{ date(key ~ '-15')|quire_date('month-year') }}</h3>
-                        <ol class="rows">{% for item in earlier|filter(item => item.publishedAt and item.publishedAt|date('Y-m') == key) %}{{ rows.row(item, type) }}{% endfor %}</ol>
+                    <section class="qd-month" aria-labelledby="m-{{ key }}">
+                        <h3 class="qd-month__head" id="m-{{ key }}">{{ date(key ~ '-15')|quire_date('month-year') }}</h3>
+                        <ol class="qd-rows">{% for item in earlier|filter(item => item.publishedAt and item.publishedAt|date('Y-m') == key) %}{{ rows.row(item, type) }}{% endfor %}</ol>
                     </section>
                 {% endfor %}
             </section>
         {% else %}
-            <section class="earlier no-dates" aria-labelledby="earlier-heading"><div class="section-head"><h2 id="earlier-heading">{{ 'Earlier'|trans({}, domain) }}</h2></div>
-                <ol class="rows">{% for item in earlier %}{{ rows.row(item, type, false) }}{% endfor %}</ol>
+            <section class="qd-earlier qd-no-dates" aria-labelledby="earlier-heading"><div class="qd-section-head"><h2 id="earlier-heading">{{ 'Earlier'|quire_trans({}, domain) }}</h2></div>
+                <ol class="qd-rows">{% for item in earlier %}{{ rows.row(item, type, false) }}{% endfor %}</ol>
             </section>
         {% endif %}
     {% endif %}
@@ -86,6 +86,6 @@
         address and starts at page 1. With "listing", the list is the home page (its one address, "/"), so the
         archive goes on from page 2: page 1's posts are this edition -#}
     {% set archive_url = quire_listing_url(type.id) != quire_home_url() ? quire_listing_url(type.id) : (page.pageCount > 1 ? quire_listing_url(type.id, 2) : null) %}
-    {% if archive_url %}<p class="to-archive"><a class="btn" href="{{ archive_url }}">{{ type.id == 'post' ? 'All posts'|trans({}, domain) : type.pluralLabel }} <span class="arrow" aria-hidden="true">→</span></a></p>{% endif %}
+    {% if archive_url %}<p class="qd-to-archive"><a class="qd-btn" href="{{ archive_url }}">{{ type.id == 'post' ? 'All posts'|quire_trans({}, domain) : type.pluralLabel }} <span class="qd-arrow" aria-hidden="true">→</span></a></p>{% endif %}
     {% if dated %}{{ include('partials/months.html.twig') }}{% endif %}
 </div>

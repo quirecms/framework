@@ -6,7 +6,7 @@
 {# Minutes of reading, from the text's words at 230 a minute, at least 1 #}
 {% macro reading_time(item) -%}
     {%- set words = item.body|striptags|replace({"\n": ' ', "\t": ' '})|split(' ')|filter(word => word != '')|length -%}
-    {{- '{minutes} min read'|trans({minutes: max(1, (words / 230)|round(0, 'ceil'))}, 'quire-theme-default') -}}
+    {{- '{minutes} min read'|quire_trans({minutes: max(1, (words / 230)|round(0, 'ceil'))}, 'quire-theme-default') -}}
 {%- endmacro %}
 
 {# One item in a list, through its card (content/<type>/_card.html.twig, or content/_card.html.twig) #}

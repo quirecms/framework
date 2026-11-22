@@ -37,12 +37,22 @@ How a list shows each post is its card, `content/_card.html.twig` (a row: day, t
 {# templates/layout.html.twig of a child theme #}
 {% extends '@quire-theme-default/layout.html.twig' %}
 
-{% block brand %}<a class="brand" href="{{ quire_home_url() }}"><img src="{{ quire_asset('theme/logo.svg') }}" alt="{{ site.title }}"></a>{% endblock %}
+{% block brand %}<a class="qd-brand" href="{{ quire_home_url() }}"><img src="{{ quire_asset('theme/logo.svg') }}" alt="{{ site.title }}"></a>{% endblock %}
 
 {% block footer_base %}<p>© {{ 'now'|date('Y') }} Acme Ltd · Reg. 123</p>{{ parent() }}{% endblock %}
 ```
 
 Its templates are the reference for writing your own: each one starts with a comment listing the variables, blocks and slots it has.
+
+### What a child theme may rely on
+
+The default theme's own classes start with `qd-`, so a child theme's classes never meet its rules by accident (a child's `.lead` isn't the default theme's `.qd-lead`). Its stylesheet is in the cascade layer `quire-theme-default`, above quire/privacy's `quire-privacy`; a site's and a child theme's own CSS, outside any layer, wins over both whatever order they load in, so a child restyles with plain rules, no `!important` or long selectors. The few rules the theme marks `!important` (hidden elements, visually hidden text, reduced motion, print) stay as they are.
+
+These are the default theme's interface for children, kept from one version to the next; a test fails if one disappears. Everything else in its stylesheet is internal and may change in any release.
+
+- **Custom properties:** `--paper`, `--paper-2`, `--ink`, `--muted`, `--rule`, `--control`, `--accent`, `--on-accent`, `--notice`, `--notice-bg`, `--danger`, `--danger-bg`, `--font-read`, `--font-display`, `--font-ui`, `--font-mono`, `--measure`, `--container`, `--gutter`, `--radius`, `--band` (the accent band at the top of every page: `--band: 0` removes it).
+- **Classes:** `.qd-masthead`, `.qd-brand`, `.qd-site-nav`, `.qd-page`, `.qd-container`, `.qd-site-footer`, `.qd-prose` (the text of an item, where the renderer's markup goes), `.qd-btn`, `.qd-btn--solid`, `.qd-kicker`; and two every theme shares, `.skip-link` and `.visually-hidden`.
+- **Blocks of the layout:** `title`, `fonts` (replace it when the child brings its own fonts), `head`, `ribbon`, `header`, `brand`, `content`, `footer`, `footer_base`.
 
 ## Using a theme
 
@@ -285,6 +295,7 @@ Every template, of a theme, an extension or the site, has:
 | `quire_latest(limit)` | The latest published items of the listable types, from a cache dropped when an item is published, changed or trashed: for pages bots hit most, such as "page not found" |
 | `quire_loads_only_from_this_site()` | Whether the page loads nothing from other sites, decided by the very Content-Security-Policy Quire sends (enforced, no other hosts, schemes or report endpoints), the page's head (no cross-site `preconnect` and the like) and the active theme's templates (no address of another site): for a sentence such as "This site loads nothing from other companies", which then can't drift from what browsers do. A proxy that replaces Quire's header isn't covered |
 | `quire_setup_steps()` | The site's setup steps the person looking may take, while some aren't done (`{steps, done}`, each step's `title`, `text`, `done`, `url`, `action`), or null for visitors and once all are: for an empty home page that helps its owner start. The same list as the admin's home page. A page that shows them is the viewer's alone: private, never stored |
+| `message|quire_trans(parameters, domain)` | A theme's visible text, translated, and marked as English where the site's language has no translation of it (see [languages](#languages)) |
 | `message|quire_trans_html(parameters, domain)` | A translated message with HTML in its parameters (see [languages](#languages)) |
 
 ## What the renderer prints
@@ -396,6 +407,8 @@ The variables are listed at the top of Quire's template.
 
 **Showing a password.** The password fields of the sign-in, register and new-password pages have a "Show" button beside them, `security/_password_toggle.html.twig`, revealed by `quire/show-password.js` (a file of the site, loaded by the page, not an inline script). Without JavaScript it stays hidden, and the field is a plain password field. It says whether the password shows with `aria-pressed`, and the field is a password field again before its form is sent. Style it with `.password-toggle`, and keep `[hidden]` hidden (`[hidden] { display: none !important; }`): a `button` rule that sets `display` would otherwise show it without its script; a replacement page keeps the button (`data-quire-password-toggle`, `aria-controls` naming the field, `type="button"`) and the script. After a failed sign-in, both fields carry `aria-invalid="true"` and point to the error.
 
+Each account page puts everything it shows in the block `account`, with `account_heading` (its heading and intro, `.account-intro`) inside: a theme frames the block and keeps all of it, the form, its checks and the show-password script, as the default theme does with its card (`{% block content %}…{{ block('account') }}…{% endblock %}` in a template that extends `@Quire/security/login.html.twig`). Other classes the pages print: `.form-password` (a password field with its Show), `.form-summary` (the fields to fix, each a link), `.form-ok`, `.account-links`, `.account-actions` with `.account-action` and `.account-action--main`, and `.email` (an address or username in a sentence).
+
 The account pages work the same way, with the same classes plus `form-hint`, and can be replaced the same way: `security/register.html.twig`, `forgot_password.html.twig`, `reset_password.html.twig`, `resend_verification.html.twig`, `check_inbox.html.twig` and `link_expired.html.twig`. Each form posts its `_csrf_token` (`csrf_token('register')`, `'forgot_password'`, `'reset_password'`, `'resend_verification'`) and its fields, as Quire's templates show. So do the emails, in `templates/email/`: `layout.html.twig`, and an `.html.twig` and a `.txt.twig` for each of `verify_email`, `password_reset` and `account_exists`. Style emails inline: email clients ignore most CSS.
 
 ## Languages
@@ -406,6 +419,8 @@ Quire's pages are in the site's language (`site.locale`), and an item's page in 
 <a class="skip-link" href="#content">{{ 'Skip to content'|trans({}, 'acme-dark') }}</a>
 {{ 'Page {page} of {count}'|trans({ page: 2, count: 5 }, 'acme-dark') }}
 ```
+
+**Print a theme's visible texts with `quire_trans`.** It translates like `trans`, and when the site's language has no translation of a text, the English one it falls back to comes isolated and marked, `<bdi lang="en">…</bdi>`: screen readers read it as English, and on a right-to-left site its punctuation stays where English puts it. Write a line with a value in it as one message with a placeholder (`'Runs on {quire}'`), never as pieces side by side, which a right-to-left row would swap. In attributes and `<title>`, which can't hold markup, use `trans`.
 
 **A translation is text, never HTML.** Print it with `|trans`, which Twig escapes. When a message needs HTML in a value (a `<time>`, a link), give that value as HTML the code made, a `Markup` (e.g. from `quire_admin_when` in the admin), and print the message with `quire_trans_html`: the translation is escaped, and only those values go in as they are.
 

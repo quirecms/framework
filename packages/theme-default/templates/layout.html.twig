@@ -5,7 +5,7 @@
     the page has one, is_home on the homepage, and the variables of the page's own template.
     minimal: true on pages that must render when the site can't (the error page): no navigation, nothing
     read from the database.
-    Blocks: title, head, ribbon (above the whole site, e.g. the preview notice), header (the masthead
+    Blocks: title, fonts (the preloaded fonts), head, ribbon (above the whole site, e.g. the preview notice), header (the masthead
     whole), brand (the link home in it: monogram, name, description), content, footer (the site's footer
     whole), footer_base (its last line: copyright and "Runs on Quire"). A child theme replaces one of them
     and keeps the rest; {{ parent() }} keeps the parent's part. Variables a block sets stay in it: what
@@ -23,38 +23,41 @@
     <meta name="color-scheme" content="light dark">
     <title>{% block title %}{{ site.title }}{% endblock %}</title>
     {% if not minimal %}{{ quire_head() }}{% endif %}
-    {# The fonts of the first screen: preloaded, and never swapped in mid-read (font-display: optional) #}
+    {# The fonts of the first screen: preloaded, and never swapped in mid-read (font-display: optional). A child
+       theme with fonts of its own replaces the block, so these aren't downloaded for nothing. #}
+    {% block fonts %}
     {% for font in ['Newsreader-display-latin', 'Newsreader-text-latin', 'Inter-ui-latin'] %}
         <link rel="preload" href="{{ quire_asset('quire-theme-default/fonts/' ~ font ~ '.woff2') }}" as="font" type="font/woff2" crossorigin>
     {% endfor %}
+    {% endblock %}
     <link rel="icon" href="{{ quire_asset('quire-theme-default/favicon.svg') }}" type="image/svg+xml">
     {% block head %}{% endblock %}
     {{ quire_slot('head') }}
 </head>
-<body class="accent-{{ theme.settings.accent }}">
-    <a class="skip-link" href="#content">{{ 'Skip to content'|trans({}, domain) }}</a>
+<body class="qd-accent-{{ theme.settings.accent }}">
+    <a class="skip-link" href="#content">{{ 'Skip to content'|quire_trans({}, domain) }}</a>
     {% block ribbon %}{% endblock %}
     {{ quire_slot('body_start') }}
     {# Read once, for the header and the footer (a block's own variables don't reach the other) #}
     {% set navigation = minimal ? [] : quire_navigation() %}
 
     {% block header %}
-    <header class="masthead">
-        <div class="container masthead__main">
+    <header class="qd-masthead">
+        <div class="qd-container qd-masthead__main">
             {% block brand %}
-            <a class="brand" href="{{ quire_home_url() }}"{% if is_home|default(false) %} aria-current="page"{% endif %} aria-label="{{ '{site}, home page'|trans({site: site.title}, domain) }}">
+            <a class="qd-brand" href="{{ quire_home_url() }}"{% if is_home|default(false) %} aria-current="page"{% endif %} aria-label="{{ '{site}, home page'|trans({site: site.title}, domain) }}">
                 {{ identity.monogram(site.title) }}
-                <span><span class="brand__name">{{ site.title }}</span>{% if site.description %}<span class="brand__desc">{{ site.description }}</span>{% endif %}</span>
+                <span><span class="qd-brand__name">{{ site.title }}</span>{% if site.description %}<span class="qd-brand__desc">{{ site.description }}</span>{% endif %}</span>
             </a>
             {% endblock %}
             {% if not minimal %}
                 {% if quire_slot_filled('header.nav') or navigation|length > 0 %}
-                    <nav class="site-nav" aria-label="{{ 'Main'|trans({}, domain) }}">
+                    <nav class="qd-site-nav" aria-label="{{ 'Main'|trans({}, domain) }}">
                         {% if navigation|length > 0 %}
                             {% set shown = navigation|length > 5 ? navigation|slice(0, 4) : navigation %}
                             <ul>{% for item in shown %}<li><a href="{{ item.url }}"{% if item.current %} aria-current="{{ item.current == 'page' ? 'page' : 'true' }}"{% endif %}>{{ item.title }}</a></li>{% endfor %}</ul>
                             {% if navigation|length > 5 %}
-                                <details class="nav-more"><summary>{{ 'More'|trans({}, domain) }} <span aria-hidden="true">▾</span></summary>
+                                <details class="qd-nav-more"><summary>{{ 'More'|quire_trans({}, domain) }} <span aria-hidden="true">▾</span></summary>
                                     <ul>{% for item in navigation|slice(4) %}<li><a href="{{ item.url }}"{% if item.current %} aria-current="{{ item.current == 'page' ? 'page' : 'true' }}"{% endif %}>{{ item.title }}</a></li>{% endfor %}</ul>
                                 </details>
                             {% endif %}
@@ -67,32 +70,34 @@
     </header>
     {% endblock %}
 
-    <div class="page{{ quire_slot_filled('sidebar') ? ' has-sidebar' }}">
+    <div class="qd-page{{ quire_slot_filled('qd-sidebar') ? ' qd-has-sidebar' }}">
         <main id="content" tabindex="-1">
             {% block content %}{% endblock %}
         </main>
         {% if quire_slot_filled('sidebar') %}
-            <aside class="sidebar container" aria-label="{{ 'Sidebar'|trans({}, domain) }}">{{ quire_slot('sidebar') }}</aside>
+            <aside class="qd-sidebar qd-container" aria-label="{{ 'Sidebar'|trans({}, domain) }}">{{ quire_slot('sidebar') }}</aside>
         {% endif %}
     </div>
 
     {% block footer %}
-    <footer class="site-footer">
-        <p class="print-source container">{{ 'From {site} · {url}'|trans({site: site.title, url: site.url}, domain) }}</p>
-        <div class="container grid">
-            <div class="foot-brand">{{ identity.monogram(site.title) }}<div><b>{{ site.title }}</b>{% if site.description %}<p>{{ site.description }}</p>{% endif %}</div></div>
+    <footer class="qd-site-footer">
+        <p class="qd-print-source qd-container">{{ 'From {site} · {url}'|quire_trans({site: site.title, url: site.url}, domain) }}</p>
+        <div class="qd-container qd-grid">
+            <div class="qd-foot-brand">{{ identity.monogram(site.title) }}<div><b>{{ site.title }}</b>{% if site.description %}<p>{{ site.description }}</p>{% endif %}</div></div>
             {% if navigation|length > 0 %}
-                <div><h2>{{ 'Pages'|trans({}, domain) }}</h2><ul>{% for item in navigation %}<li><a href="{{ item.url }}">{{ item.title }}</a></li>{% endfor %}</ul></div>
+                <div><h2>{{ 'Pages'|quire_trans({}, domain) }}</h2><ul>{% for item in navigation %}<li><a href="{{ item.url }}">{{ item.title }}</a></li>{% endfor %}</ul></div>
             {% endif %}
-            <div class="foot-site"><h2>{{ 'This site'|trans({}, domain) }}</h2>
+            {% if not minimal %}
+            <div class="qd-foot-site"><h2>{{ 'This site'|quire_trans({}, domain) }}</h2>
                 {{ quire_slot('footer') }}
-                {% if not minimal %}<ul><li><a href="{{ path('quire_login') }}">{{ 'Sign in'|trans({}, domain) }}</a></li></ul>{% endif %}
+                <ul><li><a href="{{ path('quire_login') }}">{{ 'Sign in'|quire_trans({}, domain) }}</a></li></ul>
             </div>
+            {% endif %}
         </div>
-        <div class="container base">
+        <div class="qd-container qd-base">
             {% block footer_base %}
             <p>© {{ 'now'|date('Y') }} {{ site.title }}</p>
-            {% if theme.settings.show_credit ?? true %}<p class="runs">{{ 'Runs on {quire}'|quire_trans_html({quire: identity.credit()}, domain) }}</p>{% endif %}
+            {% if theme.settings.show_credit ?? true %}<p class="qd-runs">{{ 'Runs on {quire}'|quire_trans_html({quire: identity.credit()}, domain) }}</p>{% endif %}
             {% endblock %}
         </div>
     </footer>

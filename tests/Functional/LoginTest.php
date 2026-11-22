@@ -63,9 +63,9 @@ final class LoginTest extends WebTestCase
         $crawler = $this->client->request('GET', '/login');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextSame('main h1', 'Sign in');
+        self::assertSelectorTextSame('main h1', 'Sign in to Quire');
         self::assertSame('username', $crawler->filter('label[for=username] + input#username')->attr('autocomplete'));
-        self::assertSame('current-password', $crawler->filter('label[for=password] + input#password')->attr('autocomplete'));
+        self::assertSame('current-password', $crawler->filter('label[for=password] + .form-password > input#password')->attr('autocomplete'), 'The field and its "Show" together, after its label.');
         self::assertNotEmpty($crawler->filter('input[name=_csrf_token]')->attr('value'));
         self::assertSelectorTextSame('.sign-in-options a.fixture-login', 'Continue with Fixture', 'Extensions add ways to sign in.');
         self::assertStringContainsString('no-store', (string) $this->client->getResponse()->headers->get('Cache-Control'));
@@ -114,7 +114,8 @@ final class LoginTest extends WebTestCase
         self::assertSame([UserLoggingIn::class, UserLoggedIn::class], array_map(static fn (object $event): string => $event::class, $this->events));
 
         $crawler = $this->client->request('GET', '/login');
-        self::assertSelectorTextSame('main p', 'You\'re signed in as Ada.');
+        self::assertSelectorTextSame('main h1', 'You’re signed in');
+        self::assertSelectorTextSame('main .form-ok', 'As Ada, on this device.');
         $this->client->click($crawler->selectLink('Sign out')->link());
         self::assertResponseRedirects('/');
         self::assertSame('anonymous', $this->whoAmI());
@@ -129,7 +130,7 @@ final class LoginTest extends WebTestCase
             $this->signIn($username, 'wrong password');
             $crawler = $this->client->followRedirect();
 
-            self::assertSelectorTextSame('.form-error', 'Invalid credentials.', $username);
+            self::assertSelectorTextSame('.form-error', 'The email, username or password is wrong. Check them and try again.', $username);
             self::assertSame($username, $crawler->filter('input#username')->attr('value'), 'What was typed is kept.');
         }
     }
@@ -140,7 +141,7 @@ final class LoginTest extends WebTestCase
 
         $this->signIn('grace', 'wrong password');
         $this->client->followRedirect();
-        self::assertSelectorTextSame('.form-error', 'Invalid credentials.');
+        self::assertSelectorTextSame('.form-error', 'The email, username or password is wrong. Check them and try again.');
 
         $this->signIn('grace', self::PASSWORD);
         $this->client->followRedirect();
@@ -247,7 +248,7 @@ final class LoginTest extends WebTestCase
 
         $this->client->request('GET', '/login');
 
-        self::assertSelectorTextSame('main h1', 'Anmelden');
+        self::assertSelectorTextSame('main h1', 'Bei Quire anmelden');
         self::assertSelectorTextSame('label[for=username]', 'E-Mail oder Benutzername');
     }
 

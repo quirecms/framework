@@ -73,7 +73,7 @@ final class AccountPrivacyTest extends WebTestCase
             $answers[$case] = $this->client->getCrawler()->filter('#sign-in-error')->text();
         }
 
-        self::assertSame(['Invalid credentials.'], array_values(array_unique($answers)), 'The same answer for each.');
+        self::assertSame(['The email, username or password is wrong. Check them and try again.'], array_values(array_unique($answers)), 'The same answer for each.');
     }
 
     public function testRegisteringHashesThePasswordWhateverTheAddress(): void

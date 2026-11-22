@@ -7,32 +7,32 @@
 {% import 'partials/identity.html.twig' as identity %}
 {% set domain = 'quire-theme-default' %}
 {% set setup = quire_setup_steps() %}
-<div class="container welcome">
+<div class="qd-container qd-welcome">
     {% if setup %}
         {% set left = setup.steps|length - setup.done %}
         <div>
-            <p class="kicker"><span class="accent">{{ 'Your site is ready'|trans({}, domain) }}</span></p>
-            <h1>{{ '{count, plural, one {One thing to do first} other {# things to do first}}'|trans({count: left}, domain) }}</h1>
-            <p class="done-line"><span aria-hidden="true">✓</span> {{ 'Quire is installed'|trans({}, domain) }}</p>
-            <p class="lede">{{ 'This is your public site. Visitors see “Nothing here yet.” until you publish something.'|trans({}, domain) }}</p>
-            <ol class="steps">
+            <p class="qd-kicker"><span class="qd-accent">{{ 'Your site is ready'|quire_trans({}, domain) }}</span></p>
+            <h1>{{ '{count, plural, one {One thing to do first} other {# things to do first}}'|quire_trans({count: left}, domain) }}</h1>
+            <p class="qd-done-line"><span aria-hidden="true">✓</span> {{ 'Quire is installed'|quire_trans({}, domain) }}</p>
+            <p class="qd-lede">{{ 'This is your public site. Visitors see “Nothing here yet.” until you publish something.'|quire_trans({}, domain) }}</p>
+            <ol class="qd-steps">
                 {% for step in setup.steps %}
-                    <li{% if step.done %} class="done"{% endif %}><span><span class="t">{{ step.title }}{% if step.done %}<span class="visually-hidden"> ({{ 'done'|trans({}, domain) }})</span>{% endif %}</span><span class="w">{{ step.text }}</span></span>{% if step.url and not step.done %}<a href="{{ step.url }}">{{ step.action ?: step.title }}</a>{% endif %}</li>
+                    <li{% if step.done %} class="qd-done"{% endif %}><span><span class="qd-t">{{ step.title }}{% if step.done %}<span class="visually-hidden"> ({{ 'done'|quire_trans({}, domain) }})</span>{% endif %}</span><span class="qd-w">{{ step.text }}</span></span>{% if step.url and not step.done %}<a href="{{ step.url }}">{{ step.action ?: step.title }}</a>{% endif %}</li>
                 {% endfor %}
             </ol>
         </div>
-        <aside class="identity-card" aria-labelledby="identity-heading">
-            <h2 id="identity-heading">{{ 'Already yours'|trans({}, domain) }}</h2>
-            <div class="mark">{{ identity.monogram(site.title, 'lg') }}<div><b>{{ site.title }}</b><p>{{ 'A mark made from your site’s name'|trans({}, domain) }}</p></div></div>
-            <p>{{ 'Your accent color sets the mark, links, buttons and highlights everywhere. Every color is readable in light and dark.'|trans({}, domain) }}</p>
+        <aside class="qd-identity-card" aria-labelledby="identity-heading">
+            <h2 id="identity-heading">{{ 'Already yours'|quire_trans({}, domain) }}</h2>
+            <div class="qd-mark">{{ identity.monogram(site.title, 'lg') }}<div><b>{{ site.title }}</b><p>{{ 'A mark made from your site’s name'|quire_trans({}, domain) }}</p></div></div>
+            <p>{{ 'Your accent color sets the mark, links, buttons and highlights everywhere. Every color is readable in light and dark.'|quire_trans({}, domain) }}</p>
         </aside>
     {% else %}
         <div>
-            <h1>{{ 'Nothing here yet.'|trans({}, domain) }}</h1>
-            <p class="lede">{{ 'This site has just been set up. Its first posts will appear here.'|trans({}, domain) }}</p>
+            <h1>{{ 'Nothing here yet.'|quire_trans({}, domain) }}</h1>
+            <p class="qd-lede">{{ 'This site has just been set up. Its first posts will appear here.'|quire_trans({}, domain) }}</p>
         </div>
         {% set initials = identity.monogram(site.title)|striptags|trim %}
         {# The site has no id: its cover's look comes from its name's length, so it stays the same until the name changes #}
-        <div>{{ identity.cover('%04x'|format((site.title|length * 40503) % 65536), initials, 'cover--mark') }}</div>
+        <div>{{ identity.cover('%04x'|format((site.title|length * 40503) % 65536), initials, 'qd-cover--mark') }}</div>
     {% endif %}
 </div>

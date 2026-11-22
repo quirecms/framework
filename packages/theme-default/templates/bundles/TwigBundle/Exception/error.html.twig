@@ -2,7 +2,8 @@
     The page for other errors. Shown in production; development shows the error. Nothing here reads the
     database (no navigation, no posts), so it renders when the site can't.
 
-    Variables: status_code, status_text
+    Variables: status_code, status_text. A server error has a reference to quote (quire_error_reference()),
+    the same as the line it was logged with.
 #}
 {% extends 'layout.html.twig' %}
 {% import 'partials/identity.html.twig' as identity %}
@@ -12,13 +13,18 @@
 {% block title %}{{ 'Something went wrong'|trans({}, domain) }} – {{ site.title }}{% endblock %}
 
 {% block content %}
-    <div class="container status">
+    <div class="qd-container qd-status">
         {{ identity.cover('6db9', status_code|default(500)) }}
         <div>
-            <p class="kicker"><span class="accent">{{ status_code|default(500) }}</span>{% if status_text|default('') %} · {{ status_text }}{% endif %}</p>
-            <h1>{{ 'Something went wrong'|trans({}, domain) }}</h1>
-            <p class="lede">{{ 'Please try again in a moment.'|trans({}, domain) }}</p>
-            <div class="actions"><a class="btn btn--solid" href="{{ app.request ? app.request.requestUri : quire_home_url() }}">{{ 'Try again'|trans({}, domain) }}</a><a class="btn" href="{{ quire_home_url() }}">{{ 'Go to the homepage'|trans({}, domain) }}</a></div>
+            {% set code = status_code|default(500) %}
+            <p class="qd-kicker"><span class="qd-accent">{{ code }}</span> · {{ code >= 500 ? 'Server error'|quire_trans({}, domain) : status_text|default('') }}</p>
+            <h1>{{ 'Something went wrong'|quire_trans({}, domain) }}</h1>
+            <p class="qd-lede">{{ 'Please try again in a moment.'|quire_trans({}, domain) }}</p>
+            {% set reference = quire_error_reference() %}
+            {% if reference %}
+                <p class="qd-reference">{{ 'If it keeps happening, tell the site’s owner this reference:'|quire_trans({}, domain) }}<br><code>{{ reference.code }}</code> <time datetime="{{ reference.at|date('c') }}">{{ reference.at|quire_date('long-time') }}</time></p>
+            {% endif %}
+            <div class="qd-actions"><a class="qd-btn qd-btn--solid" href="{{ app.request ? app.request.requestUri : quire_home_url() }}">{{ 'Try again'|quire_trans({}, domain) }}</a><a class="qd-btn" href="{{ quire_home_url() }}">{{ 'Go to the homepage'|quire_trans({}, domain) }}</a></div>
         </div>
     </div>
 {% endblock %}

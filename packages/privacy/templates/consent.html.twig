@@ -10,7 +10,11 @@
     admin's preview, without the loader: "banner" shows the banner, "dialog" the open settings).
 
     Blocks (override them, not the whole file, with {% extends '@!quire_privacy/consent.html.twig' %}):
-    consent_heading, consent_text, consent_actions, consent_details_link, consent_dialog.
+    consent_mark (before the heading and text, empty: e.g. the site's mark), consent_heading, consent_text,
+    consent_actions, consent_details_link, consent_dialog. The heading and the texts are one element,
+    .consent__body, so a theme lays out the mark, the body and the actions side by side.
+
+    The second layer has one name everywhere: "Cookie settings" (the banner's link, the dialog, the footer).
 
     Every button that accepts and every one that rejects is the same component (consent__btn), so they
     look alike whatever the theme does. Keep both on the first layer, with names.
@@ -21,12 +25,15 @@
     : (reject == 'necessary' ? 'Necessary only'|trans({}, domain) : 'Technical cookies only'|trans({}, domain)) -%}
 <section class="consent consent--{{ layout }}" data-consent-banner aria-labelledby="quire-consent-heading"{% if preview|default(false) != 'banner' %} hidden{% endif %}>
     <div class="consent__inner">
+        {% block consent_mark %}{% endblock %}
+        <div class="consent__body">
         <h2 class="consent__heading" id="quire-consent-heading">{% block consent_heading %}{{ mode == 'single' ? ('consent.single.heading.' ~ category.value)|trans({}, domain) : 'Cookies on this site'|trans({}, domain) }}{% endblock %}</h2>
         {% block consent_text %}
             <p class="consent__text">{{ mode == 'single' ? ('consent.single.text.' ~ category.value)|trans({}, domain) : 'This site would like to use services of other companies. Nothing of theirs runs until you allow it.'|trans({}, domain) }}</p>
             <p class="consent__text consent__new" data-consent-new hidden>{{ 'New or changed since your last visit:'|trans({}, domain) }} <span data-consent-new-names></span></p>
             {% if test %}<p class="consent__text consent__test">{{ 'Test site: nothing is sent.'|trans({}, domain) }}</p>{% endif %}
         {% endblock %}
+        </div>
         <div class="consent__actions">
             {% block consent_actions %}
                 <button type="button" class="consent__btn" data-consent-accept>{{ mode == 'single' ? ('consent.single.accept.' ~ category.value)|trans({}, domain) : 'Accept all'|trans({}, domain) }}</button>
@@ -37,7 +44,7 @@
             {% endblock %}
             {% block consent_details_link %}
                 {% if mode == 'single' %}
-                    <button type="button" class="consent__link" data-consent-open>{{ 'Cookie details'|trans({}, domain) }}</button>
+                    <button type="button" class="consent__link" data-consent-open>{{ 'Cookie settings'|trans({}, domain) }}</button>
                 {% endif %}
             {% endblock %}
         </div>
@@ -46,7 +53,10 @@
 {% block consent_dialog %}
 <dialog class="consent-dialog" data-consent-dialog aria-labelledby="quire-consent-dialog-heading"{% if preview|default(false) == 'dialog' %} open{% endif %}>
     <form method="dialog" class="consent-dialog__form">
-        <h2 class="consent-dialog__heading" id="quire-consent-dialog-heading">{{ 'Cookie settings'|trans({}, domain) }}</h2>
+        <div class="consent-dialog__head">
+            <h2 class="consent-dialog__heading" id="quire-consent-dialog-heading">{{ 'Cookie settings'|trans({}, domain) }}</h2>
+            <button type="submit" class="consent-dialog__close icon-close" aria-label="{{ 'Close'|trans({}, domain) }}"><span aria-hidden="true">✕</span></button>
+        </div>
         <p>{{ 'Choose what this site may use. You can change it at any time with “Cookie settings”.'|trans({}, domain) }}</p>
         <p class="consent__signal" data-consent-signal hidden>{{ 'Your browser asks sites not to track you, so everything below stays off.'|trans({}, domain) }}</p>
         {% if test %}<p class="consent__test">{{ 'Test site: nothing is sent.'|trans({}, domain) }}</p>{% endif %}
@@ -94,11 +104,11 @@
         {% if privacy_page %}<p><a href="{{ privacy_page }}">{{ 'Privacy notice'|trans({}, domain) }}</a></p>{% endif %}
         <p class="consent-dialog__id" data-consent-id hidden>{{ 'Your choice’s ID, if you ask the site what you agreed to:'|trans({}, domain) }} <code></code></p>
 
-        <div class="consent__actions">
-            <button type="button" class="consent__btn" data-consent-save>{{ 'Save my choices'|trans({}, domain) }}</button>
+        {#- Accept first and reject second, as on the banner; closing is the ✕ above -#}
+        <div class="consent__actions consent-dialog__actions">
             <button type="button" class="consent__btn" data-consent-accept>{{ 'Accept all'|trans({}, domain) }}</button>
             <button type="button" class="consent__btn" data-consent-reject>{{ reject == 'reject' ? 'Reject all'|trans({}, domain) : reject_label }}</button>
-            <button type="submit" class="consent__link">{{ 'Close'|trans({}, domain) }}</button>
+            <button type="button" class="consent__btn" data-consent-save>{{ 'Save my choices'|trans({}, domain) }}</button>
         </div>
     </form>
 </dialog>

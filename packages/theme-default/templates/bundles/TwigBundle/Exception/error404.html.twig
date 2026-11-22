@@ -12,19 +12,19 @@
 
 {% block content %}
     {% set latest = quire_latest(3) %}
-    <div class="container status status--404">
+    <div class="qd-container qd-status qd-status--404">
         <div>
-            <p class="kicker"><span class="accent">404</span></p>
-            <h1>{{ 'Page not found'|trans({}, domain) }}</h1>
-            <p class="lede-sm">{{ 'There’s nothing at {path}.'|quire_trans_html({path: identity.asked(app.request ? app.request.pathInfo : '')}, domain) }}</p>
+            <p class="qd-kicker"><span class="qd-accent">404</span></p>
+            <h1>{{ 'Page not found'|quire_trans({}, domain) }}</h1>
+            <p class="qd-lede-sm">{{ 'There’s nothing at {path}.'|quire_trans_html({path: identity.asked(app.request ? app.request.pathInfo : '')}, domain) }}</p>
             {% if quire_slot_filled('error404.suggestions') %}{{ quire_slot('error404.suggestions', {path: app.request ? app.request.pathInfo : ''}) }}{% endif %}
-            <div class="actions">{% if latest is not empty and (latest|first).type == 'post' %}<a class="btn" href="{{ quire_listing_url('post') }}">{{ 'All posts'|trans({}, domain) }}</a>{% endif %}<a class="btn" href="{{ quire_home_url() }}">{{ 'Go to the homepage'|trans({}, domain) }}</a></div>
+            <div class="qd-actions">{% if latest is not empty and (latest|first).type == 'post' %}<a class="qd-btn" href="{{ quire_listing_url('post') }}">{{ 'All posts'|quire_trans({}, domain) }}</a>{% endif %}<a class="qd-btn" href="{{ quire_home_url() }}">{{ 'Go to the homepage'|quire_trans({}, domain) }}</a></div>
         </div>
         {{ identity.cover('2d1e', '404') }}
     </div>
     {% if latest is not empty %}
-        <div class="container"><div class="section-head"><h2>{{ 'Latest posts'|trans({}, domain) }}</h2></div>
-            <div class="earlier earlier--dated"><ol class="rows">{% for item in latest %}{{ rows.row(item, null, theme.settings.show_dates, true) }}{% endfor %}</ol></div>
+        <div class="qd-container"><div class="qd-section-head"><h2>{{ 'Latest posts'|quire_trans({}, domain) }}</h2></div>
+            <div class="qd-earlier qd-earlier--dated"><ol class="qd-rows">{% for item in latest %}{{ rows.row(item, null, theme.settings.show_dates, true) }}{% endfor %}</ol></div>
         </div>
     {% endif %}
 {% endblock %}

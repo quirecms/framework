@@ -1,0 +1,6 @@
+{# Core's page (@Quire/security/check_inbox.html.twig) in the default theme's card, with an envelope above its heading. #}
+{% extends '@Quire/security/check_inbox.html.twig' %}
+
+{% block content %}{{ include('partials/account.html.twig', {body: block('account')}) }}{% endblock %}
+
+{% block account_heading %}<svg class="qd-big-mark" viewBox="0 0 48 48" width="48" height="48" aria-hidden="true" focusable="false"><rect x="5" y="11" width="38" height="26" rx="4" fill="none" stroke="currentColor" stroke-width="3"/><path d="M7 14l17 12 17-12" fill="none" stroke="currentColor" stroke-width="3"/></svg>{{ parent() }}{% endblock %}

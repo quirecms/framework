@@ -288,6 +288,10 @@ await check('a first visit shows the banner, keeps room for it, and the page has
     expect(await page.locator('.consent__opener').isVisible(), 'The "Cookie settings" opener isn\'t shown.');
     const buttons = await banner.locator('.consent__btn').evaluateAll((elements) => elements.map((e) => { const s = getComputedStyle(e); return [e.offsetWidth, s.backgroundColor, s.color, s.fontWeight, s.borderTopWidth].join(' '); }));
     expect(buttons.length === 2 && buttons[0] === buttons[1], `Accepting and rejecting don't look the same: ${buttons.join(' | ')}`);
+    // The theme's look wins over the banner's base styles, whatever order the pages load them in: both are in
+    // ordered cascade layers (quire-privacy under quire-theme-default). The default theme draws pills.
+    const radius = await banner.locator('.consent__btn').first().evaluate((e) => getComputedStyle(e).borderTopLeftRadius);
+    expect(parseFloat(radius) > 100, `The theme's buttons lost to the banner's base styles (border radius ${radius}).`);
     expect(errors.length === 0, errors.join('; '));
     await context.close();
 });

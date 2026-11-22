@@ -1,0 +1,6 @@
+{# Core's page (@Quire/security/link_expired.html.twig) in the default theme's card, with a clock above its heading. #}
+{% extends '@Quire/security/link_expired.html.twig' %}
+
+{% block content %}{{ include('partials/account.html.twig', {body: block('account')}) }}{% endblock %}
+
+{% block account_heading %}<svg class="qd-big-mark" viewBox="0 0 48 48" width="48" height="48" aria-hidden="true" focusable="false"><circle cx="24" cy="24" r="18" fill="none" stroke="currentColor" stroke-width="3"/><path d="M24 13v12l8 5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>{{ parent() }}{% endblock %}

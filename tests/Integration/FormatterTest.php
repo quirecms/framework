@@ -276,6 +276,18 @@ final class FormatterTest extends KernelTestCase
         self::assertSame('Results Two goals.', $renderer->excerpt($item), 'No "#" beside the heading, no note, no "Note 1".');
     }
 
+    public function testAnExcerptIsTheProseNotTheTablesCodeOrImageLinks(): void
+    {
+        $renderer = self::getContainer()->get(\Quire\Content\ContentRenderer::class);
+        $item = static fn (string $body): \Quire\Content\Content => new \Quire\Content\Content('01a1ef40-0000-7000-8000-000000000002', 'post', 'published', 'en', null, 'T', 't', '/t', null, 0, null, $body, 'markdown', [], null, 1, new \DateTimeImmutable(), new \DateTimeImmutable(), new \DateTimeImmutable(), null);
+
+        self::assertSame('The groups after round 3. Westgate lead.', $renderer->excerpt($item("The groups after round 3.\n\n| Team | Pts |\n|---|---|\n| Westgate | 9 |\n| Ashford | 3 |\n\nWestgate lead.")), 'Not "Team Pts Westgate 9 Ashford 3".');
+        self::assertSame('Photos from the opening. It seats 2,000.', $renderer->excerpt($item("Photos from the opening.\n\n![The new stand](https://images.example.org/stand.jpg)\n\nIt seats 2,000.")), 'Not "View the image on images.example.org".');
+        self::assertSame('Here is the new stand from the pitch.', $renderer->excerpt($item('Here is ![the new stand](https://images.example.org/stand.jpg) from the pitch.')), 'An image within a sentence keeps its description.');
+        self::assertSame('Run it:', $renderer->excerpt($item("Run it:\n\n```sh\nbin/console quire:about\n```")), 'No code.');
+        self::assertSame('Team Pts Westgate 9', $renderer->excerpt($item("| Team | Pts |\n|---|---|\n| Westgate | 9 |")), 'A table alone still says something.');
+    }
+
     public function testTaskListBoxesAreAStateNamedInTheItemsLanguage(): void
     {
         $html = $this->markdown("- [x] Tickets on sale\n- [ ] Group D venue");
