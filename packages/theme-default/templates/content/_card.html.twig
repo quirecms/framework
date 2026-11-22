@@ -9,12 +9,12 @@
 #}
 {% set dated = (dated ?? (type.has('scheduling') and theme.settings.show_dates)) and item.publishedAt %}
 {% set excerpt = item.excerpt ?: quire_excerpt(item, 160) %}
-{% if not (in_list ?? false) %}<ol class="rows">{% endif %}
-<li class="row{{ dated ? '' : ' row--undated' }}">
-    {% if dated %}<p class="daynum" aria-hidden="true">{{ item.publishedAt|quire_date('day') }}{% if with_month ?? false %}<small>{{ item.publishedAt|quire_date('month') }}</small>{% endif %}</p>{% endif %}
+{% if not (in_list ?? false) %}<ol class="qd-rows">{% endif %}
+<li class="qd-row{{ dated ? '' : ' qd-row--undated' }}">
+    {% if dated %}<p class="qd-daynum" aria-hidden="true">{{ item.publishedAt|quire_date('day') }}{% if with_month ?? false %}<small>{{ item.publishedAt|quire_date('month') }}</small>{% endif %}</p>{% endif %}
     <div>
         <h3><a href="{{ quire_url(item) }}">{{ item.title }}</a></h3>
-        {% if excerpt %}<p class="ex">{{ excerpt }}</p>{% endif %}
+        {% if excerpt %}<p class="qd-ex">{{ excerpt }}</p>{% endif %}
         {% if dated %}<p class="visually-hidden"><time datetime="{{ item.publishedAt|date('c') }}">{{ item.publishedAt|quire_date }}</time></p>{% endif %}
     </div>
     <span></span>

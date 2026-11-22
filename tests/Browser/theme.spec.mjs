@@ -27,7 +27,7 @@ for (const [name, path] of Object.entries(screens)) {
 
         await expect(page).toHaveScreenshot(`${name}.png`, {
             fullPage: true,
-            mask: [page.locator('time, .daynum, .week, .kicker, .month__head, nav.months, .list-head .meta, .history, .byline, .page-meta, nav.crumbs, .browse, .section-map .sub, .site-footer .base, .rows')],
+            mask: [page.locator('time, .qd-daynum, .qd-week, .qd-kicker, .qd-month__head, nav.qd-months, .qd-list-head .qd-meta, .qd-history, .qd-byline, .qd-page-meta, nav.qd-crumbs, .qd-browse, .qd-section-map .qd-sub, .qd-site-footer .qd-base, .qd-rows')],
             stylePath: new URL('./screenshot.css', import.meta.url).pathname,
         });
     });

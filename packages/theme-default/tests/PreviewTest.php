@@ -33,12 +33,12 @@ final class PreviewTest extends ExtensionTestCase
         $crawler = $this->client->request('GET', '/blog/not-yet');
 
         self::assertResponseIsSuccessful();
-        self::assertSame('This isn’t published, so only people who may see unpublished content see it.', $crawler->filter('.ribbon--notice p')->text());
-        self::assertSame('This isn’t published,', $crawler->filter('.ribbon--notice p b')->text(), 'The lead in bold, as designed.');
-        self::assertCount(1, $crawler->filterXPath('//*[contains(@class, "ribbon--notice")]/following::header[contains(@class, "masthead")]'), 'Above the whole site, so it can\'t be taken for content.');
-        self::assertSame('/admin/content/post/'.$draft->id, $crawler->filter('.ribbon--notice a')->attr('href'));
-        self::assertStringStartsWith('Draft · not scheduled ·', $crawler->filter('main .kicker')->text());
-        self::assertSame('All posts', $crawler->filter('.browse a')->text(), 'The way back to the list, as on a published post.');
+        self::assertSame('This isn’t published, so only people who may see unpublished content see it.', $crawler->filter('.qd-ribbon--notice p')->text());
+        self::assertSame('This isn’t published,', $crawler->filter('.qd-ribbon--notice p b')->text(), 'The lead in bold, as designed.');
+        self::assertCount(1, $crawler->filterXPath('//*[contains(@class, "qd-ribbon--notice")]/following::header[contains(@class, "qd-masthead")]'), 'Above the whole site, so it can\'t be taken for content.');
+        self::assertSame('/admin/content/post/'.$draft->id, $crawler->filter('.qd-ribbon--notice a')->attr('href'));
+        self::assertStringStartsWith('Draft · not scheduled ·', $crawler->filter('main .qd-kicker')->text());
+        self::assertSame('All posts', $crawler->filter('.qd-browse a')->text(), 'The way back to the list, as on a published post.');
     }
 
     public function testWhoMayOnlyPreviewIsNotOfferedToEdit(): void
@@ -50,8 +50,8 @@ final class PreviewTest extends ExtensionTestCase
         $crawler = $this->client->request('GET', '/blog/not-yet');
 
         self::assertResponseIsSuccessful();
-        self::assertCount(1, $crawler->filter('.ribbon--notice'));
-        self::assertCount(0, $crawler->filter('.ribbon--notice a'), 'No link to what they may not do.');
+        self::assertCount(1, $crawler->filter('.qd-ribbon--notice'));
+        self::assertCount(0, $crawler->filter('.qd-ribbon--notice a'), 'No link to what they may not do.');
 
         $this->client->request('GET', '/logout');
         $this->client->getCookieJar()->clear();
@@ -68,23 +68,23 @@ final class PreviewTest extends ExtensionTestCase
         $this->client->loginUser($this->user('editor', ['editor']));
         $crawler = $this->client->request('GET', '/blog/next-week');
 
-        self::assertStringStartsWith('Scheduled for March 4, 2030', $crawler->filter('main .kicker')->text());
+        self::assertStringStartsWith('Scheduled for March 4, 2030', $crawler->filter('main .qd-kicker')->text());
     }
 
     public function testTheOwnersEmptyHomeSaysWhoseItIs(): void
     {
         $crawler = $this->client->request('GET', '/');
-        self::assertCount(0, $crawler->filter('.ribbon--notice'), 'A visitor gets the calm empty home.');
-        self::assertCount(0, $crawler->filter('ol.steps'));
+        self::assertCount(0, $crawler->filter('.qd-ribbon--notice'), 'A visitor gets the calm empty home.');
+        self::assertCount(0, $crawler->filter('ol.qd-steps'));
 
         $this->client->loginUser($this->user('ada', ['admin']));
         $crawler = $this->client->request('GET', '/');
 
-        self::assertSame('Only you see this', $crawler->filter('.ribbon--notice .tag')->text());
-        self::assertSame('You’re signed in as Ada, who may change this site.', $crawler->filter('.ribbon--notice p')->text());
-        self::assertSame('/admin', $crawler->filter('.ribbon--notice a')->attr('href'));
-        self::assertGreaterThan(0, $crawler->filter('ol.steps li')->count(), 'The steps, ticked from the site\'s state.');
-        self::assertSame('Already yours', $crawler->filter('.identity-card h2')->text());
+        self::assertSame('Only you see this', $crawler->filter('.qd-ribbon--notice .qd-tag')->text());
+        self::assertSame('You’re signed in as Ada, who may change this site.', $crawler->filter('.qd-ribbon--notice p')->text());
+        self::assertSame('/admin', $crawler->filter('.qd-ribbon--notice a')->attr('href'));
+        self::assertGreaterThan(0, $crawler->filter('ol.qd-steps li')->count(), 'The steps, ticked from the site\'s state.');
+        self::assertSame('Already yours', $crawler->filter('.qd-identity-card h2')->text());
     }
 
     /**

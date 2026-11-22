@@ -39,7 +39,7 @@ final class AccountPagesTest extends ExtensionTestCase
     public function testTheSignInFormIsCoresInTheThemesCard(): void
     {
         $crawler = $this->client->request('GET', '/login');
-        $form = $crawler->filter('.auth--card .auth__form form.form');
+        $form = $crawler->filter('.qd-auth--card .qd-auth__form form.form');
 
         self::assertCount(1, $form, 'Core\'s form, in the card.');
         self::assertSame('username', $form->filter('input[name=_username]')->attr('autocomplete'));
@@ -47,15 +47,15 @@ final class AccountPagesTest extends ExtensionTestCase
         self::assertSame('password', $form->filter('.form-password .password-toggle')->attr('aria-controls'), 'The field and its "Show".');
         self::assertNotSame('', (string) $form->filter('input[type=hidden][name=_csrf_token]')->attr('value'));
         self::assertCount(1, $form->filter('input[name=_remember_me]'));
-        self::assertSame(['Forgot your password?', 'Create an account'], $crawler->filter('.auth__form .account-links a')->each(static fn (Crawler $a): string => $a->text()));
-        self::assertCount(1, $crawler->filter('.auth__form script[src*="show-password"]'), 'Core\'s script comes with its block.');
-        self::assertSame('Sign in to Quire', $crawler->filter('.auth__form h1')->text());
+        self::assertSame(['Forgot your password?', 'Create an account'], $crawler->filter('.qd-auth__form .account-links a')->each(static fn (Crawler $a): string => $a->text()));
+        self::assertCount(1, $crawler->filter('.qd-auth__form script[src*="show-password"]'), 'Core\'s script comes with its block.');
+        self::assertSame('Sign in to Quire', $crawler->filter('.qd-auth__form h1')->text());
     }
 
     public function testTheRegistrationFormKeepsItsHoneypotAndChecks(): void
     {
         $crawler = $this->client->request('GET', '/register');
-        $form = $crawler->filter('.auth__form form.form');
+        $form = $crawler->filter('.qd-auth__form form.form');
 
         self::assertSame(['name', 'email', 'new-password'], $form->filter('input[name=name], input[name=email], input[name=password]')->each(static fn (Crawler $i): string => (string) $i->attr('autocomplete')));
         self::assertSame('8', $form->filter('input[name=password]')->attr('minlength'));

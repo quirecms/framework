@@ -39,10 +39,10 @@ final class ThemingTest extends TestCase
     {
         [$post, $home] = $this->pages($theme);
 
-        self::assertSame('Thanks for reading "Hello world"', $post->filter('article.entry .fixture-after-body')->text(), 'The fixture extension\'s fragment, after the body.');
-        self::assertSame('Like "Hello world"', $post->filter('article.entry .fixture-likes')->text(), 'And its second fragment, by priority.');
+        self::assertSame('Thanks for reading "Hello world"', $post->filter('article.qd-entry .fixture-after-body')->text(), 'The fixture extension\'s fragment, after the body.');
+        self::assertSame('Like "Hello world"', $post->filter('article.qd-entry .fixture-likes')->text(), 'And its second fragment, by priority.');
         self::assertCount(1, $post->filter('.skip-link'), 'The default theme\'s layout.');
-        self::assertCount(1, $home->filter('main .lead'), 'The default theme\'s list: the newest post leads.');
+        self::assertCount(1, $home->filter('main .qd-lead'), 'The default theme\'s list: the newest post leads.');
     }
 
     public function testTheChildThemeOverridesOneTemplate(): void
@@ -59,12 +59,12 @@ final class ThemingTest extends TestCase
     {
         [$post] = $this->pages('quire-fixture-default-blocks', withPage: true);
 
-        self::assertSame('Acme Ltd', $post->filter('header.masthead .fixture-brand')->text(), 'Its own brand, in the default theme\'s masthead.');
-        self::assertCount(0, $post->filter('.brand'), 'Instead of the default one.');
-        self::assertSame(['About'], $post->filter('header .site-nav a')->each(static fn (Crawler $link): string => $link->text()), 'The navigation stays.');
-        self::assertSame(['About'], $post->filter('footer .grid a[href="/about"]')->each(static fn (Crawler $link): string => $link->text()), 'And so does the footer\'s, which reads the same navigation.');
-        self::assertSame('© Acme Ltd · Reg. 123', $post->filter('footer .base .fixture-legal')->text(), 'Its own footer line.');
-        self::assertCount(1, $post->filter('footer .base .runs'), 'With the parent\'s through parent().');
+        self::assertSame('Acme Ltd', $post->filter('header.qd-masthead .fixture-brand')->text(), 'Its own brand, in the default theme\'s masthead.');
+        self::assertCount(0, $post->filter('.qd-brand'), 'Instead of the default one.');
+        self::assertSame(['About'], $post->filter('header .qd-site-nav a')->each(static fn (Crawler $link): string => $link->text()), 'The navigation stays.');
+        self::assertSame(['About'], $post->filter('footer .qd-grid a[href="/about"]')->each(static fn (Crawler $link): string => $link->text()), 'And so does the footer\'s, which reads the same navigation.');
+        self::assertSame('© Acme Ltd · Reg. 123', $post->filter('footer .qd-base .fixture-legal')->text(), 'Its own footer line.');
+        self::assertCount(1, $post->filter('footer .qd-base .qd-runs'), 'With the parent\'s through parent().');
         self::assertCount(1, $post->filter('.skip-link'), 'The rest is the default theme\'s.');
     }
 

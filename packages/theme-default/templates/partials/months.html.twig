@@ -11,20 +11,20 @@
 {% set domain = 'quire-theme-default' %}
 {% if months|length > 1 %}
     {%- set this_year = (shown|first ?: months|keys|first)|slice(0, 4) -%}
-    <nav class="months" aria-labelledby="months-heading"><h2 id="months-heading">{{ 'Jump to a month'|quire_trans({}, domain) }}</h2><ol>
+    <nav class="qd-months" aria-labelledby="months-heading"><h2 id="months-heading">{{ 'Jump to a month'|quire_trans({}, domain) }}</h2><ol>
         {%- set year = null -%}
         {%- for key, month in months -%}
             {%- set first = date(key ~ '-15') -%}
             {%- set month_year = key|slice(0, 4) -%}
             {%- if month_year == this_year -%}
-                {%- if year != this_year %}<li class="yr">{{ this_year }}</li>{% endif -%}
+                {%- if year != this_year %}<li class="qd-yr">{{ this_year }}</li>{% endif -%}
                 {%- set here = key in shown -%}
                 <li><a href="{{ quire_listing_url(type.id, month.page) }}#m-{{ key }}"{% if here %} aria-current="true"{% endif %} aria-label="{{ here ? '{month}, on this page'|trans({month: first|quire_date('month-year')}, domain) : first|quire_date('month-year') }}">{{ first|quire_date('month') }}</a></li>
             {%- elseif year != month_year -%}
                 {#- Another year: one link, to its newest month -#}
-                <li><a class="yr-link" href="{{ quire_listing_url(type.id, month.page) }}#m-{{ key }}" aria-label="{{ 'All of {year}'|trans({year: month_year}, domain) }}">{{ month_year }}</a></li>
+                <li><a class="qd-yr-link" href="{{ quire_listing_url(type.id, month.page) }}#m-{{ key }}" aria-label="{{ 'All of {year}'|trans({year: month_year}, domain) }}">{{ month_year }}</a></li>
             {%- endif -%}
             {%- set year = month_year -%}
         {%- endfor -%}
-    </ol>{% if shown is not empty %}<p class="months__legend"><span class="months__key" aria-hidden="true"></span>{{ 'On this page'|quire_trans({}, domain) }}</p>{% endif %}</nav>
+    </ol>{% if shown is not empty %}<p class="qd-months__legend"><span class="qd-months__key" aria-hidden="true"></span>{{ 'On this page'|quire_trans({}, domain) }}</p>{% endif %}</nav>
 {% endif %}
