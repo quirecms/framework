@@ -20,6 +20,13 @@ final class ManifestParser
     /** IDs that are core's: its assets are mapped as "quire/…", next to each extension's "<id>/…" */
     private const array RESERVED_IDS = ['quire', 'core'];
 
+    /**
+     * Names core and the admin use under an extension's ID elsewhere: the activity log's actions and their
+     * texts ("user.created", "audit.origin.web") and the groups of settings ("site"). An extension's own
+     * actions and group are described from its own texts, so one named like these would word core's.
+     */
+    public const array CORE_NAMESPACES = ['appearance', 'area', 'content', 'detail', 'extension', 'mail', 'origin', 'permalinks', 'role', 'setting', 'site', 'storage', 'theme', 'user', 'users', 'via'];
+
     private const array KNOWN_KEYS = ['id', 'title', 'description', 'category', 'icon', 'requires', 'optional', 'theme', 'importmap'];
 
     /** An npm package, optionally with a file inside it: "@hotwired/turbo", "bootstrap/dist/css/bootstrap.min.css" */
@@ -63,6 +70,10 @@ final class ManifestParser
         // Core's own: its assets are "quire/…", its template namespace "@Quire", its settings "quire.…"
         if (\in_array($id, self::RESERVED_IDS, true)) {
             throw InvalidManifestException::forPackage($name, \sprintf('"%s" is Quire\'s own name, which no extension or theme may take: set "extra.quire.id" to another, e.g. "%s-extension".', $id, $id));
+        }
+
+        if (\in_array($id, self::CORE_NAMESPACES, true)) {
+            throw InvalidManifestException::forPackage($name, \sprintf('"%s" is a name core uses for its own activity and settings, which no extension or theme may take: set "extra.quire.id" to another, e.g. "%s".', $id, self::idFromPackageName($name)));
         }
 
         $requires = $this->idList($name, $manifest, 'requires', $id);

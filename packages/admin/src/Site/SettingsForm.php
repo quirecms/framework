@@ -95,7 +95,7 @@ final readonly class SettingsForm
 
         foreach ($this->definitions() as $definition) {
             $group = $this->group($definition);
-            $groups[$group] ??= $this->groupLabel($group, $definition->owner);
+            $groups[$group] ??= $this->groupLabel($group);
         }
 
         uksort($groups, static function (string $a, string $b) use ($groups): int {
@@ -379,13 +379,14 @@ final readonly class SettingsForm
     }
 
     /**
-     * An extension's own group (named after it) takes its title from the extension's texts, as its settings'
-     * labels do; the groups core and the admin define, from the admin's.
+     * A group named after an installed extension takes its title from the extension's texts, as its settings'
+     * labels do; the groups core and the admin define, from the admin's. (By the group's name, not by whose
+     * setting comes first; core's names are no extension's, see ManifestParser::CORE_NAMESPACES.).
      */
-    private function groupLabel(string $group, string $owner): string
+    private function groupLabel(string $group): string
     {
         $key = 'settings.group.'.$group;
-        $label = $this->translator->trans($key, [], $group === $owner ? $owner : 'quire-admin');
+        $label = $this->translator->trans($key, [], $this->installed->has($group) ? $group : 'quire-admin');
 
         return $label !== $key ? $label : ucfirst(str_replace(['-', '_'], ' ', $group));
     }

@@ -6,6 +6,8 @@ namespace Quire\Tests\Architecture;
 
 use PHPUnit\Framework\TestCase;
 use Quire\Extension\ManifestParser;
+use Symfony\Component\Finder\Finder;
+use Symfony\Component\Yaml\Yaml;
 
 /**
  * ADR-0009 (D-52): one translation domain per package, and a package's translations/ holds only its own.
@@ -43,6 +45,34 @@ final class TranslationDomainsTest extends TestCase
 
         self::assertGreaterThan(10, $checked, 'The packages\' catalogues were found.');
         self::assertSame([], $wrong);
+    }
+
+    /**
+     * An extension's actions in the activity log, and a group of settings named after it, are described from
+     * its own texts. So the names core uses there are no extension's ID: an extension called "user" would
+     * otherwise word core's "user.…" entries.
+     */
+    public function testTheNamesCoreDescribesInTheAdminAreNoExtensionsId(): void
+    {
+        $root = \dirname(__DIR__, 2);
+        /** @var array<string, string> $admin */
+        $admin = Yaml::parseFile($root.'/packages/admin/translations/quire-admin+intl-icu.en.yaml');
+        $names = [];
+
+        foreach (array_keys($admin) as $key) {
+            if (1 === preg_match('/^audit\.([a-z0-9-]+)\./', $key, $m) || 1 === preg_match('/^settings\.group\.([a-z0-9-]+)$/', $key, $m)) {
+                $names[$m[1]] = true;
+            }
+        }
+
+        // And the actions core and the admin record, described or not
+        foreach (new Finder()->files()->in([$root.'/packages/core/src', $root.'/packages/admin/src'])->name('*.php') as $file) {
+            preg_match_all('/->record\(\s*\'([a-z0-9-]+)\./', $file->getContents(), $found);
+            $names += array_fill_keys($found[1], true);
+        }
+
+        self::assertGreaterThan(10, \count($names), 'The names were found.');
+        self::assertSame([], array_values(array_diff(array_keys($names), ManifestParser::CORE_NAMESPACES)));
     }
 
     public function testADomainIsAPackagesIdAndQuireIsCores(): void
