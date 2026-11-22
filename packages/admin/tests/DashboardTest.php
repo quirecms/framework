@@ -140,4 +140,16 @@ final class DashboardTest extends AdminTestCase
         self::assertSelectorTextSame('.home-week h2', 'Diese Woche');
         self::assertSelectorTextSame('.q-skip', 'Zum Inhalt springen');
     }
+
+    public function testTheAdminIsInMacedonianToo(): void
+    {
+        $this->signIn('editor');
+        $this->setSetting('site.locale', 'mk');
+        $this->content('post', 'Здраво')->published()->create();
+        $this->client->request('GET', '/admin');
+
+        self::assertMatchesRegularExpression('/^(Добро утро|Добар ден|Добра вечер), Editor$/u', $this->client->getCrawler()->filter('main h1')->text());
+        self::assertSelectorTextSame('.home-week h2', 'Оваа недела');
+        self::assertSelectorTextSame('.q-skip', 'Прескокни до содржината');
+    }
 }
