@@ -245,6 +245,22 @@
                     }
                 }
             }
+        },
+        {
+            "name": "quire/fixture-theme-default-blocks",
+            "version": "1.0.0.0",
+            "pretty_version": "1.0.0",
+            "type": "quire-theme",
+            "install-path": "themes/default-blocks",
+            "description": "Test theme that replaces blocks of the default theme's layout",
+            "extra": {
+                "quire": {
+                    "id": "quire-fixture-default-blocks",
+                    "theme": {
+                        "parent": "quire-theme-default"
+                    }
+                }
+            }
         }
     ],
     "dev": true,

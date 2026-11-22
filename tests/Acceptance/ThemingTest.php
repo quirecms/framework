@@ -31,6 +31,7 @@ final class ThemingTest extends TestCase
     {
         yield 'the default theme' => ['quire-theme-default'];
         yield 'a child of the default theme' => ['quire-fixture-default-child'];
+        yield 'a child that replaces blocks of its layout' => ['quire-fixture-default-blocks'];
     }
 
     #[DataProvider('provideThemes')]
@@ -54,6 +55,19 @@ final class ThemingTest extends TestCase
         self::assertSame($defaultHome->filter('main')->html(), $childHome->filter('main')->html(), 'Everything else is the default theme\'s.');
     }
 
+    public function testAChildReplacesPartsOfTheLayoutAndKeepsTheRest(): void
+    {
+        [$post] = $this->pages('quire-fixture-default-blocks', withPage: true);
+
+        self::assertSame('Acme Ltd', $post->filter('header.masthead .fixture-brand')->text(), 'Its own brand, in the default theme\'s masthead.');
+        self::assertCount(0, $post->filter('.brand'), 'Instead of the default one.');
+        self::assertSame(['About'], $post->filter('header .site-nav a')->each(static fn (Crawler $link): string => $link->text()), 'The navigation stays.');
+        self::assertSame(['About'], $post->filter('footer .grid a[href="/about"]')->each(static fn (Crawler $link): string => $link->text()), 'And so does the footer\'s, which reads the same navigation.');
+        self::assertSame('© Acme Ltd · Reg. 123', $post->filter('footer .base .fixture-legal')->text(), 'Its own footer line.');
+        self::assertCount(1, $post->filter('footer .base .runs'), 'With the parent\'s through parent().');
+        self::assertCount(1, $post->filter('.skip-link'), 'The rest is the default theme\'s.');
+    }
+
     #[DataProvider('provideThemes')]
     public function testTheThemePassesItsChecks(string $theme): void
     {
@@ -65,11 +79,12 @@ final class ThemingTest extends TestCase
     }
 
     /**
-     * A post page and the homepage, on a site with the theme and the fixture extension.
+     * A post page and the homepage, on a site with the theme and the fixture extension (and a page in
+     * its navigation, with $withPage).
      *
      * @return array{Crawler, Crawler}
      */
-    private function pages(string $theme): array
+    private function pages(string $theme, bool $withPage = false): array
     {
         $kernel = $this->kernel($theme);
         $client = new KernelBrowser($kernel);
@@ -81,6 +96,12 @@ final class ThemingTest extends TestCase
             $writer = $this->service($kernel, ContentWriter::class);
             $post = $writer->create(new CreateContent('post', 'Hello world', body: 'The body.'));
             $writer->transition($post->id, $post->version, Status::PUBLISH, new \DateTimeImmutable('2026-01-15 10:00:00'));
+
+            if ($withPage) {
+                // A top-level page: the site's navigation
+                $page = $writer->create(new CreateContent('page', 'About', body: 'Who we are.'));
+                $writer->transition($page->id, $page->version, Status::PUBLISH, new \DateTimeImmutable('2026-01-15 10:00:00'));
+            }
 
             $pages = [$client->request('GET', '/blog/hello-world'), $client->request('GET', '/')];
             self::assertSame(200, $client->getResponse()->getStatusCode());

@@ -31,7 +31,16 @@ To change more, make a child theme with `"parent": "quire-theme-default"` (see [
 :root { --font-read: Georgia, serif; --measure: 40rem; }
 ```
 
-How a list shows each post is its card, `content/_card.html.twig` (a row: day, title, excerpt). The home page, "All posts" and the 404 page all use it, and the admin shows it alone; it gets `dated`, `with_month` and `in_list` from lists, and must work without them. The layout has a `ribbon` block above the whole site (the preview notice) and takes `minimal: true` from pages that must render when the site can't (no navigation, nothing from the database).
+How a list shows each post is its card, `content/_card.html.twig` (a row: day, title, excerpt). The home page, "All posts" and the 404 page all use it, and the admin shows it alone; it gets `dated`, `with_month` and `in_list` from lists, and must work without them. The layout has a `ribbon` block above the whole site (the preview notice) and takes `minimal: true` from pages that must render when the site can't (no navigation, nothing from the database). A child theme can replace parts of the layout and keep the rest: `header` (the masthead), `brand` inside it (the link home), `footer` (the whole footer), and `footer_base` inside it (copyright and "Runs on Quire"). For a company's own logo and legal line:
+
+```twig
+{# templates/layout.html.twig of a child theme #}
+{% extends '@quire-theme-default/layout.html.twig' %}
+
+{% block brand %}<a class="brand" href="{{ quire_home_url() }}"><img src="{{ quire_asset('theme/logo.svg') }}" alt="{{ site.title }}"></a>{% endblock %}
+
+{% block footer_base %}<p>© {{ 'now'|date('Y') }} Acme Ltd · Reg. 123</p>{{ parent() }}{% endblock %}
+```
 
 Its templates are the reference for writing your own: each one starts with a comment listing the variables, blocks and slots it has.
 

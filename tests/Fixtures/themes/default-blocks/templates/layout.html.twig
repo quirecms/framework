@@ -1,0 +1,11 @@
+{# A child of the default theme with its own brand and footer line, as a company's site has: the rest of the layout is the default theme's. #}
+{% extends '@quire-theme-default/layout.html.twig' %}
+
+{% block brand %}
+    <a class="fixture-brand" href="{{ quire_home_url() }}">Acme Ltd</a>
+{% endblock %}
+
+{% block footer_base %}
+    <p class="fixture-legal">© Acme Ltd · Reg. 123</p>
+    {{ parent() }}
+{% endblock %}
