@@ -1,0 +1,3 @@
+# Overrides an extension's artifact text, for the translation artifacts' test
+'Base theme': 'base'
+'Child theme': 'base'

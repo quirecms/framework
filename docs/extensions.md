@@ -1067,6 +1067,13 @@ Language codes are canonical, as ICU writes them: `mk`, `pt_BR`, `sr_Latn`.
 - `delivery`: `bundled` (the default) when your translations ship in your package; `hub` when they come from the translation hub as language packages, one per language and version line of yours. A bundled package's texts are never replaced by a language package.
 - `domains`: your domains; your ID if left out. With `hub`, list them. `quire` and `quire-…` are Quire's own packages', and Symfony's (`messages`, `security`, `validators`) no package's.
 
+A language package (Composer type `quire-translation`) is data: one language of one package, for one version line of it (`0.5` before 1.0, `2` from 1.0 on), with only `translations/<domain>+intl-icu.<language>.yaml` files of plain texts. Quire loads it over the package's own texts and under the themes' and the site's, so a theme or a site can still change any wording. It's left out, never stopping the site, when it doesn't fit, and `quire:about` says why:
+- it carries code (`autoload`, `bin`, `scripts`) or a file that isn't one of its texts;
+- a text isn't plain (a YAML tag, a number);
+- the package it translates isn't installed, is on another version line, or ships its own translations (`bundled`);
+- it names a domain of another package;
+- another language package translates the same package into the same language.
+
 ### Recording actions in the audit log
 
 Core records its own actions in the [audit log](audit.md). Record your extension's with `Quire\Audit\AuditLog::record()`, with the console command that does the same when there is one, and describe them for the admin with a translation: see [recording an extension's actions](audit.md#recording-an-extensions-actions).

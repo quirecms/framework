@@ -117,6 +117,24 @@ final class InstalledExtensions implements ResetInterface
     }
 
     /**
+     * Every installed package, as Composer's installed.json lists it.
+     *
+     * @return list<array<mixed>>
+     */
+    public function composerPackages(): array
+    {
+        return array_values(array_filter($this->packages(), \is_array(...)));
+    }
+
+    /**
+     * Where installed.json is: packages' install paths are relative to it.
+     */
+    public function vendorComposerDir(): string
+    {
+        return \dirname($this->installedJsonPath);
+    }
+
+    /**
      * @return array<mixed>
      */
     private function packages(): array

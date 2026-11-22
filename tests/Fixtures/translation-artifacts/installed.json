@@ -1,0 +1,347 @@
+{
+    "packages": [
+        {
+            "name": "quire/fixture-hello",
+            "version": "1.0.0.0",
+            "pretty_version": "1.0.0",
+            "type": "quire-extension",
+            "install-path": "../extensions/hello",
+            "description": "Test extension that exercises every extender",
+            "extra": {
+                "quire": {
+                    "id": "quire-fixture-hello"
+                }
+            }
+        },
+        {
+            "name": "quire/fixture-theme-base",
+            "version": "1.0.0.0",
+            "pretty_version": "1.0.0",
+            "type": "quire-theme",
+            "install-path": "../themes/base",
+            "description": "Test theme with a layout and a content template",
+            "extra": {
+                "quire": {
+                    "id": "quire-fixture-base"
+                }
+            }
+        },
+        {
+            "name": "quire/fixture-theme-child",
+            "version": "1.0.0.0",
+            "pretty_version": "1.0.0",
+            "type": "quire-theme",
+            "install-path": "../themes/child",
+            "description": "Test theme that inherits from the base test theme",
+            "extra": {
+                "quire": {
+                    "id": "quire-fixture-child",
+                    "requires": [
+                        "quire-fixture-hello"
+                    ],
+                    "theme": {
+                        "parent": "quire-fixture-base"
+                    }
+                }
+            }
+        },
+        {
+            "name": "quire/privacy",
+            "version": "0.1.0.0",
+            "pretty_version": "0.1.0",
+            "type": "quire-extension",
+            "install-path": "../../../packages/privacy",
+            "description": "Privacy and cookies for Quire",
+            "extra": {
+                "quire": {
+                    "title": "Privacy and cookies",
+                    "description": "Asks visitors before a service of another company runs: analytics, videos, fonts. Without such a service, it shows nothing."
+                }
+            }
+        },
+        {
+            "name": "acme/hub-shop",
+            "version": "0.5.2.0",
+            "pretty_version": "0.5.2",
+            "type": "quire-extension",
+            "install-path": "hub-shop",
+            "extra": {
+                "quire": {
+                    "id": "acme-hub-shop",
+                    "translations": {
+                        "version": 1,
+                        "delivery": "hub",
+                        "domains": [
+                            "acme-hub-shop"
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "name": "acme/hub-shop-mk",
+            "version": "1.0.0.0",
+            "pretty_version": "1.0.0",
+            "type": "quire-translation",
+            "install-path": "artifacts/mk",
+            "extra": {
+                "quire": {
+                    "translation": {
+                        "version": 1,
+                        "package": "acme/hub-shop",
+                        "locale": "mk",
+                        "line": "0.5",
+                        "domains": [
+                            "acme-hub-shop"
+                        ],
+                        "provenance": {
+                            "source": "https://hub.example.org/acme/hub-shop",
+                            "revision": "0123abc",
+                            "built_at": "2026-11-22T18:00:00Z"
+                        },
+                        "generated": true
+                    }
+                }
+            }
+        },
+        {
+            "name": "acme/hub-shop-de",
+            "version": "1.0.0.0",
+            "pretty_version": "1.0.0",
+            "type": "quire-translation",
+            "install-path": "artifacts/de-old-line",
+            "extra": {
+                "quire": {
+                    "translation": {
+                        "version": 1,
+                        "package": "acme/hub-shop",
+                        "locale": "de",
+                        "line": "0.4",
+                        "domains": [
+                            "acme-hub-shop"
+                        ],
+                        "provenance": {
+                            "source": "https://hub.example.org/acme/hub-shop",
+                            "revision": "0123abc",
+                            "built_at": "2026-11-22T18:00:00Z"
+                        },
+                        "generated": true
+                    }
+                }
+            }
+        },
+        {
+            "name": "acme/hub-shop-fr",
+            "version": "1.0.0.0",
+            "pretty_version": "1.0.0",
+            "type": "quire-translation",
+            "install-path": "artifacts/fr-foreign-domain",
+            "extra": {
+                "quire": {
+                    "translation": {
+                        "version": 1,
+                        "package": "acme/hub-shop",
+                        "locale": "fr",
+                        "line": "0.5",
+                        "domains": [
+                            "quire-admin"
+                        ],
+                        "provenance": {
+                            "source": "https://hub.example.org/acme/hub-shop",
+                            "revision": "0123abc",
+                            "built_at": "2026-11-22T18:00:00Z"
+                        },
+                        "generated": true
+                    }
+                }
+            }
+        },
+        {
+            "name": "acme/hub-shop-it",
+            "version": "1.0.0.0",
+            "pretty_version": "1.0.0",
+            "type": "quire-translation",
+            "install-path": "artifacts/it-php",
+            "extra": {
+                "quire": {
+                    "translation": {
+                        "version": 1,
+                        "package": "acme/hub-shop",
+                        "locale": "it",
+                        "line": "0.5",
+                        "domains": [
+                            "acme-hub-shop"
+                        ],
+                        "provenance": {
+                            "source": "https://hub.example.org/acme/hub-shop",
+                            "revision": "0123abc",
+                            "built_at": "2026-11-22T18:00:00Z"
+                        },
+                        "generated": true
+                    }
+                }
+            }
+        },
+        {
+            "name": "acme/hub-shop-es",
+            "version": "1.0.0.0",
+            "pretty_version": "1.0.0",
+            "type": "quire-translation",
+            "install-path": "artifacts/es-autoload",
+            "extra": {
+                "quire": {
+                    "translation": {
+                        "version": 1,
+                        "package": "acme/hub-shop",
+                        "locale": "es",
+                        "line": "0.5",
+                        "domains": [
+                            "acme-hub-shop"
+                        ],
+                        "provenance": {
+                            "source": "https://hub.example.org/acme/hub-shop",
+                            "revision": "0123abc",
+                            "built_at": "2026-11-22T18:00:00Z"
+                        },
+                        "generated": true
+                    }
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Acme\\Es\\": "src/"
+                }
+            }
+        },
+        {
+            "name": "acme/hub-shop-pl",
+            "version": "1.0.0.0",
+            "pretty_version": "1.0.0",
+            "type": "quire-translation",
+            "install-path": "artifacts/pl-const",
+            "extra": {
+                "quire": {
+                    "translation": {
+                        "version": 1,
+                        "package": "acme/hub-shop",
+                        "locale": "pl",
+                        "line": "0.5",
+                        "domains": [
+                            "acme-hub-shop"
+                        ],
+                        "provenance": {
+                            "source": "https://hub.example.org/acme/hub-shop",
+                            "revision": "0123abc",
+                            "built_at": "2026-11-22T18:00:00Z"
+                        },
+                        "generated": true
+                    }
+                }
+            }
+        },
+        {
+            "name": "acme/privacy-mk",
+            "version": "1.0.0.0",
+            "pretty_version": "1.0.0",
+            "type": "quire-translation",
+            "install-path": "artifacts/privacy-mk",
+            "extra": {
+                "quire": {
+                    "translation": {
+                        "version": 1,
+                        "package": "quire/privacy",
+                        "locale": "mk",
+                        "line": "0.4",
+                        "domains": [
+                            "quire-privacy"
+                        ],
+                        "provenance": {
+                            "source": "https://hub.example.org/acme/hub-shop",
+                            "revision": "0123abc",
+                            "built_at": "2026-11-22T18:00:00Z"
+                        },
+                        "generated": true
+                    }
+                }
+            }
+        },
+        {
+            "name": "acme/hub-shop-sv",
+            "version": "1.0.0.0",
+            "pretty_version": "1.0.0",
+            "type": "quire-translation",
+            "install-path": "artifacts/sv-one",
+            "extra": {
+                "quire": {
+                    "translation": {
+                        "version": 1,
+                        "package": "acme/hub-shop",
+                        "locale": "sv",
+                        "line": "0.5",
+                        "domains": [
+                            "acme-hub-shop"
+                        ],
+                        "provenance": {
+                            "source": "https://hub.example.org/acme/hub-shop",
+                            "revision": "0123abc",
+                            "built_at": "2026-11-22T18:00:00Z"
+                        },
+                        "generated": true
+                    }
+                }
+            }
+        },
+        {
+            "name": "other/hub-shop-sv",
+            "version": "1.0.0.0",
+            "pretty_version": "1.0.0",
+            "type": "quire-translation",
+            "install-path": "artifacts/sv-two",
+            "extra": {
+                "quire": {
+                    "translation": {
+                        "version": 1,
+                        "package": "acme/hub-shop",
+                        "locale": "sv",
+                        "line": "0.5",
+                        "domains": [
+                            "acme-hub-shop"
+                        ],
+                        "provenance": {
+                            "source": "https://hub.example.org/acme/hub-shop",
+                            "revision": "0123abc",
+                            "built_at": "2026-11-22T18:00:00Z"
+                        },
+                        "generated": true
+                    }
+                }
+            }
+        },
+        {
+            "name": "acme/hub-shop-de-de",
+            "version": "1.0.0.0",
+            "pretty_version": "1.0.0",
+            "type": "quire-translation",
+            "install-path": "artifacts/de-de",
+            "extra": {
+                "quire": {
+                    "translation": {
+                        "version": 1,
+                        "package": "acme/hub-shop",
+                        "locale": "de-DE",
+                        "line": "0.5",
+                        "domains": [
+                            "acme-hub-shop"
+                        ],
+                        "provenance": {
+                            "source": "https://hub.example.org/acme/hub-shop",
+                            "revision": "0123abc",
+                            "built_at": "2026-11-22T18:00:00Z"
+                        },
+                        "generated": true
+                    }
+                }
+            }
+        }
+    ]
+}
