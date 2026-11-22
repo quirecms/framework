@@ -117,6 +117,7 @@ final class PrivacyAdminTest extends AdminTestCase
         $this->client->request('GET', '/admin/settings/quire-privacy');
         self::assertResponseIsSuccessful();
         self::assertSelectorExists('input[name*="log_months"]');
+        self::assertSelectorTextSame('nav.q-views a[aria-current=page]', 'Privacy and cookies', 'The group\'s title, from the extension\'s own texts.');
     }
 
     private function page(string $query = ''): Crawler

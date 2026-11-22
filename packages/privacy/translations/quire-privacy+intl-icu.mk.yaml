@@ -122,3 +122,5 @@ Send outside production too: Испраќај и надвор од продук�
 "{category} on": "{category}: вклучено"
 "{category} off": "{category}: исклучено"
 "{category} partly on": "{category}: делумно вклучено"
+# Насловот на групата поставки на ова проширување во администрацијата
+settings.group.quire-privacy: 'Приватност и колачиња'

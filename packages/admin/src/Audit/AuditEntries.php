@@ -8,6 +8,7 @@ use Quire\Audit\AuditEntry;
 use Quire\Audit\Origin;
 use Quire\Content\Content;
 use Quire\Content\ContentRepository;
+use Quire\Extension\InstalledExtensions;
 use Quire\Permission\Permissions;
 use Quire\Settings\SettingsSchema;
 use Quire\User\User;
@@ -43,6 +44,7 @@ final class AuditEntries implements ResetInterface
         private readonly SettingsSchema $settings,
         private readonly UrlGeneratorInterface $urls,
         private readonly TranslatorInterface $translator,
+        private readonly InstalledExtensions $installed,
     ) {
     }
 
@@ -84,13 +86,17 @@ final class AuditEntries implements ResetInterface
             };
         }
 
+        // An extension's actions ("<its ID>.<verb>") are described in its own texts, core's in the admin's
+        $prefix = strstr($entry->action, '.', true);
+        $domain = false !== $prefix && $this->installed->has($prefix) ? $prefix : 'quire-admin';
+
         // An extension's action it doesn't describe. (Asked without the details: a translator's fallback puts
         // them into the key itself, e.g. a detail "on" into "audit.content…".)
-        if ($this->translator->trans($key, [], 'quire-admin') === $key) {
+        if ($this->translator->trans($key, [], $domain) === $key) {
             return null === $entry->subjectType ? $entry->action : \sprintf('%s: %s', $entry->action, $parameters['subject']);
         }
 
-        return $this->translator->trans($key, $parameters, 'quire-admin');
+        return $this->translator->trans($key, $parameters, $domain);
     }
 
     /**
