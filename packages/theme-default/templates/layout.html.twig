@@ -5,7 +5,11 @@
     the page has one, is_home on the homepage, and the variables of the page's own template.
     minimal: true on pages that must render when the site can't (the error page): no navigation, nothing
     read from the database.
-    Blocks: title, head, ribbon (above the whole site, e.g. the preview notice), content
+    Blocks: title, head, ribbon (above the whole site, e.g. the preview notice), header (the masthead
+    whole), brand (the link home in it: monogram, name, description), content, footer (the site's footer
+    whole), footer_base (its last line: copyright and "Runs on Quire"). A child theme replaces one of them
+    and keeps the rest; {{ parent() }} keeps the parent's part. Variables a block sets stay in it: what
+    several share (navigation) is set before them.
     Slots: head, body_start, header.nav, sidebar, footer, body_end
 #}
 {% import 'partials/identity.html.twig' as identity %}
@@ -31,15 +35,19 @@
     <a class="skip-link" href="#content">{{ 'Skip to content'|trans({}, domain) }}</a>
     {% block ribbon %}{% endblock %}
     {{ quire_slot('body_start') }}
+    {# Read once, for the header and the footer (a block's own variables don't reach the other) #}
+    {% set navigation = minimal ? [] : quire_navigation() %}
 
+    {% block header %}
     <header class="masthead">
         <div class="container masthead__main">
+            {% block brand %}
             <a class="brand" href="{{ quire_home_url() }}"{% if is_home|default(false) %} aria-current="page"{% endif %} aria-label="{{ '{site}, home page'|trans({site: site.title}, domain) }}">
                 {{ identity.monogram(site.title) }}
                 <span><span class="brand__name">{{ site.title }}</span>{% if site.description %}<span class="brand__desc">{{ site.description }}</span>{% endif %}</span>
             </a>
+            {% endblock %}
             {% if not minimal %}
-                {% set navigation = quire_navigation() %}
                 {% if quire_slot_filled('header.nav') or navigation|length > 0 %}
                     <nav class="site-nav" aria-label="{{ 'Main'|trans({}, domain) }}">
                         {% if navigation|length > 0 %}
@@ -57,6 +65,7 @@
             {% endif %}
         </div>
     </header>
+    {% endblock %}
 
     <div class="page{{ quire_slot_filled('sidebar') ? ' has-sidebar' }}">
         <main id="content" tabindex="-1">
@@ -67,11 +76,12 @@
         {% endif %}
     </div>
 
+    {% block footer %}
     <footer class="site-footer">
         <p class="print-source container">{{ 'From {site} · {url}'|trans({site: site.title, url: site.url}, domain) }}</p>
         <div class="container grid">
             <div class="foot-brand">{{ identity.monogram(site.title) }}<div><b>{{ site.title }}</b>{% if site.description %}<p>{{ site.description }}</p>{% endif %}</div></div>
-            {% if not minimal and navigation|default([])|length > 0 %}
+            {% if navigation|length > 0 %}
                 <div><h2>{{ 'Pages'|trans({}, domain) }}</h2><ul>{% for item in navigation %}<li><a href="{{ item.url }}">{{ item.title }}</a></li>{% endfor %}</ul></div>
             {% endif %}
             <div class="foot-site"><h2>{{ 'This site'|trans({}, domain) }}</h2>
@@ -80,10 +90,13 @@
             </div>
         </div>
         <div class="container base">
+            {% block footer_base %}
             <p>© {{ 'now'|date('Y') }} {{ site.title }}</p>
             {% if theme.settings.show_credit ?? true %}<p class="runs">{{ 'Runs on {quire}'|quire_trans_html({quire: identity.credit()}, domain) }}</p>{% endif %}
+            {% endblock %}
         </div>
     </footer>
+    {% endblock %}
 
     {{ quire_slot('body_end') }}
 </body>
