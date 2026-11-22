@@ -130,7 +130,7 @@ final class LoginTest extends WebTestCase
             $this->signIn($username, 'wrong password');
             $crawler = $this->client->followRedirect();
 
-            self::assertSelectorTextSame('.form-error', 'Invalid credentials.', $username);
+            self::assertSelectorTextSame('.form-error', 'The email, username or password is wrong. Check them and try again.', $username);
             self::assertSame($username, $crawler->filter('input#username')->attr('value'), 'What was typed is kept.');
         }
     }
@@ -141,7 +141,7 @@ final class LoginTest extends WebTestCase
 
         $this->signIn('grace', 'wrong password');
         $this->client->followRedirect();
-        self::assertSelectorTextSame('.form-error', 'Invalid credentials.');
+        self::assertSelectorTextSame('.form-error', 'The email, username or password is wrong. Check them and try again.');
 
         $this->signIn('grace', self::PASSWORD);
         $this->client->followRedirect();

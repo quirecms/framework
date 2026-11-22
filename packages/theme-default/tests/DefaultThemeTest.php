@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace Quire\ThemeDefault\Tests;
 
 use Quire\Content\Command\CreateContent;
+use Quire\Content\Command\UpdatePendingRevision;
 use Quire\Content\Content;
 use Quire\Content\ContentWriter;
+use Quire\Content\Revision\PendingRevisionWriter;
+use Quire\Content\Revision\PublicChangeKind;
+use Quire\Content\Revision\PublicNote;
 use Quire\Content\Status;
 use Quire\Http\ErrorReference;
 use Quire\Testing\ExtensionTestCase;
@@ -191,6 +195,27 @@ final class DefaultThemeTest extends ExtensionTestCase
 
         $crawler = $this->client->request('GET', '/blog?page=4');
         self::assertSame(['2025', 'Dec', 'Oct'], $crawler->filter('nav.qd-months a')->each(static fn (Crawler $a): string => $a->text()), 'From an older page, the newer year is the one link.');
+    }
+
+    public function testAPostShowsItsPublicHistoryNewestFirst(): void
+    {
+        $post = $this->publish('post', 'Opening hours', 'Open 9 to 5.', '2025-03-04 10:00');
+        $pending = $this->service(PendingRevisionWriter::class);
+        $writer = $this->service(ContentWriter::class);
+        $notes = [[PublicChangeKind::Correction, 'Open until 6, not 5.'], [PublicChangeKind::Update, 'Added the holidays.'], [PublicChangeKind::Update, 'Added Sundays.'], [PublicChangeKind::Update, 'Added the summer hours.']];
+        foreach ($notes as $i => [$kind, $note]) {
+            $change = $pending->create($post->id);
+            $change = $pending->update(new UpdatePendingRevision($change->id, $change->version)->body('Open 9 to 5. Change '.$i.'.'));
+            $post = $writer->publishPendingRevision($change->id, $change->version, null, new PublicNote($kind, $note));
+        }
+
+        $crawler = $this->client->request('GET', '/blog/opening-hours');
+
+        self::assertStringStartsWith('Corrected', $crawler->filter('.qd-byline a')->text(), 'A correction says so in the byline (03c).');
+        self::assertStringContainsString('4 changes', $crawler->filter('.qd-byline a')->text());
+        self::assertSame(['Added the summer hours.', 'Added Sundays.', 'Added the holidays.'], $crawler->filter('.qd-history > ol > li p')->each(static fn (Crawler $p): string => $p->text()), 'The three newest, newest first (03e).');
+        self::assertSame('Show 1 earlier change', $crawler->filter('.qd-history details summary')->text(), 'The rest behind one disclosure, ending at "Published".');
+        self::assertCount(1, $crawler->filter('.qd-history details li.qd-is-correction'));
     }
 
     public function testAMonthSplitAcrossPagesIsContinued(): void
