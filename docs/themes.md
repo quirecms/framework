@@ -285,6 +285,7 @@ Every template, of a theme, an extension or the site, has:
 | `quire_latest(limit)` | The latest published items of the listable types, from a cache dropped when an item is published, changed or trashed: for pages bots hit most, such as "page not found" |
 | `quire_loads_only_from_this_site()` | Whether the page loads nothing from other sites, decided by the very Content-Security-Policy Quire sends (enforced, no other hosts, schemes or report endpoints), the page's head (no cross-site `preconnect` and the like) and the active theme's templates (no address of another site): for a sentence such as "This site loads nothing from other companies", which then can't drift from what browsers do. A proxy that replaces Quire's header isn't covered |
 | `quire_setup_steps()` | The site's setup steps the person looking may take, while some aren't done (`{steps, done}`, each step's `title`, `text`, `done`, `url`, `action`), or null for visitors and once all are: for an empty home page that helps its owner start. The same list as the admin's home page. A page that shows them is the viewer's alone: private, never stored |
+| `message|quire_trans(parameters, domain)` | A theme's visible text, translated, and marked as English where the site's language has no translation of it (see [languages](#languages)) |
 | `message|quire_trans_html(parameters, domain)` | A translated message with HTML in its parameters (see [languages](#languages)) |
 
 ## What the renderer prints
@@ -406,6 +407,8 @@ Quire's pages are in the site's language (`site.locale`), and an item's page in 
 <a class="skip-link" href="#content">{{ 'Skip to content'|trans({}, 'acme-dark') }}</a>
 {{ 'Page {page} of {count}'|trans({ page: 2, count: 5 }, 'acme-dark') }}
 ```
+
+**Print a theme's visible texts with `quire_trans`.** It translates like `trans`, and when the site's language has no translation of a text, the English one it falls back to comes isolated and marked, `<bdi lang="en">…</bdi>`: screen readers read it as English, and on a right-to-left site its punctuation stays where English puts it. Write a line with a value in it as one message with a placeholder (`'Runs on {quire}'`), never as pieces side by side, which a right-to-left row would swap. In attributes and `<title>`, which can't hold markup, use `trans`.
 
 **A translation is text, never HTML.** Print it with `|trans`, which Twig escapes. When a message needs HTML in a value (a `<time>`, a link), give that value as HTML the code made, a `Markup` (e.g. from `quire_admin_when` in the admin), and print the message with `quire_trans_html`: the translation is escaped, and only those values go in as they are.
 

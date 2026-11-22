@@ -278,6 +278,25 @@ final class DefaultThemeTest extends ExtensionTestCase
         $this->client->request('GET', '/about');
 
         self::assertSelectorExists('html[lang=ar][dir=rtl]');
+
+        // No Arabic catalogue: the theme's texts are English, each marked so (designer, 22 Nov: screen 11 is
+        // the layout; the fallback must read right), and a composed line is one message, never two pieces
+        $crawler = $this->client->request('GET', '/');
+        self::assertSame('Nothing here yet.', $crawler->filter('main h1 bdi[lang=en]')->text(), 'Its full stop stays where English puts it.');
+        self::assertSame('Runs on Quire', $crawler->filter('.site-footer .runs bdi[lang=en]')->text(), 'One isolated message, not "Quire Runs on".');
+    }
+
+    public function testATranslatedTextIsntMarked(): void
+    {
+        $this->setSetting('site.locale', 'de');
+
+        $crawler = $this->client->request('GET', '/');
+
+        self::assertCount(0, $crawler->filter('.site-footer .runs bdi'), 'German has its translation.');
+        self::assertSelectorTextContains('.site-footer .runs', 'Betrieben mit Quire');
+
+        $this->setSetting('site.locale', 'en');
+        self::assertCount(0, $this->client->request('GET', '/')->filter('bdi[lang]'), 'Nor is English, the language of the code.');
     }
 
     public function testAPageHasItsSectionAndDate(): void

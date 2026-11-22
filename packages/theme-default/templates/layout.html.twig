@@ -32,7 +32,7 @@
     {{ quire_slot('head') }}
 </head>
 <body class="accent-{{ theme.settings.accent }}">
-    <a class="skip-link" href="#content">{{ 'Skip to content'|trans({}, domain) }}</a>
+    <a class="skip-link" href="#content">{{ 'Skip to content'|quire_trans({}, domain) }}</a>
     {% block ribbon %}{% endblock %}
     {{ quire_slot('body_start') }}
     {# Read once, for the header and the footer (a block's own variables don't reach the other) #}
@@ -54,7 +54,7 @@
                             {% set shown = navigation|length > 5 ? navigation|slice(0, 4) : navigation %}
                             <ul>{% for item in shown %}<li><a href="{{ item.url }}"{% if item.current %} aria-current="{{ item.current == 'page' ? 'page' : 'true' }}"{% endif %}>{{ item.title }}</a></li>{% endfor %}</ul>
                             {% if navigation|length > 5 %}
-                                <details class="nav-more"><summary>{{ 'More'|trans({}, domain) }} <span aria-hidden="true">▾</span></summary>
+                                <details class="nav-more"><summary>{{ 'More'|quire_trans({}, domain) }} <span aria-hidden="true">▾</span></summary>
                                     <ul>{% for item in navigation|slice(4) %}<li><a href="{{ item.url }}"{% if item.current %} aria-current="{{ item.current == 'page' ? 'page' : 'true' }}"{% endif %}>{{ item.title }}</a></li>{% endfor %}</ul>
                                 </details>
                             {% endif %}
@@ -78,16 +78,16 @@
 
     {% block footer %}
     <footer class="site-footer">
-        <p class="print-source container">{{ 'From {site} · {url}'|trans({site: site.title, url: site.url}, domain) }}</p>
+        <p class="print-source container">{{ 'From {site} · {url}'|quire_trans({site: site.title, url: site.url}, domain) }}</p>
         <div class="container grid">
             <div class="foot-brand">{{ identity.monogram(site.title) }}<div><b>{{ site.title }}</b>{% if site.description %}<p>{{ site.description }}</p>{% endif %}</div></div>
             {% if navigation|length > 0 %}
-                <div><h2>{{ 'Pages'|trans({}, domain) }}</h2><ul>{% for item in navigation %}<li><a href="{{ item.url }}">{{ item.title }}</a></li>{% endfor %}</ul></div>
+                <div><h2>{{ 'Pages'|quire_trans({}, domain) }}</h2><ul>{% for item in navigation %}<li><a href="{{ item.url }}">{{ item.title }}</a></li>{% endfor %}</ul></div>
             {% endif %}
             {% if not minimal %}
-            <div class="foot-site"><h2>{{ 'This site'|trans({}, domain) }}</h2>
+            <div class="foot-site"><h2>{{ 'This site'|quire_trans({}, domain) }}</h2>
                 {{ quire_slot('footer') }}
-                <ul><li><a href="{{ path('quire_login') }}">{{ 'Sign in'|trans({}, domain) }}</a></li></ul>
+                <ul><li><a href="{{ path('quire_login') }}">{{ 'Sign in'|quire_trans({}, domain) }}</a></li></ul>
             </div>
             {% endif %}
         </div>

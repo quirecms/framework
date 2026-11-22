@@ -8,9 +8,9 @@
 {% if previous_url or next_url %}
     {% set numbers = page.pageCount > 5 %}
     <nav class="pager{{ numbers ? ' pager--numbers' }}" aria-label="{{ 'Pages'|trans({}, domain) }}">
-        <span class="newer">{% if previous_url %}<a href="{{ previous_url }}" rel="prev"><span class="arrow" aria-hidden="true">←</span> {{ 'Newer'|trans({}, domain) }}</a>{% endif %}</span>
+        <span class="newer">{% if previous_url %}<a href="{{ previous_url }}" rel="prev"><span class="arrow" aria-hidden="true">←</span> {{ 'Newer'|quire_trans({}, domain) }}</a>{% endif %}</span>
         {% if numbers %}<div class="pager__mid">{% endif %}
-        <span class="count">{{ 'Page {page} of {count}'|trans({page: page.page, count: page.pageCount}, domain) }}</span>
+        <span class="count">{{ 'Page {page} of {count}'|quire_trans({page: page.page, count: page.pageCount}, domain) }}</span>
         {% if numbers %}
             <ol class="numbers">
                 {%- set last = 0 -%}
@@ -24,6 +24,6 @@
             </ol>
             </div>
         {% endif %}
-        <span class="older">{% if next_url %}<a href="{{ next_url }}" rel="next">{{ 'Older'|trans({}, domain) }} <span class="arrow" aria-hidden="true">→</span></a>{% endif %}</span>
+        <span class="older">{% if next_url %}<a href="{{ next_url }}" rel="next">{{ 'Older'|quire_trans({}, domain) }} <span class="arrow" aria-hidden="true">→</span></a>{% endif %}</span>
     </nav>
 {% endif %}

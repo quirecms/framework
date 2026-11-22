@@ -23,7 +23,7 @@
         {% if is_home %}
             {{ include('partials/welcome.html.twig') }}
         {% else %}
-            <div class="container"><header class="list-head"><h1>{{ archive_title }}</h1></header><p>{{ 'Nothing here yet.'|trans({}, domain) }}</p></div>
+            <div class="container"><header class="list-head"><h1>{{ type.id == 'post' ? 'All posts'|quire_trans({}, domain) : type.pluralLabel }}</h1></header><p>{{ 'Nothing here yet.'|quire_trans({}, domain) }}</p></div>
         {% endif %}
     {% else %}
         {#- Each month with items, newest first: where in the list it starts, and so on which page (one query) -#}
@@ -43,17 +43,17 @@
         {% else %}
             <div class="container">
                 <header class="list-head">
-                    <h1>{{ archive_title }}</h1>
+                    <h1>{{ type.id == 'post' ? 'All posts'|quire_trans({}, domain) : type.pluralLabel }}</h1>
                     {% set newest = (items|first).publishedAt %}
                     {% set oldest = (items|last).publishedAt %}
-                    <p class="meta">{{ 'Page {page} of {count}'|trans({page: page.page, count: page.pageCount}, domain) }}{% if dated and newest and oldest %} · {{ newest|date('Y-m') == oldest|date('Y-m') ? newest|quire_date('month-year') : '{newest} to {oldest}'|trans({newest: newest|quire_date('month-year'), oldest: oldest|quire_date('month-year')}, domain) }}{% endif %}</p>
+                    <p class="meta">{{ 'Page {page} of {count}'|quire_trans({page: page.page, count: page.pageCount}, domain) }}{% if dated and newest and oldest %} · {{ newest|date('Y-m') == oldest|date('Y-m') ? newest|quire_date('month-year') : '{newest} to {oldest}'|quire_trans({newest: newest|quire_date('month-year'), oldest: oldest|quire_date('month-year')}, domain) }}{% endif %}</p>
                 </header>
                 {% if dated %}
                     <section class="earlier" aria-label="{{ archive_title }}">
                         {% for key in shown %}
                             {% set continued = (months[key].page ?? page.page) < page.page %}
                             <section class="month" aria-labelledby="m-{{ key }}">
-                                <h2 class="month__head" id="m-{{ key }}">{{ date(key ~ '-15')|quire_date('month-year') }}{% if continued %} <small>{{ 'continued'|trans({}, domain) }}</small>{% endif %}</h2>
+                                <h2 class="month__head" id="m-{{ key }}">{{ date(key ~ '-15')|quire_date('month-year') }}{% if continued %} <small>{{ 'continued'|quire_trans({}, domain) }}</small>{% endif %}</h2>
                                 <ol class="rows">{% for item in items|filter(item => item.publishedAt and item.publishedAt|date('Y-m') == key) %}{{ rows.row(item, type) }}{% endfor %}</ol>
                             </section>
                         {% endfor %}
