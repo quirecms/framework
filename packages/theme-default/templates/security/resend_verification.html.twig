@@ -1,0 +1,4 @@
+{# Core's page (@Quire/security/resend_verification.html.twig) in the default theme's card: its content is core's own. #}
+{% extends '@Quire/security/resend_verification.html.twig' %}
+
+{% block content %}{{ include('partials/account.html.twig', {body: block('account')}) }}{% endblock %}

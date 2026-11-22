@@ -217,10 +217,10 @@ main:focus { outline: none; }
 .pager { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 1rem; margin-block: 2.5rem 4rem; padding-block-start: 1.5rem; border-block-start: 2px solid var(--ink); }
 .pager .count { font-size: var(--step--1); color: var(--muted); text-align: center; }
 .pager .older { justify-self: end; } .pager .newer { justify-self: start; }
-.btn, .pager a { font: inherit; font-weight: 650; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; text-align: center;
+.btn, .pager a, .auth__form .form button[type="submit"], .account-action { font: inherit; font-weight: 650; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; text-align: center;
     min-block-size: 46px; padding: 0.4rem 1.3rem; border-radius: 999px; text-decoration: none; cursor: pointer; border: 1.5px solid var(--ink); background: transparent; color: var(--ink); max-inline-size: 100%; }
-.btn--solid { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
-.btn:hover, .pager a:hover { box-shadow: 0 0 0 3px var(--tint-2); }
+.btn--solid, .auth__form .form button[type="submit"], .account-action--main { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.btn:hover, .pager a:hover, .auth__form .form button[type="submit"]:hover, .account-action:hover { box-shadow: 0 0 0 3px var(--tint-2); }
 [dir="rtl"] .arrow { display: inline-block; transform: scaleX(-1); }
 
 /* ---------- Article ---------- */
@@ -368,27 +368,36 @@ h2:hover .heading-anchor, h3:hover .heading-anchor, .heading-anchor:focus-visibl
 .auth__side .brand-block div > span { color: var(--muted); font-size: var(--step--1); }
 .auth__form { padding: 3rem clamp(1.5rem, 5vw, 4rem); display: flex; flex-direction: column; justify-content: center; }
 .auth__form h1 { font-family: var(--font-read); font-size: 2.4rem; line-height: 1.08; letter-spacing: -0.02em; margin: 0 0 0.5rem; text-wrap: balance; }
-.auth__form .intro { color: var(--muted); margin: 0 0 2rem; max-inline-size: 26rem; }
+.auth__form .intro, .auth__form .account-intro { color: var(--muted); margin: 0 0 2rem; max-inline-size: 26rem; }
 .form { display: grid; gap: 1.25rem; max-inline-size: 26rem; }
-.field { display: grid; gap: 0.4rem; margin: 0; }
-.field label { font-weight: 650; }
-.field .hint { color: var(--muted); font-size: var(--step--1); margin: 0; }
-.field .err { color: var(--danger); font-size: var(--step--1); font-weight: 650; display: flex; gap: 0.4rem; margin: 0; }
+.field, .form-field { display: grid; gap: 0.4rem; margin: 0; }
+.field label, .form-field > label { font-weight: 650; }
+.field .hint, .form-field .form-hint { color: var(--muted); font-size: var(--step--1); margin: 0; }
+.field .err, .form-field .form-error { color: var(--danger); font-size: var(--step--1); font-weight: 650; display: flex; gap: 0.4rem; margin: 0; }
 input[type="text"], input[type="email"], input[type="password"] { font: inherit; inline-size: 100%; min-block-size: 48px; padding: 0 0.85rem; background: var(--paper); color: var(--ink); border: 1.5px solid var(--control); border-radius: var(--radius); }
 input:focus-visible { outline-offset: 1px; border-color: var(--accent); }
 input[aria-invalid="true"] { border-color: var(--danger); border-width: 2px; }
-.check { display: flex; gap: 0.6rem; align-items: center; margin: 0; }
-.check input { inline-size: 1.25rem; block-size: 1.25rem; accent-color: var(--accent); margin: 0; }
-.form .btn { inline-size: 100%; }
-.alert { display: flex; gap: 0.75rem; margin: 0 0 1.5rem; padding: 0.8rem 1rem; border-radius: var(--radius); background: var(--danger-bg); border-inline-start: 4px solid var(--danger); max-inline-size: 26rem; }
-.alert p { margin: 0; min-inline-size: 0; }
+.check, .form-check { display: flex; gap: 0.6rem; align-items: center; margin: 0; }
+.check input, .form-check input { inline-size: 1.25rem; block-size: 1.25rem; accent-color: var(--accent); margin: 0; }
+.form .btn, .auth__form .form button[type="submit"] { inline-size: 100%; }
+.alert, .auth__form > .form-error, .auth__form > .form-ok { display: flex; gap: 0.75rem; margin: 0 0 1.5rem; padding: 0.8rem 1rem; border-radius: var(--radius); background: var(--danger-bg); border-inline-start: 4px solid var(--danger); max-inline-size: 26rem; }
+.alert p, .auth__form > .form-error > * { margin: 0; min-inline-size: 0; }
 .alert .icon { color: var(--danger); font-weight: 800; }
-.alert--ok { background: var(--paper-2); border-color: var(--accent); }
+.alert--ok, .auth__form > .form-ok { background: var(--paper-2); border-color: var(--accent); }
 .alert--ok .icon { color: var(--accent); }
-.auth-links { margin: 1.75rem 0 0; display: grid; gap: 0.35rem; }
-.auth-links p { margin: 0; }
-.mail-chip { font-weight: 650; color: var(--ink); background: var(--paper-2); border-radius: 0.3rem; padding: 0 0.3rem; }
+.auth-links, .account-links { margin: 1.75rem 0 0; display: grid; gap: 0.35rem; }
+.auth-links p, .account-links p { margin: 0; }
+.mail-chip, .auth__form .email { font-weight: 650; color: var(--ink); background: var(--paper-2); border-radius: 0.3rem; padding: 0 0.3rem; }
 .big-mark { font-size: 2.5rem; line-height: 1; margin-block-end: 1rem; }
+
+/* Core's account markup (templates/security/*), as the design draws it: the icons of an alert and an
+   error are the theme's, so the words stay core's */
+.auth__form > .form-error::before, .form-field .form-error::before { content: "!"; font-weight: 800; color: var(--danger); }
+.auth__form > .form-ok::before { content: "✓"; font-weight: 800; color: var(--accent); }
+.auth__form > .form-error a { color: var(--ink); }
+.account-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 0; }
+.auth__form > .form-hint { color: var(--muted); font-size: var(--step--1); margin: -1rem 0 1.75rem; }
+.auth__form .notice { margin: 0 0 1.25rem; }
 
 /* ---------- Footer ---------- */
 .site-footer { background: var(--paper-2); border-block-start: 1px solid var(--rule); font-size: var(--step--1); color: var(--muted); }
@@ -967,11 +976,11 @@ a:not(.btn):active { background: var(--tint-1); }
 .heading-row:hover .heading-anchor, .heading-anchor:focus-visible { opacity: 1; }
 .prose blockquote::before { content: "“" / ""; }
 /* v7 account pages: show password (rendered by a tiny core script only; absent without JavaScript) */
-.pw { position: relative; display: block; }
-.pw input { padding-inline-end: 5.25rem; }
-.pw__toggle { position: absolute; inset-block: 4px; inset-inline-end: 4px; min-inline-size: 4.5rem; font: inherit; font-size: var(--step--1); font-weight: 650; color: var(--ink); background: var(--paper-2); border: 1px solid var(--rule); border-radius: calc(var(--radius) - 2px); cursor: pointer; }
-.pw__toggle:hover { border-color: var(--ink); }
-.pw__toggle[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.pw, .form-password { position: relative; display: block; }
+.pw input, .form-password input { padding-inline-end: 5.25rem; }
+.pw__toggle, .password-toggle { position: absolute; inset-block: 4px; inset-inline-end: 4px; min-inline-size: 4.5rem; font: inherit; font-size: var(--step--1); font-weight: 650; color: var(--ink); background: var(--paper-2); border: 1px solid var(--rule); border-radius: calc(var(--radius) - 2px); cursor: pointer; }
+.pw__toggle:hover, .password-toggle:hover { border-color: var(--ink); }
+.pw__toggle[aria-pressed="true"], .password-toggle[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
 /* ===== v7.1 (17 Nov 2026): after the first v7 blind review ===== */
 :root { --step--1: 0.875rem; --step-meta: 0.9375rem; }
 .byline, .crumbs, .toc, .prose .footnote, .prose blockquote p:last-child:not(:first-child), .history time, .page-meta, .ribbon, .change-summary { font-size: var(--step-meta); }

@@ -217,10 +217,10 @@ final class AccountsTest extends WebTestCase
         $this->client->request('GET', $link);
         self::assertResponseRedirects('/accept-invitation');
         $this->client->followRedirect();
-        self::assertSelectorTextSame('h1', 'Choose your password');
+        self::assertSelectorTextSame('h1', 'Welcome, Grace Hopper');
         self::assertSelectorTextContains('main', 'sign in with as grace');
 
-        $this->client->submitForm('Save password', ['password' => 'a new horse']);
+        $this->client->submitForm('Choose password', ['password' => 'a new horse']);
         self::assertResponseRedirects('/login');
         $this->client->followRedirect();
         self::assertSelectorTextContains('.notice', 'Welcome! Sign in with your new password.');
