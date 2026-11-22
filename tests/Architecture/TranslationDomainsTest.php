@@ -6,6 +6,7 @@ namespace Quire\Tests\Architecture;
 
 use PHPUnit\Framework\TestCase;
 use Quire\Extension\ManifestParser;
+use Quire\Translation\Locales;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Yaml\Yaml;
 
@@ -35,7 +36,7 @@ final class TranslationDomainsTest extends TestCase
                 ++$checked;
                 $name = basename($catalogue);
 
-                if (1 !== preg_match('/^(?<domain>[a-z0-9-]+)(?<icu>\+intl-icu)?\.(?<locale>[a-z]{2,3}(?:_[A-Z]{2})?)\.yaml$/', $name, $m)) {
+                if (1 !== preg_match('/^(?<domain>[a-z0-9-]+)(?<icu>\+intl-icu)?\.(?<locale>[A-Za-z0-9_]+)\.yaml$/', $name, $m) || !Locales::isCanonical($m['locale'])) {
                     $wrong[] = $composer['name'].': '.$name.' isn\'t <domain>[+intl-icu].<locale>.yaml';
                 } elseif ($m['domain'] !== $own && !('quire' === $own && \in_array($m['domain'], self::SYMFONY_DOMAINS, true) && '' === $m['icu'])) {
                     $wrong[] = $composer['name'].': '.$name.' is in the domain "'.$m['domain'].'", not its own "'.$own.'"';
