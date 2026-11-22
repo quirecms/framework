@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Integration;
 
 use PHPUnit\Framework\TestCase;
+use Quire\Extension\InstalledExtensions;
 use Quire\Testing\TestInstallation;
 use Quire\Testing\TestKernel;
 use Quire\Translation\Internal\ArtifactLoader;
@@ -17,6 +18,7 @@ use Symfony\Component\Console\Event\ConsoleTerminateEvent;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Translation\Loader\LoaderInterface;
 use Symfony\Component\Translation\MessageCatalogue;
 use Symfony\Contracts\Translation\TranslatorInterface;
@@ -133,9 +135,14 @@ final class TranslationArtifactsTest extends TestCase
         self::assertCount(9, array_filter($report['warnings'], static fn (string $warning): bool => str_starts_with($warning, 'The language package')), 'Each one left out, and only those.');
     }
 
-    public function testBuildingTheSiteSaysWhichAreLeftOut(): void
+    public function testBuildingTheSiteSaysWhichAreLeftOutAsInstalledNow(): void
     {
-        $listener = new ArtifactWarningsListener([['name' => 'acme/shop-mk', 'status' => 'loaded', 'reason' => null], ['name' => 'acme/shop-de', 'status' => 'ignored', 'reason' => 'It\'s for acme/shop 0.4; 0.5.2 is installed.']]);
+        // A copy of the fixture site, whose packages change after the command started
+        $dir = sys_get_temp_dir().'/quire-artifacts-'.bin2hex(random_bytes(4));
+        $filesystem = new Filesystem();
+        $filesystem->mirror(TestInstallation::projectDir().self::FIXTURES, $dir);
+        $installed = new InstalledExtensions($dir.'/installed.json');
+        $listener = new ArtifactWarningsListener($installed);
         $said = static function (string $command, int $exitCode) use ($listener): string {
             $output = new BufferedOutput();
             $listener(new ConsoleTerminateEvent(new Command($command), new ArrayInput([]), $output, $exitCode));
@@ -143,10 +150,19 @@ final class TranslationArtifactsTest extends TestCase
             return trim((string) preg_replace('/\s+/', ' ', $output->fetch()));
         };
 
-        self::assertStringContainsString('The language package "acme/shop-de" isn\'t loaded: It\'s for acme/shop 0.4', $said('cache:clear', 0));
-        self::assertStringNotContainsString('acme/shop-mk', $said('cache:warmup', 0));
-        self::assertSame('', $said('quire:about', 0), 'Only when the site is built.');
-        self::assertSame('', $said('cache:clear', 1), 'Not over a failed build\'s own error.');
+        try {
+            self::assertStringNotContainsString('"acme/hub-shop-mk"', $said('cache:clear', 0));
+            self::assertSame('', $said('quire:about', 0), 'Only when the site is built.');
+            self::assertSame('', $said('cache:clear', 1), 'Not over a failed build\'s own error.');
+
+            // "composer update" meanwhile: the extension moves to 0.6, so its 0.5 language package no longer fits
+            $json = (string) file_get_contents($dir.'/installed.json');
+            file_put_contents($dir.'/installed.json', str_replace(['"version": "0.5.2.0"', '"pretty_version": "0.5.2"'], ['"version": "0.6.0.0"', '"pretty_version": "0.6.0"'], $json));
+
+            self::assertStringContainsString('The language package "acme/hub-shop-mk" isn\'t loaded: It\'s for acme/hub-shop 0.5; 0.6.0 is installed.', $said('cache:warmup', 0));
+        } finally {
+            $filesystem->remove($dir);
+        }
     }
 
     private function translator(string $theme): TranslatorInterface

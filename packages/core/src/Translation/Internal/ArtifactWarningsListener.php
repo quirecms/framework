@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Quire\Translation\Internal;
 
+use Quire\Extension\InstalledExtensions;
+use Quire\Translation\TranslationArtifacts;
 use Symfony\Component\Console\ConsoleEvents;
 use Symfony\Component\Console\Event\ConsoleTerminateEvent;
 use Symfony\Component\Console\Style\SymfonyStyle;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 
 /**
@@ -15,18 +16,17 @@ use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
  * (cache:clear, cache:warmup: a deployment, an update): an ignored one never stops the site, so it's said
  * where whoever builds it looks. quire:about lists them too.
  *
+ * Decided again from the packages installed now, not taken from the container the command ran in: without
+ * debug, that's the one built before a "composer update", and cache:clear builds the new one beside it.
+ *
  * @internal
  */
 final readonly class ArtifactWarningsListener
 {
     private const array BUILDS = ['cache:clear', 'cache:warmup'];
 
-    /**
-     * @param list<array{name: string, status: string, reason: ?string}> $artifacts
-     */
     public function __construct(
-        #[Autowire(param: TranslationArtifactsPass::ARTIFACTS)]
-        private array $artifacts = [],
+        private InstalledExtensions $installed,
     ) {
     }
 
@@ -39,9 +39,17 @@ final readonly class ArtifactWarningsListener
 
         $io = new SymfonyStyle($event->getInput(), $event->getOutput());
 
-        foreach ($this->artifacts as $artifact) {
-            if ('loaded' !== $artifact['status']) {
-                $io->warning(\sprintf('The language package "%s" isn\'t loaded: %s', $artifact['name'], $artifact['reason']));
+        try {
+            $statuses = new TranslationArtifacts()->read($this->installed->composerPackages(), $this->installed->vendorComposerDir());
+        } catch (\Throwable $e) {
+            $io->warning(\sprintf('The language packages couldn\'t be checked (%s): run "bin/console quire:about" to see them.', $e->getMessage()));
+
+            return;
+        }
+
+        foreach ($statuses as $status) {
+            if (!$status->loaded) {
+                $io->warning(\sprintf('The language package "%s" isn\'t loaded: %s', $status->name, $status->reason));
             }
         }
     }
