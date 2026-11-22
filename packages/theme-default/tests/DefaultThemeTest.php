@@ -286,6 +286,25 @@ final class DefaultThemeTest extends ExtensionTestCase
         self::assertSame('de', $post->locale);
     }
 
+    public function testMacedonianIsBundledForTheThemeAndTheAccountPages(): void
+    {
+        $this->setSetting('site.locale', 'mk');
+        $this->publish('post', 'Здраво', 'Текст.', '2025-03-04 10:00', locale: 'mk');
+
+        $crawler = $this->client->request('GET', '/blog/zdravo');
+
+        self::assertSelectorExists('html[lang=mk]');
+        self::assertSelectorTextSame('.skip-link', 'Прескокни до содржината');
+        self::assertSelectorTextContains('.qd-site-footer .qd-runs', 'Работи на Quire');
+        self::assertSame([], $crawler->filter('bdi[lang=en]')->each(static fn (Crawler $b): string => $b->text()), 'No text of the page falls back to English.');
+
+        $crawler = $this->client->request('GET', '/login');
+
+        self::assertSelectorTextContains('h1', 'Најавете се на');
+        self::assertSelectorTextSame('label[for=password]', 'Лозинка');
+        self::assertSame([], $crawler->filter('bdi[lang=en]')->each(static fn (Crawler $b): string => $b->text()), 'Nor of the sign-in page.');
+    }
+
     public function testAnItemIsShownInItsOwnLanguage(): void
     {
         $this->publish('post', 'Hallo Welt', 'Text.', '2025-03-04 10:00', locale: 'de');
