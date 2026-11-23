@@ -31,7 +31,7 @@ final class FormatterTest extends KernelTestCase
         $html = $this->markdown("## Getting started\n\n- [x] Done\n- ~~old~~\n\n| a |\n|---|\n| 1 |\n\n```php\necho 1;\n```\n\nVisit https://quirecms.com");
 
         self::assertStringContainsString('<h2 id="h-getting-started">Getting started</h2>', $html, 'Heading ids are prefixed, so they never meet a theme\'s own.');
-        self::assertStringContainsString('<li data-task="done" data-state="Done"><input checked="" disabled="" type="checkbox" aria-label="Done"> Done', $html);
+        self::assertStringContainsString('<li data-task="done" data-state="Done"><input checked="" disabled="" type="checkbox" aria-label="Done"><span class="task-text"> Done</span>', $html);
         self::assertStringContainsString('<del>old</del>', $html);
         self::assertStringContainsString('<td role="cell" data-label="a" data-kind="num">1</td>', $html);
         self::assertStringContainsString('<code class="language-php">echo 1;', $html);
@@ -296,6 +296,15 @@ final class FormatterTest extends KernelTestCase
         self::assertSame(['Done', 'Still to come'], $page->filter('li > input[type=checkbox][disabled]')->each(static fn (\Symfony\Component\DomCrawler\Crawler $box): string => (string) $box->attr('aria-label')), 'A box without a name fails WCAG 4.1.2.');
         self::assertSame(['done', 'open'], $page->filter('li[data-task]')->each(static fn (\Symfony\Component\DomCrawler\Crawler $item): string => (string) $item->attr('data-task')));
         self::assertSame(['Done', 'Still to come'], $page->filter('li[data-task]')->each(static fn (\Symfony\Component\DomCrawler\Crawler $item): string => (string) $item->attr('data-state')), 'For the theme to write, out of the text.');
+
+        // The text after the box is one element, a note read in place included; sub-tasks stay outside it
+        $html = $this->markdown("- [ ] Test the scoreboard[^1]\n  - [x] Order a new one\n\n[^1]: It was replaced in March.");
+        $page = new \Symfony\Component\DomCrawler\Crawler($html);
+        $text = $page->filter('li[data-task="open"] > .task-text');
+        self::assertCount(1, $text);
+        self::assertCount(1, $text->filter('sup a[href^="#fn-"]'), 'The note\'s reference is in the text.');
+        self::assertCount(1, $text->filter('.footnote'), 'The note is in the text, read in place on narrow screens.');
+        self::assertCount(1, $page->filter('li[data-task="open"] > ul > li[data-task="done"] > .task-text'), 'A sub-task is its own item, outside the text.');
     }
 
     public function testAnAuthorsMarkupCantPassForTheRenderersOrTakeItsIds(): void
