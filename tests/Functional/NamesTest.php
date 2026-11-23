@@ -7,10 +7,12 @@ namespace App\Tests\Functional;
 use Quire\Content\Type\ContentTypeDefinition;
 use Quire\Content\Type\ContentTypeRegistry;
 use Quire\Permission\Delegation;
+use Quire\Permission\Permissions;
 use Quire\Settings\SettingsSchema;
 use Quire\Testing\AdminTestCase;
 use Quire\Testing\TestInstallation;
 use Quire\Translation\Labels;
+use Symfony\Component\ErrorHandler\BufferingLogger;
 
 /**
  * The names of content types, roles and settings in the page's language: core's in its own texts, an
@@ -53,6 +55,25 @@ final class NamesTest extends AdminTestCase
         self::getContainer()->get('translator')->getCatalogue('de')->add(['{count, plural, one {# gadget} other {# gadgets}}' => '{count, plural, one {# Gerät} other {# Geräte}}'], 'quire-fixture-recipes');
 
         self::assertSame('3 Geräte', $this->service(Labels::class)->phrase($this->gadget(['count' => '{count, plural, one {# gadget} other {# gadgets}}']), 'count', ['count' => 3]));
+    }
+
+    /**
+     * A language package's broken translation of a phrase doesn't break the page: the phrase reads in English,
+     * and the owner hears of it.
+     */
+    public function testABrokenTranslationOfAPhraseReadsInEnglishAndIsLogged(): void
+    {
+        $this->locale('de');
+        self::getContainer()->get('translator')->getCatalogue('de')->add(['{count, plural, one {# gadget} other {# gadgets}}' => '{count, plural, one {# Gerät} other {# Geräte}'], 'quire-fixture-recipes');
+        $logger = new BufferingLogger();
+        $labels = new Labels(self::getContainer()->get('translator'), $this->service(Permissions::class), $this->service(ContentTypeRegistry::class), $logger);
+
+        self::assertSame('3 gadgets', $labels->phrase($this->gadget(['count' => '{count, plural, one {# gadget} other {# gadgets}}']), 'count', ['count' => 3]));
+        /** @var list<array{string, string, array{phrase: string, type: string, locale: string, domain: string}}> $logs */
+        $logs = $logger->cleanLogs();
+        self::assertSame(['warning'], array_column($logs, 0));
+        $context = $logs[0][2];
+        self::assertSame(['count', 'gadget', 'de', 'quire-fixture-recipes'], [$context['phrase'], $context['type'], $context['locale'], $context['domain']]);
     }
 
     public function testAPhraseThatCantBeFormattedFailsLoudly(): void
