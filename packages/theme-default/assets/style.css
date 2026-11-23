@@ -861,12 +861,16 @@ a:not(.qd-btn):active { background: var(--tint-1); }
 .qd-section-map li, .qd-section-map a { min-inline-size: 0; } .qd-section-map :is(h2, h3) { overflow-wrap: anywhere; hyphens: auto; }
 .qd-week a { display: inline-block; min-inline-size: 24px; max-inline-size: 100%; overflow-wrap: anywhere; }
 .qd-week__more a { display: inline-flex; align-items: center; min-block-size: 24px; }
-/* v6 shape-aware layout (IDEA-0015): a wide table takes the content width; the theme decides from the content */
+/* v6 shape-aware layout (IDEA-0015): a wide table takes the content width; the theme decides from the content.
+   Only the table widens: the text stays at the measure, centered, and its notes go under their sentence as on
+   phones (IDEA-0016), since a widened body has no margin beside it. An article with "On this page" keeps it in
+   its column, and its wide table scrolls in its own region in the text column instead. */
 @media (min-width: 60.01rem) {
-    .qd-article-body:has(.table > table:is([data-columns="6"], [data-columns="7"], [data-columns="8"], [data-columns="9"], [data-columns="10"])) > div:nth-child(2), .shape-data > div:nth-child(2) { grid-column: 1 / -1; }
-    .shape-data .qd-prose > :not(.table:has(> table:is([data-columns="6"], [data-columns="7"], [data-columns="8"], [data-columns="9"], [data-columns="10"]))) { max-inline-size: var(--measure); margin-inline: auto; }
-    .shape-data .qd-prose .table:has(> table:is([data-columns="6"], [data-columns="7"], [data-columns="8"], [data-columns="9"], [data-columns="10"])) table { display: table; inline-size: 100%; }
-    .shape-data .qd-margin { display: none; }
+    :is(.shape-data, .qd-article-body:not(:has(> .qd-toc--wide)):has(.table > table:is([data-columns="6"], [data-columns="7"], [data-columns="8"], [data-columns="9"], [data-columns="10"]))) > div:nth-child(2) { grid-column: 1 / -1; }
+    :is(.shape-data, .qd-article-body:not(:has(> .qd-toc--wide)):has(.table > table:is([data-columns="6"], [data-columns="7"], [data-columns="8"], [data-columns="9"], [data-columns="10"]))) > div:nth-child(2) > :not(.qd-prose), :is(.shape-data, .qd-article-body:not(:has(> .qd-toc--wide)):has(.table > table:is([data-columns="6"], [data-columns="7"], [data-columns="8"], [data-columns="9"], [data-columns="10"]))) .qd-prose > :not(.table:has(> table:is([data-columns="6"], [data-columns="7"], [data-columns="8"], [data-columns="9"], [data-columns="10"]))) { max-inline-size: var(--measure); margin-inline: auto; }
+    :is(.shape-data, .qd-article-body:not(:has(> .qd-toc--wide)):has(.table > table:is([data-columns="6"], [data-columns="7"], [data-columns="8"], [data-columns="9"], [data-columns="10"]))) .qd-prose .table:has(> table:is([data-columns="6"], [data-columns="7"], [data-columns="8"], [data-columns="9"], [data-columns="10"])) table { display: table; inline-size: 100%; }
+    :is(.shape-data, .qd-article-body:not(:has(> .qd-toc--wide)):has(.table > table:is([data-columns="6"], [data-columns="7"], [data-columns="8"], [data-columns="9"], [data-columns="10"]))) .qd-margin { display: none; }
+    :is(.shape-data, .qd-article-body:not(:has(> .qd-toc--wide)):has(.table > table:is([data-columns="6"], [data-columns="7"], [data-columns="8"], [data-columns="9"], [data-columns="10"]))) .qd-prose .footnote { float: none; display: block; inline-size: auto; margin: 0.6rem 0 0.9rem; padding: 0.5rem 0.75rem; border: 0; border-inline-start: 3px solid var(--rule); background: var(--paper-2); border-radius: 0 0.35rem 0.35rem 0; }
 }
 /* fix after the v6 blind review: with dates off there is no date column, at every width */
 .qd-earlier.qd-no-dates .qd-rows .qd-row { grid-template-columns: minmax(0, 1fr) auto; }
