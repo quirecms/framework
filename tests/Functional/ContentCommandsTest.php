@@ -124,6 +124,26 @@ final class ContentCommandsTest extends KernelTestCase
         self::assertStringContainsString('Published 0 scheduled items.', $due->getDisplay());
     }
 
+    /**
+     * Bringing a site's posts over from elsewhere: each published with the date it had there.
+     */
+    public function testPublishWithAnEarlierDate(): void
+    {
+        $create = $this->command('quire:content:create');
+        self::assertSame(0, $create->execute(['type' => 'post', 'title' => 'Spring draw', '--published-at' => '2026-03-14 09:00']));
+        self::assertStringContainsString('as published', $this->flat($create));
+        $id = (string) preg_replace('/.*with ID ([0-9a-f-]{36}).*/s', '$1', $this->flat($create));
+        self::assertSame('2026-03-14 09:00', self::getContainer()->get(ContentRepository::class)->find($id)?->publishedAt?->format('Y-m-d H:i'));
+
+        self::assertSame(0, $create->execute(['type' => 'post', 'title' => 'Last month', '--published-at' => '-1 month']), 'Relative dates, as with --schedule.');
+
+        self::assertSame(1, $create->execute(['type' => 'post', 'title' => 'Later', '--published-at' => '+1 day']));
+        self::assertStringContainsString('--published-at is for an earlier date: to publish later, use --schedule.', $this->flat($create));
+        self::assertSame(1, $create->execute(['type' => 'post', 'title' => 'Both', '--published-at' => '-1 day', '--publish' => true]));
+        self::assertStringContainsString('Pass one of --publish, --schedule and --published-at.', $this->flat($create));
+        self::assertEquals(0, self::getContainer()->get(Connection::class)->fetchOne("SELECT count(*) FROM quire.content WHERE title IN ('Later', 'Both')"), 'Refused before anything is made.');
+    }
+
     public function testPendingRevisionsFromTheCommandLine(): void
     {
         $container = self::getContainer();

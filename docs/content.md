@@ -91,6 +91,7 @@ Rendered HTML is cached until the item changes; shortcodes run each time. The ca
 ```bash
 bin/console quire:content:create post "Hello world" --body "My *first* post." --publish
 bin/console quire:content:create page "Team" --parent <page-id> --body-file team.md --author grace
+bin/console quire:content:create post "Spring draw" --body-file draw.md --published-at "2026-03-14 09:00"
 bin/console quire:content:list --type post
 bin/console quire:content:show <id>
 bin/console quire:content:update <id> --title "Hello again" --message "Better title"
@@ -98,6 +99,8 @@ bin/console quire:content:transition <id> unpublish
 bin/console quire:content:delete <id>
 bin/console quire:content:restore <id>
 ```
+
+`--published-at` publishes an item with an earlier date (an exact one, or relative such as `-3 weeks`), e.g. when bringing a site's posts over from elsewhere: the item shows that date, and lists and archives place it there. A later date is refused: that's `--schedule`.
 
 `--body-file=-` reads the body from standard input. `--author` takes a user's ID, email or username; on `quire:content:update`, `--author ""` leaves the item without an author. Each command's `--help` lists its options.
 
