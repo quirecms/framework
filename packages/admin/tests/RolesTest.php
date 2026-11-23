@@ -50,8 +50,8 @@ final class RolesTest extends AdminTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorTextSame('h1', 'Change what “Member” may do?');
         self::assertSelectorTextContains('main', 'This applies to the 1 user with this role.');
-        self::assertSame(['Create posts content.post.create'], $crawler->filter('.review-list__added')->each(static fn (Crawler $li): string => $li->text()));
-        self::assertSelectorTextContains('.q-notice--warning', 'They may create posts, which is done in the admin, but they can\'t open it.');
+        self::assertSame(['Create (Posts) content.post.create'], $crawler->filter('.review-list__added')->each(static fn (Crawler $li): string => $li->text()));
+        self::assertSelectorTextContains('.q-notice--warning', 'Some of what they may do is done in the admin, but they can\'t open it: Create (Posts).');
         self::assertSame([], $this->service(Permissions::class)->abilitiesOf('member'), 'Nothing saved yet.');
 
         $this->client->submit($crawler->selectButton('Save')->form());
@@ -63,7 +63,7 @@ final class RolesTest extends AdminTestCase
 
         // Back to the defaults, reviewed the same way.
         $crawler = $this->client->submit($crawler->selectButton('Back to the defaults')->form());
-        self::assertSame(['Create posts content.post.create'], $crawler->filter('.review-list__removed')->each(static fn (Crawler $li): string => $li->text()));
+        self::assertSame(['Create (Posts) content.post.create'], $crawler->filter('.review-list__removed')->each(static fn (Crawler $li): string => $li->text()));
         $this->client->submit($crawler->selectButton('Save')->form());
         self::assertSame([], $this->service(Permissions::class)->abilitiesOf('member'));
     }
@@ -145,7 +145,7 @@ final class RolesTest extends AdminTestCase
         self::assertSame(['Admin 1 user'], $crawler->filter('.q-card')->last()->filter('.q-list li')->each(static fn (Crawler $li): string => $li->text()));
 
         $crawler = $this->client->request('GET', '/admin/access?user=grace&ability=content.post.publish');
-        self::assertSame('Yes Grace may: Publish posts', $crawler->filter('.access-result h2')->text());
+        self::assertSame('Yes Grace may: Publish (Posts)', $crawler->filter('.access-result h2')->text());
 
         $this->client->request('GET', '/admin/access?user=nobody&ability=content.post.publish');
         self::assertSelectorTextSame('.q-notice--error', 'No user with the username or email “nobody”.');

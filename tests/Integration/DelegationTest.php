@@ -84,8 +84,8 @@ final class DelegationTest extends KernelTestCase
         $manager = $this->delegate('perms', ['quire.permissions.manage']);
         $this->signIn($manager);
 
-        self::assertStringStartsWith('You can\'t give or take away "', (string) $this->actions->denied('role.grant', ['role' => 'perms', 'abilities' => ['quire.extensions.manage']]));
-        self::assertStringStartsWith('You can\'t give or take away "', (string) $this->actions->denied('role.revoke', ['role' => 'editor', 'abilities' => ['content.post.publish']]));
+        self::assertStringStartsWith('You can\'t give or take away “', (string) $this->actions->denied('role.grant', ['role' => 'perms', 'abilities' => ['quire.extensions.manage']]));
+        self::assertStringStartsWith('You can\'t give or take away “', (string) $this->actions->denied('role.revoke', ['role' => 'editor', 'abilities' => ['content.post.publish']]));
         self::assertStringStartsWith('You can\'t give the role "admin"', (string) $this->actions->denied('role.create', ['role' => 'twin', 'label' => 'Twin', 'from' => 'admin']));
         self::assertStringStartsWith('You can\'t give the role "editor"', (string) $this->actions->denied('role.delete', ['role' => 'editor']));
         self::assertNull($this->actions->denied('role.grant', ['role' => 'editor', 'abilities' => ['quire.permissions.manage']]), 'What they hold, they give.');
@@ -99,9 +99,9 @@ final class DelegationTest extends KernelTestCase
         $permissions = self::getContainer()->get(Permissions::class);
         $grants = ['grant' => ['quire.extensions.manage' => ['settings'], 'quire.users.manage' => ['settings']]];
 
-        self::assertStringStartsWith('Changing it takes the right "', (string) $this->actions->denied('setting.set', ['setting' => Permissions::SETTING, 'value' => $grants]));
-        self::assertStringStartsWith('Changing it takes the right "', (string) $this->actions->denied('setting.set', ['setting' => Permissions::SETTING, 'default' => true]));
-        self::assertStringStartsWith('Changing it takes the right "', (string) $this->actions->denied('setting.set', ['setting' => Themes::SETTING, 'value' => 'other']));
+        self::assertStringStartsWith('Changing it takes the right “', (string) $this->actions->denied('setting.set', ['setting' => Permissions::SETTING, 'value' => $grants]));
+        self::assertStringStartsWith('Changing it takes the right “', (string) $this->actions->denied('setting.set', ['setting' => Permissions::SETTING, 'default' => true]));
+        self::assertStringStartsWith('Changing it takes the right “', (string) $this->actions->denied('setting.set', ['setting' => Themes::SETTING, 'value' => 'other']));
         self::assertNull($this->actions->denied('setting.set', ['setting' => 'site.title', 'value' => 'Fine']));
 
         $transfer = self::getContainer()->get(SettingsTransfer::class);
@@ -114,7 +114,7 @@ final class DelegationTest extends KernelTestCase
         // Who manages permissions too still gives only what they hold
         $both = $this->delegate('both', ['quire.settings.manage', 'quire.permissions.manage']);
         $this->signIn($both);
-        self::assertStringStartsWith('It gives or takes away "', (string) $this->actions->denied('setting.set', ['setting' => Permissions::SETTING, 'value' => ['grant' => ['quire.extensions.manage' => ['both']]]]));
+        self::assertStringStartsWith('It gives or takes away “', (string) $this->actions->denied('setting.set', ['setting' => Permissions::SETTING, 'value' => ['grant' => ['quire.extensions.manage' => ['both']]]]));
         self::assertNull($this->actions->denied('setting.set', ['setting' => Permissions::SETTING, 'value' => ['grant' => ['quire.settings.manage' => ['editor']]]]));
     }
 

@@ -349,7 +349,7 @@
 "The application": "Апликацијата"
 "The content stays; it gets this author, or none.": "Содржината останува; го добива овој автор или никој."
 "The invitation couldn't be sent: {problem}": "Поканата не можеше да се испрати: {problem}"
-"They may {abilities}, which is done in the admin, but they can't open it. Add “{access}”, or remove those.": "Смеат да {abilities}, што се прави во администрацијата, но не можат да ја отворат. Додајте „{access}“ или отстранете ги тие."
+"Some of what they may do is done in the admin, but they can't open it: {abilities}. Add “{access}”, or remove those.": "Дел од она што смеат да го прават се прави во администрацијата, но не можат да ја отворат: {abilities}. Додајте „{access}“ или отстранете ги тие."
 "They'll be able to": "Ќе можат да"
 "They'll no longer be able to": "Повеќе нема да можат да"
 "This applies to everyone, including visitors who aren't signed in.": "Ова важи за сите, вклучително и посетителите што не се најавени."

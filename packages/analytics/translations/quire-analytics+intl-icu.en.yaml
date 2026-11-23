@@ -5,3 +5,6 @@
 "Besides campaigns (utm_…), separated by commas, e.g. \"q\" for the site's search. Others are left out of the addresses sent: links to sign in or reset a password carry tokens and e-mail addresses.": "Besides campaigns (utm_…), separated by commas, e.g. \"q\" for the site's search. Others are left out of the addresses sent: links to sign in or reset a password carry tokens and e-mail addresses."
 # The title of this extension's group of settings in the admin
 settings.group.quire-analytics: 'Analytics'
+
+# Its abilities
+"Set up analytics": "Set up analytics"

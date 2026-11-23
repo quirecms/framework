@@ -6,6 +6,7 @@ namespace App\Tests\Functional;
 
 use Quire\Content\Type\ContentTypeDefinition;
 use Quire\Content\Type\ContentTypeRegistry;
+use Quire\Permission\Delegation;
 use Quire\Settings\SettingsSchema;
 use Quire\Testing\AdminTestCase;
 use Quire\Testing\TestInstallation;
@@ -62,6 +63,40 @@ final class NamesTest extends AdminTestCase
         $this->expectExceptionMessageIsOrContains('The phrase "empty" of the type "gadget" can\'t be formatted in "en": ');
 
         $this->service(Labels::class)->phrase($gadget, 'empty', ['since' => 'last week']);
+    }
+
+    public function testAbilitiesAndAddressesWithTheTypesName(): void
+    {
+        $labels = $this->service(Labels::class);
+        $settings = $this->service(SettingsSchema::class);
+        $delegation = $this->service(Delegation::class);
+        $five = ['content.post.publish', 'content.page.delete', 'quire.settings.manage', 'content.recipe.edit_any', 'quire.users.manage'];
+        $names = static fn (): array => [$labels->ability('content.post.publish'), $labels->ability('content.recipe.edit_any'), $labels->ability('quire.settings.manage'), $labels->setting($settings->get('quire.permalinks.post')), $labels->setting($settings->get('quire.listings.post')), $delegation->labels($five)];
+
+        $this->locale('en');
+        self::assertSame(['Publish (Posts)', 'Edit any (Recipes)', 'Change the site\'s settings', 'Item URLs (Posts)', 'List URL (Posts)', '“Publish (Posts)”, “Delete (Pages)”, “Change the site\'s settings” and 2 more'], $names());
+        self::assertSame('For example /blog/{slug} or /{year}/{month}/{slug}. Placeholders: {slug}, {path}, {id}, {year}, {month}, {day}. Old URLs keep working: they redirect to the new ones.', $labels->settingHelp($settings->get('quire.permalinks.post')), 'Braces as text.');
+        self::assertSame('URLs of posts', $settings->get('quire.permalinks.post')->label, 'The English name in full, for the console and the intent bar.');
+
+        $this->locale('de');
+        self::assertSame(['Veröffentlichen (Beiträge)', 'Alle bearbeiten (Recipes)', 'Die Einstellungen der Website ändern', 'Adressen der Einträge (Beiträge)', 'Adresse der Liste (Beiträge)', '„Veröffentlichen (Beiträge)“, „Löschen (Seiten)“, „Die Einstellungen der Website ändern“ und 2 weitere'], $names());
+
+        $this->locale('mk');
+        self::assertSame(['Објавување (Објави)', 'Уредување сите (Recipes)', 'Менување на поставките на сајтот', 'Адреси на ставките (Објави)', 'Адреса на листата (Објави)', '„Објавување (Објави)“, „Бришење (Страници)“, „Менување на поставките на сајтот“ и уште 2'], $names());
+        self::assertStringStartsWith('На пример /blog/{slug} или', (string) $labels->settingHelp($settings->get('quire.permalinks.recipe')), 'An extension\'s type: core\'s help.');
+    }
+
+    public function testTheAdminsSentencesAboutAbilitiesInEachLanguage(): void
+    {
+        $this->createUser('Grace', ['editor']);
+        $this->signIn('admin');
+
+        foreach (['en' => 'Grace may: Publish (Posts)', 'de' => 'Grace darf: Veröffentlichen (Beiträge)', 'mk' => 'Grace смее: Објавување (Објави)'] as $locale => $expected) {
+            $this->setSetting('site.locale', $locale);
+            $crawler = $this->client->request('GET', '/admin/access?user=grace&ability=content.post.publish');
+            self::assertStringEndsWith($expected, $crawler->filter('.access-result h2')->text(), $locale);
+            self::assertStringNotContainsString(': '.explode(': ', $expected)[1].':', $crawler->filter('main')->text(), 'No label after a colon has one of its own.');
+        }
     }
 
     public function testEachOwnerHasItsDomain(): void

@@ -350,7 +350,7 @@
 'The application': 'The application'
 'The content stays; it gets this author, or none.': 'The content stays; it gets this author, or none.'
 'The invitation couldn''t be sent: {problem}': 'The invitation couldn''t be sent: {problem}'
-'They may {abilities}, which is done in the admin, but they can''t open it. Add “{access}”, or remove those.': 'They may {abilities}, which is done in the admin, but they can''t open it. Add “{access}”, or remove those.'
+'Some of what they may do is done in the admin, but they can''t open it: {abilities}. Add “{access}”, or remove those.': 'Some of what they may do is done in the admin, but they can''t open it: {abilities}. Add “{access}”, or remove those.'
 'They''ll be able to': 'They''ll be able to'
 'They''ll no longer be able to': 'They''ll no longer be able to'
 'This applies to everyone, including visitors who aren''t signed in.': 'This applies to everyone, including visitors who aren''t signed in.'

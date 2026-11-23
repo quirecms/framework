@@ -273,11 +273,11 @@ final readonly class SettingsController
 
         foreach ($after as $ability => $roles) {
             foreach (array_diff($roles, $before[$ability] ?? []) as $role) {
-                $gained[$role][] = $this->permissions->abilities()[$ability]['label'];
+                $gained[$role][] = $this->labels->ability($ability);
             }
 
             foreach (array_diff($before[$ability] ?? [], $roles) as $role) {
-                $lost[$role][] = $this->permissions->abilities()[$ability]['label'];
+                $lost[$role][] = $this->labels->ability($ability);
             }
         }
 
