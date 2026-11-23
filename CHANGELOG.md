@@ -4,6 +4,25 @@ Every release of Quire, newest first: what it brings, the security fixes, and wh
 
 <!-- Made from docs/releases/<version>.md by "php .github/feed.php --changelog > CHANGELOG.md": change those files, not this one. A test checks it's up to date. -->
 
+## [0.5.0-rc.3] - 2026-11-23
+
+Fixes from trying 0.5.0-rc.2: wide tables by keyboard, and details of the sign-in form, dates, the privacy notice and task lists. This is a release candidate: try it, don't run production sites on it.
+
+### Fixed
+
+- **A wide table can be scrolled by keyboard:** in the default theme, a table wider than its column scrolls inside its named region, the element the keyboard focuses, so the arrow keys reach its last column. A shadow at an edge shows there's more that way.
+- **The privacy notice's tables of what a service keeps** are in the same region, named by their caption, and show as cards on phones instead of overflowing them.
+- **The Show/Hide button beside a password keeps the focus,** so pressing it again hides the password instead of typing into it or sending the form.
+- **A date in an item's header** moves to a line of its own rather than break inside itself, and breaks only when a line can't hold it, so it no longer overflows a phone with large text.
+- **A task's text starts at the same place in every row of its list,** whatever its state's words.
+
+### Upgrading
+
+A third release candidate of 0.5.0, for trying it out before the release: not for sites in production. Sites on 0.4 stay there, since they require `^0.4`.
+- A site on 0.5.0-rc.1 or rc.2: `composer update "quire/*"`. No migrations, settings or texts changed since rc.2.
+- To try it on another site that isn't in production, follow 0.5.0-rc.1's steps with `^0.5.0-rc.3`. A new site: `composer create-project quire/skeleton:0.5.0-rc.3`.
+- A child of the default theme that styles a content table's scrolling should check it: the region around the table (`.table`) scrolls now, not the table. A theme that styles the privacy notice should check its tables, now in the same region.
+
 ## [0.5.0-rc.2] - 2026-11-23
 
 Fixes from trying 0.5.0-rc.1: long reads with wide tables, task lists and notes on phones, the cookie dialog, and the sign-in form. This is a release candidate: try it, don't run production sites on it.
@@ -298,6 +317,7 @@ The first release of Quire, the extensible CMS for PHP, built on Symfony.
 
 Start a site with `composer create-project quire/skeleton my-site` (see docs/docker.md).
 
+[0.5.0-rc.3]: https://github.com/quirecms/framework/releases/tag/v0.5.0-rc.3
 [0.5.0-rc.2]: https://github.com/quirecms/framework/releases/tag/v0.5.0-rc.2
 [0.5.0-rc.1]: https://github.com/quirecms/framework/releases/tag/v0.5.0-rc.1
 [0.4.0]: https://github.com/quirecms/framework/releases/tag/v0.4.0
