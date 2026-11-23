@@ -18,7 +18,7 @@
 {% import '@quire_admin/_ui.html.twig' as ui %}
 {% import '@quire_admin/content/widgets.html.twig' as widgets %}
 
-{% set plural = type.pluralLabel|trans({}, type.owner) %}
+{% set plural = quire_type_label(type, true) %}
 {% set ids = {title: 'title', slug: 'slug', body: 'body', excerpt: 'excerpt', parent_id: 'parent_id', position: 'position', author_id: 'author_id', published_at: 'publish_at'} %}
 {% set pending = changes ? changes.pending : null %}
 {% set readonly = not can_save or (item and item.deletedAt) %}
@@ -46,10 +46,10 @@
         <a class="editor-bar__back" href="{{ path('quire_admin_content', {type: type.id}) }}"><span aria-hidden="true">←</span> {{ plural }}</a>
         {{ ui.thread(pending and pending.state.value == 'in_review' ? 'review' : stage, true) }}
         <div class="editor-bar__state">
-            <h1 class="q-sr">{{ item ? 'Editing “{title}”'|trans({title: item.title}, 'quire-admin') : 'New {type}'|trans({type: type.label|trans({}, type.owner)|lower}, 'quire-admin') }}</h1>
+            <h1 class="q-sr">{{ item ? 'Editing “{title}”'|trans({title: item.title}, 'quire-admin') : quire_type_phrase(type, 'new') }}</h1>
             <p class="editor-bar__headline">
                 {%- if not item -%}
-                    {{ 'New {type} · not saved yet'|trans({type: type.label|trans({}, type.owner)|lower}, 'quire-admin') }}
+                    {{ '{new} · not saved yet'|trans({new: quire_type_phrase(type, 'new')}, 'quire-admin') }}
                 {%- elseif item.deletedAt -%}
                     {{ 'In the trash'|trans({}, 'quire-admin') }}
                 {%- elseif changes and pending -%}

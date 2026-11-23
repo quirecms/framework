@@ -86,6 +86,6 @@
         address and starts at page 1. With "listing", the list is the home page (its one address, "/"), so the
         archive goes on from page 2: page 1's posts are this edition -#}
     {% set archive_url = quire_listing_url(type.id) != quire_home_url() ? quire_listing_url(type.id) : (page.pageCount > 1 ? quire_listing_url(type.id, 2) : null) %}
-    {% if archive_url %}<p class="qd-to-archive"><a class="qd-btn" href="{{ archive_url }}">{{ type.id == 'post' ? 'All posts'|quire_trans({}, domain) : type.pluralLabel }} <span class="qd-arrow" aria-hidden="true">→</span></a></p>{% endif %}
+    {% if archive_url %}<p class="qd-to-archive"><a class="qd-btn" href="{{ archive_url }}">{{ quire_type_phrase(type, 'all') }} <span class="qd-arrow" aria-hidden="true">→</span></a></p>{% endif %}
     {% if dated %}{{ include('partials/months.html.twig') }}{% endif %}
 </div>

@@ -14,7 +14,7 @@
 {% set dated = type.has('scheduling') and theme.settings.show_dates %}
 {% set items = page.items %}
 {% set edition = is_home and page.page == 1 %}
-{% set archive_title = type.id == 'post' ? 'All posts'|trans({}, domain) : type.pluralLabel %}
+{% set archive_title = quire_type_phrase(type, 'all') %}
 
 {% block title %}{{ edition ? site.title : archive_title ~ ' – ' ~ site.title }}{% endblock %}
 
@@ -31,7 +31,7 @@
         {% if is_home %}
             {{ include('partials/welcome.html.twig') }}
         {% else %}
-            <div class="qd-container"><header class="qd-list-head"><h1>{{ type.id == 'post' ? 'All posts'|quire_trans({}, domain) : type.pluralLabel }}</h1></header><p>{{ 'Nothing here yet.'|quire_trans({}, domain) }}</p></div>
+            <div class="qd-container"><header class="qd-list-head"><h1>{{ quire_type_phrase(type, 'all') }}</h1></header><p>{{ 'Nothing here yet.'|quire_trans({}, domain) }}</p></div>
         {% endif %}
     {% else %}
         {#- Each month with items, newest first: where in the list it starts, and so on which page (one query) -#}
@@ -51,7 +51,7 @@
         {% else %}
             <div class="qd-container">
                 <header class="qd-list-head">
-                    <h1>{{ type.id == 'post' ? 'All posts'|quire_trans({}, domain) : type.pluralLabel }}</h1>
+                    <h1>{{ quire_type_phrase(type, 'all') }}</h1>
                     {% set newest = (items|first).publishedAt %}
                     {% set oldest = (items|last).publishedAt %}
                     <p class="qd-meta">{{ 'Page {page} of {count}'|quire_trans({page: page.page, count: page.pageCount}, domain) }}{% if dated and newest and oldest %} · {{ newest|date('Y-m') == oldest|date('Y-m') ? newest|quire_date('month-year') : '{newest} to {oldest}'|quire_trans({newest: newest|quire_date('month-year'), oldest: oldest|quire_date('month-year')}, domain) }}{% endif %}</p>

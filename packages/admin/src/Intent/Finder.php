@@ -9,6 +9,7 @@ use Quire\Admin\Controller\SettingsController;
 use Quire\Admin\Controller\UsersController;
 use Quire\Admin\Navigation\AdminMenu;
 use Quire\Admin\Site\SettingsForm;
+use Quire\Translation\Labels;
 use Quire\User\UserRepository;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -34,6 +35,7 @@ final readonly class Finder
         private Security $security,
         private UrlGeneratorInterface $urls,
         private TranslatorInterface $translator,
+        private Labels $labels,
     ) {
     }
 
@@ -61,7 +63,7 @@ final readonly class Finder
 
         foreach ($this->lists->listableTypes() as $type) {
             foreach ($this->lists->query($type)->search($words, prefix: true)->limit(self::EACH)->get() as $item) {
-                $found['content'][] = ['label' => $item->title, 'detail' => $this->translator->trans($type->label, [], $type->owner), 'url' => $this->urls->generate('quire_admin_content_edit', ['type' => $type->id, 'id' => $item->id]), 'status' => $item->status];
+                $found['content'][] = ['label' => $item->title, 'detail' => $this->labels->type($type), 'url' => $this->urls->generate('quire_admin_content_edit', ['type' => $type->id, 'id' => $item->id]), 'status' => $item->status];
             }
         }
 

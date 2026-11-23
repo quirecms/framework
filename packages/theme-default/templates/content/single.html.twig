@@ -50,7 +50,7 @@
                     <nav class="qd-crumbs" aria-label="{{ 'Breadcrumb'|trans({}, domain) }}">{% for ancestor in ancestors %}<a href="{{ quire_url(ancestor) }}">{{ ancestor.title }}</a> <span aria-hidden="true">›</span> {% endfor %}<span aria-current="page">{{ content.title }}</span></nav>
                 {% endif %}
             {% elseif type.has('listable') %}
-                <nav class="qd-crumbs qd-crumbs--article" aria-label="{{ 'Breadcrumb'|trans({}, domain) }}"><a href="{{ quire_listing_url(type.id) }}">{{ type.pluralLabel }}</a>{% if month_url %} <span aria-hidden="true">›</span> <a href="{{ month_url }}">{{ content.publishedAt|quire_date('month-year') }}</a>{% endif %}</nav>
+                <nav class="qd-crumbs qd-crumbs--article" aria-label="{{ 'Breadcrumb'|trans({}, domain) }}"><a href="{{ quire_listing_url(type.id) }}">{{ quire_type_label(type, true) }}</a>{% if month_url %} <span aria-hidden="true">›</span> <a href="{{ month_url }}">{{ content.publishedAt|quire_date('month-year') }}</a>{% endif %}</nav>
             {% endif %}
 
             {% if not is_page %}
@@ -135,7 +135,7 @@
 
         {% if not is_page and type.has('listable') and preview|default(false) %}
             {#- A preview has no neighbours yet: only the way back to the list -#}
-            <div class="qd-container"><p class="qd-browse"><a href="{{ quire_listing_url(type.id) }}">{{ type.id == 'post' ? 'All posts'|quire_trans({}, domain) : type.pluralLabel }}</a></p></div>
+            <div class="qd-container"><p class="qd-browse"><a href="{{ quire_listing_url(type.id) }}">{{ quire_type_phrase(type, 'all') }}</a></p></div>
         {% endif %}
         {% if not is_page and type.has('listable') and content.publishedAt and not preview|default(false) %}
             {% set newer = quire_content(type.id).locale(content.locale).newerThan(content).first() %}
@@ -147,7 +147,7 @@
                         <div class="qd-older">{% if older %}<a href="{{ quire_url(older) }}"><div><p class="qd-kicker">{{ 'Older'|quire_trans({}, domain) }}</p><b class="qd-next__title">{{ older.title }}</b></div><span class="qd-arrow" aria-hidden="true">→</span></a>{% endif %}</div>
                     </nav>
                 {% endif %}
-                <p class="qd-browse"><a href="{{ quire_listing_url(type.id) }}">{{ type.id == 'post' ? 'All posts'|quire_trans({}, domain) : type.pluralLabel }}</a>{% if month_url %}<a href="{{ month_url }}">{{ 'More from {month}'|quire_trans({month: content.publishedAt|quire_date('month-year')}, domain) }}</a>{% endif %}</p>
+                <p class="qd-browse"><a href="{{ quire_listing_url(type.id) }}">{{ quire_type_phrase(type, 'all') }}</a>{% if month_url %}<a href="{{ month_url }}">{{ 'More from {month}'|quire_trans({month: content.publishedAt|quire_date('month-year')}, domain) }}</a>{% endif %}</p>
             </div>
         {% endif %}
 

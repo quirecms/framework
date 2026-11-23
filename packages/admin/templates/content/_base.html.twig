@@ -6,7 +6,7 @@
 #}
 {% extends '@quire_admin/layout.html.twig' %}
 
-{% set plural = type.pluralLabel|trans({}, type.owner) %}
+{% set plural = quire_type_label(type, true) %}
 
 {% block title %}{{ plural }}{% endblock %}
 
@@ -20,7 +20,7 @@
             {% endfor %}
         </nav>
         {% if can_create %}
-            <a class="q-btn" href="{{ path('quire_admin_content_new', {type: type.id}) }}"><span aria-hidden="true">＋</span> {{ 'New {type}'|trans({type: (type.label|trans({}, type.owner))|lower}, 'quire-admin') }}</a>
+            <a class="q-btn" href="{{ path('quire_admin_content_new', {type: type.id}) }}"><span aria-hidden="true">＋</span> {{ quire_type_phrase(type, 'new') }}</a>
         {% endif %}
     </div>
 {% endblock %}

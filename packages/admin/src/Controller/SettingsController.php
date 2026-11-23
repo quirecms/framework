@@ -11,6 +11,7 @@ use Quire\Settings\Exception\InvalidSettingValueException;
 use Quire\Settings\Settings;
 use Quire\Settings\SettingsSchema;
 use Quire\Settings\SettingsTransfer;
+use Quire\Translation\Labels;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -48,6 +49,7 @@ final readonly class SettingsController
         private SettingsTransfer $transfer,
         private ConfirmGuard $confirm,
         private Permissions $permissions,
+        private Labels $labels,
     ) {
     }
 
@@ -137,7 +139,7 @@ final readonly class SettingsController
 
         foreach (array_keys($import->changes) as $key) {
             $definition = $this->schema->get($key);
-            $labels[$key] = ['label' => $this->translator->trans($definition->label ?? $key, [], $definition->owner), 'from' => $this->form->shown($definition, $import->changes[$key]['from']), 'to' => $this->form->shown($definition, $import->changes[$key]['to'])];
+            $labels[$key] = ['label' => $this->labels->setting($definition), 'from' => $this->form->shown($definition, $import->changes[$key]['from']), 'to' => $this->form->shown($definition, $import->changes[$key]['to'])];
 
             // What changes who may do what says so in words, not as data (AUTHZ-14)
             if (Permissions::SETTING === $key) {
@@ -279,7 +281,7 @@ final readonly class SettingsController
             }
         }
 
-        $roles = $this->permissions->roles();
+        $roles = $this->labels->roles();
         $sentences = [];
 
         foreach ($gained as $role => $abilities) {

@@ -17,6 +17,7 @@ use Quire\Settings\Settings;
 use Quire\Settings\SettingsSchema;
 use Quire\Settings\SettingType;
 use Quire\Theme\Themes;
+use Quire\Translation\Labels;
 use Quire\User\Role;
 use Quire\User\User;
 use Quire\User\UserRepository;
@@ -67,6 +68,7 @@ final readonly class IntentParser
         private RelativeTime $time,
         private UrlGeneratorInterface $urls,
         private TranslatorInterface $translator,
+        private Labels $labels,
     ) {
     }
 
@@ -172,8 +174,11 @@ final readonly class IntentParser
         if (1 === preg_match('/\b(?:as|als)\s+(?:an?\s+|ein(?:e|en)?\s+)?(\S+)/u', mb_strtolower($text), $match)) {
             $wanted = rtrim($match[1], 's');
 
-            foreach ($this->permissions->roles() as $name => $label) {
-                if (Role::GUEST !== $name && \in_array($wanted, [mb_strtolower($name), rtrim(mb_strtolower($label), 's')], true)) {
+            // The role's id, its English name or its name in the admin's language
+            $english = $this->permissions->roles();
+
+            foreach ($this->labels->roles() as $name => $label) {
+                if (Role::GUEST !== $name && \in_array($wanted, [mb_strtolower($name), rtrim(mb_strtolower($label), 's'), rtrim(mb_strtolower($english[$name] ?? $name), 's')], true)) {
                     $role = $name;
                 }
             }
@@ -182,7 +187,7 @@ final readonly class IntentParser
         $parts = [['label' => $this->trans('intent.verb.invite'), 'kind' => 'verb'], ...array_map(static fn (string $email): array => ['label' => $email, 'kind' => 'person'], $emails[0])];
 
         if (null !== $role) {
-            $parts[] = ['label' => $this->trans('as {role}', ['role' => $this->permissions->roles()[$role]]), 'kind' => 'role'];
+            $parts[] = ['label' => $this->trans('as {role}', ['role' => $this->labels->role($role)]), 'kind' => 'role'];
         }
 
         return $this->intent(
@@ -221,14 +226,14 @@ final readonly class IntentParser
         }
 
         $wanted = $this->name(mb_strtolower($match['name']));
-        $definition = $this->schema->has($wanted) ? $this->schema->get($wanted) : array_find($this->schema->all(), fn (SettingDefinition $definition): bool => null !== $definition->label && $wanted === mb_strtolower($this->translator->trans($definition->label, [], $definition->owner)));
+        $definition = $this->schema->has($wanted) ? $this->schema->get($wanted) : array_find($this->schema->all(), fn (SettingDefinition $definition): bool => null !== $definition->label && \in_array($wanted, [mb_strtolower($this->labels->setting($definition)), mb_strtolower($definition->label)], true));
 
         if (null === $definition || $definition->sensitive) {
             return null;
         }
 
         $value = $this->value($definition, trim($match['value'], " \"'“”"));
-        $label = null === $definition->label ? $definition->key : $this->translator->trans($definition->label, [], $definition->owner);
+        $label = $this->labels->setting($definition);
 
         return $this->intent(
             'setting.set',

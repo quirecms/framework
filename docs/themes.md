@@ -297,6 +297,9 @@ Every template, of a theme, an extension or the site, has:
 | `quire_setup_steps()` | The site's setup steps the person looking may take, while some aren't done (`{steps, done}`, each step's `title`, `text`, `done`, `url`, `action`), or null for visitors and once all are: for an empty home page that helps its owner start. The same list as the admin's home page. A page that shows them is the viewer's alone: private, never stored |
 | `message|quire_trans(parameters, domain)` | A theme's visible text, translated, and marked as English where the site's language has no translation of it (see [languages](#languages)) |
 | `message|quire_trans_html(parameters, domain)` | A translated message with HTML in its parameters (see [languages](#languages)) |
+| `quire_type_label(type, plural = false)` | A content type's name in the page's language, e.g. "Posts" |
+| `quire_type_phrase(type, phrase, parameters)` | A sentence that names the type, worded whole: `'new'`, `'all'`, `'count'` (with `{count: n}`), `'search'`, `'empty'` |
+| `quire_role_label(name)`, `quire_setting_label(definition)` | A role's or setting's name in the page's language |
 
 ## What the renderer prints
 
