@@ -437,7 +437,6 @@ input[aria-invalid="true"] { border-color: var(--danger); border-width: 2px; }
 .consent__btn:hover { box-shadow: 0 0 0 3px var(--tint-2); }
 /* Accepting and rejecting are the same width (equal weight): wide enough for one line in English */
 .consent--bar .consent__btn { flex: 0 1 16rem; }
-.consent-dialog__actions .consent__btn { flex: 0 1 11rem; }
 .consent__link { font: inherit; background: none; border: 0; color: var(--accent); text-decoration: underline; text-underline-offset: 0.18em; font-weight: 650; padding: 0 0.4rem; min-block-size: 44px; cursor: pointer; }
 .consent--corner { inset-inline: auto 1.25rem; inset-block-end: 1.25rem; max-inline-size: 25rem; margin: 0; }
 .consent--corner .consent__inner { grid-template-columns: auto minmax(0, 1fr); }
@@ -460,7 +459,9 @@ input[aria-invalid="true"] { border-color: var(--danger); border-width: 2px; }
 .consent-dialog__service summary { cursor: pointer; color: var(--accent); font-size: var(--step--1); font-weight: 650; min-block-size: 24px; }
 .consent-dialog__facts { display: grid; grid-template-columns: max-content 1fr; gap: 0.2rem 1rem; font-size: var(--step--1); margin: 0.6rem 0 0; }
 .consent-dialog__facts dt { color: var(--muted); } .consent-dialog__facts dd { margin: 0; overflow-wrap: anywhere; }
-.consent-dialog__actions { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: flex-end; }
+/* Accept and Reject side by side, equal, then "Save my choices" across: the same in every language, however long their words */
+.consent-dialog__actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; align-items: stretch; }
+.consent-dialog__actions .consent__btn:last-child { grid-column: 1 / -1; }
 .icon-close { font: inherit; inline-size: 44px; block-size: 44px; border-radius: 50%; border: 1px solid var(--rule); background: var(--paper); color: var(--ink); cursor: pointer; font-size: 1.1rem; }
 .consent-embed.qd-cover { aspect-ratio: 16 / 9; display: grid; place-items: center; margin-block: 0 1.15em; font-family: var(--font-ui); }
 .consent-embed__inner { max-inline-size: 30rem; margin: 1rem; padding: 1.25rem 1.5rem; background: var(--paper); border-radius: var(--radius); display: grid; gap: 0.6rem; justify-items: start; font-size: var(--step-0); box-shadow: 0 8px 24px rgb(0 0 0 / 0.08); }
@@ -954,7 +955,7 @@ a:not(.qd-btn):active { background: var(--tint-1); }
 .qd-site-footer .consent__opener, .consent__btn, .consent__link { overflow-wrap: anywhere; max-inline-size: 100%; text-align: center; }
 .ext-image { grid-template-columns: auto minmax(0, 1fr); } .ext-image a { overflow-wrap: anywhere; }
 .qd-ribbon--notice .legend { flex-wrap: wrap; }
-@media (max-width: 30rem) { .consent-dialog__actions .consent__btn { flex: 1 1 100%; } }
+@media (max-width: 30rem) { .consent-dialog__actions { grid-template-columns: minmax(0, 1fr); } }
 /* large text on a small screen (the rem query only matches when text is zoomed): plates move under the title */
 @media (max-width: 15rem) {
     .qd-earlier .qd-rows .qd-row { grid-template-columns: 2.6rem minmax(0, 1fr); }
@@ -1056,8 +1057,6 @@ a:not(.qd-btn):active { background: var(--tint-1); }
 @media (max-width: 30rem) {
   .consent-dialog__form { padding: 1.25rem; }
   .consent-dialog__actions { margin: 0 -1.25rem -1.25rem; padding: 0.75rem 1.25rem 1rem; }
-  .consent-dialog__actions .consent__btn { flex: 1 1 calc(50% - 0.3rem); }
-  .consent-dialog__actions .consent__btn:last-child { flex-basis: 100%; }
 }
 /* v7.3: dates in "This week" fit "Wed, Nov 11" (US format is longer than v6's "Wed 11") */
 /* v7.4: wide screens only. Unscoped in v7.3, it overrode the phone stack (30rem block above) and drew the line through the titles. */
@@ -1067,7 +1066,7 @@ a:not(.qd-btn):active { background: var(--tint-1); }
 }
 /* v7.3: at large text the sticky action row would cover most of the dialog: it scrolls with the content instead */
 .consent-dialog__form { container: cdlg / inline-size; }
-@container cdlg (max-width: 15em) { .consent-dialog__actions { position: static; margin: 0; padding: 0.5rem 0 0; } .consent-dialog__actions .consent__btn { flex-basis: 100%; } }
+@container cdlg (max-width: 15em) { .consent-dialog__actions { position: static; margin: 0; padding: 0.5rem 0 0; } .consent-dialog__actions { grid-template-columns: minmax(0, 1fr); } }
 .consent-dialog__heading { hyphens: manual; overflow-wrap: normal; word-break: normal; }
 .consent-dialog__head { flex-wrap: wrap-reverse; justify-content: flex-end; } .consent-dialog__head .consent-dialog__heading { flex: 1 1 auto; }
 .consent__saved { display: block; font-size: var(--step--1); color: var(--muted); }
