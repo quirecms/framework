@@ -11,7 +11,6 @@ use Quire\Admin\Permission\AbilityCatalog;
 use Quire\Admin\Security\ConfirmGuard;
 use Quire\Permission\Access;
 use Quire\Permission\Delegation;
-use Quire\Permission\Permissions;
 use Quire\Permission\ViewAs;
 use Quire\Routing\AdminAccessListener;
 use Quire\Settings\Settings;
@@ -65,7 +64,6 @@ final readonly class UsersController
         private UserRepository $users,
         private UserWriter $writer,
         private Invitations $invitations,
-        private Permissions $permissions,
         private CurrentUser $currentUser,
         private Settings $settings,
         private Security $security,
@@ -115,9 +113,9 @@ final readonly class UsersController
         $everyone = $this->users->search(limit: 1)['total'];
         $tabs = [['view' => '', 'label' => $this->translator->trans('Everyone', [], 'quire-admin'), 'count' => $everyone]];
 
-        foreach ($roles as $role => $label) {
+        foreach (array_keys($roles) as $role) {
             if (($byRole[$role] ?? 0) > 0) {
-                $tabs[] = ['view' => 'role:'.$role, 'label' => $this->translator->trans($label, [], $this->permissions->roleOwner($role) ?? 'quire-admin'), 'count' => $byRole[$role]];
+                $tabs[] = ['view' => 'role:'.$role, 'label' => $this->labels->role($role), 'count' => $byRole[$role]];
             }
         }
 

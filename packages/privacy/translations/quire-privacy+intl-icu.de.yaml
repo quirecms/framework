@@ -124,3 +124,6 @@ Send outside production too: Auch außerhalb der Produktion senden
 "{category} partly on": "{category}: teilweise an"
 # The title of this extension's group of settings in the admin
 settings.group.quire-privacy: 'Datenschutz und Cookies'
+
+# Its abilities
+"Manage privacy and cookies": "Datenschutz und Cookies verwalten"

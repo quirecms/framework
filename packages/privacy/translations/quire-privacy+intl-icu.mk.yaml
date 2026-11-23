@@ -124,3 +124,6 @@ Send outside production too: Испраќај и надвор од продук�
 "{category} partly on": "{category}: делумно вклучено"
 # Насловот на групата поставки на ова проширување во администрацијата
 settings.group.quire-privacy: 'Приватност и колачиња'
+
+# Its abilities
+"Manage privacy and cookies": "Управување со приватноста и колачињата"

@@ -124,3 +124,6 @@ Send outside production too: Send outside production too
 "{category} partly on": "{category} partly on"
 # The title of this extension's group of settings in the admin
 settings.group.quire-privacy: 'Privacy and cookies'
+
+# Its abilities
+"Manage privacy and cookies": "Manage privacy and cookies"

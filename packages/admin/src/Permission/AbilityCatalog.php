@@ -104,9 +104,9 @@ final readonly class AbilityCatalog
 
         $others = [];
 
-        foreach ($this->permissions->abilities() as $name => $ability) {
+        foreach (array_keys($this->permissions->abilities()) as $name) {
             if (!$this->isContent($name) && $mine($name)) {
-                $others[] = $this->translator->trans($ability['label'], [], $ability['owner']);
+                $others[] = $this->labels->ability($name);
             }
         }
 
@@ -162,9 +162,7 @@ final readonly class AbilityCatalog
 
     public function label(string $name): string
     {
-        $ability = $this->permissions->abilities()[$name] ?? null;
-
-        return null === $ability ? $name : $this->translator->trans($ability['label'], [], $ability['owner']);
+        return $this->labels->ability($name);
     }
 
     public function isContent(string $name): bool
@@ -193,8 +191,8 @@ final readonly class AbilityCatalog
             return [];
         }
 
-        return [$this->translator->trans('They may {abilities}, which is done in the admin, but they can\'t open it. Add “{access}”, or remove those.', [
-            'abilities' => implode(', ', array_map(fn (string $name): string => mb_strtolower($this->label($name)), \array_slice(array_values($needAdmin), 0, 3))).(\count($needAdmin) > 3 ? ' …' : ''),
+        return [$this->translator->trans('Some of what they may do is done in the admin, but they can\'t open it: {abilities}. Add “{access}”, or remove those.', [
+            'abilities' => implode('; ', array_map($this->label(...), \array_slice(array_values($needAdmin), 0, 3))).(\count($needAdmin) > 3 ? ' …' : ''),
             'access' => $this->label(AdminAccessListener::ABILITY),
         ], 'quire-admin')];
     }

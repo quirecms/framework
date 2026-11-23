@@ -280,7 +280,7 @@ final readonly class SettingsForm
         foreach ($levels as $id => $level) {
             if (\is_string($level)) {
                 $check = $checks[$id] ?? null;
-                $label = null === $check ? (string) $id : $this->translator->trans($check['label'], [], $check['owner']);
+                $label = null === $check ? (string) $id : $this->labels->owned($check['label'], $check['owner']);
                 $shown[] = $label.' — '.('off' === $level ? $this->translator->trans('Off', [], 'quire-admin') : $this->translator->trans('check.'.$level, [], 'quire-admin'));
             }
         }
@@ -452,7 +452,7 @@ final readonly class SettingsForm
                 $options .= \sprintf('<option value="%s"%s>%s</option>', $level, $level === $current ? ' selected' : '', htmlspecialchars($label));
             }
 
-            $html .= \sprintf('<tr><th scope="row"><label for="%s">%s</label> <span class="q-meta">%s</span></th><td><select name="%s" id="%s">%s</select></td></tr>', $id, htmlspecialchars($this->translator->trans($check['label'], [], $check['owner'])), htmlspecialchars($check['id']), $name, $id, $options);
+            $html .= \sprintf('<tr><th scope="row"><label for="%s">%s</label> <span class="q-meta">%s</span></th><td><select name="%s" id="%s">%s</select></td></tr>', $id, htmlspecialchars($this->labels->owned($check['label'], $check['owner'])), htmlspecialchars($check['id']), $name, $id, $options);
         }
 
         return new Markup($html.'</tbody></table>', 'UTF-8');

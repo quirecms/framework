@@ -348,7 +348,7 @@
 'The application': 'Die Anwendung'
 'The content stays; it gets this author, or none.': 'Die Inhalte bleiben; sie bekommen diesen Autor oder keinen.'
 'The invitation couldn''t be sent: {problem}': 'Die Einladung konnte nicht gesendet werden: {problem}'
-'They may {abilities}, which is done in the admin, but they can''t open it. Add “{access}”, or remove those.': 'Sie dürfen {abilities}, was in der Verwaltung geschieht, können sie aber nicht öffnen. Füge „{access}“ hinzu oder entferne diese.'
+'Some of what they may do is done in the admin, but they can''t open it: {abilities}. Add “{access}”, or remove those.': 'Einiges, was sie dürfen, geschieht in der Verwaltung, die sie aber nicht öffnen können: {abilities}. Füge „{access}“ hinzu oder entferne diese.'
 'They''ll be able to': 'Sie werden dürfen'
 'They''ll no longer be able to': 'Sie werden nicht mehr dürfen'
 'This applies to everyone, including visitors who aren''t signed in.': 'Das gilt für alle, auch für Besucher, die nicht angemeldet sind.'
