@@ -22,7 +22,14 @@ test('a password can be shown, and is a password field again before the form is 
     await expect(toggle).toHaveAccessibleName('Hide password');
     // Said once, for screen readers that don't read a changed name again
     await expect(page.locator('[data-quire-password-status]')).toHaveText('Your password is visible.');
-    await expect(field).toBeFocused();
+    // The focus stays on the button: a second Space hides the password again instead of typing into it
+    await expect(toggle).toBeFocused();
+    await page.keyboard.press('Space');
+    await expect(field).toHaveAttribute('type', 'password');
+    await expect(field).toHaveValue('correct horse');
+    await expect(page.locator('[data-quire-password-status]')).toHaveText('Your password is hidden.');
+    await page.keyboard.press('Space');
+    await expect(field).toHaveAttribute('type', 'text');
     // As text, never sent to a browser's spell-checking service
     expect(await field.evaluate((input) => input.spellcheck)).toBe(false);
 

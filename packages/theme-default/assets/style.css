@@ -267,7 +267,7 @@ main:focus { outline: none; }
 .qd-prose code { font-family: var(--font-mono); font-size: 0.82em; background: var(--paper-2); border: 1px solid var(--rule); border-radius: 4px; padding: 0.05em 0.35em; }
 .qd-prose pre { background: var(--paper-2); border: 1px solid var(--rule); border-radius: var(--radius); padding: 1rem 1.25rem; overflow-x: auto; font-size: 0.85rem; line-height: 1.6; }
 .qd-prose pre code { background: none; border: 0; padding: 0; font-size: inherit; }
-.qd-prose .table > table { font-family: var(--font-ui); display: block; overflow-x: auto; border-collapse: collapse; font-size: 0.9375rem; font-variant-numeric: tabular-nums; }
+.qd-prose .table > table { font-family: var(--font-ui); border-collapse: collapse; font-size: 0.9375rem; font-variant-numeric: tabular-nums; }
 .qd-prose th, .qd-prose td { padding: 0.55rem 0.9rem; border-block-end: 1px solid var(--rule); text-align: start; vertical-align: top; }
 .qd-prose th { font-weight: 650; border-block-end: 2px solid var(--ink); }
 .qd-prose [data-kind="num"] { text-align: end; }
@@ -640,7 +640,9 @@ del.change { text-decoration-color: #b42318; text-decoration-thickness: 2px; bac
 /* On a phone the menu's items are closer, so a few short ones share a row rather than leave one alone below */
 @media (max-width: 30rem) { .qd-site-nav a { padding-inline: 0.55rem; } }
 /* A date never breaks inside itself ("November / 19, 2026") */
-.qd-kicker time { white-space: nowrap; }
+/* A date moves to a line of its own rather than break inside itself ("November / 19, 2026"), and breaks only when a
+   line can't hold it (a phone with large text) */
+.qd-kicker time { display: inline-block; }
 .qd-pager--numbers .qd-numbers { flex-wrap: wrap; }
 @media (max-width: 60rem) { .qd-pager--numbers { grid-template-columns: minmax(0, 1fr) auto; } .qd-pager--numbers .qd-newer { display: none; } .qd-pager--numbers .qd-numbers { justify-content: flex-start; } }
 .alert a { display: inline-block; padding-block: 0.2rem; }
@@ -1147,4 +1149,35 @@ a:not(.qd-btn):active { background: var(--tint-1); }
 /* A row without a date (dates off, a draft in the admin's preview): no day column */
 .qd-rows .qd-row.qd-row--undated { grid-template-columns: minmax(0, 1fr) auto; }
 
+}
+
+/* A table wider than its column scrolls inside its region, the element that is named and takes the keyboard's focus,
+   so the arrow keys scroll it. A shadow at an edge shows there's more that way: the paper-colored covers move with
+   the content (local) and hide the shadows (scroll) at an end that's reached. */
+.qd-prose .table, .privacy-services .table { overflow-x: auto; max-inline-size: 100%;
+    background:
+        linear-gradient(to right, var(--paper), var(--paper)) left / 1.5rem 100% no-repeat local,
+        linear-gradient(to left, var(--paper), var(--paper)) right / 1.5rem 100% no-repeat local,
+        radial-gradient(farthest-side at 0 50%, color-mix(in srgb, var(--ink) 40%, transparent), transparent) left / 1.25rem 100% no-repeat scroll,
+        radial-gradient(farthest-side at 100% 50%, color-mix(in srgb, var(--ink) 40%, transparent), transparent) right / 1.25rem 100% no-repeat scroll; }
+[dir="rtl"] :is(.qd-prose, .privacy-services) .table { background-position: right, left, left, right; }
+.qd-prose .table:focus-visible, .privacy-services .table:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* The privacy notice's tables of what a service keeps: the same region, and the same cards on phones */
+.privacy-services .table > table { border-collapse: collapse; font-size: var(--step--1); }
+.privacy-services .table :is(th, td) { padding: 0.45rem 0.75rem; border-block-end: 1px solid var(--rule); text-align: start; vertical-align: top; }
+.privacy-services .table th { font-weight: 650; border-block-end: 2px solid var(--ink); }
+@media (max-width: 30rem) {
+    .privacy-services .table > table, .privacy-services .table tbody, .privacy-services .table tr { display: block; }
+    .privacy-services .table thead { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
+    .privacy-services .table tr { border: 1px solid var(--rule); border-radius: var(--radius); padding: 0.5rem 0.75rem; margin-block-end: 0.5rem; }
+    .privacy-services .table td { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: 0.75rem; border: 0; padding: 0.2rem 0; }
+    .privacy-services .table td::before { content: attr(data-label); font-weight: 650; color: var(--muted); }
+}
+/* A task's text starts at the same place in every row, whatever its state's words: the rows share the list's columns,
+   the state's as wide as its longest words, up to a third of the line (they wrap beyond it, with large text) */
+.qd-prose ul:has(> li[data-task]) { display: grid; grid-template-columns: 0.8rem fit-content(min(8rem, 35%)) minmax(0, 1fr); column-gap: 0.6rem; }
+.qd-prose ul:has(> li[data-task]) > li { grid-column: 1 / -1; grid-template-columns: subgrid; }
+.qd-prose ul:has(> li[data-task]) > li[data-state]::before { min-inline-size: 0; }
+@media (max-width: 20rem) {
+    .qd-prose ul:has(> li[data-task]) { grid-template-columns: 0.8rem minmax(0, 1fr); }
 }
