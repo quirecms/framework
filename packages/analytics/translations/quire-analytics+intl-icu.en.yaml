@@ -8,3 +8,10 @@ settings.group.quire-analytics: 'Analytics'
 
 # Its abilities
 "Set up analytics": "Set up analytics"
+
+# What visitors read of the Google Analytics service, in the cookie settings and the privacy notice
+"Counts visits and shows how the site is used, for its owner. Google may process the data in the United States (Google LLC).": "Counts visits and shows how the site is used, for its owner. Google may process the data in the United States (Google LLC)."
+"Tells visits of the same browser apart.": "Tells visits of the same browser apart."
+"Keeps the state of the visit.": "Keeps the state of the visit."
+"2 years": "2 years"
+"As set in Google Analytics: 2 or 14 months": "As set in Google Analytics: 2 or 14 months"

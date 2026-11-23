@@ -72,7 +72,7 @@ final class BannerTest extends PrivacyTestCase
     public function testEnglishFallbacksAreMarkedForThePagesLanguage(): void
     {
         $crawler = $this->home();
-        self::assertCount(0, $crawler->filter('[data-consent-banner] bdi, dialog[data-consent-dialog] bdi'));
+        self::assertCount(0, $crawler->filter('[data-consent-banner] bdi[lang], dialog[data-consent-dialog] bdi[lang]'));
         self::assertNull($this->config($crawler)['lang'] ?? null);
 
         $this->setSetting('site.locale', 'ar');

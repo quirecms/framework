@@ -81,20 +81,20 @@
                     <details>
                         <summary>{{ 'About {service}'|quire_trans({service: service.label}, domain) }}</summary>
                         <dl class="consent-dialog__facts">
-                            <dt>{{ 'Run by'|quire_trans({}, domain) }}</dt><dd>{{ service.vendor }}</dd>
-                            <dt>{{ 'What it does'|quire_trans({}, domain) }}</dt><dd>{{ service.purpose }}</dd>
+                            <dt>{{ 'Run by'|quire_trans({}, domain) }}</dt><dd><bdi>{{ service.vendor }}</bdi></dd>
+                            <dt>{{ 'What it does'|quire_trans({}, domain) }}</dt><dd>{{ service.purpose|quire_trans({}, quire_domain(service.owner)) }}</dd>
                             {% if service.hosts is not empty %}
-                                <dt>{{ 'It reaches'|quire_trans({}, domain) }}</dt><dd>{{ service.hosts|reduce((all, list) => all|merge(list), [])|map(host => host|replace({'https://': ''}))|join(', ') }}</dd>
+                                <dt>{{ 'It reaches'|quire_trans({}, domain) }}</dt><dd>{% for host in service.hosts|reduce((all, list) => all|merge(list), [])|map(host => host|replace({'https://': ''})) %}<bdi dir="ltr">{{ host }}</bdi>{{ not loop.last ? ', ' }}{% endfor %}</dd>
                             {% endif %}
-                            {% if service.retention %}<dt>{{ 'Its company keeps the data for'|quire_trans({}, domain) }}</dt><dd>{{ service.retention }}</dd>{% endif %}
-                            {% if service.policyUrl %}<dt>{{ 'Its privacy policy'|quire_trans({}, domain) }}</dt><dd><a href="{{ service.policyUrl }}" rel="noopener" target="_blank">{{ service.policyUrl|replace({'https://': ''}) }}</a></dd>{% endif %}
+                            {% if service.retention %}<dt>{{ 'Its company keeps the data for'|quire_trans({}, domain) }}</dt><dd>{{ service.retention|quire_trans({}, quire_domain(service.owner)) }}</dd>{% endif %}
+                            {% if service.policyUrl %}<dt>{{ 'Its privacy policy'|quire_trans({}, domain) }}</dt><dd><a href="{{ service.policyUrl }}" rel="noopener" target="_blank"><bdi dir="ltr">{{ service.policyUrl|replace({'https://': ''}) }}</bdi></a></dd>{% endif %}
                         </dl>
                         {% if service.cookies is not empty %}
                             <table class="consent-dialog__cookies">
                                 <caption>{{ 'What it keeps on your device'|quire_trans({}, domain) }}</caption>
                                 <thead><tr><th scope="col">{{ 'Name'|quire_trans({}, domain) }}</th><th scope="col">{{ 'Kept for'|quire_trans({}, domain) }}</th><th scope="col">{{ 'Purpose'|quire_trans({}, domain) }}</th></tr></thead>
                                 <tbody>
-                                    {% for cookie in service.cookies %}<tr><td><code>{{ cookie.name }}</code></td><td>{{ cookie.lifetime }}</td><td>{{ cookie.purpose }}</td></tr>{% endfor %}
+                                    {% for cookie in service.cookies %}<tr><td><code dir="ltr">{{ cookie.name }}</code></td><td><bdi>{{ cookie.lifetime|quire_trans({}, quire_domain(service.owner)) }}</bdi></td><td>{{ cookie.purpose|quire_trans({}, quire_domain(service.owner)) }}</td></tr>{% endfor %}
                                 </tbody>
                             </table>
                         {% endif %}

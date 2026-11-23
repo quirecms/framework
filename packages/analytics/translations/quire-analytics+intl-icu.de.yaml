@@ -8,3 +8,10 @@ settings.group.quire-analytics: 'Analyse'
 
 # Its abilities
 "Set up analytics": "Analyse einrichten"
+
+# What visitors read of the Google Analytics service, in the cookie settings and the privacy notice
+"Counts visits and shows how the site is used, for its owner. Google may process the data in the United States (Google LLC).": "Zählt Besuche und zeigt dem Inhaber, wie die Website genutzt wird. Google kann die Daten in den USA verarbeiten (Google LLC)."
+"Tells visits of the same browser apart.": "Unterscheidet Besuche desselben Browsers."
+"Keeps the state of the visit.": "Speichert den Stand des Besuchs."
+"2 years": "2 Jahre"
+"As set in Google Analytics: 2 or 14 months": "Wie in Google Analytics eingestellt: 2 oder 14 Monate"

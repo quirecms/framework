@@ -37,8 +37,8 @@ final class NamesThroughLabelsTest extends TestCase
         'packages/admin/src/Audit/AuditEntries.php' => ['$domain'],
     ];
 
-    /** A Twig translation whose domain is neither a literal nor the template's `domain` */
-    private const string TWIG_DOMAIN = '/\|(?:quire_)?trans\((?:[^()]|\([^()]*\))*,\s*+(?![\'"]|domain\s*\))[^,()]+\)/';
+    /** A Twig translation whose domain is neither a literal, the template's `domain`, nor quire_domain(owner) */
+    private const string TWIG_DOMAIN = '/\|(?:quire_)?trans\((?:[^()]|\([^()]*\))*,\s*+(?![\'"]|domain\s*\)|quire_domain\()[^,()]+\)/';
 
     public function testNoTemplatePrintsADeclaredName(): void
     {
@@ -102,11 +102,12 @@ final class NamesThroughLabelsTest extends TestCase
 
     public function testTheScanReadsEachSpelling(): void
     {
-        self::assertSame([1, 1, 0, 0, 0], array_map(static fn (string $twig): int => (int) preg_match(self::TWIG_DOMAIN, $twig), [
+        self::assertSame([1, 1, 0, 0, 0, 0], array_map(static fn (string $twig): int => (int) preg_match(self::TWIG_DOMAIN, $twig), [
             '{{ type.label|trans({}, type.owner) }}',
             "{{ 'x'|trans({n: f(1)}, ability['owner']) }}",
             "{{ 'x'|trans({n: f(1)}, 'quire') }}",
             "{{ 'x'|quire_trans({}, domain) }}",
+            '{{ service.purpose|quire_trans({}, quire_domain(service.owner)) }}',
             "{{ 'x'|trans }}",
         ]));
         self::assertMatchesRegularExpression(self::TWIG_DOMAIN, "{{ 'x'|trans({\n    n: 1,\n}, type.owner) }}", 'Across lines.');

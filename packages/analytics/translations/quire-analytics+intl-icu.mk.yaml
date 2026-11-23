@@ -8,3 +8,10 @@ settings.group.quire-analytics: 'Аналитика'
 
 # Its abilities
 "Set up analytics": "Поставување на аналитиката"
+
+# What visitors read of the Google Analytics service, in the cookie settings and the privacy notice
+"Counts visits and shows how the site is used, for its owner. Google may process the data in the United States (Google LLC).": "Ги брои посетите и му покажува на сопственикот како се користи сајтот. Google може да ги обработува податоците во САД (Google LLC)."
+"Tells visits of the same browser apart.": "Ги разликува посетите од ист прелистувач."
+"Keeps the state of the visit.": "Ја чува состојбата на посетата."
+"2 years": "2 години"
+"As set in Google Analytics: 2 or 14 months": "Како што е поставено во Google Analytics: 2 или 14 месеци"
