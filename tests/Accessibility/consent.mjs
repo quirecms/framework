@@ -242,16 +242,17 @@ if (process.env.QUIRE_CHECK_SENDS === '1') {
         await page.locator('[data-consent-banner] [data-consent-accept]').click();
         await page.waitForFunction(() => window.ciGtag === 1, null, { timeout: 5000 });
         const seen = googleRequests(page);
-        const scripts = [];
-        page.on('request', (request) => request.resourceType() === 'script' && scripts.push(request.url()));
 
         for (const url of ['/login', '/forgot-password', `/reset-password/${'a'.repeat(32)}.ci-not-a-token`]) {
-            scripts.length = 0;
             await page.goto(base + url, { waitUntil: 'networkidle' });
             expect(!page.url().includes('token'), `${url}: the page's address still holds the token.`);
             expect(await page.locator('#quire-consent-config').count() === 1 && await page.locator('[data-consent-banner]').count() === 0, `${url}: the settings without a banner.`);
             expect(await page.locator('.consent__opener').isVisible(), `${url}: no "Cookie settings" to change the choice.`);
+            // What this page itself loaded, from its own resource timing: a request the previous page made
+            // late (a service it started) is reported by the browser, but isn't this page's
+            const scripts = await page.evaluate(() => performance.getEntriesByType('resource').map((entry) => entry.name).filter((name) => /\.m?js(\?|$)/.test(name)));
             const other = scripts.filter((script) => new URL(script).origin !== new URL(base).origin || script.includes('/assets/ci-consent/') || script.includes('/assets/quire-analytics/'));
+            expect(scripts.some((script) => script.includes('/assets/quire-privacy/consent-')), `${url}: the consent loader didn't load (${scripts.join(', ')}).`);
             expect(other.length === 0, `${url}: scripts other than the site's own: ${other.join(', ')}`);
             expect(await page.evaluate(() => window.ciGtag ?? 0) === 0, `${url}: a service started.`);
 
