@@ -63,6 +63,30 @@ final class Ga4SettingTest extends ExtensionTestCase
         self::assertSame($video, $after->get('fixture-video')?->revision(), 'Their answers about the other services stand.');
     }
 
+    /**
+     * What visitors read of the service is translated in this package's texts; English where the page's
+     * language has none, marked as such; its identifiers (cookies, hosts, addresses) read left to right.
+     */
+    public function testVisitorsReadTheServiceInTheirLanguage(): void
+    {
+        $this->setSetting(AnalyticsSettings::GA4_ID, 'G-ABC123DEF4');
+        $this->service(Services::class)->reset();
+        $ga = '//dialog[@data-consent-dialog]//div[contains(@class, "consent-dialog__service")][.//text()[contains(., "Google Analytics")]]';
+
+        $this->setSetting('site.locale', 'mk');
+        $service = $this->client->request('GET', '/')->filterXPath($ga);
+        self::assertStringContainsString('Ги разликува посетите од ист прелистувач.', $service->text());
+        self::assertStringContainsString('2 години', $service->text());
+        self::assertCount(0, $service->filter('bdi[lang]'), 'Nothing in English.');
+
+        $this->setSetting('site.locale', 'ar');
+        $service = $this->client->request('GET', '/')->filterXPath($ga);
+        self::assertSame('Tells visits of the same browser apart.', $service->filter('tbody tr:first-child td:last-child bdi[lang="en"]')->text());
+        self::assertSame(['_ga', '_ga_*'], $service->filter('code[dir="ltr"]')->each(static fn ($code): string => $code->text()));
+        self::assertContains('*.google-analytics.com', $service->filter('dd bdi[dir="ltr"]')->each(static fn ($host): string => $host->text()));
+        self::assertSame('policies.google.com/privacy', $service->filter('a bdi[dir="ltr"]')->text());
+    }
+
     public function testTheIdIsChecked(): void
     {
         $this->expectException(InvalidSettingValueException::class);

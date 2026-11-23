@@ -105,6 +105,7 @@ return [
 
 - **Categories:** `Necessary` (never asked about), `Preferences`, `OwnStatistics` (the site's own measurement, kept apart for when the law exempts it; until then asked about like the others), `Statistics` (visitors see "Analytics") and `Marketing`.
 - **Hosts** are allowed by the site's [Content-Security-Policy](security.md) on its pages, never on the sign-in pages. A host that no service declares can't load. The policy is the same for every visitor, so pages stay cacheable: it says what may load, and consent says what does.
+- **Texts visitors read** (the purpose, each cookie's lifetime and purpose, the retention) are English, translated in your package's domain like its other texts; where the page's language has none, they show in English, marked as such. The label and the company are names and aren't translated. Cookie names, hosts and the policy's address always read left to right, also on right-to-left pages.
 - **The script** is a JavaScript module among the extension's assets, started only once the visitor allows the service. It may export `start({config, consent})` (e.g. to load the vendor's script, whose host is declared) and `stop()`. `config` is the declaration's, the same for every visitor: never a secret.
 - Mistakes (a keyword as a host, a script that isn't an asset, a necessary service with a script, the same ID twice) are refused when the container is built, naming the extension.
 
