@@ -87,17 +87,22 @@ final readonly class Labels implements RuntimeExtensionInterface
             $message = $type->phrases[$phrase];
             $domain = self::domainOf($type->owner);
 
-            // Asked of the catalogue (with its fallbacks), not by comparing texts: an untranslated message
-            // goes through the plain formatter, which would swap "count" inside "{count, plural, …}"
-            if ($this->translator->getCatalogue()->has($message, $domain)) {
-                return $this->translator->trans($message, $parameters, $domain);
+            [$text, $locale] = [$message, 'en'];
+
+            // Phrases are ICU messages by contract, so they're formatted here, whatever kind of domain holds
+            // their translation: Symfony's plain formatter would swap "count" inside "{count, plural, …}"
+            for ($catalogue = $this->translator->getCatalogue(); $catalogue instanceof \Symfony\Component\Translation\MessageCatalogueInterface; $catalogue = $catalogue->getFallbackCatalogue()) {
+                if ($catalogue->defines($message, $domain)) {
+                    [$text, $locale] = [$catalogue->get($message, $domain), $catalogue->getLocale()];
+
+                    break;
+                }
             }
 
-            // Not in the owner's texts at all, English included: the phrase as it's declared, formatted
-            $formatted = \MessageFormatter::formatMessage('en', $message, $parameters);
+            $formatted = \MessageFormatter::formatMessage($locale, $text, $parameters);
 
             if (false === $formatted) {
-                throw new \LogicException(\sprintf('The phrase "%s" of the type "%s" can\'t be formatted: %s.', $phrase, $type->id, intl_get_error_message()));
+                throw new \LogicException(\sprintf('The phrase "%s" of the type "%s" can\'t be formatted in "%s": %s.', $phrase, $type->id, $locale, intl_get_error_message()));
             }
 
             return $formatted;

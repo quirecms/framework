@@ -46,12 +46,20 @@ final class NamesTest extends AdminTestCase
         self::assertSame('3 gadgets', $this->service(Labels::class)->phrase($gadget, 'count', ['count' => 3]));
     }
 
+    public function testAPhraseTranslatedInAPlainDomainIsStillAnIcuMessage(): void
+    {
+        $this->locale('de');
+        self::getContainer()->get('translator')->getCatalogue('de')->add(['{count, plural, one {# gadget} other {# gadgets}}' => '{count, plural, one {# Gerät} other {# Geräte}}'], 'quire-fixture-recipes');
+
+        self::assertSame('3 Geräte', $this->service(Labels::class)->phrase($this->gadget(['count' => '{count, plural, one {# gadget} other {# gadgets}}']), 'count', ['count' => 3]));
+    }
+
     public function testAPhraseThatCantBeFormattedFailsLoudly(): void
     {
         $gadget = $this->gadget(['empty' => 'No gadgets since {since, date}.']);
 
         $this->expectException(\LogicException::class);
-        $this->expectExceptionMessageIsOrContains('The phrase "empty" of the type "gadget" can\'t be formatted: ');
+        $this->expectExceptionMessageIsOrContains('The phrase "empty" of the type "gadget" can\'t be formatted in "en": ');
 
         $this->service(Labels::class)->phrase($gadget, 'empty', ['since' => 'last week']);
     }
