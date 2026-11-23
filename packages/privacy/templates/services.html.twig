@@ -23,11 +23,13 @@
                 {% if service.policyUrl %}<dt>{{ 'Its privacy policy'|quire_trans({}, domain) }}</dt><dd><a href="{{ service.policyUrl }}" rel="noopener"><bdi dir="ltr">{{ service.policyUrl|replace({'https://': ''}) }}</bdi></a></dd>{% endif %}
             </dl>
             {% if service.cookies is not empty %}
-                <table>
-                    <caption>{{ 'What it keeps on your device'|quire_trans({}, domain) }}</caption>
+                {#- A region that scrolls when the table is wider than the page, named by the table's caption -#}
+                {%- set caption_id = 'privacy-keeps-' ~ loop.parent.loop.index ~ '-' ~ loop.index %}
+                <div class="table" role="region" tabindex="0" aria-labelledby="{{ caption_id }}"><table>
+                    <caption id="{{ caption_id }}">{{ 'What it keeps on your device'|quire_trans({}, domain) }}</caption>
                     <thead><tr><th scope="col">{{ 'Name'|quire_trans({}, domain) }}</th><th scope="col">{{ 'Kept for'|quire_trans({}, domain) }}</th><th scope="col">{{ 'Purpose'|quire_trans({}, domain) }}</th></tr></thead>
-                    <tbody>{% for cookie in service.cookies %}<tr><td><code dir="ltr">{{ cookie.name }}</code></td><td><bdi>{{ cookie.lifetime|quire_trans({}, quire_domain(service.owner)) }}</bdi></td><td>{{ cookie.purpose|quire_trans({}, quire_domain(service.owner)) }}</td></tr>{% endfor %}</tbody>
-                </table>
+                    <tbody>{% for cookie in service.cookies %}<tr><td data-label="{{ 'Name'|quire_trans({}, domain) }}"><code dir="ltr">{{ cookie.name }}</code></td><td data-label="{{ 'Kept for'|quire_trans({}, domain) }}"><bdi>{{ cookie.lifetime|quire_trans({}, quire_domain(service.owner)) }}</bdi></td><td data-label="{{ 'Purpose'|quire_trans({}, domain) }}">{{ cookie.purpose|quire_trans({}, quire_domain(service.owner)) }}</td></tr>{% endfor %}</tbody>
+                </table></div>
             {% endif %}
         {% endfor %}
     {% endfor %}
