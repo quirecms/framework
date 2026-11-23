@@ -130,3 +130,9 @@ settings.group.quire-privacy: 'Datenschutz und Cookies'
 
 # Its abilities
 "Manage privacy and cookies": "Datenschutz und Cookies verwalten"
+
+# What was saved, in a sentence: "Saved: {state}." with each category's words, agreeing in each language
+"consent.saved.statistics": "{state, select, on {Analyse an} off {Analyse aus} other {Analyse teilweise an}}"
+"consent.saved.statistics-own": "{state, select, on {Messung an} off {Messung aus} other {Messung teilweise an}}"
+"consent.saved.preferences": "{state, select, on {Einstellungen an} off {Einstellungen aus} other {Einstellungen teilweise an}}"
+"consent.saved.marketing": "{state, select, on {Marketing an} off {Marketing aus} other {Marketing teilweise an}}"

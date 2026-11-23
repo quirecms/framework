@@ -84,7 +84,7 @@
                             <dt>{{ 'Run by'|quire_trans({}, domain) }}</dt><dd><bdi>{{ service.vendor }}</bdi></dd>
                             <dt>{{ 'What it does'|quire_trans({}, domain) }}</dt><dd>{{ service.purpose|quire_trans({}, quire_domain(service.owner)) }}</dd>
                             {% if service.hosts is not empty %}
-                                <dt>{{ 'It reaches'|quire_trans({}, domain) }}</dt><dd>{% for host in service.hosts|reduce((all, list) => all|merge(list), [])|map(host => host|replace({'https://': ''})) %}<bdi dir="ltr">{{ host }}</bdi>{{ not loop.last ? ', ' }}{% endfor %}</dd>
+                                <dt>{{ 'It reaches'|quire_trans({}, domain) }}</dt><dd><ul class="consent__hosts">{% for host in service.reaches %}<li><bdi dir="ltr">{{ host }}</bdi></li>{% endfor %}</ul></dd>
                             {% endif %}
                             {% if service.retention %}<dt>{{ 'Its company keeps the data for'|quire_trans({}, domain) }}</dt><dd>{{ service.retention|quire_trans({}, quire_domain(service.owner)) }}</dd>{% endif %}
                             {% if service.policyUrl %}<dt>{{ 'Its privacy policy'|quire_trans({}, domain) }}</dt><dd><a href="{{ service.policyUrl }}" rel="noopener" target="_blank"><bdi dir="ltr">{{ service.policyUrl|replace({'https://': ''}) }}</bdi></a></dd>{% endif %}
@@ -121,6 +121,13 @@
 {# What the footer says of each category, in one place: the labels are the categories' own #}
 {% set category_labels = {} %}
 {% for group in categories %}{% set category_labels = category_labels|merge({(group.category.value): group.category.label|trans({}, domain)}) %}{% endfor %}
+{# What was saved, in a sentence ("Saved: analytics off."): each category's own words, which agree in each language #}
+{% set saved_states = {} %}
+{% for group in categories %}{% set saved_states = saved_states|merge({(group.category.value): {
+    on: ('consent.saved.' ~ group.category.value)|trans({state: 'on'}, domain),
+    off: ('consent.saved.' ~ group.category.value)|trans({state: 'off'}, domain),
+    some: ('consent.saved.' ~ group.category.value)|trans({state: 'some'}, domain),
+}}) %}{% endfor %}
 <script type="application/json" id="quire-consent-config">{{ config|merge({messages: {
     saved: 'Saved: {state}.'|trans({state: '{state}'}, domain),
     off: '{label} is off.'|trans({label: '{label}'}, domain),
@@ -128,6 +135,6 @@
     stateOff: '{category} off'|trans({category: '{category}'}, domain),
     stateSome: '{category} partly on'|trans({category: '{category}'}, domain),
     stateSeparator: ' · ',
-}, lang: quire_fallback_language('{category} on', domain), categories: category_labels})|json_encode(constant('JSON_HEX_TAG') b-or constant('JSON_HEX_AMP') b-or constant('JSON_HEX_APOS') b-or constant('JSON_HEX_QUOT') b-or constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_THROW_ON_ERROR'))|raw }}</script>
+}, lang: quire_fallback_language('{category} on', domain), categories: category_labels, saved: saved_states})|json_encode(constant('JSON_HEX_TAG') b-or constant('JSON_HEX_AMP') b-or constant('JSON_HEX_APOS') b-or constant('JSON_HEX_QUOT') b-or constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_THROW_ON_ERROR'))|raw }}</script>
 <script type="module" src="{{ loader }}"></script>
 {% endif %}

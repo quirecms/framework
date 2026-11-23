@@ -130,3 +130,9 @@ settings.group.quire-privacy: 'Приватност и колачиња'
 
 # Its abilities
 "Manage privacy and cookies": "Управување со приватноста и колачињата"
+
+# What was saved, in a sentence: "Saved: {state}." with each category's words, agreeing in each language
+"consent.saved.statistics": "{state, select, on {аналитика вклучена} off {аналитика исклучена} other {аналитика делумно вклучена}}"
+"consent.saved.statistics-own": "{state, select, on {мерење вклучено} off {мерење исклучено} other {мерење делумно вклучено}}"
+"consent.saved.preferences": "{state, select, on {поставки вклучени} off {поставки исклучени} other {поставки делумно вклучени}}"
+"consent.saved.marketing": "{state, select, on {маркетинг вклучен} off {маркетинг исклучен} other {маркетинг делумно вклучен}}"

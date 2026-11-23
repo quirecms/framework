@@ -41,6 +41,17 @@ final class ServiceTest extends TestCase
         $declare();
     }
 
+    public function testVisitorsAreToldEachSiteItReachesOnce(): void
+    {
+        $service = new Service('ga', 'Google Analytics', Category::Statistics, 'Google Ireland Limited', 'Counts visits.', hosts: [
+            'script-src' => ['https://www.googletagmanager.com/gtag/'],
+            'connect-src' => ['https://*.google-analytics.com', 'https://*.googletagmanager.com'],
+            'img-src' => ['https://*.google-analytics.com', 'https://*.googletagmanager.com'],
+        ]);
+
+        self::assertSame(['www.googletagmanager.com', '*.google-analytics.com', '*.googletagmanager.com'], $service->reaches());
+    }
+
     public function testACookieFamilyEndsWithAStar(): void
     {
         self::assertSame('_ga_*', new Cookie('_ga_*', '2 years', 'Keeps the session.')->name);

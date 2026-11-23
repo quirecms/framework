@@ -207,7 +207,9 @@ final class AccountsTest extends WebTestCase
         $admin = $writer->create(new CreateUser('Ada Lovelace', 'ada@example.com', roles: ['admin']));
         $linus = $writer->create(new CreateUser('Linus Ek', 'linus@example.com', roles: ['editor']));
         self::getContainer()->get(Invitations::class)->invite($linus, $admin);
-        $link = $this->link($this->email());
+        $email = $this->email();
+        self::assertStringContainsString('Ada Lovelace invited you to '.self::getContainer()->get(Settings::class)->getString('site.title').' as Editor. Your username is linus.', (string) $email->getTextBody(), 'The role and the username, each named as what it is.');
+        $link = $this->link($email);
 
         foreach (['en' => 'Editor', 'mk' => 'Уредник'] as $locale => $role) {
             self::getContainer()->get(Settings::class)->set('site.locale', $locale);
@@ -230,8 +232,7 @@ final class AccountsTest extends WebTestCase
         $invitations->invite($grace, $admin);
         $email = $this->email();
         self::assertSame('You’re invited to '.self::getContainer()->get(Settings::class)->getString('site.title'), $email->getSubject());
-        self::assertStringContainsString('Ada Lovelace added you to', (string) $email->getTextBody());
-        self::assertStringContainsString('as grace.', (string) $email->getTextBody());
+        self::assertStringContainsString('Ada Lovelace invited you to '.self::getContainer()->get(Settings::class)->getString('site.title').'. Your username is grace.', (string) $email->getTextBody());
         $link = $this->link($email);
         self::assertStringStartsWith($this->siteUri().'/accept-invitation/', $link);
 

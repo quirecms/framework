@@ -84,6 +84,32 @@ final class BannerTest extends PrivacyTestCase
         self::assertSame('en', $this->config($crawler)['lang'] ?? null, 'What the loader writes (the state, what was saved).');
     }
 
+    /**
+     * After a choice the status says what was saved in a sentence, each category in its own words, which
+     * agree in each language ("маркетинг исклучен", "поставки исклучени"); the footer's state names them.
+     */
+    public function testWhatWasSavedIsSaidInEachCategorysOwnWords(): void
+    {
+        $saved = $this->config($this->home())['saved'] ?? [];
+        self::assertSame(['on' => 'preferences on', 'off' => 'preferences off', 'some' => 'preferences partly on'], $saved['preferences'] ?? null);
+        self::assertSame('marketing off', $saved['marketing']['off'] ?? null, 'Lower case, in a sentence.');
+
+        $this->setSetting('site.locale', 'mk');
+        $saved = $this->config($this->home())['saved'] ?? [];
+        self::assertSame(['маркетинг исклучен', 'поставки исклучени'], [$saved['marketing']['off'] ?? null, $saved['preferences']['off'] ?? null]);
+    }
+
+    public function testTheSitesAServiceReachesAreOnePerLine(): void
+    {
+        $hosts = $this->home()->filter('dialog[data-consent-dialog] ul.consent__hosts');
+
+        $all = $hosts->filter('li > bdi[dir="ltr"]')->each(static fn (Crawler $host): string => $host->text());
+
+        self::assertContains('player.video.example', $all);
+        self::assertCount($hosts->filter('li')->count(), $all, 'Each host on its own line, read left to right.');
+        self::assertStringNotContainsString(',', $hosts->text(), 'No commas.');
+    }
+
     public function testTheLoadersDataIsTheSameForEveryVisitorAndCantEndTheScript(): void
     {
         $config = $this->config($this->home());
@@ -201,11 +227,11 @@ final class BannerTest extends PrivacyTestCase
     }
 
     /**
-     * @return array{v: int, test: bool, revision: string, services: list<array{id: string, script: ?string, category: string, config: array<string, mixed>, cookies: list<string>}>, messages: array{off: string, stateOn?: string, stateOff?: string}, categories?: array<string, string>, lang?: ?string}
+     * @return array{v: int, test: bool, revision: string, services: list<array{id: string, script: ?string, category: string, config: array<string, mixed>, cookies: list<string>}>, messages: array{off: string, stateOn?: string, stateOff?: string}, categories?: array<string, string>, lang?: ?string, saved?: array<string, array{on: string, off: string, some: string}>}
      */
     private function config(Crawler $crawler): array
     {
-        /** @var array{v: int, test: bool, revision: string, services: list<array{id: string, script: ?string, category: string, config: array<string, mixed>, cookies: list<string>}>, messages: array{off: string, stateOn?: string, stateOff?: string}, categories?: array<string, string>, lang?: ?string} $config */
+        /** @var array{v: int, test: bool, revision: string, services: list<array{id: string, script: ?string, category: string, config: array<string, mixed>, cookies: list<string>}>, messages: array{off: string, stateOn?: string, stateOff?: string}, categories?: array<string, string>, lang?: ?string, saved?: array<string, array{on: string, off: string, some: string}>} $config */
         $config = json_decode($crawler->filter('script#quire-consent-config')->text(), true, flags: \JSON_THROW_ON_ERROR);
 
         return $config;

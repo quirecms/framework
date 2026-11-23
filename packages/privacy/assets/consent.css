@@ -279,6 +279,28 @@ html.consent-shown body {
     }
 }
 
+/* The sites a service reaches: one per line, each read left to right */
+.consent__hosts {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+/* A short viewport (a phone on its side, 400% zoom): the banner is at the top of the page, in its flow, rather
+   than over a large part of what can be seen, with its buttons scrolling inside it. */
+@media (max-height: 25rem) {
+    html.consent-shown body {
+        padding-bottom: 0;
+    }
+
+    .consent,
+    .consent--corner {
+        position: static;
+        max-height: none;
+        overflow: visible;
+    }
+}
+
 @media (prefers-reduced-motion: no-preference) {
     .consent {
         animation: quire-consent-in 0.2s ease-out;
