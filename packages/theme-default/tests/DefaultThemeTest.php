@@ -22,6 +22,20 @@ final class DefaultThemeTest extends ExtensionTestCase
     #[\Override]
     protected static ?string $theme = 'quire-theme-default';
 
+    /**
+     * "This site loads nothing from other companies.": in the footer while the site's policy loads only from
+     * the site itself; the owner can turn it off.
+     */
+    public function testTheFooterSaysTheSiteLoadsNothingFromOthers(): void
+    {
+        $crawler = $this->client->request('GET', '/');
+        self::assertSame('This site loads nothing from other companies.', $crawler->filter('footer .qd-foot-site p.qd-loads-nothing')->text());
+        self::assertCount(1, $crawler->filter('.qd-loads-nothing .qd-dot[aria-hidden="true"]'));
+
+        $this->setSetting('theme.quire-theme-default.show_loads_nothing', false);
+        self::assertCount(0, $this->client->request('GET', '/')->filter('.qd-loads-nothing'), 'The owner turned it off.');
+    }
+
     public function testTheFooterOffersSigningInOrOut(): void
     {
         $crawler = $this->client->request('GET', '/');

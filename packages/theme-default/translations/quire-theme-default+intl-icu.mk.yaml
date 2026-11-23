@@ -74,3 +74,14 @@
 "Only you see this": "Ова го гледате само Вие"
 "You’re signed in as {name}, who may change this site.": "Најавени сте како {name}, со право да го менува овој сајт."
 "Open the admin": "Отворете ја администрацијата"
+
+# The footer's line, and the theme's settings
+"This site loads nothing from other companies.": "Овој сајт не вчитува ништо од други компании."
+"Accent color": "Боја за нагласување"
+"The color of links and highlights. Every choice is readable in light and dark mode.": "Бојата на врските и нагласувањата. Секој избор е читлив во светол и темен режим."
+"Show dates": "Прикажи датуми"
+"Show the publication date of posts. Without dates, the home page has no \"This week\" and no months.": "Прикажи го датумот на објавување на објавите. Без датуми, почетната страница нема „Оваа недела“ ниту месеци."
+"Show \"Runs on Quire\"": "Прикажи „Работи на Quire“"
+"The credit at the bottom of every page.": "Наводот на дното на секоја страница."
+"Show \"This site loads nothing from other companies\"": "Прикажи „Овој сајт не вчитува ништо од други компании“"
+"In the footer, and only while it's true: Quire checks the security policy the site sends, so a service, a font or an image from another site removes it.": "Во подножјето, и само додека е точно: Quire ја проверува безбедносната политика што сајтот ја испраќа, па услуга, фонт или слика од друг сајт го отстрануваат."

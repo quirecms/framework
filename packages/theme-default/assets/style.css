@@ -423,6 +423,8 @@ input[aria-invalid="true"] { border-color: var(--danger); border-width: 2px; }
 .qd-site-footer .qd-base { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; border-block-start: 1px solid var(--rule); padding-block: 1rem 1.5rem; }
 .qd-site-footer .qd-base p { margin: 0; }
 .qd-runs a { color: var(--ink); text-decoration-color: var(--accent); }
+.qd-loads-nothing { display: flex; gap: 0.5rem; align-items: baseline; color: var(--ink); margin: 0.5rem 0 0; }
+.qd-loads-nothing .qd-dot { flex: none; inline-size: 0.6rem; block-size: 0.6rem; border-radius: 50%; border: 2px solid var(--accent); }
 .qd-print-source { display: none; }
 
 /* ---------- quire/privacy ---------- */
