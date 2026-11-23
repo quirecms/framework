@@ -1009,7 +1009,7 @@ a:not(.qd-btn):active { background: var(--tint-1); }
 .pw input, .form-password input { padding-inline-end: 5.25rem; }
 .pw__toggle, .password-toggle { position: absolute; inset-block: 4px; inset-inline-end: 4px; min-inline-size: 4.5rem; font: inherit; font-size: var(--step--1); font-weight: 650; color: var(--ink); background: var(--paper-2); border: 1px solid var(--rule); border-radius: calc(var(--radius) - 2px); cursor: pointer; }
 .pw__toggle:hover, .password-toggle:hover { border-color: var(--ink); }
-.pw__toggle[aria-pressed="true"], .password-toggle[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.pw__toggle[aria-pressed="true"], .password-toggle[data-showing] { background: var(--ink); color: var(--paper); }
 /* ===== v7.1 (17 Nov 2026): after the first v7 blind review ===== */
 :root { --step--1: 0.875rem; --step-meta: 0.9375rem; }
 .qd-byline, .qd-crumbs, .qd-toc, .qd-prose .footnote, .qd-prose blockquote p:last-child:not(:first-child), .qd-history time, .qd-page-meta, .qd-ribbon, .change-summary { font-size: var(--step-meta); }

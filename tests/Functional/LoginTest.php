@@ -81,8 +81,9 @@ final class LoginTest extends WebTestCase
         self::assertCount(1, $toggle, 'A button right after the field.');
         self::assertSame('button', $toggle->attr('type'), 'It never submits the form.');
         self::assertSame('password', $toggle->attr('aria-controls'));
-        self::assertSame('false', $toggle->attr('aria-pressed'));
-        self::assertSame('Show password', $toggle->attr('aria-label'));
+        self::assertNull($toggle->attr('aria-pressed'), 'It says what it does next instead: no pressed state, which would say it twice.');
+        self::assertSame(['Show password', 'Show', 'Hide', 'Hide password'], [$toggle->attr('aria-label'), $toggle->text(), $toggle->attr('data-hide'), $toggle->attr('data-hide-label')]);
+        self::assertSame(['none', 'false'], [$crawler->filter('input#username')->attr('autocapitalize'), $crawler->filter('input#username')->attr('spellcheck')], 'A username is typed as it is.');
         self::assertNotNull($toggle->attr('hidden'), 'Hidden until its script runs: without JavaScript, a plain password field.');
         self::assertSame(['_password', 'current-password'], [$crawler->filter('input#password')->attr('name'), $crawler->filter('input#password')->attr('autocomplete')], 'The field is as it was.');
         self::assertSame(['false', 'none', 'off'], [$crawler->filter('input#password')->attr('spellcheck'), $crawler->filter('input#password')->attr('autocapitalize'), $crawler->filter('input#password')->attr('autocorrect')], 'Shown as text, it\'s never sent to a spell checker\'s service.');

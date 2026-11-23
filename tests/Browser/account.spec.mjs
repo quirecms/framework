@@ -10,21 +10,26 @@ test('a password can be shown, and is a password field again before the form is 
 
     // Its script reveals it
     await expect(toggle).toBeVisible();
-    await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    await expect(toggle).toHaveText('Show');
+    await expect(toggle).toHaveAccessibleName('Show password');
     // Both fields, or the browser's own check of the required username stops the form before it's sent
     await page.locator('#username').fill('someone');
     await field.fill('correct horse');
 
     await toggle.click();
     await expect(field).toHaveAttribute('type', 'text');
-    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    await expect(toggle).toHaveText('Hide');
+    await expect(toggle).toHaveAccessibleName('Hide password');
+    // Said once, for screen readers that don't read a changed name again
+    await expect(page.locator('[data-quire-password-status]')).toHaveText('Your password is visible.');
     await expect(field).toBeFocused();
     // As text, never sent to a browser's spell-checking service
     expect(await field.evaluate((input) => input.spellcheck)).toBe(false);
 
     await toggle.click();
     await expect(field).toHaveAttribute('type', 'password');
-    await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    await expect(toggle).toHaveText('Show');
+    await expect(page.locator('[data-quire-password-status]')).toHaveText('Your password is hidden.');
 
     // Shown, then sent: the browser gets a password field, never plain text it could keep
     await toggle.click();
