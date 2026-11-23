@@ -94,6 +94,11 @@
                 {{ quire_slot('footer') }}
                 {#- Signed in: the way out, as on the account page (pages aren't shared between visitors) -#}
                 <ul><li>{% if app.user %}<a href="{{ logout_path() }}">{{ 'Sign out'|quire_trans({}, domain) }}</a>{% else %}<a href="{{ path('quire_login') }}">{{ 'Sign in'|quire_trans({}, domain) }}</a>{% endif %}</li></ul>
+                {#- Said only when it's true: core reads the policy the site's pages are sent (enforced, every source the
+                    site's own, nothing reported or hinted elsewhere) and every template of the theme -#}
+                {% if (theme.settings.show_loads_nothing ?? true) and quire_loads_only_from_this_site() %}
+                    <p class="qd-loads-nothing"><span class="qd-dot" aria-hidden="true"></span>{{ 'This site loads nothing from other companies.'|quire_trans({}, domain) }}</p>
+                {% endif %}
             </div>
             {% endif %}
         </div>

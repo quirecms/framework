@@ -75,3 +75,14 @@
 "Only you see this": "Only you see this"
 "You’re signed in as {name}, who may change this site.": "You’re signed in as {name}, who may change this site."
 "Open the admin": "Open the admin"
+
+# The footer's line, and the theme's settings
+"This site loads nothing from other companies.": "This site loads nothing from other companies."
+"Accent color": "Accent color"
+"The color of links and highlights. Every choice is readable in light and dark mode.": "The color of links and highlights. Every choice is readable in light and dark mode."
+"Show dates": "Show dates"
+"Show the publication date of posts. Without dates, the home page has no \"This week\" and no months.": "Show the publication date of posts. Without dates, the home page has no \"This week\" and no months."
+"Show \"Runs on Quire\"": "Show \"Runs on Quire\""
+"The credit at the bottom of every page.": "The credit at the bottom of every page."
+"Show \"This site loads nothing from other companies\"": "Show \"This site loads nothing from other companies\""
+"In the footer, and only while it's true: Quire checks the security policy the site sends, so a service, a font or an image from another site removes it.": "In the footer, and only while it's true: Quire checks the security policy the site sends, so a service, a font or an image from another site removes it."

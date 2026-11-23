@@ -23,6 +23,7 @@ Its settings:
 | `theme.quire-theme-default.accent` | `blue`, `green`, `purple`, `orange`, `red`: the color of links and highlights | `blue` |
 | `theme.quire-theme-default.show_dates` | Whether posts show their date. Without dates the home page has no week and no months | `true` |
 | `theme.quire-theme-default.show_credit` | Whether "Runs on Quire" shows at the bottom of every page | `true` |
+| `theme.quire-theme-default.show_loads_nothing` | Whether the footer says "This site loads nothing from other companies." It shows only while it's true: the policy the site's pages are sent is enforced, every source is the site's own, nothing is reported or hinted to another site, and no template of the theme names another site's address (`quire_loads_only_from_this_site()`). A service visitors are asked about, a font or an image from another site removes it | `true` |
 
 To change more, make a child theme with `"parent": "quire-theme-default"` (see [Writing a theme](#writing-a-theme)), or override single templates in the site's `templates/`. Its stylesheet is built on CSS custom properties, so a few lines restyle it:
 

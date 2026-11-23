@@ -74,3 +74,14 @@
 "Only you see this": "Nur Sie sehen das"
 "You’re signed in as {name}, who may change this site.": "Sie sind als {name} angemeldet und dürfen diese Website ändern."
 "Open the admin": "Admin öffnen"
+
+# The footer's line, and the theme's settings
+"This site loads nothing from other companies.": "Diese Website lädt nichts von anderen Unternehmen."
+"Accent color": "Akzentfarbe"
+"The color of links and highlights. Every choice is readable in light and dark mode.": "Die Farbe von Links und Hervorhebungen. Jede Wahl ist im hellen und im dunklen Modus lesbar."
+"Show dates": "Daten anzeigen"
+"Show the publication date of posts. Without dates, the home page has no \"This week\" and no months.": "Das Veröffentlichungsdatum von Beiträgen anzeigen. Ohne Daten hat die Startseite kein „Diese Woche“ und keine Monate."
+"Show \"Runs on Quire\"": "„Betrieben mit Quire“ anzeigen"
+"The credit at the bottom of every page.": "Der Hinweis unten auf jeder Seite."
+"Show \"This site loads nothing from other companies\"": "„Diese Website lädt nichts von anderen Unternehmen“ anzeigen"
+"In the footer, and only while it's true: Quire checks the security policy the site sends, so a service, a font or an image from another site removes it.": "In der Fußzeile, und nur solange es stimmt: Quire prüft die Sicherheitsrichtlinie, die die Website sendet, daher entfernt ihn ein Dienst, eine Schrift oder ein Bild von einer anderen Website."
