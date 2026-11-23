@@ -70,11 +70,13 @@
     </header>
     {% endblock %}
 
-    <div class="qd-page{{ quire_slot_filled('qd-sidebar') ? ' qd-has-sidebar' }}">
+    {#- An item's page prints the sidebar itself, after its text (content/single.html.twig) -#}
+    {% set sidebar_here = quire_slot_filled('sidebar') and not (sidebar_in_content ?? false) %}
+    <div class="qd-page{{ quire_slot_filled('sidebar') ? ' qd-has-sidebar' }}">
         <main id="content" tabindex="-1">
             {% block content %}{% endblock %}
         </main>
-        {% if quire_slot_filled('sidebar') %}
+        {% if sidebar_here %}
             <aside class="qd-sidebar qd-container" aria-label="{{ 'Sidebar'|trans({}, domain) }}">{{ quire_slot('sidebar') }}</aside>
         {% endif %}
     </div>
@@ -90,7 +92,8 @@
             {% if not minimal %}
             <div class="qd-foot-site"><h2>{{ 'This site'|quire_trans({}, domain) }}</h2>
                 {{ quire_slot('footer') }}
-                <ul><li><a href="{{ path('quire_login') }}">{{ 'Sign in'|quire_trans({}, domain) }}</a></li></ul>
+                {#- Signed in: the way out, as on the account page (pages aren't shared between visitors) -#}
+                <ul><li>{% if app.user %}<a href="{{ logout_path() }}">{{ 'Sign out'|quire_trans({}, domain) }}</a>{% else %}<a href="{{ path('quire_login') }}">{{ 'Sign in'|quire_trans({}, domain) }}</a>{% endif %}</li></ul>
             </div>
             {% endif %}
         </div>

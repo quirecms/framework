@@ -56,6 +56,34 @@ final class BannerTest extends PrivacyTestCase
         self::assertSame('https://video.example/privacy', $dialog->filter('a[rel=noopener]')->attr('href'));
     }
 
+    public function testTheDialogNamesEachCategorysSwitchAndIsDescribedByItsIntro(): void
+    {
+        $dialog = $this->home()->filter('dialog[data-consent-dialog]');
+
+        self::assertSame(['Allow preferences', 'Allow marketing'], $dialog->filter('[data-consent-category]')->each(static fn (Crawler $box): string => trim($box->ancestors()->first()->text())));
+        self::assertSame('quire-consent-dialog-intro', $dialog->attr('aria-describedby'));
+        self::assertStringContainsString('“Cookie settings” at the bottom of every page.', $dialog->filter('#quire-consent-dialog-intro')->text());
+    }
+
+    /**
+     * Under a language without texts of its own, the banner's and the dialog's are English, marked as such
+     * (read as English, their punctuation where English puts it), and the loader marks what it writes.
+     */
+    public function testEnglishFallbacksAreMarkedForThePagesLanguage(): void
+    {
+        $crawler = $this->home();
+        self::assertCount(0, $crawler->filter('[data-consent-banner] bdi, dialog[data-consent-dialog] bdi'));
+        self::assertNull($this->config($crawler)['lang'] ?? null);
+
+        $this->setSetting('site.locale', 'ar');
+        $crawler = $this->home();
+
+        self::assertSame('en', $crawler->filter('#quire-consent-heading bdi')->attr('lang'));
+        self::assertSame('en', $crawler->filter('dialog[data-consent-dialog] [data-consent-save] bdi')->attr('lang'));
+        self::assertSame('en', $crawler->filter('footer .consent__opener bdi')->attr('lang'));
+        self::assertSame('en', $this->config($crawler)['lang'] ?? null, 'What the loader writes (the state, what was saved).');
+    }
+
     public function testTheLoadersDataIsTheSameForEveryVisitorAndCantEndTheScript(): void
     {
         $config = $this->config($this->home());
@@ -63,7 +91,7 @@ final class BannerTest extends PrivacyTestCase
         self::assertSame(1, $config['v']);
         self::assertTrue($config['test'], 'Outside production nothing is sent.');
         self::assertSame(['fixture-video', 'fixture-fonts'], array_column($config['services'], 'id'));
-        self::assertStringStartsWith('/assets/quire-fixture-video/start-', $config['services'][0]['script']);
+        self::assertStringStartsWith('/assets/quire-fixture-video/start-', (string) $config['services'][0]['script']);
         self::assertSame(['channel' => 'quire'], $config['services'][0]['config']);
         self::assertSame(['fixture_video_id', 'fixture_video_pref_*'], $config['services'][0]['cookies']);
         self::assertSame('{label} is off.', $config['messages']['off']);
@@ -118,12 +146,45 @@ final class BannerTest extends PrivacyTestCase
         self::assertStringNotContainsString('video.example', (string) $this->client->getResponse()->headers->get('Content-Security-Policy'), 'A script on a password form could read the password.');
     }
 
-    public function testPagesWithPasswordFormsHaveNoBannerAndNoLoader(): void
+    /**
+     * Visitors can change their choice on pages with forms for passwords or accounts (the settings and
+     * the footer's opener), but nothing of a service runs there: the loader gets no service's code or
+     * configuration, decided here, and the page's policy allows no other site's host.
+     */
+    public function testPagesWithPasswordFormsHaveTheSettingsButNoServicesCode(): void
     {
-        $crawler = $this->client->request('GET', '/login');
+        $this->setSetting('quire.auth.password_reset', true);
 
-        self::assertResponseIsSuccessful();
-        self::assertCount(0, $crawler->filter('[data-consent-banner], #quire-consent-config, .consent__opener, script[src*="quire-privacy/consent"], link[href*="quire-privacy/consent"]'), 'Nothing of a service runs there, whatever the visitor allowed.');
+        foreach (['/login', '/forgot-password', '/reset-password/'.str_repeat('a', 32).'.not-a-real-token'] as $url) {
+            $crawler = $this->client->request('GET', $url);
+
+            if (str_contains($url, 'token')) {
+                // The emailed link's token moves into the session at once: the page has it nowhere
+                self::assertResponseRedirects();
+                $crawler = $this->client->followRedirect();
+                self::assertStringNotContainsString('token', $this->client->getRequest()->getUri(), $url);
+            }
+
+            self::assertCount(0, $crawler->filter('[data-consent-banner]'), $url.': no banner asks there.');
+            self::assertCount(1, $crawler->filter('footer button.consent__opener[data-consent-open]'), $url.': the opener.');
+            self::assertCount(1, $crawler->filter('dialog[data-consent-dialog]'), $url.': the settings.');
+            self::assertCount(1, $crawler->filter('script[type=module][src^="/assets/quire-privacy/consent-"]'), $url.': the loader, the site\'s own.');
+
+            $config = $this->config($crawler);
+            self::assertNotSame([], $config['services'], $url.': what visitors choose about.');
+
+            foreach ($config['services'] as $service) {
+                self::assertNull($service['script'], $url.': no service\'s code ('.$service['id'].').');
+                self::assertSame([], $service['config'], $url.': nor its configuration.');
+            }
+
+            $policy = (string) $this->client->getResponse()->headers->get('Content-Security-Policy');
+            self::assertStringNotContainsString('video.example', $policy, $url.': the policy allows no other site\'s host.');
+            self::assertStringNotContainsString('fonts.example', $policy, $url);
+        }
+
+        $config = $this->config($this->home());
+        self::assertNotNull($config['services'][0]['script'], 'Other pages start what visitors allow.');
     }
 
     public function testThePackageFillsCoresSlotForOtherSitesHosts(): void
@@ -140,11 +201,11 @@ final class BannerTest extends PrivacyTestCase
     }
 
     /**
-     * @return array{v: int, test: bool, revision: string, services: list<array{id: string, script: string, category: string, config: array<string, mixed>, cookies: list<string>}>, messages: array{off: string, stateOn?: string, stateOff?: string}, categories?: array<string, string>}
+     * @return array{v: int, test: bool, revision: string, services: list<array{id: string, script: ?string, category: string, config: array<string, mixed>, cookies: list<string>}>, messages: array{off: string, stateOn?: string, stateOff?: string}, categories?: array<string, string>, lang?: ?string}
      */
     private function config(Crawler $crawler): array
     {
-        /** @var array{v: int, test: bool, revision: string, services: list<array{id: string, script: string, category: string, config: array<string, mixed>, cookies: list<string>}>, messages: array{off: string, stateOn?: string, stateOff?: string}, categories?: array<string, string>} $config */
+        /** @var array{v: int, test: bool, revision: string, services: list<array{id: string, script: ?string, category: string, config: array<string, mixed>, cookies: list<string>}>, messages: array{off: string, stateOn?: string, stateOff?: string}, categories?: array<string, string>, lang?: ?string} $config */
         $config = json_decode($crawler->filter('script#quire-consent-config')->text(), true, flags: \JSON_THROW_ON_ERROR);
 
         return $config;

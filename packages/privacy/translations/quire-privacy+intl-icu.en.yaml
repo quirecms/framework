@@ -5,15 +5,15 @@ Own measurement: Own measurement
 Analytics: Analytics
 Marketing: Marketing
 Needed for the site to work, e.g. to sign in. Always on.: Needed for the site to work, e.g. to sign in. Always on.
-Remember your choices, e.g. fonts or a map's settings.: Remember your choices, e.g. fonts or a map's settings.
+Remember your choices, e.g. fonts or a map’s settings.: Remember your choices, e.g. fonts or a map’s settings.
 Count visits for this site only, without sharing them.: Count visits for this site only, without sharing them.
-Help the site see how it's used, through an analytics service.: Help the site see how it's used, through an analytics service.
+Help the site see how it’s used, through an analytics service.: Help the site see how it’s used, through an analytics service.
 Videos and other content from companies that may follow you across sites.: Videos and other content from companies that may follow you across sites.
 consent.single.heading.statistics: Analytics cookies
 consent.single.heading.statistics-own: Measurement cookies
 consent.single.heading.preferences: Preference cookies
 consent.single.heading.marketing: Marketing cookies
-consent.single.text.statistics: This site would like to use analytics cookies to see how it's used. They stay off unless you accept them.
+consent.single.text.statistics: This site would like to use analytics cookies to see how it’s used. They stay off unless you accept them.
 consent.single.text.statistics-own: This site would like to count visits for itself only, without sharing them. Nothing is counted unless you accept.
 consent.single.text.preferences: This site would like to use services that remember your choices, e.g. fonts. They stay off unless you accept them.
 consent.single.text.marketing: This site would like to show content from companies that may follow you across sites, e.g. videos. It stays off unless you accept it.
@@ -35,10 +35,13 @@ This site would like to use services of other companies. Nothing of theirs runs 
 Accept all: Accept all
 Choose cookies: Choose cookies
 Cookie settings: Cookie settings
-Choose what this site may use. You can change it at any time with “Cookie settings”.: Choose what this site may use. You can change it at any time with “Cookie settings”.
+"Choose what this site may use. You can change it at any time with “Cookie settings” at the bottom of every page.": "Choose what this site may use. You can change it at any time with “Cookie settings” at the bottom of every page."
 Your browser asks sites not to track you, so everything below stays off.: Your browser asks sites not to track you, so everything below stays off.
 Always on: Always on
-Allow all of them: Allow all of them
+"consent.allow.statistics": "Allow analytics"
+"consent.allow.statistics-own": "Allow measurement"
+"consent.allow.preferences": "Allow preferences"
+"consent.allow.marketing": "Allow marketing"
 About {service}: About {service}
 Run by: Run by
 What it does: What it does
@@ -52,7 +55,7 @@ Purpose: Purpose
 Privacy notice: Privacy notice
 Save my choices: Save my choices
 Close: Close
-Your choice is saved.: Your choice is saved.
+"Saved: {state}.": "Saved: {state}."
 '{label} is off.': '{label} is off.'
 Banner: Banner
 'Where visitors see it: a bar at the bottom, or a box in a corner.': 'Where visitors see it: a bar at the bottom, or a box in a corner.'
@@ -118,7 +121,7 @@ Send outside production too: Send outside production too
 "Load it": "Load it"
 "Always allow {label}": "Always allow {label}"
 "Open it on {host}": "Open it on {host}"
-"This content can't be shown.": "This content can't be shown."
+"This content can’t be shown.": "This content can’t be shown."
 "{category} on": "{category} on"
 "{category} off": "{category} off"
 "{category} partly on": "{category} partly on"

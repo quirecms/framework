@@ -56,9 +56,9 @@ enum Category: string
     {
         return match ($this) {
             self::Necessary => 'Needed for the site to work, e.g. to sign in. Always on.',
-            self::Preferences => 'Remember your choices, e.g. fonts or a map\'s settings.',
+            self::Preferences => 'Remember your choices, e.g. fonts or a map’s settings.',
             self::OwnStatistics => 'Count visits for this site only, without sharing them.',
-            self::Statistics => 'Help the site see how it\'s used, through an analytics service.',
+            self::Statistics => 'Help the site see how it’s used, through an analytics service.',
             self::Marketing => 'Videos and other content from companies that may follow you across sites.',
         };
     }

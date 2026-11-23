@@ -198,6 +198,28 @@ final class AccountsTest extends WebTestCase
         self::assertNotSame($grace->passwordHash, $this->user('grace@example.com')->passwordHash);
     }
 
+    /**
+     * The role an invitation names is in bold, not in quotes, and in the page's language.
+     */
+    public function testAnInvitationNamesTheRoleInThePagesLanguage(): void
+    {
+        $writer = self::getContainer()->get(UserWriter::class);
+        $admin = $writer->create(new CreateUser('Ada Lovelace', 'ada@example.com', roles: ['admin']));
+        $linus = $writer->create(new CreateUser('Linus Ek', 'linus@example.com', roles: ['editor']));
+        self::getContainer()->get(Invitations::class)->invite($linus, $admin);
+        $link = $this->link($this->email());
+
+        foreach (['en' => 'Editor', 'mk' => 'Уредник'] as $locale => $role) {
+            self::getContainer()->get(Settings::class)->set('site.locale', $locale);
+            $this->client->request('GET', $link);
+            $crawler = $this->client->followRedirect();
+
+            self::assertSame($role, $crawler->filter('.account-intro strong')->text(), $locale);
+            self::assertStringNotContainsString('“', $crawler->filter('.account-intro')->text(), $locale.': no quotes around the role.');
+            self::assertStringNotContainsString('„', $crawler->filter('.account-intro')->text(), $locale);
+        }
+    }
+
     public function testInvitedUsersChooseTheirPassword(): void
     {
         $writer = self::getContainer()->get(UserWriter::class);
@@ -207,7 +229,7 @@ final class AccountsTest extends WebTestCase
 
         $invitations->invite($grace, $admin);
         $email = $this->email();
-        self::assertSame('You\'re invited to '.self::getContainer()->get(Settings::class)->getString('site.title'), $email->getSubject());
+        self::assertSame('You’re invited to '.self::getContainer()->get(Settings::class)->getString('site.title'), $email->getSubject());
         self::assertStringContainsString('Ada Lovelace added you to', (string) $email->getTextBody());
         self::assertStringContainsString('as grace.', (string) $email->getTextBody());
         $link = $this->link($email);

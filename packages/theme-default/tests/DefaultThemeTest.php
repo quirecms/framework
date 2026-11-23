@@ -22,6 +22,17 @@ final class DefaultThemeTest extends ExtensionTestCase
     #[\Override]
     protected static ?string $theme = 'quire-theme-default';
 
+    public function testTheFooterOffersSigningInOrOut(): void
+    {
+        $crawler = $this->client->request('GET', '/');
+        self::assertSame(['Sign in'], $crawler->filter('.qd-foot-site ul a')->each(static fn ($a): string => $a->text()));
+
+        $this->signIn();
+        $crawler = $this->client->request('GET', '/');
+        self::assertSame(['Sign out'], $crawler->filter('.qd-foot-site ul a')->each(static fn ($a): string => $a->text()), 'Signed in, it says so (08i).');
+        self::assertStringStartsWith('/logout', (string) $crawler->filter('.qd-foot-site ul a')->attr('href'));
+    }
+
     public function testAPostPageIsAccessibleAndStyled(): void
     {
         $this->setSetting('site.title', 'Tournament and News');
@@ -37,7 +48,7 @@ final class DefaultThemeTest extends ExtensionTestCase
         self::assertSelectorExists('footer.qd-site-footer');
         self::assertSelectorTextSame('main h1', 'Hello world');
         self::assertSelectorTextSame('main .qd-kicker time[datetime="2025-03-04T10:00:00+00:00"]', 'March 4, 2025');
-        self::assertSelectorTextContains('main .qd-kicker', '1 min read');
+        self::assertSelectorTextContains('main .qd-kicker', "1\u{a0}min read");
         self::assertSelectorTextSame('main .qd-prose em', 'text');
         self::assertSelectorExists('main .qd-prose.qd-prose--opening', 'A post opens with a drop cap (its first paragraph, in CSS).');
         self::assertSelectorExists('html[lang=en][dir=ltr]');

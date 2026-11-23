@@ -5,9 +5,9 @@ Own measurement: Сопствено мерење
 Analytics: Аналитика
 Marketing: Маркетинг
 Needed for the site to work, e.g. to sign in. Always on.: Потребни за да работи страницата, на пр. за најава. Секогаш вклучени.
-Remember your choices, e.g. fonts or a map's settings.: Ги паметат вашите избори, на пр. фонтови или поставки на мапа.
+Remember your choices, e.g. fonts or a map’s settings.: Ги паметат вашите избори, на пр. фонтови или поставки на мапа.
 Count visits for this site only, without sharing them.: Ги бројат посетите само за оваа страница, без да ги споделуваат.
-Help the site see how it's used, through an analytics service.: Ѝ покажуваат на страницата како се користи, преку услуга за аналитика.
+Help the site see how it’s used, through an analytics service.: Ѝ покажуваат на страницата како се користи, преку услуга за аналитика.
 Videos and other content from companies that may follow you across sites.: Видеа и друга содржина од компании што може да ве следат низ страниците.
 consent.single.heading.statistics: Колачиња за аналитика
 consent.single.heading.statistics-own: Колачиња за мерење
@@ -35,10 +35,13 @@ This site would like to use services of other companies. Nothing of theirs runs 
 Accept all: Прифати ги сите
 Choose cookies: Избери колачиња
 Cookie settings: Поставки за колачиња
-Choose what this site may use. You can change it at any time with “Cookie settings”.: Изберете што смее да користи оваа страница. Можете да го смените секогаш преку „Поставки за колачиња“.
+"Choose what this site may use. You can change it at any time with “Cookie settings” at the bottom of every page.": "Изберете што смее да користи оваа страница. Можете да го смените секогаш преку „Поставки за колачиња“ на дното на секоја страница."
 Your browser asks sites not to track you, so everything below stays off.: Вашиот прелистувач бара страниците да не ве следат, па сè подолу останува исклучено.
 Always on: Секогаш вклучени
-Allow all of them: Дозволи ги сите
+"consent.allow.statistics": "Дозволи аналитика"
+"consent.allow.statistics-own": "Дозволи мерење"
+"consent.allow.preferences": "Дозволи поставки"
+"consent.allow.marketing": "Дозволи маркетинг"
 About {service}: За {service}
 Run by: Ја води
 What it does: Што прави
@@ -52,7 +55,7 @@ Purpose: Намена
 Privacy notice: Известување за приватност
 Save my choices: Зачувај ги изборите
 Close: Затвори
-Your choice is saved.: Вашиот избор е зачуван.
+"Saved: {state}.": "Зачувано: {state}."
 '{label} is off.': '{label} е исклучено.'
 Banner: Банер
 'Where visitors see it: a bar at the bottom, or a box in a corner.': 'Каде го гледаат посетителите: лента на дното или кутија во агол.'
@@ -118,7 +121,7 @@ Send outside production too: Испраќај и надвор од продук�
 "Load it": "Вчитај"
 "Always allow {label}": "Секогаш дозволи {label}"
 "Open it on {host}": "Отвори на {host}"
-"This content can't be shown.": "Оваа содржина не може да се прикаже."
+"This content can’t be shown.": "Оваа содржина не може да се прикаже."
 "{category} on": "{category}: вклучено"
 "{category} off": "{category}: исклучено"
 "{category} partly on": "{category}: делумно вклучено"

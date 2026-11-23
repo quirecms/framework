@@ -65,7 +65,7 @@ final class NamesThroughLabelsTest extends TestCase
         $root = \dirname(__DIR__, 2);
         $found = [];
 
-        foreach (new Finder()->files()->in([$root.'/packages/admin/src', $root.'/packages/core/src/Theme'])->name('*.php') as $file) {
+        foreach (new Finder()->files()->in([$root.'/packages/admin/src', $root.'/packages/core/src/Theme', $root.'/packages/core/src/Http'])->name('*.php') as $file) {
             $path = 'packages/'.substr($file->getPathname(), \strlen($root.'/packages/'));
 
             if (\in_array($path, self::ENGLISH, true)) {

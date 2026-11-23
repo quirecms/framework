@@ -531,7 +531,10 @@ input[aria-invalid="true"] { border-color: var(--danger); border-width: 2px; }
     .qd-article-body { display: block; }
     .qd-prose a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 0.8em; }
 }
-:lang(de) h1, :lang(de) h2, :lang(de) h3, :lang(de) .qd-standfirst { hyphens: auto; }
+/* Long words in titles break at a hyphen in every language the browser knows, not mid-word ("Unite|d"); a word
+   it can't hyphenate still breaks rather than overflow (F8) */
+h1, h2, .qd-standfirst { hyphens: auto; overflow-wrap: break-word; }
+:lang(de) h3 { hyphens: auto; }
 
 /* v3 a11y pass: brand shrinks at 200% text; standalone small links reach 24px (WCAG 2.5.8) */
 .qd-brand, .qd-brand > span { min-inline-size: 0; }
