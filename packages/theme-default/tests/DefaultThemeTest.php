@@ -68,7 +68,8 @@ final class DefaultThemeTest extends ExtensionTestCase
         self::assertSelectorExists('html[lang=en][dir=ltr]');
         self::assertSelectorExists('body.qd-accent-blue');
         self::assertCount(1, $crawler->filter('head link[rel=stylesheet][href^="/assets/quire-theme-default/style-"]'));
-        self::assertCount(3, $crawler->filter('head link[rel=preload][as=font][crossorigin]'), 'The first screen\'s fonts, preloaded.');
+        self::assertCount(4, $crawler->filter('head link[rel=preload][as=font][crossorigin]'), 'The first screen\'s fonts, preloaded: on a post, its stand-first\'s italic too.');
+        self::assertCount(1, $crawler->filter('head link[rel=preload][href*="Newsreader-text-italic-latin"]'));
         self::assertSame('TN', trim($crawler->filter('.qd-brand .qd-monogram')->text()), 'The mark made from the site\'s name, skipping small words.');
     }
 

@@ -23,10 +23,11 @@
     <meta name="color-scheme" content="light dark">
     <title>{% block title %}{{ site.title }}{% endblock %}</title>
     {% if not minimal %}{{ quire_head() }}{% endif %}
-    {# The fonts of the first screen: preloaded, and never swapped in mid-read (font-display: optional). A child
+    {# The fonts of the first screen: preloaded, and never swapped in mid-read (font-display: optional), the
+       italic too where a page says its first screen has it (italic_first_screen: an item's stand-first). A child
        theme with fonts of its own replaces the block, so these aren't downloaded for nothing. #}
     {% block fonts %}
-    {% for font in ['Newsreader-display-latin', 'Newsreader-text-latin', 'Inter-ui-latin'] %}
+    {% for font in ['Newsreader-display-latin', 'Newsreader-text-latin', 'Inter-ui-latin']|merge(italic_first_screen ?? false ? ['Newsreader-text-italic-latin'] : []) %}
         <link rel="preload" href="{{ quire_asset('quire-theme-default/fonts/' ~ font ~ '.woff2') }}" as="font" type="font/woff2" crossorigin>
     {% endfor %}
     {% endblock %}
