@@ -262,6 +262,12 @@ final class ContentType implements ExtenderInterface
                 throw $context->error(\sprintf('Extend\ContentType("%s")::phrases()', $this->id), \sprintf('The phrase "%s" is empty.', $name));
             }
 
+            try {
+                new \MessageFormatter('en', $phrase);
+            } catch (\IntlException) {
+                throw $context->error(\sprintf('Extend\ContentType("%s")::phrases()', $this->id), \sprintf('The phrase "%s" isn\'t an ICU message (%s). A brace meant as text is quoted: "\'{\'".', $name, intl_get_error_message()));
+            }
+
             if ('count' === $name && !str_contains($phrase, '{count')) {
                 throw $context->error(\sprintf('Extend\ContentType("%s")::phrases()', $this->id), 'The phrase "count" says how many with {count}, e.g. "{count, plural, one {# recipe} other {# recipes}}".');
             }

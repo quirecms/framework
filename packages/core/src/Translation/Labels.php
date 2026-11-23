@@ -8,6 +8,8 @@ use Quire\Content\Type\ContentTypeDefinition;
 use Quire\Extend\ExtenderContext;
 use Quire\Permission\Permissions;
 use Quire\Settings\SettingDefinition;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\Translation\TranslatorBagInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Twig\Extension\RuntimeExtensionInterface;
 
@@ -38,7 +40,8 @@ final readonly class Labels implements RuntimeExtensionInterface
     ];
 
     public function __construct(
-        private TranslatorInterface $translator,
+        #[Autowire(service: 'translator')]
+        private TranslatorInterface&TranslatorBagInterface $translator,
         private Permissions $permissions,
     ) {
     }
@@ -82,10 +85,22 @@ final readonly class Labels implements RuntimeExtensionInterface
 
         if (isset($type->phrases[$phrase])) {
             $message = $type->phrases[$phrase];
-            $text = $this->translator->trans($message, $parameters, self::domainOf($type->owner));
+            $domain = self::domainOf($type->owner);
+
+            // Asked of the catalogue (with its fallbacks), not by comparing texts: an untranslated message
+            // goes through the plain formatter, which would swap "count" inside "{count, plural, …}"
+            if ($this->translator->getCatalogue()->has($message, $domain)) {
+                return $this->translator->trans($message, $parameters, $domain);
+            }
 
             // Not in the owner's texts at all, English included: the phrase as it's declared, formatted
-            return $text !== $message ? $text : (string) \MessageFormatter::formatMessage('en', $message, $parameters);
+            $formatted = \MessageFormatter::formatMessage('en', $message, $parameters);
+
+            if (false === $formatted) {
+                throw new \LogicException(\sprintf('The phrase "%s" of the type "%s" can\'t be formatted: %s.', $phrase, $type->id, intl_get_error_message()));
+            }
+
+            return $formatted;
         }
 
         return $this->translator->trans(self::NEUTRAL[$phrase], ['type' => $this->type($type), 'types' => $this->type($type, plural: true), ...$parameters], 'quire');

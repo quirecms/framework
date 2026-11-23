@@ -152,6 +152,8 @@ final class ContentTypeTest extends ExtenderTestCase
         $this->assertExtenderFails(new ContentType('product')->phrases(['create' => 'New product']), '"create" isn\'t a phrase a type words. Phrases: new, all, count, search, empty.');
         $this->assertExtenderFails(new ContentType('product')->phrases(['new' => ' ']), 'The phrase "new" is empty.');
         $this->assertExtenderFails(new ContentType('product')->phrases(['count' => 'Some products']), 'The phrase "count" says how many with {count}');
+        $this->assertExtenderFails(new ContentType('product')->phrases(['new' => 'New {product']), 'The phrase "new" isn\'t an ICU message (');
+        $this->assertExtenderFails(new ContentType('product')->phrases(['count' => '{count, plural, one {# product}']), 'The phrase "count" isn\'t an ICU message (');
 
         $this->apply(new ContentType('product'));
 

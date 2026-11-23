@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
+use Quire\Content\Type\ContentTypeDefinition;
 use Quire\Content\Type\ContentTypeRegistry;
 use Quire\Settings\SettingsSchema;
 use Quire\Testing\AdminTestCase;
@@ -37,6 +38,24 @@ final class NamesTest extends AdminTestCase
         self::assertSame(['Neuer Beitrag', 'Neue Seite', '2 Beiträge durchsuchen…'], [$labels->phrase($post, 'new'), $labels->phrase($page, 'new'), $labels->phrase($post, 'search', ['count' => 2])], 'Nouns keep their capitals.');
     }
 
+    public function testAPhraseNoTextsWordIsFormattedAsDeclared(): void
+    {
+        $this->locale('mk');
+        $gadget = $this->gadget(['count' => '{count, plural, one {# gadget} other {# gadgets}}']);
+
+        self::assertSame('3 gadgets', $this->service(Labels::class)->phrase($gadget, 'count', ['count' => 3]));
+    }
+
+    public function testAPhraseThatCantBeFormattedFailsLoudly(): void
+    {
+        $gadget = $this->gadget(['empty' => 'No gadgets since {since, date}.']);
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessageIsOrContains('The phrase "empty" of the type "gadget" can\'t be formatted: ');
+
+        $this->service(Labels::class)->phrase($gadget, 'empty', ['since' => 'last week']);
+    }
+
     public function testEachOwnerHasItsDomain(): void
     {
         self::assertSame(['quire', 'site', 'acme-shop'], [Labels::domainOf('core'), Labels::domainOf('site'), Labels::domainOf('acme-shop')]);
@@ -62,6 +81,14 @@ final class NamesTest extends AdminTestCase
     protected static function installedJson(): string
     {
         return TestInstallation::projectDir().'/tests/Fixtures/installed.json';
+    }
+
+    /**
+     * @param array<string, string> $phrases
+     */
+    private function gadget(array $phrases): ContentTypeDefinition
+    {
+        return new ContentTypeDefinition('gadget', 'Gadget', 'Gadgets', 'quire-fixture-recipes', [], '/gadgets/{slug}', 'created_at', 'desc', phrases: $phrases);
     }
 
     private function locale(string $locale): void
