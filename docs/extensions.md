@@ -408,6 +408,7 @@ new Extend\ContentType('product')
 | Method | Description |
 |--------|-------------|
 | `label($singular, $plural)` | Names shown in admin interfaces. Defaults to the ID, e.g. `Product` and `Products`. |
+| `phrases([...])` | The sentences that name the type, worded whole so each language can translate them: `new` ("New product"), `all` ("All products"), `count` (`{count, plural, one {# product} other {# products}}`), `search` (`Search {count, plural, …}…`) and `empty` ("No products yet."). Any left out reads "New: Product", "Products: 4". `count` must use `{count}`. See [Texts and languages](#texts-and-languages). |
 | `capabilities(...)` | What the type can do. Use the `Capability` constants for core's flags, and plain strings for your own (e.g. `'reviewable'`). Defaults to none. |
 | `permalink($pattern)` | Default URL pattern, made of static text and the placeholders `{slug}`, `{path}` (the slugs of the item's ancestors and its own, for hierarchical types), `{id}`, `{year}`, `{month}` and `{day}`. It needs `{slug}`, `{path}` or `{id}`. Defaults to `/{type}/{slug}`, or `/{type}/{path}` for hierarchical types. Sites change it with the setting `quire.permalinks.<type>` (see [URLs](content.md#urls)). Listable types also get a list, by default at the pattern's static start (`/products`). |
 | `field($name, $type, ...)` | Declares a typed field (see below) |
@@ -1055,6 +1056,8 @@ final class RejectSpam
 Your extension's texts are in its own translation domain, its ID: `translations/acme-shop+intl-icu.en.yaml`, in ICU MessageFormat, and one file per language next to it (`acme-shop+intl-icu.de.yaml`). Keep to your own domain: a file in another package's domain (`quire-admin+intl-icu.en.yaml`, say) would change that package's texts, and Quire's tests of its own packages refuse it. The admin takes what it shows about your extension from your domain too: the title of your group of settings (`settings.group.acme-shop`) and your [activity log entries](audit.md).
 
 Language codes are canonical, as ICU writes them: `mk`, `pt_BR`, `sr_Latn`.
+
+The names of your content types and roles are translated in your domain with their context after a `|`, since a short word reads differently by what it names: `'Product|content type': 'Produkt'`, `'Products|content type': 'Produkte'`, `'Reviewer|role': 'Prüfer'`. In English the text is the key without its context, and a test of Quire's own catalogues checks it. A type's phrases are keyed by their English text, and settings' labels and help by theirs. Print these names in templates with `quire_type_label(type, plural)`, `quire_type_phrase(type, 'new', {count: …})`, `quire_role_label(name)` and `quire_setting_label(definition)`, or `Quire\Translation\Labels` in PHP: never the declared label, which is English.
 
 `extra.quire.translations` says what your texts are, in a format the translation hub reads too:
 

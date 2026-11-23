@@ -7,6 +7,7 @@ namespace Quire\Admin\Navigation;
 use Quire\Admin\Content\ContentLists;
 use Quire\Admin\Extend\Admin;
 use Quire\Content\Type\ContentTypeDefinition;
+use Quire\Translation\Labels;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -32,6 +33,7 @@ final readonly class AdminMenu
         private RequestStack $requests,
         private TranslatorInterface $translator,
         private ContentLists $contentLists,
+        private Labels $labels,
     ) {
     }
 
@@ -43,15 +45,16 @@ final readonly class AdminMenu
         $request = $this->requests->getMainRequest();
         $currentPath = $request?->getPathInfo() ?? '';
         // A list per content type the user may edit, before the entries extensions add to the section.
-        $entries = [...array_map(static fn (ContentTypeDefinition $type, int $position): array => [
+        $entries = [...array_map(fn (ContentTypeDefinition $type, int $position): array => [
             'id' => 'quire-admin.content.'.$type->id,
-            'label' => $type->pluralLabel,
+            'label' => $this->labels->type($type, plural: true),
             'route' => 'quire_admin_content',
             'parameters' => ['type' => $type->id],
             'ability' => null,
             'section' => 'content',
             'order' => $position - 1000,
-            'owner' => $type->owner,
+            // Named already (Labels), not a text of its owner's to translate again
+            'owner' => '',
         ], $this->contentLists->listableTypes(), array_keys($this->contentLists->listableTypes())), ...$this->entries];
         usort($entries, static fn (array $a, array $b): int => [$a['order'], $a['id']] <=> [$b['order'], $b['id']]);
         $sections = array_fill_keys(Admin::SECTIONS, []);
@@ -81,7 +84,7 @@ final readonly class AdminMenu
         foreach (array_filter($sections) as $section => $items) {
             $menu[$section] = array_map(fn (array $item): MenuItem => new MenuItem(
                 $item['entry']['id'],
-                $this->translator->trans($item['entry']['label'], [], $item['entry']['owner']),
+                '' === $item['entry']['owner'] ? $item['entry']['label'] : $this->translator->trans($item['entry']['label'], [], Labels::domainOf($item['entry']['owner'])),
                 $item['url'],
                 $item['entry']['id'] === ($best[0] ?? null),
             ), $items);

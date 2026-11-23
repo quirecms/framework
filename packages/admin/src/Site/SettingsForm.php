@@ -20,6 +20,7 @@ use Quire\Settings\Settings;
 use Quire\Settings\SettingsSchema;
 use Quire\Settings\SettingType;
 use Quire\Theme\Themes;
+use Quire\Translation\Labels;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Twig\Markup;
@@ -60,6 +61,7 @@ final readonly class SettingsForm
         private SettingAccess $access,
         private Security $security,
         private Themes $themes,
+        private Labels $labels,
     ) {
     }
 
@@ -135,8 +137,8 @@ final readonly class SettingsForm
 
             $entries[] = [
                 'definition' => $definition,
-                'label' => $this->translator->trans($definition->label ?? $key, [], $definition->owner),
-                'help' => null === $definition->help ? null : $this->translator->trans($definition->help, [], $definition->owner),
+                'label' => $this->labels->setting($definition),
+                'help' => $this->labels->settingHelp($definition),
                 'warning' => $warning,
                 'html' => match (true) {
                     ContentChecker::LEVELS_SETTING === $key => $this->checkLevels($value, $control),
@@ -197,7 +199,7 @@ final readonly class SettingsForm
                 $owner ??= \in_array($definition->owner, ['core', 'site'], true) ? null : $this->ownerLabel($definition->owner);
                 $phrase = null === $definition->phrase
                     ? $this->translator->trans('{label}: {value}.', ['label' => $entry['label']], 'quire-admin')
-                    : $this->translator->trans($definition->phrase, [], $definition->owner);
+                    : $this->translator->trans($definition->phrase, [], Labels::domainOf($definition->owner));
                 [$before, $after] = array_pad(explode('{value}', $phrase, 2), 2, '');
                 $value = $this->settings->get($definition->key);
                 $sentences[] = [
@@ -236,7 +238,7 @@ final readonly class SettingsForm
         $label = $short && \is_bool($value) ? null : $definition->valueLabel($value);
 
         return match (true) {
-            null !== $label => $this->translator->trans($label, [], $definition->owner),
+            null !== $label => $this->translator->trans($label, [], Labels::domainOf($definition->owner)),
             $definition->sensitive => $this->translator->trans(null === $value || '' === $value ? 'not set' : 'set · hidden', [], 'quire-admin'),
             ContentChecker::LEVELS_SETTING === $definition->key && \is_array($value) => $this->levelsShown($value),
             null === $value, '' === $value, [] === $value => $this->translator->trans('not set', [], 'quire-admin'),

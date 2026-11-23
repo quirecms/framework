@@ -12,6 +12,7 @@ use Quire\Admin\Navigation\MenuItem;
 use Quire\Admin\Preferences\AdminPreferences;
 use Quire\Admin\Preferences\UnderTheHood;
 use Quire\Content\Type\ContentTypeDefinition;
+use Quire\Translation\Labels;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
@@ -36,6 +37,7 @@ final readonly class AdminExtension
         private Security $security,
         private UrlGeneratorInterface $urls,
         private Inbox $inbox,
+        private Labels $labels,
     ) {
     }
 
@@ -77,7 +79,7 @@ final readonly class AdminExtension
     public function new(): array
     {
         return array_values(array_map(
-            fn (ContentTypeDefinition $type): array => ['label' => $type->label, 'url' => $this->urls->generate('quire_admin_content_new', ['type' => $type->id])],
+            fn (ContentTypeDefinition $type): array => ['label' => $this->labels->type($type), 'url' => $this->urls->generate('quire_admin_content_new', ['type' => $type->id])],
             array_filter($this->contentLists->listableTypes(), fn (ContentTypeDefinition $type): bool => $this->security->isGranted('content.'.$type->id.'.create')),
         ));
     }

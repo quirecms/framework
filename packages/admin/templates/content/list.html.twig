@@ -82,7 +82,7 @@
                 {% endfor %}
                 <label class="q-toolbar__search">
                     <span class="q-sr">{{ 'Search'|trans({}, 'quire-admin') }}</span>
-                    <input type="search" name="q" value="{{ state.q }}" autocomplete="off" placeholder="{{ 'Search {count} {type}…'|trans({count: page.total, type: plural|lower}, 'quire-admin') }}">
+                    <input type="search" name="q" value="{{ state.q }}" autocomplete="off" placeholder="{{ quire_type_phrase(type, 'search', {count: page.total}) }}">
                 </label>
                 {% if syntax %}<code class="content-search__syntax" title="{{ 'The filters, as you can type them'|trans({}, 'quire-admin') }}">{{ syntax }}</code>{% endif %}
                 <button type="submit" class="q-btn q-btn--ghost">{{ 'Show'|trans({}, 'quire-admin') }}</button>

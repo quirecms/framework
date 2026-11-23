@@ -11,6 +11,7 @@ use Quire\Permission\Delegation;
 use Quire\Permission\Exception\InvalidRoleException;
 use Quire\Permission\Permissions;
 use Quire\Permission\SiteRoles;
+use Quire\Translation\Labels;
 use Quire\User\CurrentUser;
 use Quire\User\Role;
 use Quire\User\User;
@@ -54,6 +55,7 @@ final readonly class RolesController
         private Environment $twig,
         private Delegation $delegation,
         private ConfirmGuard $confirm,
+        private Labels $labels,
     ) {
     }
 
@@ -64,7 +66,7 @@ final readonly class RolesController
         $changes = $this->permissions->changes();
         $roles = [];
 
-        foreach ($this->permissions->roles() as $name => $label) {
+        foreach ($this->labels->roles() as $name => $label) {
             $changed = 0;
 
             foreach (['grant', 'revoke'] as $kind) {
@@ -195,7 +197,7 @@ final readonly class RolesController
         }
 
         $this->permissions->setAbilities($role, $target);
-        $this->flash($request, 'success', $this->translator->trans('Saved what “{role}” may do.', ['role' => $this->permissions->roles()[$role]], 'quire-admin'));
+        $this->flash($request, 'success', $this->translator->trans('Saved what “{role}” may do.', ['role' => $this->labels->role($role)], 'quire-admin'));
 
         return $this->redirect('quire_admin_role', ['role' => $role]);
     }
@@ -306,7 +308,7 @@ final readonly class RolesController
         if ('' !== $ability) {
             $counts = $this->users->countByRole();
 
-            foreach ($this->permissions->roles() as $name => $label) {
+            foreach ($this->labels->roles() as $name => $label) {
                 if ($this->permissions->allows([$name], $ability)) {
                     $holders[] = ['name' => $name, 'label' => $label, 'users' => Role::GUEST === $name ? null : $counts[$name] ?? 0];
                 }
@@ -428,7 +430,7 @@ final readonly class RolesController
 
         foreach ($this->catalog->contentGrid()['types'] as $type) {
             foreach ($type['abilities'] as $name) {
-                $choices[$type['label']][$name] = $this->catalog->label($name);
+                $choices[$type['name']][$name] = $this->catalog->label($name);
             }
         }
 
@@ -445,7 +447,7 @@ final readonly class RolesController
 
     private function role(string $role): string
     {
-        return $this->permissions->roles()[$role] ?? throw new NotFoundHttpException(\sprintf('No role "%s".', $role));
+        return $this->permissions->hasRole($role) ? $this->labels->role($role) : throw new NotFoundHttpException(\sprintf('No role "%s".', $role));
     }
 
     private function assertAllowed(): void

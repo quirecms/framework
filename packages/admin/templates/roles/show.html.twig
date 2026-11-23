@@ -51,12 +51,12 @@
                         </thead>
                         <tbody>
                             {% for type in grid.types %}
-                                <tr data-ability-filter-target="item" data-text="{{ type.label|lower }} {{ type.id }}">
-                                    <th scope="row">{{ type.label }}</th>
+                                <tr data-ability-filter-target="item" data-text="{{ type.name|lower }} {{ type.id }}">
+                                    <th scope="row">{{ type.name }}</th>
                                     {% for action, action_label in grid.actions %}
                                         <td>
                                             {% if type.abilities[action] is defined %}
-                                                {% include '@quire_admin/roles/_checkbox.html.twig' with {name: type.abilities[action], label: action_label ~ ': ' ~ type.label, hide_label: true} %}
+                                                {% include '@quire_admin/roles/_checkbox.html.twig' with {name: type.abilities[action], label: action_label ~ ': ' ~ type.name, hide_label: true} %}
                                             {% endif %}
                                         </td>
                                     {% endfor %}

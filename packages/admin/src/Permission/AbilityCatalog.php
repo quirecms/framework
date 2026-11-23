@@ -8,6 +8,7 @@ use Quire\Content\Type\ContentTypeRegistry;
 use Quire\Extension\InstalledExtensions;
 use Quire\Permission\Permissions;
 use Quire\Routing\AdminAccessListener;
+use Quire\Translation\Labels;
 use Quire\User\Role;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
@@ -19,7 +20,7 @@ use Symfony\Contracts\Translation\TranslatorInterface;
  * @internal
  *
  * @phpstan-type Entry array{name: string, label: string, strict: bool, admin: bool}
- * @phpstan-type Grid array{actions: array<string, string>, types: list<array{id: string, label: string, abilities: array<string, string>}>}
+ * @phpstan-type Grid array{actions: array<string, string>, types: list<array{id: string, name: string, abilities: array<string, string>}>}
  * @phpstan-type Section array{owner: string, label: string, groups: array<string, array{label: string, abilities: list<Entry>}>}
  */
 final readonly class AbilityCatalog
@@ -38,6 +39,7 @@ final readonly class AbilityCatalog
         private ContentTypeRegistry $types,
         private InstalledExtensions $extensions,
         private TranslatorInterface $translator,
+        private Labels $labels,
     ) {
     }
 
@@ -59,7 +61,7 @@ final readonly class AbilityCatalog
                 }
             }
 
-            $types[] = ['id' => $type->id, 'label' => $this->translator->trans($type->pluralLabel, [], $type->owner), 'abilities' => $abilities];
+            $types[] = ['id' => $type->id, 'name' => $this->labels->type($type, plural: true), 'abilities' => $abilities];
         }
 
         return [
@@ -74,7 +76,7 @@ final readonly class AbilityCatalog
      */
     public function sentence(string $role): string
     {
-        $label = $this->permissions->roles()[$role] ?? $role;
+        $label = $this->labels->role($role);
 
         if (Role::ADMIN === $role) {
             return $this->translator->trans('As {role}, they can do everything.', ['role' => $label], 'quire-admin');
@@ -87,7 +89,7 @@ final readonly class AbilityCatalog
             $verbs = array_keys(array_filter(self::VERBS, fn (array $actions): bool => array_any($actions, fn (string $action): bool => $this->permissions->has(\sprintf('content.%s.%s', $type->id, $action)) && $mine(\sprintf('content.%s.%s', $type->id, $action)))));
 
             if ([] !== $verbs) {
-                $byVerbs[implode(',', $verbs)][] = $this->translator->trans($type->pluralLabel, [], $type->owner);
+                $byVerbs[implode(',', $verbs)][] = $this->labels->type($type, plural: true);
             }
         }
 

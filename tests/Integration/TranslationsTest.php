@@ -57,6 +57,31 @@ final class TranslationsTest extends TestCase
     }
 
     /**
+     * A key may end in its context, after a "|" ("Post|content type", "Editor|role"), for short texts that
+     * read differently by what they name. The English text is the key without it.
+     */
+    public function testAKeysContextIsntPartOfItsEnglishText(): void
+    {
+        $wrong = [];
+
+        foreach (Finder::create()->files()->in(TestInstallation::projectDir().'/packages/*/translations')->name('*.en.yaml') as $file) {
+            /** @var array<string, string> $messages */
+            $messages = Yaml::parseFile($file->getPathname()) ?? [];
+
+            foreach ($messages as $key => $text) {
+                // A "|" outside ICU's braces is a context; inside them it would be part of a message
+                if (1 === preg_match('/^(?<text>[^{}|]+)\|(?<context>[a-z ]+)$/', $key, $m) && $m['text'] !== $text) {
+                    $wrong[] = \sprintf('%s: "%s" reads "%s", not "%s"', $file->getFilename(), $key, $text, $m['text']);
+                } elseif (str_contains($key, '|') && 1 !== preg_match('/^[^{}|]+\|[a-z ]+$/', $key) && 1 !== preg_match('/\{[^}]*\|/', $key)) {
+                    $wrong[] = \sprintf('%s: "%s" has a context that isn\'t lowercase words after one "|"', $file->getFilename(), $key);
+                }
+            }
+        }
+
+        self::assertSame([], $wrong);
+    }
+
+    /**
      * Every file, English too, one per test: ICU's own reading of each message.
      *
      * @return iterable<string, array{string}>

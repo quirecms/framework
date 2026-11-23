@@ -15,6 +15,7 @@ use Quire\Permission\Permissions;
 use Quire\Permission\ViewAs;
 use Quire\Routing\AdminAccessListener;
 use Quire\Settings\Settings;
+use Quire\Translation\Labels;
 use Quire\User\CreateUser;
 use Quire\User\CurrentUser;
 use Quire\User\Exception\InvalidUserException;
@@ -79,6 +80,7 @@ final readonly class UsersController
         private Delegation $delegation,
         private ConfirmGuard $confirm,
         private UserMailer $mailer,
+        private Labels $labels,
     ) {
     }
 
@@ -555,7 +557,7 @@ final readonly class UsersController
      */
     private function assignableRoles(): array
     {
-        return array_diff_key($this->permissions->roles(), [Role::GUEST => true]);
+        return array_diff_key($this->labels->roles(), [Role::GUEST => true]);
     }
 
     /**

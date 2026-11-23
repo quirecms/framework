@@ -11,6 +11,7 @@ use Quire\Content\ContentRepository;
 use Quire\Extension\InstalledExtensions;
 use Quire\Permission\Permissions;
 use Quire\Settings\SettingsSchema;
+use Quire\Translation\Labels;
 use Quire\User\User;
 use Quire\User\UserRepository;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -45,13 +46,14 @@ final class AuditEntries implements ResetInterface
         private readonly UrlGeneratorInterface $urls,
         private readonly TranslatorInterface $translator,
         private readonly InstalledExtensions $installed,
+        private readonly Labels $labels,
     ) {
     }
 
     /**
      * @param iterable<AuditEntry> $entries
      *
-     * @return list<array{entry: AuditEntry, summary: string, subject_url: ?string, actor: string, actor_url: ?string, via: string, details: list<array{label: string, value: string}>}>
+     * @return list<array{entry: AuditEntry, summary: string, subject: string, subject_url: ?string, actor: string, actor_url: ?string, via: string, details: list<array{label: string, value: string}>}>
      */
     public function present(iterable $entries, string $timezone): array
     {
@@ -63,6 +65,7 @@ final class AuditEntries implements ResetInterface
             $presented[] = [
                 'entry' => $entry,
                 'summary' => $this->summary($entry),
+                'subject' => $this->subjectName($entry),
                 'subject_url' => $this->subjectUrl($entry),
                 'actor' => $entry->actorName ?? $this->translator->trans('audit.origin.'.$entry->origin->value, [], 'quire-admin'),
                 'actor_url' => null !== $entry->actorId && $this->user($entry->actorId) instanceof User ? $this->urls->generate('quire_admin_user', ['id' => $entry->actorId]) : null,
@@ -77,7 +80,7 @@ final class AuditEntries implements ResetInterface
     public function summary(AuditEntry $entry): string
     {
         $key = 'audit.'.$entry->action;
-        $parameters = ['subject' => $entry->subjectLabel ?? $entry->subjectId ?? ''];
+        $parameters = ['subject' => $this->subjectName($entry)];
 
         foreach ($entry->details as $name => $value) {
             $parameters[$name] = match (true) {
@@ -97,6 +100,21 @@ final class AuditEntries implements ResetInterface
         }
 
         return $this->translator->trans($key, $parameters, $domain);
+    }
+
+    /**
+     * What the entry is about, as people read it: a setting or role that still exists by its name in the
+     * page's language, anything else by the name it had when the entry was recorded.
+     */
+    public function subjectName(AuditEntry $entry): string
+    {
+        $id = $entry->subjectId;
+
+        return match (true) {
+            'setting' === $entry->subjectType && null !== $id && $this->settings->has($id) => $this->labels->setting($this->settings->get($id)),
+            'role' === $entry->subjectType && null !== $id && $this->permissions->hasRole($id) => $this->labels->role($id),
+            default => $entry->subjectLabel ?? $id ?? '',
+        };
     }
 
     /**

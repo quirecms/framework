@@ -155,7 +155,7 @@
             {% if count == 1 %}
                 <p class="activity-card__what">{% if first.subject_url %}<a href="{{ first.subject_url }}">{{ first.summary }}</a>{% else %}{{ first.summary }}{% endif %}</p>
             {% elseif entry.action == 'user.signed_in' %}
-                {% set names = card.items|map(item => item.entry.subjectLabel ?? item.actor)|reduce((all, name) => name in all ? all : all|merge([name]), []) %}
+                {% set names = card.items|map(item => item.subject is not empty ? item.subject : item.actor)|reduce((all, name) => name in all ? all : all|merge([name]), []) %}
                 <p class="activity-card__what">{{ names|length == 1 ? '{name} signed in {count} times'|trans({name: names|first, count: count}, 'quire-admin') : '{name} and {count, plural, one {# other} other {# others}} signed in'|trans({name: (names|first)|split(' ')|first, count: names|length - 1}, 'quire-admin') }}</p>
             {% else %}
                 <p class="activity-card__what">{{ '{summary} and {count, plural, one {# more} other {# more}} at once'|trans({summary: first.summary, count: count - 1}, 'quire-admin') }}</p>
@@ -190,7 +190,7 @@
 
             {% if hood %}
                 <p class="activity-card__links q-meta">
-                    {% if entry.subjectId and state.subject != entry.subjectId and count == 1 %}<a href="{{ path('quire_admin_audit', {subject_type: entry.subjectType, subject: entry.subjectId}) }}">{{ 'All about it'|trans({}, 'quire-admin') }}<span class="q-sr"> ({{ entry.subjectLabel ?? entry.subjectId }})</span></a>{% endif %}
+                    {% if entry.subjectId and state.subject != entry.subjectId and count == 1 %}<a href="{{ path('quire_admin_audit', {subject_type: entry.subjectType, subject: entry.subjectId}) }}">{{ 'All about it'|trans({}, 'quire-admin') }}<span class="q-sr"> ({{ first.subject }})</span></a>{% endif %}
                     {% if state.correlation != entry.correlationId %}<a href="{{ path('quire_admin_audit', {correlation: entry.correlationId}) }}">{{ 'Done together'|trans({}, 'quire-admin') }}<span class="q-sr"> ({{ first.summary }})</span></a>{% endif %}
                 </p>
             {% endif %}
