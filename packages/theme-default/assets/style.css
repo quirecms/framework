@@ -1127,6 +1127,10 @@ a:not(.qd-btn):active { background: var(--tint-1); }
 .qd-prose ul:has(> li[data-task]) li > input { order: -1; }
 .qd-prose ul:has(> li[data-task]) li[data-state]::before { content: attr(data-state) / ""; font-size: var(--step--1); font-weight: 650; color: var(--muted); min-inline-size: 6.5rem; }
 @media (max-width: 30rem) { .qd-prose ul:has(> li[data-task]) li[data-state]::before { min-inline-size: 0; } }
+/* The item's text is one cell (.task-text, from the renderer), however long, with its note read in place under it on
+   narrow screens; sub-tasks take the whole width below */
+.qd-prose ul:has(> li[data-task]) li > .task-text { min-inline-size: 0; overflow-wrap: break-word; }
+.qd-prose ul:has(> li[data-task]) li > :is(ul, ol) { grid-column: 1 / -1; }
 /* Months that land on the edition's top (their posts lead or are in the week) */
 [id^="m-"]:empty { display: block; scroll-margin-block-start: 1rem; }
 /* A row without a date (dates off, a draft in the admin's preview): no day column */
