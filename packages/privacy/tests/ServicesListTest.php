@@ -22,8 +22,8 @@ final class ServicesListTest extends PrivacyTestCase
         $list = $crawler->filter('.privacy-services');
 
         self::assertCount(1, $list);
-        self::assertSame(['Necessary', 'Preferences', 'Marketing'], $list->filter('h3')->each(static fn (Crawler $heading): string => $heading->text()));
-        self::assertSame(['Fixture Spam Check', 'Fixture Fonts', 'Fixture Video'], $list->filter('h4')->each(static fn (Crawler $heading): string => $heading->text()));
+        self::assertSame(['Necessary', 'Preferences', 'Marketing'], $list->filter('h2')->each(static fn (Crawler $heading): string => $heading->text()), 'Categories at level 2: no level is skipped below the page\'s title.');
+        self::assertSame(['Fixture Spam Check', 'Fixture Fonts', 'Fixture Video'], $list->filter('h3')->each(static fn (Crawler $heading): string => $heading->text()));
         self::assertStringContainsString('player.video.example', $list->text());
         self::assertSame(['fixture_video_id', 'fixture_video_pref_*'], $list->filter('table code')->each(static fn (Crawler $code): string => $code->text()));
         self::assertSame('https://video.example/privacy', $list->filter('a[rel=noopener]')->attr('href'));

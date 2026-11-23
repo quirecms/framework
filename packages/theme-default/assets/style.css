@@ -468,7 +468,9 @@ input[aria-invalid="true"] { border-color: var(--danger); border-width: 2px; }
 .consent-embed__inner p { margin: 0; }
 .consent-embed__kind { font-weight: 750; }
 .privacy-services { font-family: var(--font-ui); font-size: var(--step-0); }
-.privacy-services h3 { font-family: var(--font-read); font-size: 1.35rem; }
+/* A category (h2) and its services (h3), wherever the notice puts the list: sized as before, below the notice's own sections */
+.privacy-services h2 { font-family: var(--font-read); font-size: 1.35rem; line-height: 1.3; margin-block: 1.6em 0.4em; letter-spacing: 0; }
+.privacy-services h3 { font-family: var(--font-ui); font-size: var(--step-0); font-weight: 650; margin-block: 1.25em 0.3em; }
 .privacy-services dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.25rem 1.5rem; margin: 0 0 1rem; }
 .privacy-services dt { color: var(--muted); } .privacy-services dd { margin: 0; overflow-wrap: anywhere; }
 .privacy-services caption { text-align: start; font-weight: 650; font-size: var(--step--1); color: var(--muted); padding-block-end: 0.4rem; }
