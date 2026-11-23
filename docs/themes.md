@@ -176,7 +176,7 @@ acme-dark/
     "name": "acme/dark",
     "type": "quire-theme",
     "require": {
-        "quire/core": "^0.4"
+        "quire/core": "^0.5"
     },
     "extra": {
         "quire": {

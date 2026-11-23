@@ -12,6 +12,9 @@
 # - skeleton/ has what only the skeleton has: its README, its workflow, and composer.json, whose values
 #   "@application" are the application's (its requirements, scripts after installing…). Its
 #   symfony.lock is the application's, without the recipes of development tools.
+# - Built for a release candidate's tag (GITHUB_REF_NAME, e.g. v0.5.0-rc.1), it requires Quire's packages
+#   from that version on ("^0.5.0-rc.1"): a new site accepts only stable versions, and Composer allows a
+#   release candidate of a package only when its requirement names one. The final version satisfies it too.
 set -euo pipefail
 
 out=${1:?Usage: .github/skeleton.sh <directory>}
@@ -64,7 +67,7 @@ done
 # this runs; objects decoded as objects, so {} stays {}.)
 # shellcheck disable=SC2016 # PHP code: its $ are PHP's
 php -r '
-	[, $root, $out] = $argv;
+	[, $root, $out, $candidate] = $argv;
 	$read = static fn (string $path): object => json_decode(file_get_contents($path), false, 512, JSON_THROW_ON_ERROR);
 	$write = static fn (string $path, object $json) => file_put_contents($path, json_encode($json, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)."\n");
 	$application = $read("$root/composer.json");
@@ -79,13 +82,20 @@ php -r '
 	};
 	$skeleton = $read("$root/skeleton/composer.json");
 	$fill($skeleton, $application);
+	if (1 === preg_match("/^v(\d+\.\d+\.\d+-rc\.\d+)$/", $candidate, $match)) {
+		foreach ($skeleton->require as $package => $constraint) {
+			if (str_starts_with($package, "quire/")) {
+				$skeleton->require->$package = "^".$match[1];
+			}
+		}
+	}
 	$write("$out/composer.json", $skeleton);
 	$lock = $read("$root/symfony.lock");
 	foreach (array_keys((array) ($application->{"require-dev"} ?? [])) as $development) {
 		unset($lock->$development);
 	}
 	$write("$out/symfony.lock", $lock);
-' "$root" "$out"
+' "$root" "$out" "${GITHUB_REF_NAME:-}"
 
 # Nothing of the development may be left.
 if grep -rl -e '# >>> development only' -e '# <<< development only' "$out" >/dev/null 2>&1; then

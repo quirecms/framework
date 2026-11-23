@@ -82,22 +82,59 @@ Build it to see what new sites get: `.github/skeleton.sh /tmp/skeleton`. A test 
 - Tests that compare times (an item's publication, a backup's) assume the machine's clock doesn't jump. On WSL2, when tests fail now and then for no reason, check that the clock isn't being stepped back (`journalctl | grep 'Clock change detected'`) and that Windows syncs its own time.
 - Changes to the default theme's templates or CSS must keep it accessible: CI checks it with axe-core (see "Accessibility" in [docs/themes.md](docs/themes.md#accessibility) to run the same check locally).
 
-## Pull requests, commits and branches
+## Before you open a pull request
 
-These follow the conventions every YorvoLabs repository shares.
+A good pull request does one thing (unrelated changes go in separate pull requests), and passes CI. Before you open one, check that:
 
-1. **The title is the squash commit's subject:** imperative, one sentence, at most 72 characters, no trailing period: "Add the settings extender", not "Added the settings extender" or "Settings: the extender is added". It says what the code does, with no reference in it: "Refuse a release whose tag isn't signed". No type prefixes (`feat:` and the like); only Dependabot's `chore:` stays, so dependency updates can be filtered. A release's pull request is titled `Release X.Y.Z`, and the one that moves `main` to the next minor version `Start X.Y`.
-2. **The description is the squash commit's body,** under the headings of the template: **Why** (required), **What changes** (bullets, behavior rather than files), **Tested** (what ran, and what didn't, NOT RUN with the reason) and **Refs** (only what anyone can open: `Fixes #123`, a pull request, a published advisory, an RFC or upstream documentation; left out when there's none). Its checklist is this repository's.
-3. **Nothing internal in public text:** titles, descriptions, commit messages, branch names, tag messages, release notes and `CHANGELOG.md` describe what the code changes and why, for someone outside the project. They never carry internal tracking codes or decision numbers, people's names or who decided or approved what, or paths outside the repository.
-4. **Commits on a branch** are free-form: they're squashed when merging. Please push new commits instead of force-pushing, so the review is easier to follow. Add `Co-authored-by` only for a human co-author.
-5. **Branches are named `<kind>/<slug>`,** where the kind is `feat`, `fix`, `docs`, `chore`, `ci` or `security`, and the slug is lowercase with hyphens and says what the change is: `fix/health-check-timeout`, `feat/translated-html`. `release/` is kept for maintenance branches (6); a release is prepared on `chore/release-X.Y.Z`.
-6. **Tags and release branches:** a release tag is `vX.Y.Z`, or `vX.Y.Z-rc.N` for a release candidate, with no other labels; annotated, SSH-signed by a key in `.github/release-signers`, with the message `Quire X.Y.Z`, on a commit of `main` that passed CI. The Release and Split workflows refuse any other tag, before anything that can publish runs. Releases come from `main`; `release/X.Y` is created from `vX.Y.0` only when an older minor needs a fix after `main` has moved on (fixed on `main` first, then `git cherry-pick -x`).
-7. **Security fixes under embargo** are made in the repository's private security-advisory fork, never on a public branch, with a neutral title, description and branch: no advisory ID and no description of the attack until the advisory is published. Report a vulnerability as [SECURITY.md](SECURITY.md) says.
-8. **What a release publishes:** a GitHub release titled `Quire X.Y.Z` (a pre-release for `-rc.N`), with the release's notes; `CHANGELOG.md` in the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format, with `## [X.Y.Z] - YYYY-MM-DD` headings; and its release feed, signed with Sigstore. Before 1.0, a minor release may break things and a patch only fixes them; a release's "Upgrading" says what someone running a site must do.
+- tests cover the change, and a fix has a test that fails without it;
+- `docker compose exec php composer qa` passes;
+- behavior users see is documented in `docs/`, and in the next release's notes in `docs/releases/`;
+- theme or admin templates and CSS still pass the accessibility check (axe-core), and approved screenshots are updated on purpose;
+- `@api` changes follow semantic versioning (deprecate before removing);
+- new or changed texts are translatable, with a translation in each language the package ships, and valid ICU.
 
-A good pull request does one thing (unrelated changes go in separate pull requests), includes tests and the documentation for behavior users see, and passes CI. A maintainer will review it, and may ask for changes. Changes to how Quire is released (`.github/release-signers`, the workflows and the scripts they check a release with) need a code owner's review (`.github/CODEOWNERS`).
+Commits on a branch are free-form, since they're squashed when merging. Please push new commits instead of force-pushing, so the review is easier to follow, and add `Co-authored-by` only for a human co-author. A maintainer will review the pull request, and may ask for changes. Changes to how Quire is released (`.github/release-signers`, the workflows and the scripts they check a release with) need a code owner's review (`.github/CODEOWNERS`).
+
+## Pull requests
+
+Pull requests are squashed: the title becomes the commit's subject on `main`, followed by `(#N)`, and the description becomes its body. Write both for the change as a whole, never by copying the branch's commit messages.
+
+**The title** is `<Verb> <what changes>`:
+- It starts with an imperative verb, capitalized, e.g. Add, Fix, Refuse, Let, Make, Move, Remove, Rename, Read, Run, Show, Keep.
+- It names one change, as whoever uses it sees it. No colon, no semicolon and no list of several changes: if it needs a list, the title is the umbrella and the list goes under "What changes".
+- At most 72 characters, with no trailing period, no `feat:`-style prefix, no product name and no version. Only Dependabot's `chore:` stays, so dependency updates can be filtered.
+- A release's pull request is titled exactly `Release X.Y.Z` (or `Release X.Y.Z-rc.N`), and the one that moves `main` on to the next minor exactly `Start X.Y`.
+
+Good: "Refuse a release whose tag isn't signed". Not: "feat: release tags are checked", "Releases: signed tags, checksums and docs".
+
+**The description** has exactly these sections, in this order, and nothing before, between or after them (the template has them):
+- `## Why`: one to three sentences about the problem, for whoever uses it.
+- `## What changes`: one behavior per bullet. A breaking change is the first bullet, starting "Breaking:".
+- `## Tested`: what ran, then `NOT RUN: <what>, because <why>` for anything that didn't.
+- `## Refs`: public links only (issues, pull requests, published advisories, RFCs, upstream docs). Leave the section out when there are none.
+
+A release's pull request uses the same sections: "Why" is `Release X.Y.Z.`, and "What changes" has one bullet per changelog heading.
+
+**Nothing internal in public text.** Titles, descriptions, commit messages, branch names, tag messages, release notes and the changelog say what the code changes and why, for a reader outside the project. They carry no internal tracking codes or decision numbers, no names of who decided, reviewed or approved what, and no paths outside the repository.
+
+**Before you send it, check:**
+1. Does the title start with an imperative verb?
+2. Does the title name one change, with no colon or list?
+3. Is it 72 characters or fewer, with no prefix and no trailing period?
+4. Does the description have exactly Why, What changes, Tested and (when there are any) Refs, in that order, and nothing else?
+5. Is there nothing internal in either?
+
+If the branch gains commits after the pull request is opened, update the title and description so they still describe the whole change.
+
+**Branches** are `<kind>/<slug>`, where the kind is one of `feat`, `fix`, `docs`, `chore`, `ci` or `security`, and the slug is lowercase with hyphens and describes the change, with no internal code. A release is prepared on `chore/release-X.Y.Z`. `release/X.Y` is reserved for maintenance branches.
+
+**A fix of an embargoed vulnerability** is developed in the repository's private security advisory fork, never on a public branch. Until the advisory is published, its title, description and branch describe the change neutrally: no advisory ID, and no description of the exploit. The changelog's Security entry and the advisory ID are added at the release.
 
 ## Releases
+
+- **Tags and release branches:** a release tag is `vX.Y.Z`, or `vX.Y.Z-rc.N` for a release candidate, with no other labels; annotated, SSH-signed by a key in `.github/release-signers`, with the message `Quire X.Y.Z`, on a commit of `main` that passed CI. The Release and Split workflows refuse any other tag, before anything that can publish runs. Releases come from `main`; `release/X.Y` is created from `vX.Y.0` only when an older minor needs a fix after `main` has moved on (fixed on `main` first, then `git cherry-pick -x`).
+- **What a release publishes:** a GitHub release titled `Quire X.Y.Z` (a pre-release for `-rc.N`), with the release's notes; `CHANGELOG.md` in the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format, with `## [X.Y.Z] - YYYY-MM-DD` headings; and its release feed, signed with Sigstore. Before 1.0, a minor release may break things and a patch only fixes them; a release's "Upgrading" says what someone running a site must do. A release candidate's skeleton requires Quire's packages from that candidate on (`^X.Y.Z-rc.N`), so a new site can install it.
+- Report a vulnerability as [SECURITY.md](SECURITY.md) says.
 
 All packages are released together, with the same version, from a tag of this repository: tagging a commit of `main` with `v0.1.0` gives that version to every package. Tag with `git tag -s v0.1.0 -m "Quire 0.1.0"`, signed by a key in `.github/release-signers` as `main` has it (`.github/verify-tag.sh v0.1.0` checks a tag the way the workflows do). The workflow "Split" copies `main` and each tag to the packages' repositories (`.github/split.json` lists them; `.github/split.sh main` shows what it would push, without pushing). Before tagging, check that Packagist has every package Split pushes, from the repository Split pushes it to: `docker compose exec php php .github/packagist.php` (a new package, like `quire/analytics` in 0.3.0, is submitted at https://packagist.org/packages/submit once its repository has `main`). The release workflow checks it first, and publishes nothing when it fails. A tag publishes nothing until CI has passed on `main` for its commit: both workflows wait for it (`.github/ci-passed.sh`, 45 minutes at most) and stop if it failed. Then re-run CI's run for that commit ("Run workflow" by hand doesn't count), and the two workflows once it has passed.
 
@@ -121,7 +158,7 @@ The workflow "Release" then publishes the GitHub release with them, and Quire's 
 
 The runtime images sites build on (`runtime/Dockerfile`, see [docs/docker.md](docs/docker.md#the-runtime-images)) aren't tied to releases: the workflow "Runtime" builds, signs and publishes them every week, whenever `runtime/` changes on `main`, and by hand. CI builds the site's images on the runtime of the commit it tests (`.github/runtime.hcl`), so a change there is tested before it's published. A new PHP version gets its own tags (`8.6`, `8.6-builder`) next to the current ones.
 
-Between releases, the packages develop the next version, `0.4.x-dev`: their `main` branches are aliased to it, and they require each other in it (`^0.4`). To start the next minor version, change both in every `composer.json`, and the versions of the path repository in the root one; a test checks that they agree. A new package goes into `.github/split.json`, with its repository, and gets the `LICENSE`, `.gitattributes` and `.github/workflows/close-pull-request.yaml` the others have.
+Between releases, the packages develop the next version, `0.5.x-dev`: their `main` branches are aliased to it, and they require each other in it (`^0.5`). To start the next minor version, change both in every `composer.json`, and the versions of the path repository in the root one; a test checks that they agree. A new package goes into `.github/split.json`, with its repository, and gets the `LICENSE`, `.gitattributes` and `.github/workflows/close-pull-request.yaml` the others have.
 
 ## License
 
