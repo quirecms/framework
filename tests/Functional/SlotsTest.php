@@ -90,7 +90,7 @@ final class SlotsTest extends WebTestCase
         $twig = self::getContainer()->get(Environment::class);
 
         self::assertSame('yes no', $twig->createTemplate("{{ quire_extension_enabled('quire-fixture-hello') ? 'yes' : 'no' }} {{ quire_extension_enabled('acme-missing') ? 'yes' : 'no' }}")->render());
-        self::assertSame('filled empty', $twig->createTemplate("{{ quire_slot_filled('footer') ? 'filled' : 'empty' }} {{ quire_slot_filled('sidebar') ? 'filled' : 'empty' }}")->render());
+        self::assertSame('filled empty', $twig->createTemplate("{{ quire_slot_filled('footer') ? 'filled' : 'empty' }} {{ quire_slot_filled('content.before_body') ? 'filled' : 'empty' }}")->render());
     }
 
     private function publish(string $title): void

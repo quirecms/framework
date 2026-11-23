@@ -7,7 +7,8 @@
     choose), category (the one category in "single" mode), layout ("bar" or "corner"), reject
     ("reject", "necessary" or "technical"), test (nothing is sent), privacy_page (a URL or null),
     categories (each: category, services), config (for the loader), loader (its URL), preview (the
-    admin's preview, without the loader: "banner" shows the banner, "dialog" the open settings).
+    admin's preview, without the loader: "banner" shows the banner, "dialog" the open settings), ask
+    (false on pages with forms for passwords or accounts: no banner there, only the settings).
 
     Blocks (override them, not the whole file, with {% extends '@!quire_privacy/consent.html.twig' %}):
     consent_mark (before the heading and text, empty: e.g. the site's mark), consent_heading, consent_text,
@@ -21,75 +22,77 @@
 #}
 {%- set domain = 'quire-privacy' -%}
 {%- set reject_label = reject == 'reject'
-    ? (mode == 'single' ? ('consent.single.reject.' ~ category.value)|trans({}, domain) : 'Reject all'|trans({}, domain))
-    : (reject == 'necessary' ? 'Necessary only'|trans({}, domain) : 'Technical cookies only'|trans({}, domain)) -%}
+    ? (mode == 'single' ? ('consent.single.reject.' ~ category.value)|quire_trans({}, domain) : 'Reject all'|quire_trans({}, domain))
+    : (reject == 'necessary' ? 'Necessary only'|quire_trans({}, domain) : 'Technical cookies only'|quire_trans({}, domain)) -%}
+{%- if ask ?? true -%}
 <section class="consent consent--{{ layout }}" data-consent-banner aria-labelledby="quire-consent-heading"{% if preview|default(false) != 'banner' %} hidden{% endif %}>
     <div class="consent__inner">
         {% block consent_mark %}{% endblock %}
         <div class="consent__body">
-        <h2 class="consent__heading" id="quire-consent-heading">{% block consent_heading %}{{ mode == 'single' ? ('consent.single.heading.' ~ category.value)|trans({}, domain) : 'Cookies on this site'|trans({}, domain) }}{% endblock %}</h2>
+        <h2 class="consent__heading" id="quire-consent-heading">{% block consent_heading %}{{ mode == 'single' ? ('consent.single.heading.' ~ category.value)|quire_trans({}, domain) : 'Cookies on this site'|quire_trans({}, domain) }}{% endblock %}</h2>
         {% block consent_text %}
-            <p class="consent__text">{{ mode == 'single' ? ('consent.single.text.' ~ category.value)|trans({}, domain) : 'This site would like to use services of other companies. Nothing of theirs runs until you allow it.'|trans({}, domain) }}</p>
-            <p class="consent__text consent__new" data-consent-new hidden>{{ 'New or changed since your last visit:'|trans({}, domain) }} <span data-consent-new-names></span></p>
-            {% if test %}<p class="consent__text consent__test">{{ 'Test site: nothing is sent.'|trans({}, domain) }}</p>{% endif %}
+            <p class="consent__text">{{ mode == 'single' ? ('consent.single.text.' ~ category.value)|quire_trans({}, domain) : 'This site would like to use services of other companies. Nothing of theirs runs until you allow it.'|quire_trans({}, domain) }}</p>
+            <p class="consent__text consent__new" data-consent-new hidden>{{ 'New or changed since your last visit:'|quire_trans({}, domain) }} <span data-consent-new-names></span></p>
+            {% if test %}<p class="consent__text consent__test">{{ 'Test site: nothing is sent.'|quire_trans({}, domain) }}</p>{% endif %}
         {% endblock %}
         </div>
         <div class="consent__actions">
             {% block consent_actions %}
-                <button type="button" class="consent__btn" data-consent-accept>{{ mode == 'single' ? ('consent.single.accept.' ~ category.value)|trans({}, domain) : 'Accept all'|trans({}, domain) }}</button>
+                <button type="button" class="consent__btn" data-consent-accept>{{ mode == 'single' ? ('consent.single.accept.' ~ category.value)|quire_trans({}, domain) : 'Accept all'|quire_trans({}, domain) }}</button>
                 <button type="button" class="consent__btn" data-consent-reject>{{ reject_label }}</button>
                 {% if mode == 'several' %}
-                    <button type="button" class="consent__link" data-consent-open>{{ 'Choose cookies'|trans({}, domain) }}</button>
+                    <button type="button" class="consent__link" data-consent-open>{{ 'Choose cookies'|quire_trans({}, domain) }}</button>
                 {% endif %}
             {% endblock %}
             {% block consent_details_link %}
                 {% if mode == 'single' %}
-                    <button type="button" class="consent__link" data-consent-open>{{ 'Cookie settings'|trans({}, domain) }}</button>
+                    <button type="button" class="consent__link" data-consent-open>{{ 'Cookie settings'|quire_trans({}, domain) }}</button>
                 {% endif %}
             {% endblock %}
         </div>
     </div>
 </section>
+{%- endif -%}
 {% block consent_dialog %}
-<dialog class="consent-dialog" data-consent-dialog aria-labelledby="quire-consent-dialog-heading"{% if preview|default(false) == 'dialog' %} open{% endif %}>
+<dialog class="consent-dialog" data-consent-dialog aria-labelledby="quire-consent-dialog-heading" aria-describedby="quire-consent-dialog-intro"{% if preview|default(false) == 'dialog' %} open{% endif %}>
     <form method="dialog" class="consent-dialog__form">
         <div class="consent-dialog__head">
-            <h2 class="consent-dialog__heading" id="quire-consent-dialog-heading">{{ 'Cookie settings'|trans({}, domain) }}</h2>
+            <h2 class="consent-dialog__heading" id="quire-consent-dialog-heading">{{ 'Cookie settings'|quire_trans({}, domain) }}</h2>
             <button type="submit" class="consent-dialog__close icon-close" aria-label="{{ 'Close'|trans({}, domain) }}"><span aria-hidden="true">✕</span></button>
         </div>
-        <p>{{ 'Choose what this site may use. You can change it at any time with “Cookie settings”.'|trans({}, domain) }}</p>
-        <p class="consent__signal" data-consent-signal hidden>{{ 'Your browser asks sites not to track you, so everything below stays off.'|trans({}, domain) }}</p>
-        {% if test %}<p class="consent__test">{{ 'Test site: nothing is sent.'|trans({}, domain) }}</p>{% endif %}
+        <p id="quire-consent-dialog-intro">{{ 'Choose what this site may use. You can change it at any time with “Cookie settings” at the bottom of every page.'|quire_trans({}, domain) }}</p>
+        <p class="consent__signal" data-consent-signal hidden>{{ 'Your browser asks sites not to track you, so everything below stays off.'|quire_trans({}, domain) }}</p>
+        {% if test %}<p class="consent__test">{{ 'Test site: nothing is sent.'|quire_trans({}, domain) }}</p>{% endif %}
 
         <fieldset class="consent-dialog__category">
-            <legend>{{ 'Necessary'|trans({}, domain) }}</legend>
-            <label class="consent-dialog__switch"><input type="checkbox" checked disabled> {{ 'Always on'|trans({}, domain) }}</label>
-            <p class="consent-dialog__help">{{ 'Needed for the site to work, e.g. to sign in. Always on.'|trans({}, domain) }}</p>
+            <legend>{{ 'Necessary'|quire_trans({}, domain) }}</legend>
+            <label class="consent-dialog__switch"><input type="checkbox" checked disabled> {{ 'Always on'|quire_trans({}, domain) }}</label>
+            <p class="consent-dialog__help">{{ 'Needed for the site to work, e.g. to sign in. Always on.'|quire_trans({}, domain) }}</p>
         </fieldset>
 
         {% for group in categories %}
             <fieldset class="consent-dialog__category">
-                <legend>{{ group.category.label|trans({}, domain) }}</legend>
-                <label class="consent-dialog__switch"><input type="checkbox" data-consent-category="{{ group.category.value }}"> {{ 'Allow all of them'|trans({}, domain) }}</label>
-                <p class="consent-dialog__help">{{ group.category.description|trans({}, domain) }}</p>
+                <legend>{{ group.category.label|quire_trans({}, domain) }}</legend>
+                <label class="consent-dialog__switch"><input type="checkbox" data-consent-category="{{ group.category.value }}"> {{ ('consent.allow.' ~ group.category.value)|quire_trans({}, domain) }}</label>
+                <p class="consent-dialog__help">{{ group.category.description|quire_trans({}, domain) }}</p>
                 {% for service in group.services %}
                     <div class="consent-dialog__service">
                     <label class="consent-dialog__switch"><input type="checkbox" data-consent-service="{{ service.id }}" data-consent-of="{{ group.category.value }}"> {{ service.label }}</label>
                     <details>
-                        <summary>{{ 'About {service}'|trans({service: service.label}, domain) }}</summary>
+                        <summary>{{ 'About {service}'|quire_trans({service: service.label}, domain) }}</summary>
                         <dl class="consent-dialog__facts">
-                            <dt>{{ 'Run by'|trans({}, domain) }}</dt><dd>{{ service.vendor }}</dd>
-                            <dt>{{ 'What it does'|trans({}, domain) }}</dt><dd>{{ service.purpose }}</dd>
+                            <dt>{{ 'Run by'|quire_trans({}, domain) }}</dt><dd>{{ service.vendor }}</dd>
+                            <dt>{{ 'What it does'|quire_trans({}, domain) }}</dt><dd>{{ service.purpose }}</dd>
                             {% if service.hosts is not empty %}
-                                <dt>{{ 'It reaches'|trans({}, domain) }}</dt><dd>{{ service.hosts|reduce((all, list) => all|merge(list), [])|map(host => host|replace({'https://': ''}))|join(', ') }}</dd>
+                                <dt>{{ 'It reaches'|quire_trans({}, domain) }}</dt><dd>{{ service.hosts|reduce((all, list) => all|merge(list), [])|map(host => host|replace({'https://': ''}))|join(', ') }}</dd>
                             {% endif %}
-                            {% if service.retention %}<dt>{{ 'Its company keeps the data for'|trans({}, domain) }}</dt><dd>{{ service.retention }}</dd>{% endif %}
-                            {% if service.policyUrl %}<dt>{{ 'Its privacy policy'|trans({}, domain) }}</dt><dd><a href="{{ service.policyUrl }}" rel="noopener" target="_blank">{{ service.policyUrl|replace({'https://': ''}) }}</a></dd>{% endif %}
+                            {% if service.retention %}<dt>{{ 'Its company keeps the data for'|quire_trans({}, domain) }}</dt><dd>{{ service.retention }}</dd>{% endif %}
+                            {% if service.policyUrl %}<dt>{{ 'Its privacy policy'|quire_trans({}, domain) }}</dt><dd><a href="{{ service.policyUrl }}" rel="noopener" target="_blank">{{ service.policyUrl|replace({'https://': ''}) }}</a></dd>{% endif %}
                         </dl>
                         {% if service.cookies is not empty %}
                             <table class="consent-dialog__cookies">
-                                <caption>{{ 'What it keeps on your device'|trans({}, domain) }}</caption>
-                                <thead><tr><th scope="col">{{ 'Name'|trans({}, domain) }}</th><th scope="col">{{ 'Kept for'|trans({}, domain) }}</th><th scope="col">{{ 'Purpose'|trans({}, domain) }}</th></tr></thead>
+                                <caption>{{ 'What it keeps on your device'|quire_trans({}, domain) }}</caption>
+                                <thead><tr><th scope="col">{{ 'Name'|quire_trans({}, domain) }}</th><th scope="col">{{ 'Kept for'|quire_trans({}, domain) }}</th><th scope="col">{{ 'Purpose'|quire_trans({}, domain) }}</th></tr></thead>
                                 <tbody>
                                     {% for cookie in service.cookies %}<tr><td><code>{{ cookie.name }}</code></td><td>{{ cookie.lifetime }}</td><td>{{ cookie.purpose }}</td></tr>{% endfor %}
                                 </tbody>
@@ -101,14 +104,14 @@
             </fieldset>
         {% endfor %}
 
-        {% if privacy_page %}<p><a href="{{ privacy_page }}">{{ 'Privacy notice'|trans({}, domain) }}</a></p>{% endif %}
-        <p class="consent-dialog__id" data-consent-id hidden>{{ 'Your choice’s ID, if you ask the site what you agreed to:'|trans({}, domain) }} <code></code></p>
+        {% if privacy_page %}<p><a href="{{ privacy_page }}">{{ 'Privacy notice'|quire_trans({}, domain) }}</a></p>{% endif %}
+        <p class="consent-dialog__id" data-consent-id hidden>{{ 'Your choice’s ID, if you ask the site what you agreed to:'|quire_trans({}, domain) }} <code></code></p>
 
         {#- Accept first and reject second, as on the banner; closing is the ✕ above -#}
         <div class="consent__actions consent-dialog__actions">
-            <button type="button" class="consent__btn" data-consent-accept>{{ 'Accept all'|trans({}, domain) }}</button>
-            <button type="button" class="consent__btn" data-consent-reject>{{ reject == 'reject' ? 'Reject all'|trans({}, domain) : reject_label }}</button>
-            <button type="button" class="consent__btn" data-consent-save>{{ 'Save my choices'|trans({}, domain) }}</button>
+            <button type="button" class="consent__btn" data-consent-accept>{{ 'Accept all'|quire_trans({}, domain) }}</button>
+            <button type="button" class="consent__btn" data-consent-reject>{{ reject == 'reject' ? 'Reject all'|quire_trans({}, domain) : reject_label }}</button>
+            <button type="button" class="consent__btn" data-consent-save>{{ 'Save my choices'|quire_trans({}, domain) }}</button>
         </div>
     </form>
 </dialog>
@@ -119,12 +122,12 @@
 {% set category_labels = {} %}
 {% for group in categories %}{% set category_labels = category_labels|merge({(group.category.value): group.category.label|trans({}, domain)}) %}{% endfor %}
 <script type="application/json" id="quire-consent-config">{{ config|merge({messages: {
-    saved: 'Your choice is saved.'|trans({}, domain),
+    saved: 'Saved: {state}.'|trans({state: '{state}'}, domain),
     off: '{label} is off.'|trans({label: '{label}'}, domain),
     stateOn: '{category} on'|trans({category: '{category}'}, domain),
     stateOff: '{category} off'|trans({category: '{category}'}, domain),
     stateSome: '{category} partly on'|trans({category: '{category}'}, domain),
     stateSeparator: ' · ',
-}, categories: category_labels})|json_encode(constant('JSON_HEX_TAG') b-or constant('JSON_HEX_AMP') b-or constant('JSON_HEX_APOS') b-or constant('JSON_HEX_QUOT') b-or constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_THROW_ON_ERROR'))|raw }}</script>
+}, lang: quire_fallback_language('{category} on', domain), categories: category_labels})|json_encode(constant('JSON_HEX_TAG') b-or constant('JSON_HEX_AMP') b-or constant('JSON_HEX_APOS') b-or constant('JSON_HEX_QUOT') b-or constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_THROW_ON_ERROR'))|raw }}</script>
 <script type="module" src="{{ loader }}"></script>
 {% endif %}

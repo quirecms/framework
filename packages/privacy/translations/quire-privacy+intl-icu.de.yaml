@@ -5,9 +5,9 @@ Own measurement: Eigene Messung
 Analytics: Analyse
 Marketing: Marketing
 Needed for the site to work, e.g. to sign in. Always on.: Für die Website nötig, z. B. zum Anmelden. Immer aktiv.
-Remember your choices, e.g. fonts or a map's settings.: Merken sich Ihre Auswahl, z. B. Schriften oder die Einstellungen einer Karte.
+Remember your choices, e.g. fonts or a map’s settings.: Merken sich Ihre Auswahl, z. B. Schriften oder die Einstellungen einer Karte.
 Count visits for this site only, without sharing them.: Zählen Besuche nur für diese Website, ohne sie weiterzugeben.
-Help the site see how it's used, through an analytics service.: Zeigen der Website über einen Analysedienst, wie sie genutzt wird.
+Help the site see how it’s used, through an analytics service.: Zeigen der Website über einen Analysedienst, wie sie genutzt wird.
 Videos and other content from companies that may follow you across sites.: Videos und andere Inhalte von Unternehmen, die Sie über Websites hinweg verfolgen können.
 consent.single.heading.statistics: Analyse-Cookies
 consent.single.heading.statistics-own: Cookies zur Messung
@@ -35,10 +35,13 @@ This site would like to use services of other companies. Nothing of theirs runs 
 Accept all: Alle akzeptieren
 Choose cookies: Cookies auswählen
 Cookie settings: Cookie-Einstellungen
-Choose what this site may use. You can change it at any time with “Cookie settings”.: Wählen Sie, was diese Website verwenden darf. Sie können es jederzeit unter „Cookie-Einstellungen“ ändern.
+"Choose what this site may use. You can change it at any time with “Cookie settings” at the bottom of every page.": "Wählen Sie, was diese Website verwenden darf. Sie können es jederzeit unter „Cookie-Einstellungen“ unten auf jeder Seite ändern."
 Your browser asks sites not to track you, so everything below stays off.: Ihr Browser bittet Websites, Sie nicht zu verfolgen, deshalb bleibt alles unten aus.
 Always on: Immer aktiv
-Allow all of them: Alle erlauben
+"consent.allow.statistics": "Analyse erlauben"
+"consent.allow.statistics-own": "Messung erlauben"
+"consent.allow.preferences": "Einstellungen erlauben"
+"consent.allow.marketing": "Marketing erlauben"
 About {service}: Über {service}
 Run by: Betrieben von
 What it does: Was er tut
@@ -52,7 +55,7 @@ Purpose: Zweck
 Privacy notice: Datenschutzhinweis
 Save my choices: Auswahl speichern
 Close: Schließen
-Your choice is saved.: Ihre Auswahl ist gespeichert.
+"Saved: {state}.": "Gespeichert: {state}."
 '{label} is off.': '{label} ist aus.'
 Banner: Banner
 'Where visitors see it: a bar at the bottom, or a box in a corner.': 'Wo Besucher ihn sehen: als Leiste unten oder als Kasten in einer Ecke.'
@@ -118,7 +121,7 @@ Send outside production too: Auch außerhalb der Produktion senden
 "Load it": "Laden"
 "Always allow {label}": "{label} immer erlauben"
 "Open it on {host}": "Auf {host} öffnen"
-"This content can't be shown.": "Dieser Inhalt kann nicht angezeigt werden."
+"This content can’t be shown.": "Dieser Inhalt kann nicht angezeigt werden."
 "{category} on": "{category}: an"
 "{category} off": "{category}: aus"
 "{category} partly on": "{category}: teilweise an"

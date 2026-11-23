@@ -25,7 +25,7 @@ Other responses get policies of their own:
 
 | Pages | Policy |
 |-------|--------|
-| Signing in, registering, resetting a password | The pages' policy, with `frame-ancestors 'none'`: never shown in a frame, where another site could capture what's typed. And none of `quire/privacy`'s services' hosts, whatever the visitor consented to: a script on a password form could read the password. The site's own `quire.csp.sources` still apply |
+| Signing in, registering, resetting a password | The pages' policy, with `frame-ancestors 'none'`: never shown in a frame, where another site could capture what's typed. And none of `quire/privacy`'s services' hosts, whatever the visitor consented to: a script on a password form could read the password. Its consent loader runs there only to change a choice, with no service's code to start. The site's own `quire.csp.sources` still apply |
 | Uploaded files (`/storage/…`) | `default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; media-src 'self'; sandbox`: an uploaded HTML or SVG file never runs scripts as the site. Caddy sends the same for the files it serves itself |
 | The admin | `base-uri 'self'; object-src 'none'; frame-ancestors 'self'` |
 | JSON, feeds and other data | None |

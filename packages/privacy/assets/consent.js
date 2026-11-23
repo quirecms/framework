@@ -265,9 +265,10 @@ function start(config) {
         record(choice);
         const withdrawn = apply(before);
 
+        // What was saved, in the words of the footer's state ("Saved: Analytics off.")
         announce(withdrawn.length > 0
             ? withdrawn.map((service) => config.messages.off.replace('{label}', service.label)).join(' ')
-            : config.messages.saved);
+            : config.messages.saved.replace('{state}', stateText()));
     }
 
     // The site keeps each choice as proof (its random ID, the answers, never the visitor's account).
@@ -276,7 +277,8 @@ function start(config) {
             return;
         }
 
-        fetch(config.log, {method: 'POST', keepalive: true, credentials: 'same-origin', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id: made.id, s: made.s})})
+        // Nothing of the page: no address, no referrer (on a reset page, the address is the token)
+        fetch(config.log, {method: 'POST', keepalive: true, credentials: 'same-origin', referrerPolicy: 'no-referrer', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id: made.id, s: made.s})})
             .catch(() => {});
     }
 
@@ -313,13 +315,18 @@ function start(config) {
     // news: no live region (R13.4).
     function showState() {
         const states = document.querySelectorAll('[data-consent-state]');
+        const text = stateText();
 
-        if (states.length === 0) {
-            return;
+        for (const state of states) {
+            write(state, text);
+            state.hidden = text === '';
         }
+    }
 
+    function stateText() {
         const categories = [...new Set(services.map((service) => service.category))];
-        const text = choice === null && !signal ? '' : categories.map((category) => {
+
+        return choice === null && !signal ? '' : categories.map((category) => {
             const label = config.categories?.[category] ?? category;
             // Choices are per service (the dialog has a switch for each), so a category can be mixed: "on"
             // only when all its services are allowed, "off" when none is, and "some on" between
@@ -328,11 +335,6 @@ function start(config) {
 
             return message.replace('{category}', label);
         }).join(config.messages.stateSeparator ?? ' · ');
-
-        for (const state of states) {
-            state.textContent = text;
-            state.hidden = text === '';
-        }
     }
 
     // Puts back the embeds of services the visitor allows, and holds again those of services withdrawn.
@@ -521,9 +523,24 @@ function start(config) {
             status.textContent = '';
             // A change the screen reader notices even when the same text comes twice.
             requestAnimationFrame(() => {
-                status.textContent = message;
+                write(status, message);
             });
         }
+    }
+
+    // A text the page's language has no translation of is the fallback's (English), marked as
+    // quire_trans marks it: read as English, its punctuation kept in place on a right-to-left page.
+    function write(element, text) {
+        if (!config.lang || text === '') {
+            element.textContent = text;
+
+            return;
+        }
+
+        const bdi = document.createElement('bdi');
+        bdi.lang = config.lang;
+        bdi.textContent = text;
+        element.replaceChildren(bdi);
     }
 }
 

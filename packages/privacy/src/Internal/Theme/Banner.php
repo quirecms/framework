@@ -48,13 +48,24 @@ final readonly class Banner
     }
 
     /**
-     * Whether this page has the banner and the loader: not a page with a form for passwords or
-     * accounts (the private policy, which allows no other site's host), so nothing of a service runs
-     * there, whatever the visitor allowed.
+     * Whether this page has the consent loader, the "Cookie settings" opener and its dialog: every page of
+     * a site that asks visitors something. See {@see settingsOnly()} for pages with forms for passwords or
+     * accounts.
      */
     public function onThisPage(): bool
     {
-        return $this->shown() && PolicyKind::Private->value !== $this->requests->getMainRequest()?->attributes->get(Csp::ATTRIBUTE);
+        return $this->shown();
+    }
+
+    /**
+     * A page with a form for passwords or accounts (the private policy, which allows no other site's
+     * host): visitors can change their choice there, but nothing of a service runs, whatever they
+     * allowed. The loader gets no service's code or configuration, so it has nothing to start, and no
+     * banner asks them there. Two layers: this, decided here, and the policy itself.
+     */
+    public function settingsOnly(): bool
+    {
+        return PolicyKind::Private->value === $this->requests->getMainRequest()?->attributes->get(Csp::ATTRIBUTE);
     }
 
     /**
@@ -92,7 +103,7 @@ final readonly class Banner
     }
 
     /**
-     * @return array{mode: string, category: Category, layout: string, reject: string, test: bool, privacy_page: ?string, categories: list<array{category: Category, services: list<Service>}>}
+     * @return array{mode: string, category: Category, layout: string, reject: string, test: bool, privacy_page: ?string, categories: list<array{category: Category, services: list<Service>}>, ask: bool}
      */
     public function view(): array
     {
@@ -110,6 +121,7 @@ final readonly class Banner
             'test' => $this->testMode(),
             'privacy_page' => $this->settings->privacyPage(),
             'categories' => $categories,
+            'ask' => !$this->settingsOnly(),
         ];
     }
 
@@ -133,8 +145,8 @@ final readonly class Banner
                 'label' => $service->label,
                 'category' => $service->category->value,
                 'revision' => $service->revision(),
-                'script' => null === $service->script ? null : $this->assets->url($service->script),
-                'config' => (object) $service->config,
+                'script' => null === $service->script || $this->settingsOnly() ? null : $this->assets->url($service->script),
+                'config' => (object) ($this->settingsOnly() ? [] : $service->config),
                 'cookies' => array_map(static fn (Cookie $cookie): string => $cookie->name, $service->cookies),
             ], $this->services->askedAbout()),
         ];

@@ -236,14 +236,37 @@ if (process.env.QUIRE_CHECK_SENDS === '1') {
         await context.close();
     });
 
-    await check('Google Analytics: pages with password forms have no loader, so nothing is sent there, consent or not', async () => {
+    await check('Google Analytics: pages with password forms have the settings but no service\'s code, so nothing is sent there, consent or not, and a choice made there carries nothing of the page', async () => {
         const { context, page } = await fresh();
         await page.goto(base + '/embed', { waitUntil: 'networkidle' });
         await page.locator('[data-consent-banner] [data-consent-accept]').click();
         await page.waitForFunction(() => window.ciGtag === 1, null, { timeout: 5000 });
         const seen = googleRequests(page);
-        await page.goto(base + '/login', { waitUntil: 'networkidle' });
-        expect(await page.locator('#quire-consent-config').count() === 0 && seen.length === 0, `On the sign-in page: ${seen.join(', ')}`);
+        const scripts = [];
+        page.on('request', (request) => request.resourceType() === 'script' && scripts.push(request.url()));
+
+        for (const url of ['/login', '/forgot-password', `/reset-password/${'a'.repeat(32)}.ci-not-a-token`]) {
+            scripts.length = 0;
+            await page.goto(base + url, { waitUntil: 'networkidle' });
+            expect(!page.url().includes('token'), `${url}: the page's address still holds the token.`);
+            expect(await page.locator('#quire-consent-config').count() === 1 && await page.locator('[data-consent-banner]').count() === 0, `${url}: the settings without a banner.`);
+            expect(await page.locator('.consent__opener').isVisible(), `${url}: no "Cookie settings" to change the choice.`);
+            const other = scripts.filter((script) => new URL(script).origin !== new URL(base).origin || script.includes('/assets/ci-consent/') || script.includes('/assets/quire-analytics/'));
+            expect(other.length === 0, `${url}: scripts other than the site's own: ${other.join(', ')}`);
+            expect(await page.evaluate(() => window.ciGtag ?? 0) === 0, `${url}: a service started.`);
+
+            // A choice made here: the consent ID and the answers, never the page's address
+            await page.locator('.consent__opener').click();
+            const [logged] = await Promise.all([
+                page.waitForRequest((request) => request.url().includes('/_quire/privacy/consent') && request.method() === 'POST', { timeout: 5000 }),
+                page.locator('[data-consent-dialog] [data-consent-accept]').click(),
+            ]);
+            const headers = await logged.allHeaders();
+            expect(headers.referer === undefined, `${url}: the log was told the page (${headers.referer}).`);
+            expect(JSON.stringify(Object.keys(JSON.parse(logged.postData() ?? '{}')).sort()) === '["id","s"]', `${url}: the log got more than the choice: ${logged.postData()}`);
+        }
+
+        expect(seen.length === 0, `On pages with password forms: ${seen.join(', ')}`);
         await context.close();
     });
 

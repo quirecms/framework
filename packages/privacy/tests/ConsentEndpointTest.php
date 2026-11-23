@@ -28,6 +28,27 @@ final class ConsentEndpointTest extends PrivacyTestCase
         self::assertSame([], $this->client->getCookieJar()->all(), 'No session, no cookie: the page stays cacheable.');
     }
 
+    /**
+     * A choice made on a page of someone signed in (an account page sends the session's cookie with it) is
+     * the visitor's random ID and answers, never who they are: the log has nowhere to put it.
+     */
+    public function testAChoiceMadeSignedInNamesNobody(): void
+    {
+        $user = $this->signIn($this->createUser('Kim Ono', ['editor']));
+        $this->post(['id' => self::ID, 's' => ['fixture-video' => false]]);
+
+        self::assertResponseStatusCodeSame(204);
+        $row = $this->connection()->fetchAssociative('SELECT * FROM quire.quire_privacy_consent WHERE consent_id = ?', [self::ID]);
+        self::assertIsArray($row);
+        self::assertSame(['answers', 'consent_id', 'created_at', 'id', 'revision'], $this->sorted(array_keys($row)), 'No column for a person.');
+
+        $stored = json_encode($row, \JSON_THROW_ON_ERROR);
+
+        foreach (array_filter([$user->id, $user->username, $user->email, 'Kim'], static fn (?string $who): bool => null !== $who && '' !== $who) as $who) {
+            self::assertStringNotContainsString($who, $stored);
+        }
+    }
+
     public function testBrowsersWithoutFetchMetadataAreCheckedByTheirOrigin(): void
     {
         $this->post(['id' => self::ID, 's' => ['fixture-video' => false]], ['HTTP_SEC_FETCH_SITE' => null, 'HTTP_ORIGIN' => 'http://localhost']);
@@ -171,6 +192,18 @@ final class ConsentEndpointTest extends PrivacyTestCase
         ], static fn (?string $value): bool => null !== $value);
 
         $this->client->request('POST', self::URL, server: $server, content: \is_string($body) ? $body : json_encode($body, \JSON_THROW_ON_ERROR));
+    }
+
+    /**
+     * @param list<string> $names
+     *
+     * @return list<string>
+     */
+    private function sorted(array $names): array
+    {
+        sort($names);
+
+        return $names;
     }
 
     private function revision(): string
