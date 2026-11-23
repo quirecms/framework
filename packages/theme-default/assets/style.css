@@ -443,6 +443,7 @@ input[aria-invalid="true"] { border-color: var(--danger); border-width: 2px; }
 .consent--corner .consent__actions { grid-column: 1 / -1; }
 .consent--corner .consent__btn { flex: 1 1 auto; }
 .consent__hosts { margin: 0; padding: 0; list-style: none; }
+.consent-dialog__service-name { margin: 0; font-weight: 650; }
 /* A short viewport (400% zoom, a phone on its side): in the page's flow, at its top, not over it */
 @media (max-height: 25rem) { .consent, .consent--corner { position: static; margin: 0 0 1rem; max-inline-size: none; border-radius: 0; border-inline: 0; border-block-start: 0; box-shadow: none; } }
 .consent-dialog { inline-size: min(40rem, calc(100vw - 2rem)); padding: 0; border: 1px solid var(--rule); border-radius: calc(var(--radius) * 2); background: var(--paper); color: var(--ink); box-shadow: 0 24px 64px rgb(0 0 0 / 0.25); }

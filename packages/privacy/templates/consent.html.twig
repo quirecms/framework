@@ -77,7 +77,13 @@
                 <p class="consent-dialog__help">{{ group.category.description|quire_trans({}, domain) }}</p>
                 {% for service in group.services %}
                     <div class="consent-dialog__service">
-                    <label class="consent-dialog__switch"><input type="checkbox" data-consent-service="{{ service.id }}" data-consent-of="{{ group.category.value }}"> {{ service.label }}</label>
+                    {%- if group.services|length == 1 %}
+                        {#- One service: the category's switch is its switch (its box stays, hidden, for the loader), and it's named in words -#}
+                        <input type="checkbox" data-consent-service="{{ service.id }}" data-consent-of="{{ group.category.value }}" hidden>
+                        <p class="consent-dialog__service-name">{{ service.label }}</p>
+                    {%- else %}
+                        <label class="consent-dialog__switch"><input type="checkbox" data-consent-service="{{ service.id }}" data-consent-of="{{ group.category.value }}"> {{ service.label }}</label>
+                    {%- endif %}
                     <details>
                         <summary>{{ 'About {service}'|quire_trans({service: service.label}, domain) }}</summary>
                         <dl class="consent-dialog__facts">

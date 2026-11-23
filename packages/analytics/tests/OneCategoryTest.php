@@ -29,6 +29,12 @@ final class OneCategoryTest extends ExtensionTestCase
         self::assertSame('Analytics cookies', $crawler->filter('#quire-consent-heading')->text());
         self::assertSame(['Accept analytics cookies', 'Reject analytics cookies', 'Cookie settings'], $texts($crawler->filter('[data-consent-banner] .consent__actions button')));
         self::assertSame(['Accept analytics cookies', 'Reject analytics cookies', 'Save my choices'], $texts($crawler->filter('dialog[data-consent-dialog] .consent-dialog__actions button')));
+
+        // Its one service: named in words under the category's switch, which is the only one to tick
+        $dialog = $crawler->filter('dialog[data-consent-dialog]');
+        self::assertSame('Google Analytics', $dialog->filter('.consent-dialog__service-name')->text());
+        self::assertCount(1, $dialog->filter('input[type=checkbox]:not([hidden]):not([disabled])'), 'One switch: the category\'s.');
+        self::assertCount(1, $dialog->filter('input[data-consent-service][hidden]'), 'The service\'s box stays, hidden, for the loader.');
     }
 
     #[\Override]
