@@ -147,7 +147,7 @@ if (process.env.QUIRE_CHECK_SENDS === '1') {
         await page.waitForFunction(() => document.documentElement.dataset.ciEmbed === '1', null, { timeout: 5000 });
         expect(await page.locator('main [data-consent-embed="ci-video"]').count() === 0, 'The placeholder stays after allowing.');
         await page.locator('.consent__opener').click();
-        await page.locator('[data-consent-dialog] [data-consent-service="ci-video"]').uncheck();
+        await page.locator('[data-consent-dialog] [data-consent-category="marketing"]').uncheck();
         await page.locator('[data-consent-dialog] [data-consent-save]').click();
         expect(await page.locator('main [data-consent-embed="ci-video"]').count() === 1 && await page.locator('main iframe[data-ci-frame]').count() === 0, 'Still loaded after withdrawing.');
         // The embed's inline script is refused by design (the check above).
@@ -204,7 +204,7 @@ if (process.env.QUIRE_CHECK_SENDS === '1') {
         await page.locator('[data-consent-banner] [data-consent-reject]').click();
         await page.locator('[data-ci-event]').click();
         await page.locator('.consent__opener').click();
-        await page.locator('[data-consent-dialog] [data-consent-service="google-analytics"]').check();
+        await page.locator('[data-consent-dialog] [data-consent-category="statistics"]').check();
         await page.locator('[data-consent-dialog] [data-consent-save]').click();
         await page.waitForFunction(() => window.ciGtag === 1, null, { timeout: 5000 });
         expect(!(await layer(page)).some((entry) => entry[0] === 'event'), 'An event from before consent was sent.');
@@ -225,7 +225,7 @@ if (process.env.QUIRE_CHECK_SENDS === '1') {
         await page.waitForFunction(() => window.ciGtag === 1, null, { timeout: 5000 });
         expect((await page.evaluate(() => document.cookie)).includes('_ga='), 'The stand-in set no cookie.');
         await page.locator('.consent__opener').click();
-        await page.locator('[data-consent-dialog] [data-consent-service="google-analytics"]').uncheck();
+        await page.locator('[data-consent-dialog] [data-consent-category="statistics"]').uncheck();
         await page.locator('[data-consent-dialog] [data-consent-save]').click();
         const cookies = await page.evaluate(() => document.cookie);
         expect(!/(^|; )_ga/.test(cookies), `Cookies left: ${cookies}`);
@@ -411,8 +411,9 @@ await check('"Cookie settings" reopens the choice; saving one service keeps it, 
     expect(await dialog.isVisible(), 'The dialog didn\'t open.');
     expect(await page.evaluate(() => document.querySelector('[data-consent-dialog]').contains(document.activeElement)), 'Focus isn\'t in the dialog.');
     expect(!(await dialog.locator('[data-consent-service="ci-video"]').isChecked()), 'The refused service is ticked.');
-    await dialog.locator('[data-consent-service="ci-video"]').check();
-    expect(await dialog.locator('[data-consent-category="marketing"]').isChecked(), 'Its category doesn\'t follow its only service.');
+    // Its one service: the category's switch is its switch
+    await dialog.locator('[data-consent-category="marketing"]').check();
+    expect(await dialog.locator('[data-consent-service="ci-video"]').isChecked(), 'The service doesn\'t follow its category\'s switch.');
     await dialog.locator('[data-consent-save]').click();
     expect(!(await dialog.isVisible()), 'The dialog stays open.');
     expect(await page.evaluate(() => document.activeElement?.classList.contains('consent__opener')), 'Focus didn\'t come back to "Cookie settings".');
@@ -464,7 +465,7 @@ await check('Global Privacy Control: no banner, everything off, and the dialog s
     expect(!(await page.locator('[data-consent-banner]').isVisible()), 'The banner is shown.');
     await page.locator('.consent__opener').click();
     expect(await page.locator('[data-consent-signal]').isVisible(), 'The dialog doesn\'t say why.');
-    expect(await page.locator('[data-consent-service="ci-video"]').isDisabled(), 'The switches can be changed.');
+    expect(await page.locator('[data-consent-category="marketing"]').isDisabled(), 'The switches can be changed.');
     expect(!(await page.locator('[data-consent-dialog] [data-consent-accept]').isVisible()), '"Accept all" is offered.');
     expect(await page.evaluate(() => !window.quire.consent.allows('ci-video')), 'A service is allowed.');
     const said = (await page.locator('[data-consent-state]').textContent()) ?? '';
