@@ -4,6 +4,27 @@ Every release of Quire, newest first: what it brings, the security fixes, and wh
 
 <!-- Made from docs/releases/<version>.md by "php .github/feed.php --changelog > CHANGELOG.md": change those files, not this one. A test checks it's up to date. -->
 
+## [0.5.0-rc.2] - 2026-11-23
+
+Fixes from trying 0.5.0-rc.1: long reads with wide tables, task lists and notes on phones, the cookie dialog, and the sign-in form. This is a release candidate: try it, don't run production sites on it.
+
+### Fixed
+
+- **A long read with a wide table keeps its text at the reading measure** on screens from 1024 pixels up, with or without "On this page": only the table widens, and the notes stay beside the text they belong to instead of overlapping it.
+- **A task's text and its note stay together on narrow screens:** the text after a task's box is wrapped in `.task-text`, so a footnote reference or a second paragraph no longer drops onto a row of its own, and a note's number is shown once.
+- **Following a note's reference moves the keyboard's focus to the note,** and each note ends with a link back to its reference ("Back to the text"; its arrow points the other way on right-to-left pages).
+- **The button beside a password says "Show" or "Hide",** in its text and its name ("Show password", "Hide password"), and screen readers are told "Your password is visible." or "Your password is hidden." The sign-in form's username is never capitalized or spell-checked by phones.
+- **The cookie settings:** a category with one service names it in words under the category's switch, instead of a second checkbox; the dialog's choices are two equal columns; and the privacy notice's list of services starts at heading level 2.
+- **The default theme on phones:** the menu's items sit closer, so four short ones share a row from 360 pixels up; a date in an item's header never breaks inside itself; and an item's page preloads the italic font of its stand-first, so it doesn't change font as the page loads.
+
+### Upgrading
+
+A second release candidate of 0.5.0, for trying it out before the release: not for sites in production. Sites on 0.4 stay there, since they require `^0.4`.
+- A site on 0.5.0-rc.1: `composer update "quire/*"`. No migrations or settings changed since rc.1.
+- To try it on another site that isn't in production, follow 0.5.0-rc.1's steps with `^0.5.0-rc.2`. A new site: `composer create-project quire/skeleton:0.5.0-rc.2`.
+- A language package for core has five new texts to translate: "Hide", "Hide password", "Your password is visible.", "Your password is hidden." and "Back to the text". Until it does, they show in English.
+- A child of the default theme that styles `.task-list-item`'s text, a footnote, or the password field's Show button should check them: their markup changed (below).
+
 ## [0.5.0-rc.1] - 2026-11-23
 
 Sites look as designed on the default theme, account pages included, and Quire speaks Macedonian. This is a release candidate: try it, don't run production sites on it.
@@ -277,6 +298,7 @@ The first release of Quire, the extensible CMS for PHP, built on Symfony.
 
 Start a site with `composer create-project quire/skeleton my-site` (see docs/docker.md).
 
+[0.5.0-rc.2]: https://github.com/quirecms/framework/releases/tag/v0.5.0-rc.2
 [0.5.0-rc.1]: https://github.com/quirecms/framework/releases/tag/v0.5.0-rc.1
 [0.4.0]: https://github.com/quirecms/framework/releases/tag/v0.4.0
 [0.3.2]: https://github.com/quirecms/framework/releases/tag/v0.3.2
