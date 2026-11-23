@@ -223,9 +223,9 @@ final class FormatterTest extends KernelTestCase
         $html = $this->markdown("First.[^a] Second.[^b] Again.[^a]\n\n[^a]: Note *A*.\n\n    Its second paragraph.\n\n[^b]: Note B, voilà.");
 
         self::assertStringNotContainsString('doc-endnotes', $html, 'No list of notes at the end.');
-        self::assertStringContainsString('First.<sup><a href="#fn-a" aria-label="Note 1" id="fnref-1">1</a></sup><span class="footnote" id="fn-a" role="note"><b><span class="visually-hidden">Note </span>1</b> Note <em>A</em>.', $html);
-        self::assertStringContainsString('Its second paragraph.</span>', $html, 'Its paragraphs read on one line, without back-links.');
-        self::assertStringContainsString('<span class="footnote" id="fn-b" role="note"><b><span class="visually-hidden">Note </span>2</b> Note B, voilà.</span>', $html, 'The text is cut by characters, never bytes.');
+        self::assertStringContainsString('First.<sup><a href="#fn-a" aria-label="Note 1" id="fnref-1">1</a></sup><span class="footnote" id="fn-a" role="note" tabindex="-1"><b><span class="visually-hidden">Note </span>1</b> Note <em>A</em>.', $html);
+        self::assertStringContainsString('Its second paragraph. <a class="footnote-back" href="#fnref-1"><span aria-hidden="true">↩</span><span class="visually-hidden">Back to the text</span></a></span>', $html, 'Its paragraphs read on one line, without CommonMark\'s back-links: one of its own, to the reference focus came from.');
+        self::assertStringContainsString('<span class="footnote" id="fn-b" role="note" tabindex="-1"><b><span class="visually-hidden">Note </span>2</b> Note B, voilà. <a class="footnote-back" href="#fnref-2">', $html, 'The text is cut by characters, never bytes.');
         self::assertStringContainsString('Again.<sup><a href="#fn-a" aria-label="Note 1">1</a></sup></p>', $html, 'A second reference links to the note, once.');
         self::assertSame(1, substr_count($html, 'id="fn-a"'));
     }

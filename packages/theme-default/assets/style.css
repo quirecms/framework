@@ -775,6 +775,12 @@ a:not(.qd-btn):active { background: var(--tint-1); }
 .qd-toc--phone { display: none; }
 .qd-prose .footnote { float: inline-end; clear: inline-end; inline-size: 12rem; margin-inline-end: -15rem; margin-block: 0.3rem 1rem; font-family: var(--font-ui); font-size: var(--step--1); line-height: 1.5; color: var(--muted); border-block-start: 1px solid var(--rule); padding-block-start: 0.5rem; }
 .qd-prose .footnote b { color: var(--accent); margin-inline-end: 0.3rem; }
+/* Focus arrives on a note from its reference; its last link goes back there (a target of 24px at least) */
+.qd-prose .footnote:focus { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+.qd-prose .footnote-back { display: inline-block; min-inline-size: 24px; min-block-size: 24px; text-align: center; text-decoration: none; color: var(--accent); }
+.qd-prose .footnote-back:hover { text-decoration: underline; }
+/* The arrow points back the way the text reads */
+[dir="rtl"] .qd-prose .footnote-back > [aria-hidden] { display: inline-block; transform: scaleX(-1); }
 .qd-prose ul:has(> li[data-task]) li { align-items: center; }
 .qd-prose ul:has(> li[data-task]) input { appearance: none; inline-size: 0.8rem; block-size: 0.8rem; border-radius: 50%; border: 2px dashed var(--control); background: transparent; translate: none; box-shadow: none; }
 .qd-prose ul:has(> li[data-task]) input:checked { background: var(--ink); border: 2px solid var(--ink); box-shadow: none; }
