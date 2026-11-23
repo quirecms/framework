@@ -83,6 +83,25 @@ final readonly class Service
     }
 
     /**
+     * The other sites it reaches, each once, by host ("www.googletagmanager.com", "*.google-analytics.com"):
+     * what visitors are told, whatever the policy's directives and paths.
+     *
+     * @return list<string>
+     */
+    public function reaches(): array
+    {
+        $hosts = [];
+
+        foreach ($this->hosts as $sources) {
+            foreach ($sources as $source) {
+                $hosts[] = strtok((string) preg_replace('#^[a-z][a-z0-9+.-]*://#i', '', $source), '/');
+            }
+        }
+
+        return array_values(array_unique(array_filter($hosts, \is_string(...))));
+    }
+
+    /**
      * Changes when what a visitor agrees to changes: its category, the other sites it reaches, or what
      * it keeps on their device. A "yes" holds for one revision; after a change the visitor is asked
      * again. Wording (label, purpose) isn't part of it.

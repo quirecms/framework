@@ -338,8 +338,25 @@ await check('"Reject all" keeps a refusal of every service, hides the banner, mo
     expect(kept && kept.s['ci-video'] === false && kept.s['ci-fonts'] === false && /^[0-9a-f]{32}$/.test(kept.id), `Kept: ${JSON.stringify(kept)}`);
     expect(await page.evaluate(() => document.activeElement?.classList.contains('consent__opener')), 'Focus isn\'t on "Cookie settings".');
     await page.waitForFunction(() => document.querySelector('[data-consent-status]')?.textContent !== '');
+    const status = await page.locator('[data-consent-status]').textContent();
+    expect(/^Saved: [a-z ]+ off(, [a-z ]+ off)*\.$/.test(status ?? '') && (status ?? '').includes('marketing off'), `What was saved, in a sentence, each category in its own words: "${status}"`);
     await page.reload({ waitUntil: 'networkidle' });
     expect(!(await page.locator('[data-consent-banner]').isVisible()), 'Asked again after choosing.');
+    await context.close();
+});
+
+await check('on a short viewport (400% zoom, a phone on its side) the banner is at the top of the page, in its flow, not over it', async () => {
+    const { context, page } = await fresh({ viewport: { width: 320, height: 225 } });
+    await page.goto(base + '/', { waitUntil: 'networkidle' });
+    const banner = page.locator('[data-consent-banner]');
+    expect(await banner.isVisible(), 'No banner.');
+    expect(await banner.evaluate((element) => getComputedStyle(element).position) === 'static', 'The banner is fixed over the page.');
+    const top = () => banner.evaluate((element) => element.getBoundingClientRect().top);
+    const before = await top();
+    await page.evaluate(() => window.scrollTo(0, 400));
+    expect(await top() < before, 'The banner doesn\'t scroll away with the page.');
+    await banner.locator('[data-consent-reject]').click();
+    expect(!(await banner.isVisible()), 'The banner stays.');
     await context.close();
 });
 

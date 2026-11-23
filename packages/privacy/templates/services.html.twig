@@ -18,7 +18,7 @@
             <dl>
                 <dt>{{ 'Run by'|quire_trans({}, domain) }}</dt><dd><bdi>{{ service.vendor }}</bdi></dd>
                 <dt>{{ 'What it does'|quire_trans({}, domain) }}</dt><dd>{{ service.purpose|quire_trans({}, quire_domain(service.owner)) }}</dd>
-                {% if service.hosts is not empty %}<dt>{{ 'It reaches'|quire_trans({}, domain) }}</dt><dd>{% for host in service.hosts|reduce((all, list) => all|merge(list), [])|map(host => host|replace({'https://': ''})) %}<bdi dir="ltr">{{ host }}</bdi>{{ not loop.last ? ', ' }}{% endfor %}</dd>{% endif %}
+                {% if service.hosts is not empty %}<dt>{{ 'It reaches'|quire_trans({}, domain) }}</dt><dd><ul class="consent__hosts">{% for host in service.reaches %}<li><bdi dir="ltr">{{ host }}</bdi></li>{% endfor %}</ul></dd>{% endif %}
                 {% if service.retention %}<dt>{{ 'Its company keeps the data for'|quire_trans({}, domain) }}</dt><dd>{{ service.retention|quire_trans({}, quire_domain(service.owner)) }}</dd>{% endif %}
                 {% if service.policyUrl %}<dt>{{ 'Its privacy policy'|quire_trans({}, domain) }}</dt><dd><a href="{{ service.policyUrl }}" rel="noopener"><bdi dir="ltr">{{ service.policyUrl|replace({'https://': ''}) }}</bdi></a></dd>{% endif %}
             </dl>

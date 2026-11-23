@@ -124,7 +124,7 @@ final class UsersTest extends AdminTestCase
         self::assertNull($grace->passwordHash);
         $email = self::getMailerMessage();
         self::assertInstanceOf(Email::class, $email);
-        self::assertStringContainsString('Admin added you to', (string) $email->getTextBody());
+        self::assertStringContainsString('Admin invited you to', (string) $email->getTextBody());
 
         $this->client->followRedirect();
         self::assertSelectorTextContains('.q-notice--success:nth-of-type(2), .q-notice--success', 'Added Grace Hopper.');

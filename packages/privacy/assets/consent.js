@@ -268,7 +268,7 @@ function start(config) {
         // What was saved, in the words of the footer's state ("Saved: Analytics off.")
         announce(withdrawn.length > 0
             ? withdrawn.map((service) => config.messages.off.replace('{label}', service.label)).join(' ')
-            : config.messages.saved.replace('{state}', stateText()));
+            : config.messages.saved.replace('{state}', stateText(true)));
     }
 
     // The site keeps each choice as proof (its random ID, the answers, never the visitor's account).
@@ -323,7 +323,9 @@ function start(config) {
         }
     }
 
-    function stateText() {
+    // The footer's state ("Analytics off · Marketing on"), or, in a sentence, what was saved ("analytics off,
+    // marketing on"): each category's own words there, which agree in each language.
+    function stateText(inSentence = false) {
         const categories = [...new Set(services.map((service) => service.category))];
 
         return choice === null && !signal ? '' : categories.map((category) => {
@@ -331,10 +333,16 @@ function start(config) {
             // Choices are per service (the dialog has a switch for each), so a category can be mixed: "on"
             // only when all its services are allowed, "off" when none is, and "some on" between
             const answers = services.filter((service) => service.category === category).map((service) => allowed(service.id));
-            const message = answers.every(Boolean) ? config.messages.stateOn : (answers.some(Boolean) ? config.messages.stateSome : config.messages.stateOff);
+            const state = answers.every(Boolean) ? 'on' : (answers.some(Boolean) ? 'some' : 'off');
+
+            if (inSentence && config.saved?.[category]?.[state]) {
+                return config.saved[category][state];
+            }
+
+            const message = {on: config.messages.stateOn, some: config.messages.stateSome, off: config.messages.stateOff}[state];
 
             return message.replace('{category}', label);
-        }).join(config.messages.stateSeparator ?? ' · ');
+        }).join(inSentence ? ', ' : (config.messages.stateSeparator ?? ' · '));
     }
 
     // Puts back the embeds of services the visitor allows, and holds again those of services withdrawn.
