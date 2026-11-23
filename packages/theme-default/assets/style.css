@@ -636,6 +636,10 @@ del.change { text-decoration-color: #b42318; text-decoration-thickness: 2px; bac
 .qd-pager--numbers .qd-numbers a { display: inline-grid; place-items: center; min-inline-size: 44px; min-block-size: 44px; border-radius: 999px; border: 1px solid var(--rule); color: var(--ink); text-decoration: none; font-variant-numeric: tabular-nums; }
 .qd-pager--numbers .qd-numbers a[aria-current] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 @media (max-width: 30rem) { .qd-site-nav { overflow: visible; } .qd-site-nav ul { flex-wrap: wrap; } .qd-site-nav { flex-wrap: wrap; } }
+/* On a phone the menu's items are closer, so a few short ones share a row rather than leave one alone below */
+@media (max-width: 30rem) { .qd-site-nav a { padding-inline: 0.55rem; } }
+/* A date never breaks inside itself ("November / 19, 2026") */
+.qd-kicker time { white-space: nowrap; }
 .qd-pager--numbers .qd-numbers { flex-wrap: wrap; }
 @media (max-width: 60rem) { .qd-pager--numbers { grid-template-columns: minmax(0, 1fr) auto; } .qd-pager--numbers .qd-newer { display: none; } .qd-pager--numbers .qd-numbers { justify-content: flex-start; } }
 .alert a { display: inline-block; padding-block: 0.2rem; }

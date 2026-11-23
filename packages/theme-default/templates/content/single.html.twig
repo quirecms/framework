@@ -11,6 +11,8 @@
 #}
 {% extends 'layout.html.twig' %}
 {% import 'partials/rows.html.twig' as rows %}
+{#- An item's stand-first is in italic, on its first screen: the layout preloads that font too, so it never swaps in -#}
+{% set italic_first_screen = true %}
 {% set domain = 'quire-theme-default' %}
 {#- The sidebar goes after the item's text, before the way to the next one, in the text's column (13b) -#}
 {% set sidebar_in_content = true %}
