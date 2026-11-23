@@ -1,36 +1,13 @@
-<!--
-The title is the squash commit's subject: imperative, at most 72 characters, no trailing period,
-with no internal references, e.g. "Refuse a release whose tag isn't signed".
-This description becomes the commit's body. See "Pull requests, commits and branches" in CONTRIBUTING.md.
--->
-
 ## Why
-
-<!-- The problem, or what someone running a site couldn't do. Required. -->
+<!-- 1–3 sentences: the problem, for whoever uses it. Not who asked. Replace this comment. -->
 
 ## What changes
-
-<!-- Bullets: behavior, not files. -->
-
+<!-- One behavior per bullet; behavior, not files. A breaking change is the first bullet, starting "Breaking:". Replace this comment. -->
 -
 
 ## Tested
-
-<!-- What ran, and what didn't (NOT RUN, and why). -->
-
+<!-- What ran: tests added, checks, by hand. Then "NOT RUN: <what>, because <why>" for anything that didn't. Replace this comment. -->
 -
 
 ## Refs
-
-<!-- Only what anyone can open: an issue (Fixes #123), a pull request, a published advisory, an RFC, upstream docs. Delete the section when there's none. -->
-
--
-
-## Checklist
-
-- [ ] Tests cover the change (a fix has a test that fails without it)
-- [ ] `docker compose exec php composer qa` passes
-- [ ] User-facing changes are in `docs/`, and in the next release's notes in `docs/releases/`
-- [ ] Theme or admin templates and CSS still pass the accessibility check (axe-core), and approved screenshots are updated on purpose
-- [ ] `@api` changes follow semantic versioning (deprecate before removing)
-- [ ] New or changed texts are translatable, with a translation in each language the package ships, and valid ICU
+<!-- Public links only: issues, pull requests, published advisories, RFCs, upstream docs. Delete this section when there are none. -->
