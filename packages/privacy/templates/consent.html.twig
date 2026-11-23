@@ -41,7 +41,7 @@
                 <button type="button" class="consent__btn" data-consent-accept>{{ mode == 'single' ? ('consent.single.accept.' ~ category.value)|quire_trans({}, domain) : 'Accept all'|quire_trans({}, domain) }}</button>
                 <button type="button" class="consent__btn" data-consent-reject>{{ reject_label }}</button>
                 {% if mode == 'several' %}
-                    <button type="button" class="consent__link" data-consent-open>{{ 'Choose cookies'|quire_trans({}, domain) }}</button>
+                    <button type="button" class="consent__link" data-consent-open>{{ 'Cookie settings'|quire_trans({}, domain) }}</button>
                 {% endif %}
             {% endblock %}
             {% block consent_details_link %}
@@ -109,8 +109,9 @@
 
         {#- Accept first and reject second, as on the banner; closing is the ✕ above -#}
         <div class="consent__actions consent-dialog__actions">
-            <button type="button" class="consent__btn" data-consent-accept>{{ 'Accept all'|quire_trans({}, domain) }}</button>
-            <button type="button" class="consent__btn" data-consent-reject>{{ reject == 'reject' ? 'Reject all'|quire_trans({}, domain) : reject_label }}</button>
+            {#- With one category, its own words, as on the banner ("all" is vague with one) -#}
+            <button type="button" class="consent__btn" data-consent-accept>{{ mode == 'single' ? ('consent.single.accept.' ~ category.value)|quire_trans({}, domain) : 'Accept all'|quire_trans({}, domain) }}</button>
+            <button type="button" class="consent__btn" data-consent-reject>{{ mode == 'single' or reject != 'reject' ? reject_label : 'Reject all'|quire_trans({}, domain) }}</button>
             <button type="button" class="consent__btn" data-consent-save>{{ 'Save my choices'|quire_trans({}, domain) }}</button>
         </div>
     </form>

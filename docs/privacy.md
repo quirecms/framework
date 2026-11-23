@@ -12,11 +12,11 @@ bin/console quire:extension:enable quire-privacy
 ## What visitors see
 
 - **A banner** at the bottom (or in a corner: a setting), first after the theme's skip link. It asks only about the categories the site's services use:
-  - one category, by its name: "Analytics cookies", with **Accept analytics cookies** and **Reject analytics cookies**, and **Cookie details**;
-  - more: **Accept all**, **Reject all** and **Choose cookies**.
+  - one category, by its name: "Analytics cookies", with **Accept analytics cookies** and **Reject analytics cookies**, and **Cookie settings**;
+  - more: **Accept all**, **Reject all** and **Cookie settings**.
 
-  Accepting and rejecting look the same, side by side, and nothing is switched on in advance. The page keeps room for the banner, so it covers nothing.
-- **The cookie settings**, a dialog: each category with its switch and what it's for, and each service with who runs it, what it does, the other sites it reaches, what it keeps on the visitor's device and for how long, and its privacy policy. All of it comes from the services' declarations, so it's never out of date.
+  Accepting and rejecting look the same, side by side, and nothing is switched on in advance. The page keeps room for the banner, so it covers nothing; on a short screen (a phone on its side, 400% zoom) it's at the top of the page instead.
+- **The cookie settings**, a dialog, with the banner's choices in the same words and order (accept, reject, then **Save my choices**): each category with its switch and what it's for, and each service with who runs it, what it does, the other sites it reaches, what it keeps on the visitor's device and for how long, and its privacy policy. All of it comes from the services' declarations, so it's never out of date.
 - **"Cookie settings"** on every page, in the footer, reopens the dialog: withdrawing is as easy as giving. Withdrawing stops the service where it can, and removes its cookies on the site's domain.
 - **Asked again** about a service added since, or one that changed since the visitor allowed it (it reaches another site, keeps another cookie, or moved to another category), by name; other answers stay. A change of wording isn't a reason to ask again. Everyone is asked again when their choice expires.
 - **No banner for browsers that ask not to be tracked** (Global Privacy Control, Do Not Track): they count as rejecting, and the dialog says why.
@@ -93,7 +93,7 @@ return [
         category: Category::Marketing,
         vendor: 'Acme Video Ltd',
         purpose: 'Plays the videos in posts.',
-        cookies: [new Cookie('acme_id', '1 year', 'Recognises you across sites.')],
+        cookies: [new Cookie('acme_id', '1 year', 'Recognizes you across sites.')],
         hosts: ['frame-src' => ['https://player.acme-video.example'], 'img-src' => ['https://thumbs.acme-video.example']],
         retention: '1 year',
         policyUrl: 'https://acme-video.example/privacy',
@@ -124,7 +124,7 @@ A shortcode needs nothing for this: its output passes through `quire/privacy`'s 
 
 Output that isn't UTF-8 can't be carried or checked: its placeholder says the content can't be shown, and the site's log says so.
 
-Editors can't embed by writing HTML: the sanitiser removes frames and scripts from content. Themes restyle the placeholder (`.consent-embed`, with the `--quire-consent-*` properties) or override `templates/extensions/quire_privacy/embed.html.twig`, keeping its `data-consent-embed*` attributes.
+Editors can't embed by writing HTML: the sanitizer removes frames and scripts from content. Themes restyle the placeholder (`.consent-embed`, with the `--quire-consent-*` properties) or override `templates/extensions/quire_privacy/embed.html.twig`, keeping its `data-consent-embed*` attributes.
 
 Analytics comes this way too: `quire/analytics` declares Google Analytics 4 as a service of the site ([analytics.md](analytics.md)).
 
@@ -150,7 +150,7 @@ The choice is kept in the first-party cookie `quire_consent`: for each service, 
 
 ## Theming
 
-- **Styles:** the banner inherits the page's font and uses the system's colours, so it fits a theme that styles nothing. A theme maps its look onto the `--quire-consent-*` custom properties (background, text, border, button colours, radius, gap, focus). Accepting and rejecting share one button style, `consent__btn`: there are no separate accept and reject styles.
+- **Styles:** the banner inherits the page's font and uses the system's colors, so it fits a theme that styles nothing. A theme maps its look onto the `--quire-consent-*` custom properties (background, text, border, button colors, radius, gap, focus). Accepting and rejecting share one button style, `consent__btn`: there are no separate accept and reject styles.
 - **Blocks:** override `templates/extensions/quire_privacy/consent.html.twig` with `{% extends '@!quire_privacy/consent.html.twig' %}` and the blocks `consent_mark` (before the heading, empty: e.g. the site's mark), `consent_heading`, `consent_text`, `consent_actions`, `consent_details_link` or `consent_dialog`. The heading and the texts are one element, `.consent__body`, so the mark, the body and the actions can sit side by side. Keep both actions on the first layer, with names. The banner's stylesheet is in the cascade layer `quire-privacy`, under the default theme's: a theme's rules win over it whatever order they load in.
 - **Checked:** `quire:theme:lint` and the admin's themes page render a theme's own banner with one kind of service and with several, and report it as an error unless the first layer has one accept and one reject button with the same classes, words, and neither hidden, and a way to the details (`[data-consent-open]`), and the settings have saving and rejecting. Comparing classes stands in for "they look the same": styles by ID or position can still tell them apart, so don't.
 - **The opener:** put `{{ quire_consent_settings() }}` where the theme wants "Cookie settings"; without it, it goes in the footer slot.

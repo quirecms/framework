@@ -613,7 +613,7 @@ final class ColorField extends AbstractFieldType
 
 #### `Extend\Formatter`
 
-Extends how text becomes HTML. The pipeline is: source → pre-processors → format (Markdown, text, HTML, …) → post-processors → sanitiser. Each class you register becomes an autowired service.
+Extends how text becomes HTML. The pipeline is: source → pre-processors → format (Markdown, text, HTML, …) → post-processors → sanitizer. Each class you register becomes an autowired service.
 
 ```php
 new Extend\Formatter()
@@ -628,10 +628,10 @@ new Extend\Formatter()
 
 | Method | Registers |
 |--------|-----------|
-| `shortcode($name, $class, $trusted)` | A `ShortcodeInterface` that renders `[[name …]]`. Its output is sanitised unless `trusted: true`, which only suits output that never contains unescaped user input (e.g. an embed's iframe). Shortcodes aren't cached: they run each time the text is shown. |
+| `shortcode($name, $class, $trusted)` | A `ShortcodeInterface` that renders `[[name …]]`. Its output is sanitized unless `trusted: true`, which only suits output that never contains unescaped user input (e.g. an embed's iframe). Shortcodes aren't cached: they run each time the text is shown. |
 | `commonMark($class, $profiles)` | A [league/commonmark extension](https://commonmark.thephpleague.com/2.x/customization/overview/): new syntax, nodes, renderers or document changes |
 | `preProcessor($class, $profiles)` | A `SourceProcessorInterface` that changes the source before parsing |
-| `postProcessor($class, $profiles)` | An `HtmlProcessorInterface` that changes the HTML before it's sanitised |
+| `postProcessor($class, $profiles)` | An `HtmlProcessorInterface` that changes the HTML before it's sanitized |
 | `format($name, $class, $profiles)` | A `FormatInterface` for another markup language, allowed in the given profiles |
 | `profile($name, ...)` | A set of rules for one kind of text (see below) |
 
@@ -661,7 +661,7 @@ final readonly class GalleryShortcode implements ShortcodeInterface
 | `content` | Content written by editors | markdown, text, html | Everything safe: headings (with anchors), tables, images, all shortcodes |
 | `comment` | Text written by visitors | markdown, text | Paragraphs, emphasis, links (marked `rel="nofollow ugc"`), lists, quotes, code. No images or shortcodes. |
 
-Profile options: `formats`, `shortcodes` (names, or `['*']`), `sanitizer` (`rich` or `basic`), `headingAnchors`, `images`, `rawHtml` (let Markdown contain HTML, still sanitised), `linkRel` and `footnotes` (CommonMark footnotes, set beside their references; core's `content` profile has them, never give them to visitors' text). A `rich` profile also gets the structure every theme relies on (see "What the renderer prints" in docs/themes.md).
+Profile options: `formats`, `shortcodes` (names, or `['*']`), `sanitizer` (`rich` or `basic`), `headingAnchors`, `images`, `rawHtml` (let Markdown contain HTML, still sanitized), `linkRel` and `footnotes` (CommonMark footnotes, set beside their references; core's `content` profile has them, never give them to visitors' text). A `rich` profile also gets the structure every theme relies on (see "What the renderer prints" in docs/themes.md).
 
 Render text with `Quire\Formatter\Formatter`, and content with `Quire\Content\ContentRenderer`, which caches:
 

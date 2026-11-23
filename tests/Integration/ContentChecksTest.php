@@ -71,7 +71,7 @@ final class ContentChecksTest extends KernelTestCase
         $post = $this->draft(str_repeat('Long title ', 7));
         $page = $this->draft('A page', type: 'page');
 
-        self::assertSame([['core.excerpt', 'excerpt', null, 'There\'s no excerpt: lists and search engines then show the start of the text, which may not summarise it.']], $this->found($post, 'core.excerpt'));
+        self::assertSame([['core.excerpt', 'excerpt', null, 'There\'s no excerpt: lists and search engines then show the start of the text, which may not summarize it.']], $this->found($post, 'core.excerpt'));
         self::assertSame([], $this->found($page, 'core.excerpt'), 'Pages have no excerpt.');
         self::assertSame([['core.title-length', 'title', null, 'The title has 76 characters; search results show about 60. Put what matters first.']], $this->found($post, 'core.title-length'));
     }

@@ -17,6 +17,9 @@ const screens = {
         await page.locator('.content-list__title').first().click();
         await page.waitForURL(/\/admin\/content\/post\/[0-9a-f-]{36}$/);
         await page.waitForLoadState('networkidle');
+        // The manuscript is CodeMirror, imported once the page is there: on a busy machine that can end after
+        // the network is quiet, and the screenshot would show the textarea it replaces
+        await page.locator('.markdown-field .cm-editor').waitFor();
     },
     // Changes waiting for a review, from the home page.
     review: async (page) => {

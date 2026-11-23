@@ -20,7 +20,7 @@ use Quire\Privacy\Services;
  *         category: Category::Marketing,
  *         vendor: 'Acme Video Ltd',
  *         purpose: 'Plays the videos in posts.',
- *         cookies: [new Cookie('acme_id', '1 year', 'Recognises you across sites.')],
+ *         cookies: [new Cookie('acme_id', '1 year', 'Recognizes you across sites.')],
  *         hosts: ['frame-src' => ['https://player.acme-video.example']],
  *         policyUrl: 'https://acme-video.example/privacy',
  *     ),
