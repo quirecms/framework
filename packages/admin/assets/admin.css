@@ -363,7 +363,7 @@
     .checks__item a { display: inline-block; min-height: var(--q-target); }
 
     /* --- Changes, reviews, history ------------------------------------------------- */
-    /* Colours mark changes along with signs (+, −) and hidden words, never alone. */
+    /* Colors mark changes along with signs (+, −) and hidden words, never alone. */
     .diff-properties td { vertical-align: top; white-space: pre-wrap; overflow-wrap: anywhere; }
     .diff-properties del, .diff-properties ins, .diff-text del, .diff-text ins { text-decoration: none; }
     .diff-old, .diff-removed { background: color-mix(in srgb, var(--q-danger) 12%, transparent); }

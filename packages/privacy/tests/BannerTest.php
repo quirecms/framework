@@ -32,7 +32,7 @@ final class BannerTest extends PrivacyTestCase
     {
         $actions = $this->home()->filter('[data-consent-banner] .consent__actions button');
 
-        self::assertSame(['Accept all', 'Reject all', 'Choose cookies'], $actions->each(static fn (Crawler $button): string => trim($button->text())));
+        self::assertSame(['Accept all', 'Reject all', 'Cookie settings'], $actions->each(static fn (Crawler $button): string => trim($button->text())));
         self::assertSame(['consent__btn', 'consent__btn'], [$actions->eq(0)->attr('class'), $actions->eq(1)->attr('class')], 'Accepting and rejecting are one component.');
     }
 

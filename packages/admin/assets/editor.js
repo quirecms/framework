@@ -15,7 +15,7 @@ import { autocompletion } from '@codemirror/autocomplete';
 import { unifiedMergeView } from '@codemirror/merge';
 import { tags } from '@lezer/highlight';
 
-// Colours come from the admin's tokens, so they follow light and dark.
+// Colors come from the admin's tokens, so they follow light and dark.
 const highlighting = HighlightStyle.define([
     { tag: tags.heading1, fontWeight: '700', fontSize: '1.6em' },
     { tag: tags.heading2, fontWeight: '700', fontSize: '1.3em' },

@@ -139,7 +139,7 @@
         {% endif %}
 
         {% if not is_page and type.has('listable') and preview|default(false) %}
-            {#- A preview has no neighbours yet: only the way back to the list -#}
+            {#- A preview has no neighbors yet: only the way back to the list -#}
             <div class="qd-container"><p class="qd-browse"><a href="{{ quire_listing_url(type.id) }}">{{ quire_type_phrase(type, 'all') }}</a></p></div>
         {% endif %}
         {% if not is_page and type.has('listable') and content.publishedAt and not preview|default(false) %}

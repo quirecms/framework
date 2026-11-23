@@ -172,7 +172,7 @@ $writer->linkIdentity($user->id, 'github', '1234567', ['login' => 'grace']);
 
 ## Users of the application Quire is installed in
 
-When Quire is added to an application that has users of its own, such as a tournament manager with organisers, Quire can use them: whoever the application signs in is a user in Quire too. Map the application's Symfony roles to Quire's in `config/packages/quire.yaml`:
+When Quire is added to an application that has users of its own, such as a tournament manager with organizers, Quire can use them: whoever the application signs in is a user in Quire too. Map the application's Symfony roles to Quire's in `config/packages/quire.yaml`:
 
 ```yaml
 quire:
@@ -189,7 +189,7 @@ quire:
 - **Each of the application's users gets a linked Quire user** on their first visit, so content can name them as its author. Quire never reads or changes the application's tables. The link is an identity with the provider `host` and the user identifier as its subject.
 - **Roles are mapped on every request**, from the user's Symfony roles including the role hierarchy. A user who stops being an organiser in the application is no longer an editor in Quire on their next request; nothing needs syncing. Roles given in Quire, with `quire:user:role`, add to the mapped ones. The mapped roles are kept with the link for display only.
 - **Suspending** a linked user in Quire takes their Quire roles away; they stay signed in to the application.
-- **Rules that depend on the application's data**, e.g. "organisers edit the news of their own tournaments", are [rules](permissions.md#rules) in an extension of the application. They get the application's user.
+- **Rules that depend on the application's data**, e.g. "organizers edit the news of their own tournaments", are [rules](permissions.md#rules) in an extension of the application. They get the application's user.
 
 `Quire\User\CurrentUser` gives the Quire user of whoever is signed in, whichever way they were signed in:
 

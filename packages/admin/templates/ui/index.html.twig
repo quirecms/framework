@@ -11,8 +11,8 @@
 
 {% block content %}
     <div class="ui-guide">
-        <section class="q-card" aria-labelledby="ui-colours">
-            <h2 class="q-card__title" id="ui-colours">{{ 'Colours'|trans({}, 'quire-admin') }}</h2>
+        <section class="q-card" aria-labelledby="ui-colors">
+            <h2 class="q-card__title" id="ui-colors">{{ 'Colors'|trans({}, 'quire-admin') }}</h2>
             <p class="q-help">Tokens such as <code>var(--q-accent)</code>; light, dark and high contrast follow each person’s choice.</p>
             <div class="ui-guide__swatches">
                 {% for token in ['paper', 'surface', 'ink', 'muted', 'line', 'accent', 'accent-soft', 'danger', 'warn', 'draft', 'review', 'scheduled', 'live'] %}
