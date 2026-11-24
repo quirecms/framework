@@ -4,6 +4,61 @@ Every release of Quire, newest first: what it brings, the security fixes, and wh
 
 <!-- Made from docs/releases/<version>.md by "php .github/feed.php --changelog > CHANGELOG.md": change those files, not this one. A test checks it's up to date. -->
 
+## [0.5.0] - 2026-11-24
+
+Sites look as designed on the default theme, account pages and cookie choices included, and Quire speaks Macedonian.
+
+- **The default theme as designed:** the account pages (sign in, register, forgot password, check your inbox, choose a password, invitation, expired link, confirm email, signed in) in the theme's card, with core's forms, fields and checks unchanged; the cookie banner, its corner box and its settings dialog; an error page with a reference to quote; and a footer that offers "Sign out" to someone signed in. The footer says "This site loads nothing from other companies." only while it's true, as core reads it from the security policy the site's pages are sent; owners can turn it off (`show_loads_nothing`), as they can "Runs on Quire" (`show_credit`). Titles hyphenate instead of breaking inside words, and an item's sidebar comes after its text, before the way to the next item. A child theme can replace the header, the brand, the footer or the footer line and keep the rest. See docs/themes.md.
+- **Notes lead back to the text:** following a note's reference moves the keyboard's focus to the note, and each note ends with a link back to its reference ("Back to the text"; its arrow points the other way on right-to-left pages), which works in the margin as beside the text.
+- **Macedonian for the admin, theme and core,** with German for the same texts. Text without a translation in the page's language shows in English, marked as English, so it reads in the right direction in a right-to-left language.
+- **Names in the page's language:** content types, roles, abilities and settings, and a type's sentences ("New post", "Search 54 posts…"). What core declares for each content type reads with the type's name after it: "Publish (Posts)", "Item URLs (Posts)". Templates print them with `quire_type_label()`, `quire_type_phrase()`, `quire_role_label()`, `quire_ability_label()` and `quire_setting_label()`. See docs/extensions.md, "Texts and languages".
+- **Language packages:** a package's texts can come from a language package (Composer type `quire-translation`), which holds one package's texts in one language. It's read as plain texts, can never run code or change another package's texts, and one that doesn't fit is left out with a warning instead of stopping the site. Each package declares its texts in `extra.quire.translations`. `quire:about` lists each language package as loaded or ignored, with why.
+- **Cookie choices:** a consent banner and dialog with equal Accept and Reject choices, in the same words and order in both, and nothing preselected. "Cookie settings" is on every page, sign-in and account pages included, where nothing of a service runs. After a choice the status says what was saved ("Saved: analytics off."). A service's details read in the visitor's language, and the sites it reaches are listed once each. A category with one service names it in words under the category's switch. On a short screen the banner sits at the top of the page instead of covering it.
+- **Invitations** name the role and the username apart, on the page and in the email: "Ada Lovelace invited you to Tournament News as Editor. Your username is lin."
+- **Content brought over from elsewhere keeps its date:** `quire:content:create --published-at` publishes an item with an earlier date, exact or relative (`-3 weeks`). See docs/content.md.
+- **Sign-in errors** read "The email, username or password is wrong. Check them and try again.", the same whichever was wrong.
+
+### Changed in a way that can break a site
+
+- **The default theme's classes start with `qd-`, and its CSS is in the cascade layer `quire-theme-default`,** after `quire-core` and `quire-privacy`. A child theme's CSS that targets the old class names needs them changed.
+- **Content's HTML:** a task's text after its box is wrapped in `<span class="task-text">`; a footnote can take the focus (`tabindex="-1"`) and ends with `<a class="footnote-back">`. In the default theme, the region around a content table (`.table`) scrolls, not the table, and the privacy notice's tables are in the same region.
+- **The password field's Show button** switches its text and its name together ("Show password", "Hide password") and has no `aria-pressed`.
+- **Each package's texts are in its own translation domain,** and quire/privacy's and quire/analytics' settings titles moved into theirs. `quire` and `quire-…` domains are for Quire's own packages. A language package for core has new texts to translate ("Hide", "Hide password", "Your password is visible.", "Your password is hidden.", "Back to the text"); until it does, they show in English.
+- **An extension can't use a name core uses in the activity log or for settings** (`user`, `site`, …) as its ID.
+- **The cookie banner's link for two or more categories is "Cookie settings",** the name it has everywhere, instead of "Choose cookies".
+
+### Fixed
+
+- **A wide table can be scrolled by keyboard:** in the default theme, a table wider than its column scrolls inside its named region, the element the keyboard focuses, so the arrow keys reach its last column. A shadow at an edge shows there's more that way. On phones, the privacy notice's tables show as cards instead of overflowing.
+- **A long read with a wide table keeps its text at the reading measure** on screens from 1024 pixels up, with or without "On this page": only the table widens, and the notes stay beside the text they belong to instead of overlapping it.
+- **A task's text and its note stay together on narrow screens,** a note's number is shown once, and a task's text starts at the same place in every row of its list, whatever its state's words.
+- **The button beside a password says "Show" or "Hide"** and keeps the focus, so pressing it again hides the password instead of typing into it or sending the form; screen readers are told "Your password is visible." or "Your password is hidden." The sign-in form's username is never capitalized or spell-checked by phones.
+- **The default theme on phones:** the menu's items sit closer, so four short ones share a row from 360 pixels up; a date in an item's header moves to a line of its own rather than break inside itself, so it no longer overflows a phone with large text; and an item's page preloads the italic font of its stand-first, so it doesn't change font as the page loads.
+- **The cookie settings dialog's choices** are two equal columns, and the privacy notice's list of services starts at heading level 2.
+- **A broken translation can't break a page:** a language package's translation of a type's sentence that isn't valid ICU reads in English, and a warning names the package, the sentence and the language.
+- **An untranslated sentence with a count** ("{count, plural, …}") was printed as its raw pattern when no texts translated it.
+- **The admin translated core's ability names, and the People page's role tabs, from the wrong texts,** so they were never translated.
+- **The default theme's layout rules could be overridden by a child theme** only where they didn't use `!important`.
+
+### Known limits
+
+- **The German texts haven't had a native speaker's check,** and the consent wording in Macedonian may still change.
+- **The admin's command bar understands English words only,** also when the admin is in Macedonian.
+- **Validation messages** (e.g. a slug already in use) are still in English.
+
+### Upgrading
+
+A new minor version: sites require `^0.4`, so they move to it only when told. No migrations and no settings to change: sites look as designed as soon as they're updated.
+- Sites run by Quire Server: `quire-server site:update <site> --to=0.5.0` (server contract 2, unchanged).
+- Other sites: `composer require "quire/core:^0.5" "quire/admin:^0.5" "quire/theme-default:^0.5"` (and `"quire/privacy:^0.5" "quire/analytics:^0.5"` where they're installed, `composer require --dev "quire/testing:^0.5"` where it's used). The skeleton's files didn't change.
+- A site on a release candidate of 0.5.0: the same steps. Nothing changed since rc.3 but the margin notes' links (below).
+- Extensions and themes: require `"quire/core": "^0.5"`.
+
+What changes for sites, themes and extensions:
+- **A child of the default theme must use the new class names.** The default theme's own classes start with `qd-` (`.lead` is `.qd-lead`), and its CSS is in a cascade layer. A child's or a site's CSS stays outside the layers, so it wins over the theme's whatever its selectors. docs/themes.md lists the classes, custom properties and blocks a child may rely on. A child that styles content tables, task lists, footnotes or the password field's Show button should check them too: their markup changed (see "Changed in a way that can break a site").
+- **A translation of Quire's texts belongs in its package's domain:** `quire` for core, `quire-admin`, `quire-privacy`, `quire-analytics`, `quire-theme-default`. A site's own translation of one of them in another domain no longer applies.
+- **A content type of an extension can word its sentences** with `Extend\ContentType::phrases()` ("New recipe", "Search 4 recipes…"); without them it reads "New: Recipe". Its name, its roles' names and its settings' labels are translated in the extension's own domain.
+
 ## [0.5.0-rc.3] - 2026-11-23
 
 Fixes from trying 0.5.0-rc.2: wide tables by keyboard, and details of the sign-in form, dates, the privacy notice and task lists. This is a release candidate: try it, don't run production sites on it.
@@ -317,6 +372,7 @@ The first release of Quire, the extensible CMS for PHP, built on Symfony.
 
 Start a site with `composer create-project quire/skeleton my-site` (see docs/docker.md).
 
+[0.5.0]: https://github.com/quirecms/framework/releases/tag/v0.5.0
 [0.5.0-rc.3]: https://github.com/quirecms/framework/releases/tag/v0.5.0-rc.3
 [0.5.0-rc.2]: https://github.com/quirecms/framework/releases/tag/v0.5.0-rc.2
 [0.5.0-rc.1]: https://github.com/quirecms/framework/releases/tag/v0.5.0-rc.1
