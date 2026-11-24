@@ -97,3 +97,24 @@ test('every rule of the theme\'s and the banner\'s stylesheets is one the browse
         expect(sheet.rules, `${sheet.href}: rules the browser read, against blocks in the file`).toBe(sheet.blocks);
     }
 });
+
+// A note floats from the text into the margin column on wide screens, where the column's own (empty) box came
+// later in the page and took every click: the note's "Back to the text" link couldn't be followed. The demo
+// site has no notes, so one is put in the way the renderer prints it (DocumentStructure).
+test('a note in the margin can be followed back to the text', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'light', 'Wide screens only, the same in every look');
+    await page.goto('/blog/spring-draw-all-groups', { waitUntil: 'networkidle' });
+    await page.evaluate(() => {
+        const paragraph = document.querySelector('.qd-prose > p');
+        paragraph.insertAdjacentHTML('beforeend', '<sup id="fnref-1"><a href="#fn-1">1</a></sup><span class="footnote" id="fn-1" role="note" tabindex="-1"><b>1</b>A note. <a class="footnote-back" href="#fnref-1"><span aria-hidden="true">↩</span><span class="visually-hidden">Back to the text</span></a></span>');
+    });
+
+    const back = page.locator('.footnote-back');
+    const box = await back.boundingBox();
+    const prose = await page.locator('.qd-prose').boundingBox();
+    expect(box.x, 'the note is in the margin, beside the text').toBeGreaterThan(prose.x + prose.width);
+    // What a pointer at the link's middle reaches is the link, not a box over it
+    expect(await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.closest('.footnote-back') !== null, { x: box.x + box.width / 2, y: box.y + box.height / 2 })).toBe(true);
+    await back.click();
+    await expect(page).toHaveURL(/#fnref-1$/);
+});
